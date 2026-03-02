@@ -4,9 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ProRank ATP - Global Ranking System</title>
-    <!-- Tailwind CSS for styling -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- React and Babel for running JSX in the browser -->
     <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
@@ -15,7 +13,6 @@
         .bracket-container::-webkit-scrollbar { height: 8px; }
         .bracket-container::-webkit-scrollbar-track { background: #1e293b; }
         .bracket-container::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
-        /* Prevent layout shift during image loading */
         .aspect-3-4 { aspect-ratio: 3 / 4; }
     </style>
 </head>
@@ -28,7 +25,6 @@
         import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, collection, onSnapshot, doc, addDoc, updateDoc, deleteDoc, query, orderBy } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        // Expose Firebase to the Babel script
         window.fb = { initializeApp, getAuth, signInAnonymously, onAuthStateChanged, getFirestore, collection, onSnapshot, doc, addDoc, updateDoc, deleteDoc, query, orderBy };
     </script>
 
@@ -36,13 +32,9 @@
         const { useState, useEffect, useMemo, useRef } = React;
 
         // --- ICON COMPONENTS (SVG) ---
-        // Replacing Lucide with inline SVG components to avoid CDN resolution issues
         const Icon = ({ d, size = 24, className = "" }) => (
-            <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
-                <path d={d} />
-            </svg>
+            <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d={d} /></svg>
         );
-
         const Trophy = (props) => <Icon d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6M18 9h1.5a2.5 2.5 0 0 0 0-5H18M4 22h16M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22M18 2H6v7a6 6 0 0 0 12 0V2Z" {...props} />;
         const Users = (props) => <Icon d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M9 7a4 4 0 1 0 0-8 4 4 0 0 0 0 8ZM22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" {...props} />;
         const Swords = (props) => <Icon d="M14.5 17.5 3 6V3h3l11.5 11.5M13 19l6-6M16 16l4 4M19 21l2-2M14.5 6.5 18 3h3v3l-3.5 3.5" {...props} />;
@@ -63,119 +55,53 @@
         const Globe = (props) => <Icon d="M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20ZM2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10Z" {...props} />;
 
         // --- Configuration & Constants ---
-        const POINTS = { WINNER: 1000, FINALIST: 600, SF: 360, QF: 180, R16: 90, R32: 45 };
+        
+        // Tournament Tiers define prestige, point rewards, rank lockouts, and wildcard allowances.
+        const TOURNAMENT_TIERS = {
+            'grand_slam': {
+                name: 'Grand Slam',
+                points: { WINNER: 2000, FINALIST: 1200, SF: 720, QF: 360, R16: 180, R32: 90 },
+                excludeTop: 0, // No exclusions
+                wcCount: { 32: 8, 16: 4, 8: 2 },
+                color: 'text-purple-400', bg: 'bg-purple-500/20', border: 'border-purple-500/50'
+            },
+            'major': {
+                name: 'Major',
+                points: { WINNER: 1000, FINALIST: 600, SF: 360, QF: 180, R16: 90, R32: 45 },
+                excludeTop: 0, // No exclusions
+                wcCount: { 32: 8, 16: 4, 8: 2 },
+                color: 'text-yellow-400', bg: 'bg-yellow-500/20', border: 'border-yellow-500/50'
+            },
+            'pro': {
+                name: 'Pro Series',
+                points: { WINNER: 500, FINALIST: 300, SF: 180, QF: 90, R16: 45, R32: 20 },
+                excludeTop: 4, // Top 4 ranked players excluded
+                wcCount: { 32: 10, 16: 6, 8: 3 },
+                color: 'text-blue-400', bg: 'bg-blue-500/20', border: 'border-blue-500/50'
+            },
+            'challenger': {
+                name: 'Challenger',
+                points: { WINNER: 250, FINALIST: 150, SF: 90, QF: 45, R16: 20, R32: 10 },
+                excludeTop: 8, // Top 8 ranked players excluded
+                wcCount: { 32: 16, 16: 8, 8: 4 },
+                color: 'text-green-400', bg: 'bg-green-500/20', border: 'border-green-500/50'
+            }
+        };
+
         const ROUND_NAMES = ['Round of 32', 'Round of 16', 'Quarterfinals', 'Semifinals', 'Final'];
         const COUNTRIES = [
-            // North America & Caribbean
-            { code: 'ATG', name: 'Antigua and Barbuda', flag: '🇦🇬' },
-            { code: 'BHS', name: 'Bahamas', flag: '🇧🇸' },
-            { code: 'BRB', name: 'Barbados', flag: '🇧🇧' },
-            { code: 'CAN', name: 'Canada', flag: '🇨🇦' },
-            { code: 'CUB', name: 'Cuba', flag: '🇨🇺' },
-            { code: 'DOM', name: 'Dominican Republic', flag: '🇩🇴' },
-            { code: 'GTM', name: 'Guatemala', flag: '🇬🇹' },
-            { code: 'HTI', name: 'Haiti', flag: '🇭🇹' },
-            { code: 'JAM', name: 'Jamaica', flag: '🇯🇲' },
-            { code: 'MEX', name: 'Mexico', flag: '🇲🇽' },
-            { code: 'PAN', name: 'Panama', flag: '🇵🇦' },
-            { code: 'PUR', name: 'Puerto Rico', flag: '🇵🇷' },
-            { code: 'USA', name: 'United States', flag: '🇺🇸' },
-
-            // South America
-            { code: 'ARG', name: 'Argentina', flag: '🇦🇷' },
-            { code: 'BOL', name: 'Bolivia', flag: '🇧🇴' },
-            { code: 'BRA', name: 'Brazil', flag: '🇧🇷' },
-            { code: 'CHI', name: 'Chile', flag: '🇨🇱' },
-            { code: 'COL', name: 'Colombia', flag: '🇨🇴' },
-            { code: 'ECU', name: 'Ecuador', flag: '🇪🇨' },
-            { code: 'PAR', name: 'Paraguay', flag: '🇵🇾' },
-            { code: 'PER', name: 'Peru', flag: '🇵🇪' },
-            { code: 'URU', name: 'Uruguay', flag: '🇺🇾' },
-            { code: 'VEN', name: 'Venezuela', flag: '🇻🇪' },
-
-            // Europe
-            { code: 'ALB', name: 'Albania', flag: '🇦🇱' },
-            { code: 'AUT', name: 'Austria', flag: '🇦🇹' },
-            { code: 'BEL', name: 'Belgium', flag: '🇧🇪' },
-            { code: 'BUL', name: 'Bulgaria', flag: '🇧🇬' },
-            { code: 'CRO', name: 'Croatia', flag: '🇭🇷' },
-            { code: 'CZE', name: 'Czechia', flag: '🇨🇿' },
-            { code: 'DEN', name: 'Denmark', flag: '🇩🇰' },
-            { code: 'EST', name: 'Estonia', flag: '🇪🇪' },
-            { code: 'FIN', name: 'Finland', flag: '🇫🇮' },
-            { code: 'FRA', name: 'France', flag: '🇫🇷' },
-            { code: 'GBR', name: 'Great Britain', flag: '🇬🇧' },
-            { code: 'GER', name: 'Germany', flag: '🇩🇪' },
-            { code: 'GRE', name: 'Greece', flag: '🇬🇷' },
-            { code: 'HUN', name: 'Hungary', flag: '🇭🇺' },
-            { code: 'IRL', name: 'Ireland', flag: '🇮🇪' },
-            { code: 'ISL', name: 'Iceland', flag: '🇮🇸' },
-            { code: 'ITA', name: 'Italy', flag: '🇮🇹' },
-            { code: 'LAT', name: 'Latvia', flag: '🇱🇻' },
-            { code: 'LTU', name: 'Lithuania', flag: '🇱🇹' },
-            { code: 'NED', name: 'Netherlands', flag: '🇳🇱' },
-            { code: 'NOR', name: 'Norway', flag: '🇳🇴' },
-            { code: 'POL', name: 'Poland', flag: '🇵🇱' },
-            { code: 'POR', name: 'Portugal', flag: '🇵🇹' },
-            { code: 'ROU', name: 'Romania', flag: '🇷🇴' },
-            { code: 'RUS', name: 'Russia', flag: '🇷🇺' },
-            { code: 'SRB', name: 'Serbia', flag: '🇷🇸' },
-            { code: 'SVK', name: 'Slovakia', flag: '🇸🇰' },
-            { code: 'SLO', name: 'Slovenia', flag: '🇸🇮' },
-            { code: 'ESP', name: 'Spain', flag: '🇪🇸' },
-            { code: 'SWE', name: 'Sweden', flag: '🇸🇪' },
-            { code: 'SUI', name: 'Switzerland', flag: '🇨🇭' },
-            { code: 'UKR', name: 'Ukraine', flag: '🇺🇦' },
-
-            // Asia
-            { code: 'AFG', name: 'Afghanistan', flag: '🇦🇫' },
-            { code: 'CHN', name: 'China', flag: '🇨🇳' },
-            { code: 'IND', name: 'India', flag: '🇮🇳' },
-            { code: 'IDN', name: 'Indonesia', flag: '🇮🇩' },
-            { code: 'IRI', name: 'Iran', flag: '🇮🇷' },
-            { code: 'IRQ', name: 'Iraq', flag: '🇮🇶' },
-            { code: 'ISR', name: 'Israel', flag: '🇮🇱' },
-            { code: 'JPN', name: 'Japan', flag: '🇯🇵' },
-            { code: 'KAZ', name: 'Kazakhstan', flag: '🇰🇿' },
-            { code: 'KOR', name: 'South Korea', flag: '🇰🇷' },
-            { code: 'MAS', name: 'Malaysia', flag: '🇲🇾' },
-            { code: 'PAK', name: 'Pakistan', flag: '🇵🇰' },
-            { code: 'PHI', name: 'Philippines', flag: '🇵🇭' },
-            { code: 'QAT', name: 'Qatar', flag: '🇶🇦' },
-            { code: 'KSA', name: 'Saudi Arabia', flag: '🇸🇦' },
-            { code: 'SGP', name: 'Singapore', flag: '🇸🇬' },
-            { code: 'THA', name: 'Thailand', flag: '🇹🇭' },
-            { code: 'TUR', name: 'Turkey', flag: '🇹🇷' },
-            { code: 'UAE', name: 'United Arab Emirates', flag: '🇦🇪' },
-            { code: 'VIE', name: 'Vietnam', flag: '🇻🇳' },
-
-            // Africa
-            { code: 'ALG', name: 'Algeria', flag: '🇩🇿' },
-            { code: 'ANG', name: 'Angola', flag: '🇦🇴' },
-            { code: 'EGY', name: 'Egypt', flag: '🇪🇬' },
-            { code: 'ETH', name: 'Ethiopia', flag: '🇪🇹' },
-            { code: 'GHA', name: 'Ghana', flag: '🇬🇭' },
-            { code: 'KEN', name: 'Kenya', flag: '🇰🇪' },
-            { code: 'MAR', name: 'Morocco', flag: '🇲🇦' },
-            { code: 'NGR', name: 'Nigeria', flag: '🇳🇬' },
-            { code: 'SEN', name: 'Senegal', flag: '🇸🇳' },
-            { code: 'RSA', name: 'South Africa', flag: '🇿🇦' },
-            { code: 'TUN', name: 'Tunisia', flag: '🇹🇳' },
-
-            // Oceania
-            { code: 'AUS', name: 'Australia', flag: '🇦🇺' },
-            { code: 'FIJ', name: 'Fiji', flag: '🇫🇯' },
-            { code: 'NZL', name: 'New Zealand', flag: '🇳🇿' },
-            { code: 'PNG', name: 'Papua New Guinea', flag: '🇵🇬' },
-
-            // System
+            { code: 'ATG', name: 'Antigua and Barbuda', flag: '🇦🇬' }, { code: 'BHS', name: 'Bahamas', flag: '🇧🇸' }, { code: 'BRB', name: 'Barbados', flag: '🇧🇧' }, { code: 'CAN', name: 'Canada', flag: '🇨🇦' }, { code: 'CUB', name: 'Cuba', flag: '🇨🇺' }, { code: 'DOM', name: 'Dominican Republic', flag: '🇩🇴' }, { code: 'GTM', name: 'Guatemala', flag: '🇬🇹' }, { code: 'HTI', name: 'Haiti', flag: '🇭🇹' }, { code: 'JAM', name: 'Jamaica', flag: '🇯🇲' }, { code: 'MEX', name: 'Mexico', flag: '🇲🇽' }, { code: 'PAN', name: 'Panama', flag: '🇵🇦' }, { code: 'PUR', name: 'Puerto Rico', flag: '🇵🇷' }, { code: 'USA', name: 'United States', flag: '🇺🇸' },
+            { code: 'ARG', name: 'Argentina', flag: '🇦🇷' }, { code: 'BOL', name: 'Bolivia', flag: '🇧🇴' }, { code: 'BRA', name: 'Brazil', flag: '🇧🇷' }, { code: 'CHI', name: 'Chile', flag: '🇨🇱' }, { code: 'COL', name: 'Colombia', flag: '🇨🇴' }, { code: 'ECU', name: 'Ecuador', flag: '🇪🇨' }, { code: 'PAR', name: 'Paraguay', flag: '🇵🇾' }, { code: 'PER', name: 'Peru', flag: '🇵🇪' }, { code: 'URU', name: 'Uruguay', flag: '🇺🇾' }, { code: 'VEN', name: 'Venezuela', flag: '🇻🇪' },
+            { code: 'ALB', name: 'Albania', flag: '🇦🇱' }, { code: 'AUT', name: 'Austria', flag: '🇦🇹' }, { code: 'BEL', name: 'Belgium', flag: '🇧🇪' }, { code: 'BUL', name: 'Bulgaria', flag: '🇧🇬' }, { code: 'CRO', name: 'Croatia', flag: '🇭🇷' }, { code: 'CZE', name: 'Czechia', flag: '🇨🇿' }, { code: 'DEN', name: 'Denmark', flag: '🇩🇰' }, { code: 'EST', name: 'Estonia', flag: '🇪🇪' }, { code: 'FIN', name: 'Finland', flag: '🇫🇮' }, { code: 'FRA', name: 'France', flag: '🇫🇷' }, { code: 'GBR', name: 'Great Britain', flag: '🇬🇧' }, { code: 'GER', name: 'Germany', flag: '🇩🇪' }, { code: 'GRE', name: 'Greece', flag: '🇬🇷' }, { code: 'HUN', name: 'Hungary', flag: '🇭🇺' }, { code: 'IRL', name: 'Ireland', flag: '🇮🇪' }, { code: 'ISL', name: 'Iceland', flag: '🇮🇸' }, { code: 'ITA', name: 'Italy', flag: '🇮🇹' }, { code: 'LAT', name: 'Latvia', flag: '🇱🇻' }, { code: 'LTU', name: 'Lithuania', flag: '🇱🇹' }, { code: 'NED', name: 'Netherlands', flag: '🇳🇱' }, { code: 'NOR', name: 'Norway', flag: '🇳🇴' }, { code: 'POL', name: 'Poland', flag: '🇵🇱' }, { code: 'POR', name: 'Portugal', flag: '🇵🇹' }, { code: 'ROU', name: 'Romania', flag: '🇷🇴' }, { code: 'RUS', name: 'Russia', flag: '🇷🇺' }, { code: 'SRB', name: 'Serbia', flag: '🇷🇸' }, { code: 'SVK', name: 'Slovakia', flag: '🇸🇰' }, { code: 'SLO', name: 'Slovenia', flag: '🇸🇮' }, { code: 'ESP', name: 'Spain', flag: '🇪🇸' }, { code: 'SWE', name: 'Sweden', flag: '🇸🇪' }, { code: 'SUI', name: 'Switzerland', flag: '🇨🇭' }, { code: 'UKR', name: 'Ukraine', flag: '🇺🇦' },
+            { code: 'AFG', name: 'Afghanistan', flag: '🇦🇫' }, { code: 'CHN', name: 'China', flag: '🇨🇳' }, { code: 'IND', name: 'India', flag: '🇮🇳' }, { code: 'IDN', name: 'Indonesia', flag: '🇮🇩' }, { code: 'IRI', name: 'Iran', flag: '🇮🇷' }, { code: 'IRQ', name: 'Iraq', flag: '🇮🇶' }, { code: 'ISR', name: 'Israel', flag: '🇮🇱' }, { code: 'JPN', name: 'Japan', flag: '🇯🇵' }, { code: 'KAZ', name: 'Kazakhstan', flag: '🇰🇿' }, { code: 'KOR', name: 'South Korea', flag: '🇰🇷' }, { code: 'MAS', name: 'Malaysia', flag: '🇲🇾' }, { code: 'PAK', name: 'Pakistan', flag: '🇵🇰' }, { code: 'PHI', name: 'Philippines', flag: '🇵🇭' }, { code: 'QAT', name: 'Qatar', flag: '🇶🇦' }, { code: 'KSA', name: 'Saudi Arabia', flag: '🇸🇦' }, { code: 'SGP', name: 'Singapore', flag: '🇸🇬' }, { code: 'THA', name: 'Thailand', flag: '🇹🇭' }, { code: 'TUR', name: 'Turkey', flag: '🇹🇷' }, { code: 'UAE', name: 'United Arab Emirates', flag: '🇦🇪' }, { code: 'VIE', name: 'Vietnam', flag: '🇻🇳' },
+            { code: 'ALG', name: 'Algeria', flag: '🇩🇿' }, { code: 'ANG', name: 'Angola', flag: '🇦🇴' }, { code: 'EGY', name: 'Egypt', flag: '🇪🇬' }, { code: 'ETH', name: 'Ethiopia', flag: '🇪🇹' }, { code: 'GHA', name: 'Ghana', flag: '🇬🇭' }, { code: 'KEN', name: 'Kenya', flag: '🇰🇪' }, { code: 'MAR', name: 'Morocco', flag: '🇲🇦' }, { code: 'NGR', name: 'Nigeria', flag: '🇳🇬' }, { code: 'SEN', name: 'Senegal', flag: '🇸🇳' }, { code: 'RSA', name: 'South Africa', flag: '🇿🇦' }, { code: 'TUN', name: 'Tunisia', flag: '🇹🇳' },
+            { code: 'AUS', name: 'Australia', flag: '🇦🇺' }, { code: 'FIJ', name: 'Fiji', flag: '🇫🇯' }, { code: 'NZL', name: 'New Zealand', flag: '🇳🇿' }, { code: 'PNG', name: 'Papua New Guinea', flag: '🇵🇬' },
             { code: 'UNK', name: 'Unknown', flag: '🏳️' }
         ];
 
         const getFlag = (code) => COUNTRIES.find(c => c.code === code)?.flag || '🏳️';
         const getCountryName = (code) => COUNTRIES.find(c => c.code === code)?.name || code || 'Unknown';
 
-        // Replace with YOUR Firebase config if running outside preview
         const firebaseConfig = {
             apiKey: "AIzaSyDHfnWgaeNG2-lZBSmPpa8JdZgUHNPMh4w",
             authDomain: "prorank-7b6b3.firebaseapp.com",
@@ -184,7 +110,6 @@
             messagingSenderId: "991950932964",
             appId: "1:991950932964:web:db0346d0aa7d23b5ac55f1"
         };
-
         const appId = 'pro-rank-global';
 
         // --- Utility Functions ---
@@ -218,16 +143,26 @@
                     });
 
                     if (playedInTournament) {
-                        if (wonFinal) pointsForTournament = POINTS.WINNER;
-                        else if (highestRound === totalRounds - 1) pointsForTournament = POINTS.FINALIST;
-                        else if (highestRound === totalRounds - 2) pointsForTournament = POINTS.SF;
-                        else if (highestRound === totalRounds - 3) pointsForTournament = POINTS.QF;
-                        else if (highestRound === totalRounds - 4) pointsForTournament = POINTS.R16;
-                        else if (highestRound === totalRounds - 5) pointsForTournament = POINTS.R32;
+                        const tierConf = TOURNAMENT_TIERS[t.tier || 'major'];
+                        const pts = tierConf.points;
+
+                        if (wonFinal) pointsForTournament = pts.WINNER;
+                        else if (highestRound === totalRounds - 1) pointsForTournament = pts.FINALIST;
+                        else if (highestRound === totalRounds - 2) pointsForTournament = pts.SF;
+                        else if (highestRound === totalRounds - 3) pointsForTournament = pts.QF;
+                        else if (highestRound === totalRounds - 4) pointsForTournament = pts.R16;
+                        else if (highestRound === totalRounds - 5) pointsForTournament = pts.R32;
 
                         totalPoints += pointsForTournament;
                         const rOffset = 5 - totalRounds;
-                        recentTournaments.push({ tournamentId: t.id, tournamentName: t.name, points: pointsForTournament, result: wonFinal ? 'Winner' : ROUND_NAMES[highestRound + rOffset] });
+                        recentTournaments.push({ 
+                            tournamentId: t.id, 
+                            tournamentName: t.name, 
+                            tier: t.tier || 'major',
+                            points: pointsForTournament, 
+                            result: wonFinal ? 'Winner' : ROUND_NAMES[highestRound + rOffset],
+                            totalRounds: totalRounds
+                        });
                     }
                 }
                 return { ...player, points: totalPoints, recentTournaments, stats: { wins: w, losses: l } };
@@ -260,7 +195,7 @@
             const draw = new Array(16).fill(null);
             const seeds = selectedPlayers.slice(0, 4);
             const others = selectedPlayers.slice(4).sort(() => Math.random() - 0.5);
-            const seedSlots = [0, 15, 7, 8]; // Top 4 seeds spacing
+            const seedSlots = [0, 15, 7, 8]; 
             seeds.forEach((seed, i) => { if (seedSlots[i] !== undefined) draw[seedSlots[i]] = seed; });
             let otherIndex = 0;
             for (let i = 0; i < 16; i++) { if (!draw[i]) draw[i] = others[otherIndex++]; }
@@ -278,7 +213,76 @@
             return bracket;
         };
 
+        const generate8Draw = (selectedPlayers) => {
+            const draw = new Array(8).fill(null);
+            const seeds = selectedPlayers.slice(0, 2);
+            const others = selectedPlayers.slice(2).sort(() => Math.random() - 0.5);
+            const seedSlots = [0, 7]; 
+            seeds.forEach((seed, i) => { if (seedSlots[i] !== undefined) draw[seedSlots[i]] = seed; });
+            let otherIndex = 0;
+            for (let i = 0; i < 8; i++) { if (!draw[i]) draw[i] = others[otherIndex++]; }
+            const bracket = [];
+            const r8 = [];
+            for (let i = 0; i < 4; i++) r8.push({ id: `r0-m${i}`, p1: draw[i * 2]?.id || null, p2: draw[i * 2 + 1]?.id || null, winner: null, type: null });
+            bracket.push(r8);
+            let matchesInRound = 2;
+            for (let r = 1; r < 3; r++) {
+                const roundMatches = [];
+                for (let i = 0; i < matchesInRound; i++) roundMatches.push({ id: `r${r}-m${i}`, p1: null, p2: null, winner: null, type: null });
+                bracket.push(roundMatches);
+                matchesInRound /= 2;
+            }
+            return bracket;
+        };
+
         // --- Custom Views ---
+
+        function HistoricalTournamentSelect({ tournaments, value, onChange }) {
+            const [isOpen, setIsOpen] = useState(false);
+            const [search, setSearch] = useState('');
+            const wrapperRef = useRef(null);
+            
+            useEffect(() => {
+                function handleClickOutside(event) { if (wrapperRef.current && !wrapperRef.current.contains(event.target)) setIsOpen(false); }
+                document.addEventListener("mousedown", handleClickOutside);
+                return () => document.removeEventListener("mousedown", handleClickOutside);
+            }, []);
+            
+            const completed = useMemo(() => tournaments.filter(t => t.status === 'completed').sort((a, b) => b.completedAt - a.completedAt), [tournaments]);
+            const filtered = completed.filter(t => t.name.toLowerCase().includes(search.toLowerCase()));
+            const selectedT = completed.find(t => t.id === value);
+
+            return (
+                <div ref={wrapperRef} className="relative w-full md:w-80">
+                    <div 
+                        className="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-3 text-white flex justify-between items-center cursor-pointer hover:border-slate-500 transition-colors shadow-inner"
+                        onClick={() => setIsOpen(!isOpen)}
+                    >
+                        <span className="truncate text-sm font-medium">
+                            {value === '' ? '🟢 Current (Live Rankings)' : `🕒 As of: ${selectedT?.name}`}
+                        </span>
+                        <ChevronRight size={16} className={`shrink-0 transition-transform ${isOpen ? 'rotate-90' : ''}`} />
+                    </div>
+                    {isOpen && (
+                        <div className="absolute z-50 w-full mt-1 bg-slate-800 border border-slate-700 rounded-lg shadow-xl max-h-72 overflow-y-auto">
+                            <div className="p-2 sticky top-0 bg-slate-800 border-b border-slate-700">
+                                <input type="text" autoFocus className="w-full bg-slate-900 border border-slate-600 rounded px-3 py-2 text-sm text-white focus:outline-none focus:border-blue-500" placeholder="Search history..." value={search} onChange={e => setSearch(e.target.value)} />
+                            </div>
+                            <div className="px-4 py-3 hover:bg-slate-700 cursor-pointer flex items-center gap-2 text-slate-200 border-b border-slate-700/50" onClick={() => { onChange(''); setIsOpen(false); setSearch(''); }}>
+                                <span className="font-bold text-green-400">🟢 Current (Live Rankings)</span>
+                            </div>
+                            {filtered.map(t => (
+                                <div key={t.id} className="px-4 py-3 hover:bg-slate-700 cursor-pointer flex flex-col text-slate-200" onClick={() => { onChange(t.id); setIsOpen(false); setSearch(''); }}>
+                                    <span className="font-medium text-sm">{t.name}</span>
+                                    <span className="text-[10px] text-slate-400 mt-0.5">{new Date(t.completedAt).toLocaleDateString()}</span>
+                                </div>
+                            ))}
+                            {filtered.length === 0 && <div className="p-4 text-center text-slate-500 text-sm">No tournaments found</div>}
+                        </div>
+                    )}
+                </div>
+            );
+        }
 
         function CountrySelect({ value, onChange, disabled }) {
             const [isOpen, setIsOpen] = useState(false);
@@ -316,14 +320,30 @@
             );
         }
 
-        function DashboardView({ players }) {
+        function DashboardView({ playersRaw, tournaments, onSelectPlayer }) {
+            const [asOfId, setAsOfId] = useState('');
+
+            const displayPlayers = useMemo(() => {
+                if (!asOfId) return calculatePlayerRankings(playersRaw, tournaments);
+                
+                const targetT = tournaments.find(t => t.id === asOfId);
+                if (!targetT) return calculatePlayerRankings(playersRaw, tournaments);
+                
+                // Filter tournaments to only those completed BEFORE or AT the same time as the target
+                const filteredTournaments = tournaments.filter(t => t.status === 'completed' && t.completedAt <= targetT.completedAt);
+                return calculatePlayerRankings(playersRaw, filteredTournaments);
+            }, [playersRaw, tournaments, asOfId]);
+
             return (
                 <div className="max-w-5xl mx-auto space-y-6">
-                    <header className="mb-8">
-                        <h1 className="text-3xl font-bold text-white">Global Rankings</h1>
-                        <p className="text-slate-400 mt-2">Based on the last 10 tournament performances.</p>
+                    <header className="mb-8 flex flex-col md:flex-row md:items-end justify-between gap-6">
+                        <div>
+                            <h1 className="text-3xl font-bold text-white">Global Rankings</h1>
+                            <p className="text-slate-400 mt-2">Based on the last 10 tournament performances.</p>
+                        </div>
+                        <HistoricalTournamentSelect tournaments={tournaments} value={asOfId} onChange={setAsOfId} />
                     </header>
-                    <div className="bg-slate-800 rounded-xl border border-slate-700 overflow-hidden">
+                    <div className="bg-slate-800 rounded-xl border border-slate-700 overflow-hidden shadow-xl">
                         <div className="overflow-x-auto">
                             <table className="w-full text-left border-collapse">
                                 <thead>
@@ -336,17 +356,17 @@
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-slate-700">
-                                    {players.map((player) => (
-                                        <tr key={player.id} className="hover:bg-slate-700/30 transition-colors">
+                                    {displayPlayers.map((player) => (
+                                        <tr key={player.id} onClick={() => onSelectPlayer(player.id)} className="hover:bg-slate-700/30 transition-colors cursor-pointer group">
                                             <td className="p-4 text-center font-bold text-slate-400">{player.rank}</td>
                                             <td className="p-4 font-medium text-white flex items-center gap-3">
                                                 <img src={player.imageUrl || "https://via.placeholder.com/40"} className="w-10 h-10 rounded-full object-cover border border-slate-600 shrink-0" />
-                                                <div><div>{getFlag(player.nationality)} {player.name}</div><div className="text-xs text-slate-400">{getCountryName(player.nationality)}</div></div>
+                                                <div><div className="group-hover:text-blue-400 transition-colors">{getFlag(player.nationality)} {player.name}</div><div className="text-xs text-slate-400">{getCountryName(player.nationality)}</div></div>
                                             </td>
                                             <td className="p-4 font-bold text-blue-400">{player.points.toLocaleString()}</td>
                                             <td className="p-4 text-center text-slate-300">{player.stats.wins} - {player.stats.losses}</td>
                                             <td className="p-4 hidden md:table-cell">
-                                                <div className="flex gap-1">{player.recentTournaments.slice(0, 5).map((t, i) => (<div key={i} className={`w-3 h-3 rounded-sm ${t.result === 'Winner' ? 'bg-green-500' : t.result === 'Final' ? 'bg-blue-500' : 'bg-slate-500'}`} />))}</div>
+                                                <div className="flex gap-1">{player.recentTournaments.slice(0, 5).map((t, i) => (<div key={i} className={`w-3 h-3 rounded-sm ${t.result === 'Winner' ? 'bg-green-500' : t.result === 'Final' ? 'bg-blue-500' : (t.result === 'Semifinals' && t.totalRounds > 3) ? 'bg-yellow-500' : 'bg-slate-500'}`} title={`${t.tournamentName} (${t.result})`} />))}</div>
                                             </td>
                                         </tr>
                                     ))}
@@ -396,7 +416,7 @@
         function PlayersView({ players, onSelectPlayer, db, appId }) {
             const [newPlayerName, setNewPlayerName] = useState('');
             const [newPlayerNationality, setNewPlayerNationality] = useState('');
-            const [newPlayerImages, setNewPlayerImages] = useState(['', '', '']);
+            const [newPlayerImages, setNewPlayerImages] = useState(['', '', '', '']);
             const [isAdding, setIsAdding] = useState(false);
             const [showAddForm, setShowAddForm] = useState(false);
 
@@ -407,7 +427,7 @@
                     const validImages = newPlayerImages.map(url => url.trim()).filter(Boolean);
                     const playersRef = window.fb.collection(db, 'artifacts', appId, 'public', 'data', 'players');
                     await window.fb.addDoc(playersRef, { name: newPlayerName.trim(), nationality: newPlayerNationality || 'UNK', imageUrl: validImages[0] || '', images: validImages, createdAt: Date.now() });
-                    setNewPlayerName(''); setNewPlayerNationality(''); setNewPlayerImages(['', '', '']); setShowAddForm(false);
+                    setNewPlayerName(''); setNewPlayerNationality(''); setNewPlayerImages(['', '', '', '']); setShowAddForm(false);
                 } catch (err) { console.error(err); }
                 setIsAdding(false);
             };
@@ -439,10 +459,10 @@
                                 <input type="text" placeholder="Name..." required className="bg-slate-900 border border-slate-700 rounded-lg px-4 py-3 text-white" value={newPlayerName} onChange={e => setNewPlayerName(e.target.value)} />
                                 <CountrySelect value={newPlayerNationality} onChange={setNewPlayerNationality} />
                             </div>
-                            <div className="grid md:grid-cols-3 gap-4">
-                                {[0,1,2].map(i => <input key={i} type="url" placeholder={`Img URL ${i+1}`} className="bg-slate-900 border border-slate-700 rounded-lg px-4 py-3" value={newPlayerImages[i]} onChange={e => { const ni = [...newPlayerImages]; ni[i] = e.target.value; setNewPlayerImages(ni); }} />)}
+                            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                {[0,1,2,3].map(i => <input key={i} type="url" placeholder={`Img URL ${i+1}`} className="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-3 text-white" value={newPlayerImages[i]} onChange={e => { const ni = [...newPlayerImages]; ni[i] = e.target.value; setNewPlayerImages(ni); }} />)}
                             </div>
-                            <div className="flex justify-end"><button type="submit" className="bg-blue-600 px-8 py-2.5 rounded-lg font-bold">Save Player</button></div>
+                            <div className="flex justify-end"><button type="submit" className="bg-blue-600 px-8 py-2.5 rounded-lg font-bold text-white">Save Player</button></div>
                         </form>
                     )}
                     <div className="grid md:grid-cols-3 gap-4">{players.map(p => (
@@ -457,11 +477,11 @@
             );
         }
 
-        function PlayerProfile({ player, onBack, tournaments, db, appId }) {
+        function PlayerProfile({ player, players, onBack, tournaments, db, appId }) {
             const [isEditing, setIsEditing] = useState(false);
             const [editName, setEditName] = useState('');
             const [editNationality, setEditNationality] = useState('');
-            const [editImages, setEditImages] = useState(['', '', '']);
+            const [editImages, setEditImages] = useState(['', '', '', '']);
             const [isSaving, setIsSaving] = useState(false);
             const [showDelete, setShowDelete] = useState(false);
 
@@ -469,7 +489,7 @@
                 if (player) {
                     setEditName(player.name); setEditNationality(player.nationality || 'UNK');
                     const imgs = player.images || [player.imageUrl];
-                    setEditImages([imgs[0] || '', imgs[1] || '', imgs[2] || '']);
+                    setEditImages([imgs[0] || '', imgs[1] || '', imgs[2] || '', imgs[3] || '']);
                 }
             }, [player]);
 
@@ -496,11 +516,32 @@
                 tournaments.forEach(t => t.bracket.forEach((round, rIdx) => round.forEach(m => {
                     if ((m.p1 === player.id || m.p2 === player.id) && m.winner) {
                         const rOffset = 5 - t.bracket.length;
-                        matches.push({ tournamentName: t.name, roundName: ROUND_NAMES[rIdx + rOffset], opponentId: m.p1 === player.id ? m.p2 : m.p1, isWin: m.winner === player.id, type: m.type, date: t.completedAt || t.createdAt });
+                        const oppId = m.p1 === player.id ? m.p2 : m.p1;
+                        const oppName = players.find(p => p.id === oppId)?.name || 'Unknown';
+                        matches.push({ tournamentName: t.name, tier: t.tier || 'major', roundName: ROUND_NAMES[rIdx + rOffset], opponentId: oppId, opponentName: oppName, isWin: m.winner === player.id, type: m.type, date: t.completedAt || t.createdAt });
                     }
                 })));
                 return matches.sort((a,b) => b.date - a.date);
-            }, [player.id, tournaments]);
+            }, [player.id, tournaments, players]);
+
+            const h2hStats = useMemo(() => {
+                const stats = {};
+                matchHistory.forEach(m => {
+                    if (!stats[m.opponentId]) {
+                        const opp = players.find(p => p.id === m.opponentId);
+                        stats[m.opponentId] = {
+                            opponentId: m.opponentId,
+                            opponentName: m.opponentName,
+                            opponentFlag: opp ? getFlag(opp.nationality) : '🏳️',
+                            wins: 0,
+                            losses: 0
+                        };
+                    }
+                    if (m.isWin) stats[m.opponentId].wins++;
+                    else stats[m.opponentId].losses++;
+                });
+                return Object.values(stats).sort((a,b) => (b.wins + b.losses) - (a.wins + a.losses) || b.wins - a.wins);
+            }, [matchHistory, players]);
 
             return (
                 <div className="max-w-4xl mx-auto space-y-6 pb-20">
@@ -508,44 +549,87 @@
                     {isEditing ? (
                         <form onSubmit={handleUpdate} className="bg-slate-800 rounded-2xl p-8 space-y-4">
                             <div className="grid md:grid-cols-2 gap-4">
-                                <input type="text" className="bg-slate-900 p-3 rounded-lg" value={editName} onChange={e => setEditName(e.target.value)} />
+                                <input type="text" className="w-full bg-slate-900 p-3 rounded-lg text-white border border-slate-700" value={editName} onChange={e => setEditName(e.target.value)} />
                                 <CountrySelect value={editNationality} onChange={setEditNationality} />
                             </div>
-                            <div className="grid md:grid-cols-3 gap-4">
-                                {editImages.map((u, i) => <input key={i} className="bg-slate-900 p-3 rounded-lg" value={u} onChange={e => { const ni = [...editImages]; ni[i] = e.target.value; setEditImages(ni); }} />)}
+                            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                {editImages.map((u, i) => <input key={i} placeholder={`Img URL ${i+1}`} className="w-full bg-slate-900 p-3 rounded-lg text-white border border-slate-700" value={u} onChange={e => { const ni = [...editImages]; ni[i] = e.target.value; setEditImages(ni); }} />)}
                             </div>
-                            <div className="flex justify-between">
+                            <div className="flex justify-between pt-4">
                                 <button type="button" onClick={() => setShowDelete(true)} className="text-red-500 font-bold">Delete Player</button>
-                                <button type="submit" className="bg-blue-600 px-6 py-2 rounded-lg">Save</button>
+                                <button type="submit" className="bg-blue-600 px-6 py-2 rounded-lg text-white font-bold">Save Changes</button>
                             </div>
-                            {showDelete && <div className="mt-4 p-4 border border-red-500 bg-red-500/10 rounded flex justify-between items-center"><span>Are you sure?</span><div className="flex gap-2"><button type="button" onClick={handleDelete} className="bg-red-500 px-4 py-1 rounded">Yes</button><button type="button" onClick={() => setShowDelete(false)}>No</button></div></div>}
+                            {showDelete && <div className="mt-4 p-4 border border-red-500 bg-red-500/10 rounded flex justify-between items-center"><span>Are you sure?</span><div className="flex gap-2"><button type="button" onClick={handleDelete} className="bg-red-500 px-4 py-1 rounded font-bold">Yes</button><button type="button" onClick={() => setShowDelete(false)} className="text-slate-300">No</button></div></div>}
                         </form>
                     ) : (
                         <>
                             <div className="bg-slate-800 rounded-2xl p-8 border border-slate-700 flex flex-col md:flex-row gap-8 relative">
-                                <button onClick={() => setIsEditing(true)} className="absolute top-4 right-4 bg-slate-900 p-2 rounded-lg border border-slate-700"><Edit2 size={16}/></button>
+                                <button onClick={() => setIsEditing(true)} className="absolute top-4 right-4 bg-slate-900 p-2 rounded-lg border border-slate-700 hover:border-slate-500 transition-colors"><Edit2 size={16}/></button>
                                 <img src={player.images?.[0] || player.imageUrl} className="w-32 h-48 md:w-40 md:h-56 rounded-lg object-cover border-4 border-slate-600" />
                                 <div className="flex-1">
                                     <h1 className="text-4xl font-bold">{player.name}</h1>
-                                    <p className="text-xl text-blue-400 my-4">{getFlag(player.nationality)} {getCountryName(player.nationality)}</p>
-                                    <div className="flex gap-4">
-                                        <div className="bg-blue-900/30 p-4 rounded-lg text-center"><div className="text-blue-400 font-bold">Rank</div><div>#{player.rank}</div></div>
-                                        <div className="bg-slate-900/50 p-4 rounded-lg text-center"><div>Points</div><div>{player.points}</div></div>
-                                        <div className="bg-slate-900/50 p-4 rounded-lg text-center"><div>W-L</div><div>{player.stats.wins}-{player.stats.losses}</div></div>
+                                    <p className="text-xl text-blue-400 my-4 flex items-center gap-2"><span className="text-2xl">{getFlag(player.nationality)}</span> {getCountryName(player.nationality)}</p>
+                                    <div className="flex flex-wrap gap-4">
+                                        <div className="bg-blue-900/30 border border-blue-500/30 p-4 rounded-lg text-center min-w-[100px]"><div className="text-blue-400 font-bold uppercase text-xs tracking-widest mb-1">Rank</div><div className="text-2xl font-black">#{player.rank}</div></div>
+                                        <div className="bg-slate-900/50 border border-slate-700 p-4 rounded-lg text-center min-w-[100px]"><div className="text-slate-400 font-bold uppercase text-xs tracking-widest mb-1">Points</div><div className="text-2xl font-black">{player.points.toLocaleString()}</div></div>
+                                        <div className="bg-slate-900/50 border border-slate-700 p-4 rounded-lg text-center min-w-[100px]"><div className="text-slate-400 font-bold uppercase text-xs tracking-widest mb-1">W-L</div><div className="text-2xl font-black">{player.stats.wins}-{player.stats.losses}</div></div>
                                     </div>
                                 </div>
                             </div>
-                            <div className="grid md:grid-cols-2 gap-6">
-                                <div className="bg-slate-800 p-6 rounded-xl">
+                            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                <div className="bg-slate-800 p-6 rounded-xl border border-slate-700">
                                     <h2 className="text-xl font-bold mb-4 flex items-center gap-2"><Star className="text-yellow-500"/> Scoring Tournaments</h2>
-                                    <div className="space-y-2">{player.recentTournaments.map((t, i) => (<div key={i} className="flex justify-between p-3 bg-slate-900/50 rounded-lg"><div>{t.tournamentName}</div><div className="font-bold">+{t.points}</div></div>))}</div>
+                                    <div className="space-y-2">{player.recentTournaments.map((t, i) => {
+                                        const tierConf = TOURNAMENT_TIERS[t.tier || 'major'];
+                                        return (
+                                            <div key={i} className="flex justify-between p-3 bg-slate-900/50 rounded-lg border border-slate-700/50">
+                                                <div>
+                                                    <span className={`${tierConf.color} font-bold text-xs uppercase mr-2 tracking-wider`}>[{tierConf.name}]</span>
+                                                    <span className="font-medium text-slate-200">{t.tournamentName}</span>
+                                                    <div className="text-xs text-slate-400 mt-1">{t.result}</div>
+                                                </div>
+                                                <div className="font-bold text-blue-400">+{t.points}</div>
+                                            </div>
+                                        )
+                                    })}</div>
                                 </div>
-                                <div className="bg-slate-800 p-6 rounded-xl">
+                                <div className="bg-slate-800 p-6 rounded-xl border border-slate-700">
                                     <h2 className="text-xl font-bold mb-4 flex items-center gap-2"><History className="text-blue-400"/> Match History</h2>
-                                    <div className="space-y-2">{matchHistory.map((m, i) => (<div key={i} className={`p-3 rounded-lg border ${m.isWin ? 'border-green-500/30' : 'border-red-500/30'}`}><div>{m.tournamentName} • {m.roundName}</div><div className={m.isWin ? 'text-green-400' : 'text-red-400'}>{m.isWin ? 'W' : 'L'} vs Opponent</div></div>))}</div>
+                                    <div className="space-y-2 max-h-96 overflow-y-auto pr-2">{matchHistory.map((m, i) => {
+                                        const tierConf = TOURNAMENT_TIERS[m.tier];
+                                        return (
+                                            <div key={i} className={`p-3 rounded-lg border ${m.isWin ? 'bg-green-900/10 border-green-500/30' : 'bg-red-900/10 border-red-500/30'}`}>
+                                                <div className="flex justify-between items-start mb-1">
+                                                    <span className="text-xs text-slate-400"><span className={tierConf.color}>[{tierConf.name}]</span> {m.tournamentName} • {m.roundName}</span>
+                                                    <span className={`text-[10px] px-2 py-0.5 rounded uppercase font-bold tracking-widest ${m.type === 'lopsided' ? 'bg-purple-500/20 text-purple-400' : 'bg-orange-500/20 text-orange-400'}`}>{m.type === 'lopsided' ? 'Lopsided' : 'Close'}</span>
+                                                </div>
+                                                <div className="flex items-center gap-2 font-medium"><span className={m.isWin ? 'text-green-400' : 'text-red-400'}>{m.isWin ? 'W' : 'L'}</span><span className="text-slate-300">vs {m.opponentName}</span></div>
+                                            </div>
+                                        );
+                                    })}</div>
+                                </div>
+                                <div className="bg-slate-800 p-6 rounded-xl border border-slate-700">
+                                    <h2 className="text-xl font-bold mb-4 flex items-center gap-2"><Users className="text-purple-400"/> Head-to-Head</h2>
+                                    <div className="space-y-2 max-h-96 overflow-y-auto pr-2">
+                                        {h2hStats.length === 0 ? (
+                                            <p className="text-slate-400 text-sm">No match records yet.</p>
+                                        ) : (
+                                            h2hStats.map(h => {
+                                                const isPos = h.wins > h.losses;
+                                                const isNeg = h.losses > h.wins;
+                                                const color = isPos ? 'text-green-400' : (isNeg ? 'text-red-400' : 'text-slate-400');
+                                                return (
+                                                    <div key={h.opponentId} className={`flex justify-between items-center p-3 bg-slate-900/50 rounded-lg border ${isPos ? 'border-green-500/20' : (isNeg ? 'border-red-500/20' : 'border-slate-700/50')}`}>
+                                                        <div className="font-medium text-slate-200 flex items-center gap-2"><span>{h.opponentFlag}</span> {h.opponentName}</div>
+                                                        <div className={`font-bold ${color}`}>{h.wins} - {h.losses}</div>
+                                                    </div>
+                                                );
+                                            })
+                                        )}
+                                    </div>
                                 </div>
                                 {player.images?.length > 1 && (
-                                    <div className="md:col-span-2 bg-slate-800 p-6 rounded-xl">
+                                    <div className="md:col-span-2 lg:col-span-3 bg-slate-800 p-6 rounded-xl border border-slate-700">
                                         <h2 className="text-xl font-bold mb-4">Gallery</h2>
                                         <div className="flex gap-4 overflow-x-auto pb-4">{player.images.map((img, i) => <img key={i} src={img} className="w-48 h-64 object-cover rounded-lg border-2 border-slate-600" />)}</div>
                                     </div>
@@ -561,27 +645,43 @@
             return (
                 <div className="max-w-5xl mx-auto space-y-6">
                     <div className="flex justify-between items-center"><h1 className="text-3xl font-bold">Tournaments</h1><button onClick={onCreate} className="bg-blue-600 px-6 py-2 rounded-lg flex items-center gap-2 font-bold"><Plus size={20}/> New</button></div>
-                    <div className="grid md:grid-cols-3 gap-6">{tournaments.sort((a,b) => b.createdAt - a.createdAt).map(t => (
-                        <div key={t.id} onClick={() => onSelect(t.id)} className="bg-slate-800 p-6 rounded-xl border border-slate-700 hover:border-blue-500 cursor-pointer">
-                            <h3 className="font-bold text-xl mb-4 truncate">{t.name}</h3>
-                            <div className="text-slate-400 text-sm">{t.selectedPlayers?.length} Participants • {new Date(t.createdAt).toLocaleDateString()}</div>
-                            <div className={`mt-4 text-xs font-bold uppercase ${t.status === 'completed' ? 'text-green-400' : 'text-blue-400'}`}>{t.status}</div>
-                        </div>
-                    ))}</div>
+                    <div className="grid md:grid-cols-3 gap-6">{tournaments.sort((a,b) => b.createdAt - a.createdAt).map(t => {
+                        const tierConf = TOURNAMENT_TIERS[t.tier || 'major'];
+                        return (
+                            <div key={t.id} onClick={() => onSelect(t.id)} className={`bg-slate-800 p-6 rounded-xl border-2 transition-all cursor-pointer flex flex-col h-full hover:scale-105 ${t.status === 'completed' ? 'border-slate-700 hover:border-slate-500' : tierConf.border + ' shadow-lg shadow-black/20'}`}>
+                                <div className="flex justify-between items-start mb-2">
+                                    <h3 className="font-bold text-xl truncate pr-2">{t.name}</h3>
+                                </div>
+                                <div className="flex gap-2 mb-4">
+                                    <span className={`text-xs font-bold uppercase tracking-wider px-2 py-1 rounded ${tierConf.bg} ${tierConf.color}`}>{tierConf.name}</span>
+                                    <span className={`text-xs font-bold uppercase tracking-wider px-2 py-1 rounded ${t.status === 'completed' ? 'bg-green-500/20 text-green-400' : 'bg-slate-700 text-slate-300'}`}>{t.status}</span>
+                                </div>
+                                <div className="text-slate-400 text-sm mt-auto">{t.selectedPlayers?.length} Participants • {new Date(t.createdAt).toLocaleDateString()}</div>
+                            </div>
+                        );
+                    })}</div>
                 </div>
             );
         }
 
         function CreateTournamentView({ players, onBack, onSuccess, db, appId }) {
             const [name, setName] = useState('');
+            const [tier, setTier] = useState('major');
             const [size, setSize] = useState(32);
             const [selectedWildcards, setSelectedWildcards] = useState([]);
             const [isGenerating, setIsGenerating] = useState(false);
             
-            const reqAuto = size === 32 ? 24 : 12;
-            const reqWc = size === 32 ? 8 : 4;
-            const autoQualifiers = players.slice(0, reqAuto);
-            const remainingPlayers = players.slice(reqAuto);
+            const tierConf = TOURNAMENT_TIERS[tier];
+            const isSmallAllowed = ['pro', 'challenger'].includes(tier);
+            
+            // Ranks 1 to excludeTop are filtered out. (Since rank is 1-based, p.rank > excludeTop perfectly means if excludeTop=4, ranks 1,2,3,4 are filtered out).
+            const eligiblePlayers = players.filter(p => p.rank > tierConf.excludeTop);
+            
+            const reqWc = tierConf.wcCount[size];
+            const reqAuto = size - reqWc;
+            const autoQualifiers = eligiblePlayers.slice(0, reqAuto);
+            const remainingPlayers = eligiblePlayers.slice(reqAuto);
+            const hasEnoughPlayers = eligiblePlayers.length >= size;
             
             const toggleWildcard = (id) => {
                 if (selectedWildcards.includes(id)) setSelectedWildcards(selectedWildcards.filter(wId => wId !== id));
@@ -593,34 +693,104 @@
                 setIsGenerating(true);
                 try {
                     const selected = [...autoQualifiers, ...remainingPlayers.filter(p => selectedWildcards.includes(p.id))].sort((a,b) => a.rank - b.rank);
-                    const bracket = size === 32 ? generate32Draw(selected) : generate16Draw(selected);
-                    const docRef = await window.fb.addDoc(window.fb.collection(db, 'artifacts', appId, 'public', 'data', 'tournaments'), { name, status: 'active', createdAt: Date.now(), selectedPlayers: selected.map(p => p.id), bracket: JSON.stringify(bracket) });
+                    const bracket = size === 32 ? generate32Draw(selected) : (size === 16 ? generate16Draw(selected) : generate8Draw(selected));
+                    const docRef = await window.fb.addDoc(window.fb.collection(db, 'artifacts', appId, 'public', 'data', 'tournaments'), { 
+                        name, tier, status: 'active', createdAt: Date.now(), selectedPlayers: selected.map(p => p.id), bracket: JSON.stringify(bracket) 
+                    });
                     onSuccess(docRef.id);
                 } catch (err) { console.error(err); }
                 setIsGenerating(false);
             };
 
-            useEffect(() => { setSelectedWildcards([]); }, [size]);
+            useEffect(() => { 
+                if (size === 8 && !isSmallAllowed) setSize(16);
+                setSelectedWildcards([]); 
+            }, [size, tier]);
 
-            if (players.length < 16) return <div className="text-center py-20"><Shield size={64} className="mx-auto mb-4 text-red-400"/><h2>Need at least 16 Players (Current: {players.length})</h2><button onClick={onBack} className="mt-4 bg-slate-700 px-4 py-2 rounded">Back</button></div>;
-            
+            if (players.length < 8) return <div className="text-center py-12 border-2 border-dashed border-red-500/30 rounded-xl bg-red-500/5 mt-8 max-w-2xl mx-auto"><Shield size={48} className="mx-auto mb-3 text-red-400"/><h3 className="text-xl font-bold text-white mb-2">Need at least 8 Players</h3><p className="text-slate-400">You currently have {players.length} players.</p><button onClick={onBack} className="mt-4 bg-slate-700 hover:bg-slate-600 text-white px-4 py-2 rounded transition-colors">Go Back</button></div>;
+
             return (
                 <div className="max-w-4xl mx-auto space-y-8 pb-20">
-                    <button onClick={onBack} className="flex items-center gap-2 text-slate-400"><ArrowLeft size={16}/> Back</button>
-                    <div className="bg-slate-800 p-6 rounded-xl border border-slate-700">
+                    <button onClick={onBack} className="flex items-center gap-2 text-slate-400 hover:text-white transition-colors"><ArrowLeft size={16}/> Back</button>
+                    <div className="bg-slate-800 p-6 rounded-xl border border-slate-700 shadow-xl">
                         <div className="flex flex-col md:flex-row md:justify-between md:items-center mb-6 gap-4">
-                            <h1 className="text-2xl font-bold">Create Tournament</h1>
+                            <h1 className="text-2xl font-bold text-white">Create Tournament</h1>
                             <div className="flex bg-slate-900 rounded-lg p-1 border border-slate-700 w-fit">
+                                {isSmallAllowed && <button onClick={() => setSize(8)} className={`px-4 py-1.5 rounded-md text-sm font-bold transition-colors ${size === 8 ? 'bg-blue-600 text-white' : 'text-slate-400 hover:text-white'}`}>8 Players</button>}
                                 <button onClick={() => setSize(16)} className={`px-4 py-1.5 rounded-md text-sm font-bold transition-colors ${size === 16 ? 'bg-blue-600 text-white' : 'text-slate-400 hover:text-white'}`}>16 Players</button>
-                                <button onClick={() => setSize(32)} disabled={players.length < 32} className={`px-4 py-1.5 rounded-md text-sm font-bold transition-colors ${size === 32 ? 'bg-blue-600 text-white' : 'text-slate-400 hover:text-white'} ${players.length < 32 ? 'opacity-50 cursor-not-allowed' : ''}`}>32 Players</button>
+                                <button onClick={() => setSize(32)} className={`px-4 py-1.5 rounded-md text-sm font-bold transition-colors ${size === 32 ? 'bg-blue-600 text-white' : 'text-slate-400 hover:text-white'}`}>32 Players</button>
                             </div>
                         </div>
-                        <input type="text" className="w-full bg-slate-900 p-3 rounded-lg mb-8 border border-slate-700" placeholder="Tournament Name..." value={name} onChange={e => setName(e.target.value)} />
-                        <div className="grid md:grid-cols-2 gap-8">
-                            <div><h3 className="font-bold mb-4">Auto Qualifiers (Top {reqAuto})</h3><div className="bg-slate-900 rounded-lg p-2 h-80 overflow-y-auto space-y-1">{autoQualifiers.map(p => <div key={p.id} className="p-2 opacity-60 text-sm flex items-center justify-between"><span>#{p.rank} {getFlag(p.nationality)} {p.name}</span><CheckCircle size={14} className="text-slate-500" /></div>)}</div></div>
-                            <div><h3 className="font-bold mb-4">Wildcards ({selectedWildcards.length}/{reqWc})</h3><div className="bg-slate-900 rounded-lg p-2 h-80 overflow-y-auto space-y-1">{remainingPlayers.map(p => { const isS = selectedWildcards.includes(p.id); return <div key={p.id} onClick={() => toggleWildcard(p.id)} className={`p-2 rounded cursor-pointer flex justify-between items-center ${isS ? 'bg-blue-600/30 border border-blue-500/50' : 'hover:bg-slate-800'}`}><span>#{p.rank} {getFlag(p.nationality)} {p.name}</span>{isS && <CheckCircle size={14} className="text-blue-400" />}</div> })}</div></div>
+
+                        <div className="mb-6">
+                            <label className="block text-sm font-medium text-slate-400 mb-2">Tournament Name</label>
+                            <input type="text" className="w-full bg-slate-900 border border-slate-700 text-white px-4 py-3 rounded-lg focus:outline-none focus:border-blue-500" placeholder="e.g. World Championship 2026..." value={name} onChange={e => setName(e.target.value)} />
                         </div>
-                        <div className="mt-8 flex justify-end"><button onClick={handleCreate} disabled={isGenerating || selectedWildcards.length !== reqWc || !name.trim()} className="bg-blue-600 px-8 py-3 rounded-lg font-bold flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"><Play size={20}/> {isGenerating ? 'Generating...' : 'Start Tournament'}</button></div>
+
+                        <div className="mb-6">
+                            <label className="block text-sm font-medium text-slate-400 mb-2">Prestige Tier</label>
+                            <div className="flex flex-wrap gap-2">
+                                {Object.entries(TOURNAMENT_TIERS).map(([k, conf]) => (
+                                    <button key={k} onClick={() => setTier(k)} className={`px-5 py-2 rounded-lg text-sm font-bold transition-all border ${tier === k ? `${conf.bg} ${conf.color} ${conf.border}` : 'bg-slate-900 border-slate-700 text-slate-400 hover:border-slate-500'}`}>
+                                        {conf.name}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+
+                        <div className="bg-slate-900 p-4 rounded-lg border border-slate-700 mb-8 text-sm text-slate-300">
+                            <div className="flex items-center gap-2 mb-1"><span className={`font-bold ${tierConf.color}`}>{tierConf.name}:</span> Winner gets <strong className="text-white">{tierConf.points.WINNER} points</strong>.</div>
+                            <div>{tierConf.excludeTop > 0 ? `The Top ${tierConf.excludeTop} ranked players in the world are strictly excluded from competing.` : 'Open to all competitors.'} This {size}-player bracket format requires <strong className="text-white">{reqWc} wildcards</strong>.</div>
+                        </div>
+
+                        {!hasEnoughPlayers ? (
+                            <div className="text-center py-12 border-2 border-dashed border-red-500/30 rounded-xl bg-red-500/5">
+                                <Shield size={48} className="mx-auto mb-3 text-red-400"/>
+                                <h3 className="text-xl font-bold text-white mb-2">Not Enough Eligible Players</h3>
+                                <p className="text-slate-400 max-w-md mx-auto">Because this tier excludes the Top {tierConf.excludeTop}, you need at least {size + tierConf.excludeTop} total active players in your database to run a {size}-man format here.<br/><br/>You currently have <strong className="text-white">{eligiblePlayers.length}</strong> eligible players, but need <strong className="text-white">{size}</strong>.</p>
+                            </div>
+                        ) : (
+                            <>
+                                <div className="grid md:grid-cols-2 gap-8">
+                                    <div>
+                                        <h3 className="font-bold text-white mb-4">Auto Qualifiers (Top {reqAuto})</h3>
+                                        <div className="bg-slate-900 rounded-lg p-2 h-80 overflow-y-auto space-y-1 border border-slate-700">
+                                            {autoQualifiers.map(p => (
+                                                <div key={p.id} className="p-2 opacity-60 text-sm flex items-center justify-between text-white">
+                                                    <span className="flex items-center">
+                                                        <span className="font-mono text-slate-500 mr-2 w-6">#{p.rank}</span> 
+                                                        <span className="mr-2">{getFlag(p.nationality)}</span> {p.name}
+                                                        <span className="text-xs text-slate-400 ml-2">({p.points.toLocaleString()} pts)</span>
+                                                    </span>
+                                                    <CheckCircle size={14} className="text-slate-500" />
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <h3 className="font-bold text-white mb-4">Wildcards ({selectedWildcards.length}/{reqWc})</h3>
+                                        <div className="bg-slate-900 rounded-lg p-2 h-80 overflow-y-auto space-y-1 border border-slate-700">
+                                            {remainingPlayers.map(p => { 
+                                                const isS = selectedWildcards.includes(p.id); 
+                                                return (
+                                                    <div key={p.id} onClick={() => toggleWildcard(p.id)} className={`p-2 rounded cursor-pointer flex justify-between items-center text-sm font-medium transition-colors ${isS ? 'bg-blue-600/30 border border-blue-500/50 text-white' : 'hover:bg-slate-800 text-slate-300 border border-transparent'}`}>
+                                                        <span className="flex items-center">
+                                                            <span className="font-mono text-slate-500 mr-2 w-6">#{p.rank}</span> 
+                                                            <span className="mr-2">{getFlag(p.nationality)}</span> {p.name}
+                                                            <span className={`text-xs ml-2 ${isS ? 'text-blue-300' : 'text-slate-500'}`}>({p.points.toLocaleString()} pts)</span>
+                                                        </span>
+                                                        {isS && <CheckCircle size={14} className="text-blue-400" />}
+                                                    </div>
+                                                ) 
+                                            })}
+                                        </div>
+                                    </div>
+                                </div>
+                                <div className="mt-8 pt-6 border-t border-slate-700 flex justify-end">
+                                    <button onClick={handleCreate} disabled={isGenerating || selectedWildcards.length !== reqWc || !name.trim()} className="bg-blue-600 hover:bg-blue-500 text-white px-8 py-3 rounded-lg font-bold flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-lg shadow-blue-500/20"><Play size={20}/> {isGenerating ? 'Generating...' : 'Start Tournament'}</button>
+                                </div>
+                            </>
+                        )}
                     </div>
                 </div>
             );
@@ -631,12 +801,15 @@
             const [p1ImgIdx, setP1ImgIdx] = useState(0);
             const [p2ImgIdx, setP2ImgIdx] = useState(0);
             useEffect(() => { setP1ImgIdx(0); setP2ImgIdx(0); }, [resolvingMatch]);
+            
             const getPlayer = (id) => players.find(p => p.id === id) || { name: 'TBD', rank: '-', nationality: 'UNK' };
             const getImages = (p) => p.images || [p.imageUrl];
-            const handleMatchClick = (rIdx, mIdx, match) => { if (tournament.status === 'completed' || !match.p1 || !match.p2 || match.winner) return; setResolvingMatch({ roundIndex: rIdx, matchIndex: mIdx, ...match }); };
             
             const totalRounds = tournament.bracket.length;
             const rOffset = 5 - totalRounds;
+            const tierConf = TOURNAMENT_TIERS[tournament.tier || 'major'];
+
+            const handleMatchClick = (rIdx, mIdx, match) => { if (tournament.status === 'completed' || !match.p1 || !match.p2 || match.winner) return; setResolvingMatch({ roundIndex: rIdx, matchIndex: mIdx, ...match }); };
 
             const submitResult = async (winnerId, type) => {
                 const newBracket = JSON.parse(JSON.stringify(tournament.bracket));
@@ -650,30 +823,39 @@
                 setResolvingMatch(null);
             };
 
+            const handleRandomize = () => {
+                const winnerId = Math.random() < 0.5 ? resolvingMatch.p1 : resolvingMatch.p2;
+                submitResult(winnerId, 'close');
+            };
+
             return (
                 <div className="h-full flex flex-col pb-20">
                     <div className="flex justify-between items-center mb-6">
-                        <button onClick={onBack} className="flex items-center gap-2 text-slate-400"><ArrowLeft size={16}/> Back</button>
-                        <h1 className="text-2xl font-bold">{tournament.name} {tournament.status === 'completed' && <span className="text-green-400 text-sm ml-2">COMPLETE</span>}</h1>
+                        <button onClick={onBack} className="flex items-center gap-2 text-slate-400 hover:text-white"><ArrowLeft size={16}/> Back</button>
+                        <h1 className="text-2xl font-bold flex items-center gap-3">
+                            <span className={`${tierConf.color} text-sm uppercase tracking-widest border border-current px-2 py-1 rounded`}>{tierConf.name}</span>
+                            {tournament.name}
+                            {tournament.status === 'completed' && <span className="bg-green-500/20 text-green-400 text-xs px-2 py-1 rounded ml-2">COMPLETED</span>}
+                        </h1>
                     </div>
                     <div className="flex-1 overflow-auto bg-slate-800/50 border border-slate-700 rounded-xl p-8 min-h-[800px] bracket-container">
                         <div className="flex min-w-max h-full">
                             {tournament.bracket.map((round, rIdx) => (
                                 <div key={rIdx} className="flex flex-col w-64 shrink-0 mr-12 h-full">
-                                    <div className="text-center text-slate-500 font-bold text-sm uppercase mb-4">{ROUND_NAMES[rIdx + rOffset]}</div>
+                                    <div className="text-center text-slate-500 font-bold text-sm uppercase tracking-wider mb-4">{ROUND_NAMES[rIdx + rOffset]}</div>
                                     <div className="flex-1 flex flex-col">
                                         {round.map((match, mIdx) => {
                                             const p1 = getPlayer(match.p1), p2 = getPlayer(match.p2);
                                             const isReady = match.p1 && match.p2 && !match.winner && tournament.status !== 'completed';
                                             return (
                                                 <div key={match.id} className="flex-1 flex flex-col justify-center relative py-2">
-                                                    <div onClick={() => handleMatchClick(rIdx, mIdx, match)} className={`relative z-10 bg-slate-800 border-2 rounded-lg transition-all ${isReady ? 'border-blue-500 cursor-pointer hover:scale-105' : match.winner ? 'border-slate-600' : 'border-slate-700/50 opacity-60'}`}>
-                                                        <div className={`p-2 flex justify-between border-b border-slate-700/50 ${match.winner === match.p1 ? 'bg-slate-700/50' : ''}`}><span className="text-xs truncate">{getFlag(p1.nationality)} {p1.name}</span>{match.winner === match.p1 && <CheckCircle size={14} className="text-green-500"/>}</div>
-                                                        <div className={`p-2 flex justify-between ${match.winner === match.p2 ? 'bg-slate-700/50' : ''}`}><span className="text-xs truncate">{getFlag(p2.nationality)} {p2.name}</span>{match.winner === match.p2 && <CheckCircle size={14} className="text-green-500"/>}</div>
+                                                    <div onClick={() => handleMatchClick(rIdx, mIdx, match)} className={`relative z-10 bg-slate-800 border-2 rounded-lg transition-all shadow-md ${isReady ? 'border-blue-500 cursor-pointer hover:scale-105 shadow-blue-500/20' : match.winner ? 'border-slate-600' : 'border-slate-700/50 opacity-60'}`}>
+                                                        <div className={`p-2.5 flex justify-between items-center border-b border-slate-700/50 ${match.winner === match.p1 ? 'bg-slate-700/50' : ''}`}><span className={`text-sm font-medium flex items-center gap-2 ${match.winner && match.winner !== match.p1 ? 'text-slate-500 line-through' : 'text-slate-100'}`}>{match.p1 ? <>{getFlag(p1.nationality)} {p1.name}</> : 'TBD'}</span>{match.winner === match.p1 && <CheckCircle size={16} className="text-green-500"/>}</div>
+                                                        <div className={`p-2.5 flex justify-between items-center ${match.winner === match.p2 ? 'bg-slate-700/50' : ''}`}><span className={`text-sm font-medium flex items-center gap-2 ${match.winner && match.winner !== match.p2 ? 'text-slate-500 line-through' : 'text-slate-100'}`}>{match.p2 ? <>{getFlag(p2.nationality)} {p2.name}</> : 'TBD'}</span>{match.winner === match.p2 && <CheckCircle size={16} className="text-green-500"/>}</div>
                                                     </div>
-                                                    {rIdx > 0 && <div className="absolute -left-6 top-1/2 w-6 border-t-2 border-slate-600"></div>}
-                                                    {rIdx < totalRounds - 1 && <div className="absolute -right-6 top-1/2 w-6 border-t-2 border-slate-600"></div>}
-                                                    {rIdx < totalRounds - 1 && mIdx % 2 === 0 && <div className="absolute -right-6 top-1/2 w-[2px] bg-slate-600" style={{ height: '100%' }}></div>}
+                                                    {rIdx > 0 && <div className="absolute -left-6 top-1/2 w-6 border-t-2 border-slate-600 z-0"></div>}
+                                                    {rIdx < totalRounds - 1 && <div className="absolute -right-6 top-1/2 w-6 border-t-2 border-slate-600 z-0"></div>}
+                                                    {rIdx < totalRounds - 1 && mIdx % 2 === 0 && <div className="absolute -right-6 top-1/2 w-[2px] bg-slate-600 z-0" style={{ height: '100%' }}></div>}
                                                 </div>
                                             );
                                         })}
@@ -684,33 +866,41 @@
                     </div>
                     {resolvingMatch && (
                         <div className="fixed inset-0 bg-black/90 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-                            <div className="bg-slate-800 rounded-2xl p-6 w-full max-w-4xl border border-slate-700 overflow-y-auto max-h-[95vh]">
-                                <h2 className="text-2xl font-bold mb-8 text-center uppercase tracking-widest">Matchup Decision</h2>
+                            <div className="bg-slate-800 rounded-2xl p-6 w-full max-w-4xl border border-slate-700 overflow-y-auto max-h-[95vh] shadow-2xl">
+                                <h2 className="text-2xl font-bold mb-8 text-center text-white uppercase tracking-widest">Resolve Match</h2>
                                 <div className="flex flex-col md:flex-row gap-8 relative items-stretch">
                                     <div className="hidden md:flex absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-slate-900 border-2 border-slate-700 w-12 h-12 rounded-full items-center justify-center font-black text-slate-400 z-10">VS</div>
                                     {[resolvingMatch.p1, resolvingMatch.p2].map((pid, idx) => {
                                         const p = getPlayer(pid), imgs = getImages(p);
                                         const iIdx = idx === 0 ? p1ImgIdx : p2ImgIdx, setIIdx = idx === 0 ? setP1ImgIdx : setP2ImgIdx;
                                         return (
-                                            <div key={idx} className="flex-1 bg-slate-700/30 border border-slate-700 rounded-xl p-6 flex flex-col items-center">
-                                                <div className="relative group w-full max-w-[280px] mb-4">
-                                                    <img src={imgs[iIdx] || "https://via.placeholder.com/300x400"} className="w-full aspect-[3/4] rounded-xl object-cover border-4 border-slate-600 shadow-2xl" />
+                                            <div key={idx} className="flex-1 bg-slate-700/30 border border-slate-700 rounded-xl p-6 flex flex-col items-center shadow-inner">
+                                                <div className="relative group w-full max-w-[280px] mb-6">
+                                                    {imgs[iIdx] ? (
+                                                        <img src={imgs[iIdx]} className="w-full aspect-[3/4] rounded-xl object-cover border-4 border-slate-600 shadow-2xl transition-all duration-300" />
+                                                    ) : (
+                                                        <div className="w-full aspect-[3/4] bg-slate-800 rounded-xl border-4 border-slate-600 flex items-center justify-center"><UserCircle size={64} className="text-slate-600"/></div>
+                                                    )}
                                                     {imgs.length > 1 && (
-                                                        <><button onClick={() => setIIdx(prev => (prev === 0 ? imgs.length-1 : prev-1))} className="absolute left-2 top-1/2 -translate-y-1/2 bg-black/50 p-2 rounded-full opacity-0 group-hover:opacity-100"><ChevronLeft size={20}/></button>
-                                                        <button onClick={() => setIIdx(prev => (prev === imgs.length-1 ? 0 : prev+1))} className="absolute right-2 top-1/2 -translate-y-1/2 bg-black/50 p-2 rounded-full opacity-0 group-hover:opacity-100"><ChevronRight size={20}/></button></>
+                                                        <><button onClick={() => setIIdx(prev => (prev === 0 ? imgs.length-1 : prev-1))} className="absolute left-2 top-1/2 -translate-y-1/2 bg-black/60 hover:bg-black p-2 rounded-full text-white opacity-0 group-hover:opacity-100 transition-opacity"><ChevronLeft size={20}/></button>
+                                                        <button onClick={() => setIIdx(prev => (prev === imgs.length-1 ? 0 : prev+1))} className="absolute right-2 top-1/2 -translate-y-1/2 bg-black/60 hover:bg-black p-2 rounded-full text-white opacity-0 group-hover:opacity-100 transition-opacity"><ChevronRight size={20}/></button>
+                                                        <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5 bg-black/40 px-2 py-1 rounded-full">{imgs.map((_, i) => <div key={i} className={`w-2 h-2 rounded-full ${i === iIdx ? 'bg-blue-500' : 'bg-white/40'}`} />)}</div></>
                                                     )}
                                                 </div>
-                                                <h3 className="text-2xl font-bold uppercase">{p.name}</h3>
-                                                <div className="text-blue-400 mb-6">{getFlag(p.nationality)} {getCountryName(p.nationality)}</div>
+                                                <h3 className="text-3xl font-black text-white uppercase text-center mb-1">{p.name}</h3>
+                                                <div className="text-blue-400 font-medium mb-8 flex items-center gap-2"><span className="text-2xl">{getFlag(p.nationality)}</span> {getCountryName(p.nationality)}</div>
                                                 <div className="w-full space-y-3 mt-auto">
-                                                    <button onClick={() => submitResult(pid, 'close')} className="w-full bg-orange-500/20 text-orange-400 border border-orange-500/50 p-3 rounded-lg font-bold">Close Match</button>
-                                                    <button onClick={() => submitResult(pid, 'lopsided')} className="w-full bg-purple-500/20 text-purple-400 border border-purple-500/50 p-3 rounded-lg font-bold">Lopsided Win</button>
+                                                    <button onClick={() => submitResult(pid, 'close')} className="w-full bg-orange-500/20 hover:bg-orange-500/30 text-orange-400 border border-orange-500/50 p-4 rounded-xl font-bold transition-colors">Win (Close Match)</button>
+                                                    <button onClick={() => submitResult(pid, 'lopsided')} className="w-full bg-purple-500/20 hover:bg-purple-500/30 text-purple-400 border border-purple-500/50 p-4 rounded-xl font-bold transition-colors">Win (Lopsided)</button>
                                                 </div>
                                             </div>
                                         );
                                     })}
                                 </div>
-                                <button onClick={() => setResolvingMatch(null)} className="mt-8 w-full text-slate-500 hover:text-white transition-colors">Cancel Resolution</button>
+                                <div className="mt-8 flex flex-col md:flex-row gap-4 pt-6 border-t border-slate-700">
+                                    <button onClick={handleRandomize} className="flex-1 bg-indigo-600/20 hover:bg-indigo-600/30 border border-indigo-500/50 text-indigo-400 py-3.5 rounded-xl font-bold transition-colors flex items-center justify-center gap-2">🎲 Randomize (Coin Toss)</button>
+                                    <button onClick={() => setResolvingMatch(null)} className="flex-1 bg-slate-800 hover:bg-slate-700 border border-slate-600 text-slate-300 hover:text-white py-3.5 rounded-xl font-bold transition-colors">Cancel</button>
+                                </div>
                             </div>
                         </div>
                     )}
@@ -751,6 +941,7 @@
 
             const players = useMemo(() => calculatePlayerRankings(playersRaw, tournaments), [playersRaw, tournaments]);
             const navigateTo = (tab) => { setActiveTab(tab); setSelectedPlayerId(null); setSelectedTournamentId(null); };
+            const handlePlayerSelect = (id) => { setActiveTab('players'); setSelectedPlayerId(id); };
 
             if (!user || loading) return <div className="min-screen flex items-center justify-center bg-slate-900 text-slate-100 h-screen w-full"><div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div></div>;
 
@@ -758,20 +949,20 @@
                 <div className="min-h-screen bg-slate-900 text-slate-100 flex font-sans overflow-hidden">
                     <nav className="w-64 bg-slate-800 border-r border-slate-700 flex flex-col hidden md:flex shrink-0">
                         <div className="p-6 border-b border-slate-700 flex items-center gap-2 text-xl font-bold text-blue-400"><Trophy size={24}/><span>ProRank ATP</span></div>
-                        <div className="flex-1 py-4">
-                            <button onClick={() => navigateTo('dashboard')} className={`w-full flex items-center gap-3 px-6 py-3 transition-colors ${activeTab === 'dashboard' ? 'bg-blue-600/20 text-blue-400 border-r-4 border-blue-500' : 'text-slate-300 hover:bg-slate-700/50'}`}><Activity size={18}/>Dashboard</button>
-                            <button onClick={() => navigateTo('players')} className={`w-full flex items-center gap-3 px-6 py-3 transition-colors ${activeTab === 'players' ? 'bg-blue-600/20 text-blue-400 border-r-4 border-blue-500' : 'text-slate-300 hover:bg-slate-700/50'}`}><Users size={18}/>Players</button>
-                            <button onClick={() => navigateTo('nations')} className={`w-full flex items-center gap-3 px-6 py-3 transition-colors ${activeTab === 'nations' ? 'bg-blue-600/20 text-blue-400 border-r-4 border-blue-500' : 'text-slate-300 hover:bg-slate-700/50'}`}><Globe size={18}/>Nations</button>
-                            <button onClick={() => navigateTo('tournaments')} className={`w-full flex items-center gap-3 px-6 py-3 transition-colors ${activeTab === 'tournaments' ? 'bg-blue-600/20 text-blue-400 border-r-4 border-blue-500' : 'text-slate-300 hover:bg-slate-700/50'}`}><Swords size={18}/>Tournaments</button>
+                        <div className="flex-1 py-4 space-y-1">
+                            <button onClick={() => navigateTo('dashboard')} className={`w-full flex items-center gap-3 px-6 py-3 font-medium transition-colors ${activeTab === 'dashboard' ? 'bg-blue-600/20 text-blue-400 border-r-4 border-blue-500' : 'text-slate-300 hover:bg-slate-700/50'}`}><Activity size={20}/>Dashboard</button>
+                            <button onClick={() => navigateTo('players')} className={`w-full flex items-center gap-3 px-6 py-3 font-medium transition-colors ${activeTab === 'players' ? 'bg-blue-600/20 text-blue-400 border-r-4 border-blue-500' : 'text-slate-300 hover:bg-slate-700/50'}`}><Users size={20}/>Players</button>
+                            <button onClick={() => navigateTo('nations')} className={`w-full flex items-center gap-3 px-6 py-3 font-medium transition-colors ${activeTab === 'nations' ? 'bg-blue-600/20 text-blue-400 border-r-4 border-blue-500' : 'text-slate-300 hover:bg-slate-700/50'}`}><Globe size={20}/>Nations</button>
+                            <button onClick={() => navigateTo('tournaments')} className={`w-full flex items-center gap-3 px-6 py-3 font-medium transition-colors ${activeTab === 'tournaments' ? 'bg-blue-600/20 text-blue-400 border-r-4 border-blue-500' : 'text-slate-300 hover:bg-slate-700/50'}`}><Swords size={20}/>Tournaments</button>
                         </div>
                     </nav>
                     <main className="flex-1 flex flex-col overflow-hidden">
-                        <div className="md:hidden bg-slate-800 p-4 flex justify-between items-center"><div className="flex items-center gap-2 font-bold text-blue-400"><Trophy size={20}/><span>ProRank</span></div><div className="flex gap-4"><button onClick={() => navigateTo('dashboard')}><Activity/></button><button onClick={() => navigateTo('players')}><Users/></button><button onClick={() => navigateTo('tournaments')}><Swords/></button></div></div>
+                        <div className="md:hidden bg-slate-800 p-4 flex justify-between items-center border-b border-slate-700"><div className="flex items-center gap-2 font-bold text-blue-400"><Trophy size={20}/><span>ProRank</span></div><div className="flex gap-4"><button onClick={() => navigateTo('dashboard')} className={activeTab === 'dashboard' ? 'text-blue-400' : 'text-slate-400'}><Activity/></button><button onClick={() => navigateTo('players')} className={activeTab === 'players' ? 'text-blue-400' : 'text-slate-400'}><Users/></button><button onClick={() => navigateTo('tournaments')} className={activeTab === 'tournaments' ? 'text-blue-400' : 'text-slate-400'}><Swords/></button></div></div>
                         <div className="flex-1 overflow-auto p-4 md:p-8">
-                            {activeTab === 'dashboard' && <DashboardView players={players} />}
+                            {activeTab === 'dashboard' && <DashboardView playersRaw={playersRaw} tournaments={tournaments} onSelectPlayer={handlePlayerSelect} />}
                             {activeTab === 'nations' && <NationsView players={players} />}
                             {activeTab === 'players' && !selectedPlayerId && <PlayersView players={players} onSelectPlayer={setSelectedPlayerId} db={db} appId={appId} />}
-                            {activeTab === 'players' && selectedPlayerId && <PlayerProfile player={players.find(p => p.id === selectedPlayerId)} onBack={() => setSelectedPlayerId(null)} tournaments={tournaments} db={db} appId={appId} />}
+                            {activeTab === 'players' && selectedPlayerId && <PlayerProfile player={players.find(p => p.id === selectedPlayerId)} players={players} onBack={() => setSelectedPlayerId(null)} tournaments={tournaments} db={db} appId={appId} />}
                             {activeTab === 'tournaments' && !selectedTournamentId && <TournamentsView tournaments={tournaments} onSelect={setSelectedTournamentId} onCreate={() => setActiveTab('create_tournament')} />}
                             {activeTab === 'tournaments' && selectedTournamentId && <TournamentBracket tournament={tournaments.find(t => t.id === selectedTournamentId)} players={players} onBack={() => setSelectedTournamentId(null)} db={db} appId={appId} />}
                             {activeTab === 'create_tournament' && <CreateTournamentView players={players} onBack={() => navigateTo('tournaments')} onSuccess={id => { navigateTo('tournaments'); setSelectedTournamentId(id); }} db={db} appId={appId} />}
