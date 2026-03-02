@@ -1,0 +1,675 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ProRank ATP - Global Ranking System</title>
+    <!-- Tailwind CSS for styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- React and Babel for running JSX in the browser -->
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <style>
+        body { background-color: #0f172a; color: #f1f5f9; margin: 0; font-family: sans-serif; }
+        .bracket-container::-webkit-scrollbar { height: 8px; }
+        .bracket-container::-webkit-scrollbar-track { background: #1e293b; }
+        .bracket-container::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+        /* Prevent layout shift during image loading */
+        .aspect-3-4 { aspect-ratio: 3 / 4; }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <!-- Firebase SDKs -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, onSnapshot, doc, addDoc, updateDoc, deleteDoc, query, orderBy } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // Expose Firebase to the Babel script
+        window.fb = { initializeApp, getAuth, signInAnonymously, onAuthStateChanged, getFirestore, collection, onSnapshot, doc, addDoc, updateDoc, deleteDoc, query, orderBy };
+    </script>
+
+    <script type="text/babel">
+        const { useState, useEffect, useMemo, useRef } = React;
+
+        // --- ICON COMPONENTS (SVG) ---
+        // Replacing Lucide with inline SVG components to avoid CDN resolution issues
+        const Icon = ({ d, size = 24, className = "" }) => (
+            <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+                <path d={d} />
+            </svg>
+        );
+
+        const Trophy = (props) => <Icon d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6M18 9h1.5a2.5 2.5 0 0 0 0-5H18M4 22h16M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22M18 2H6v7a6 6 0 0 0 12 0V2Z" {...props} />;
+        const Users = (props) => <Icon d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M9 7a4 4 0 1 0 0-8 4 4 0 0 0 0 8ZM22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" {...props} />;
+        const Swords = (props) => <Icon d="M14.5 17.5 3 6V3h3l11.5 11.5M13 19l6-6M16 16l4 4M19 21l2-2M14.5 6.5 18 3h3v3l-3.5 3.5" {...props} />;
+        const History = (props) => <Icon d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8M3 3v5h5M12 7v5l4 2" {...props} />;
+        const Plus = (props) => <Icon d="M12 5v14M5 12h14" {...props} />;
+        const ChevronRight = (props) => <Icon d="m9 18 6-6-6-6" {...props} />;
+        const ChevronLeft = (props) => <Icon d="m15 18-6-6 6-6" {...props} />;
+        const UserCircle = (props) => <Icon d="M12 12a5 5 0 1 0 0-10 5 5 0 0 0 0 10ZM12 14c-4.42 0-8 3.58-8 8h16c0-4.42-3.58-8-8-8Z" {...props} />;
+        const Shield = (props) => <Icon d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z" {...props} />;
+        const Activity = (props) => <Icon d="M22 12h-4l-3 9L9 3l-3 9H2" {...props} />;
+        const Star = (props) => <Icon d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" {...props} />;
+        const CheckCircle = (props) => <Icon d="M22 11.08V12a10 10 0 1 1-5.93-9.14M22 4 12 14.01l-3-3" {...props} />;
+        const ArrowLeft = (props) => <Icon d="m12 19-7-7 7-7M5 12h14" {...props} />;
+        const Play = (props) => <Icon d="m5 3 14 9-14 9V3z" {...props} />;
+        const Trash2 = (props) => <Icon d="M3 6h18M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2M10 11v6M14 11v6" {...props} />;
+        const Edit2 = (props) => <Icon d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z" {...props} />;
+        const X = (props) => <Icon d="M18 6 6 18M6 6l12 12" {...props} />;
+        const Globe = (props) => <Icon d="M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20ZM2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10Z" {...props} />;
+
+        // --- Configuration & Constants ---
+        const POINTS = { WINNER: 1000, FINALIST: 600, SF: 360, QF: 180, R16: 90, R32: 45 };
+        const ROUND_NAMES = ['Round of 32', 'Round of 16', 'Quarterfinals', 'Semifinals', 'Final'];
+        const COUNTRIES = [
+            { code: 'ARG', name: 'Argentina', flag: '🇦🇷' },
+            { code: 'AUS', name: 'Australia', flag: '🇦🇺' },
+            { code: 'AUT', name: 'Austria', flag: '🇦🇹' },
+            { code: 'BRA', name: 'Brazil', flag: '🇧🇷' },
+            { code: 'CAN', name: 'Canada', flag: '🇨🇦' },
+            { code: 'CHN', name: 'China', flag: '🇨🇳' },
+            { code: 'CRO', name: 'Croatia', flag: '🇭🇷' },
+            { code: 'CZE', name: 'Czechia', flag: '🇨🇿' },
+            { code: 'DEN', name: 'Denmark', flag: '🇩🇰' },
+            { code: 'ESP', name: 'Spain', flag: '🇪🇸' },
+            { code: 'FRA', name: 'France', flag: '🇫🇷' },
+            { code: 'GBR', name: 'Great Britain', flag: '🇬🇧' },
+            { code: 'GER', name: 'Germany', flag: '🇩🇪' },
+            { code: 'GRE', name: 'Greece', flag: '🇬🇷' },
+            { code: 'ITA', name: 'Italy', flag: '🇮🇹' },
+            { code: 'JPN', name: 'Japan', flag: '🇯🇵' },
+            { code: 'MEX', name: 'Mexico', flag: '🇲🇽' },
+            { code: 'NED', name: 'Netherlands', flag: '🇳🇱' },
+            { code: 'NOR', name: 'Norway', flag: '🇳🇴' },
+            { code: 'POL', name: 'Poland', flag: '🇵🇱' },
+            { code: 'POR', name: 'Portugal', flag: '🇵🇹' },
+            { code: 'RSA', name: 'South Africa', flag: '🇿🇦' },
+            { code: 'RUS', name: 'Russia', flag: '🇷🇺' },
+            { code: 'SRB', name: 'Serbia', flag: '🇷🇸' },
+            { code: 'SUI', name: 'Switzerland', flag: '🇨🇭' },
+            { code: 'SWE', name: 'Sweden', flag: '🇸🇪' },
+            { code: 'USA', name: 'United States', flag: '🇺🇸' },
+            { code: 'UNK', name: 'Unknown', flag: '🏳️' }
+        ];
+
+        const getFlag = (code) => COUNTRIES.find(c => c.code === code)?.flag || '🏳️';
+        const getCountryName = (code) => COUNTRIES.find(c => c.code === code)?.name || code || 'Unknown';
+
+        // Replace with YOUR Firebase config if running outside preview
+        const firebaseConfig = {
+
+  apiKey: "AIzaSyDHfnWgaeNG2-lZBSmPpa8JdZgUHNPMh4w",
+
+  authDomain: "prorank-7b6b3.firebaseapp.com",
+
+  projectId: "prorank-7b6b3",
+
+  storageBucket: "prorank-7b6b3.firebasestorage.app",
+
+  messagingSenderId: "991950932964",
+
+  appId: "1:991950932964:web:db0346d0aa7d23b5ac55f1"
+
+};
+
+
+        const appId = 'pro-rank-global';
+
+        // --- Utility Functions ---
+
+        const calculatePlayerRankings = (players, tournaments) => {
+            const completedTournaments = tournaments
+                .filter(t => t.status === 'completed')
+                .sort((a, b) => b.completedAt - a.completedAt);
+
+            return players.map(player => {
+                let recentTournaments = [];
+                let totalPoints = 0;
+                let w = 0, l = 0;
+
+                for (const t of completedTournaments) {
+                    if (recentTournaments.length >= 10) break;
+                    let pointsForTournament = 0, playedInTournament = false, highestRound = -1, wonFinal = false;
+
+                    t.bracket.forEach((round, roundIndex) => {
+                        round.forEach(match => {
+                            if (match.p1 === player.id || match.p2 === player.id) {
+                                playedInTournament = true;
+                                if (roundIndex > highestRound) highestRound = roundIndex;
+                                if (match.winner === player.id) {
+                                    w++;
+                                    if (roundIndex === 4) wonFinal = true;
+                                } else if (match.winner && match.winner !== player.id) l++;
+                            }
+                        });
+                    });
+
+                    if (playedInTournament) {
+                        if (wonFinal) pointsForTournament = POINTS.WINNER;
+                        else if (highestRound === 4) pointsForTournament = POINTS.FINALIST;
+                        else if (highestRound === 3) pointsForTournament = POINTS.SF;
+                        else if (highestRound === 2) pointsForTournament = POINTS.QF;
+                        else if (highestRound === 1) pointsForTournament = POINTS.R16;
+                        else if (highestRound === 0) pointsForTournament = POINTS.R32;
+
+                        totalPoints += pointsForTournament;
+                        recentTournaments.push({ tournamentId: t.id, tournamentName: t.name, points: pointsForTournament, result: wonFinal ? 'Winner' : ROUND_NAMES[highestRound] });
+                    }
+                }
+                return { ...player, points: totalPoints, recentTournaments, stats: { wins: w, losses: l } };
+            }).sort((a, b) => b.points - a.points).map((p, index) => ({ ...p, rank: index + 1 }));
+        };
+
+        const generate32Draw = (selectedPlayers) => {
+            const draw = new Array(32).fill(null);
+            const seeds = selectedPlayers.slice(0, 8);
+            const others = selectedPlayers.slice(8).sort(() => Math.random() - 0.5);
+            const seedSlots = [0, 31, 15, 16, 7, 24, 8, 23];
+            seeds.forEach((seed, i) => { if (seedSlots[i] !== undefined) draw[seedSlots[i]] = seed; });
+            let otherIndex = 0;
+            for (let i = 0; i < 32; i++) { if (!draw[i]) draw[i] = others[otherIndex++]; }
+            const bracket = [];
+            const r32 = [];
+            for (let i = 0; i < 16; i++) r32.push({ id: `r0-m${i}`, p1: draw[i * 2]?.id || null, p2: draw[i * 2 + 1]?.id || null, winner: null, type: null });
+            bracket.push(r32);
+            let matchesInRound = 8;
+            for (let r = 1; r < 5; r++) {
+                const roundMatches = [];
+                for (let i = 0; i < matchesInRound; i++) roundMatches.push({ id: `r${r}-m${i}`, p1: null, p2: null, winner: null, type: null });
+                bracket.push(roundMatches);
+                matchesInRound /= 2;
+            }
+            return bracket;
+        };
+
+        // --- Custom Views ---
+
+        function CountrySelect({ value, onChange, disabled }) {
+            const [isOpen, setIsOpen] = useState(false);
+            const [search, setSearch] = useState('');
+            const wrapperRef = useRef(null);
+            useEffect(() => {
+                function handleClickOutside(event) { if (wrapperRef.current && !wrapperRef.current.contains(event.target)) setIsOpen(false); }
+                document.addEventListener("mousedown", handleClickOutside);
+                return () => document.removeEventListener("mousedown", handleClickOutside);
+            }, []);
+            const filtered = COUNTRIES.filter(c => c.name.toLowerCase().includes(search.toLowerCase()) || c.code.toLowerCase().includes(search.toLowerCase()));
+            const selectedCountry = COUNTRIES.find(c => c.code === value);
+            return (
+                <div ref={wrapperRef} className="relative w-full md:w-auto min-w-[200px]">
+                    <div 
+                        className={`w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-3 text-white flex justify-between items-center transition-colors ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer hover:border-slate-500'}`}
+                        onClick={() => !disabled && setIsOpen(!isOpen)}
+                    >
+                        <span className="truncate">{selectedCountry ? `${selectedCountry.flag} ${selectedCountry.name}` : 'Select Nationality...'}</span>
+                        <ChevronRight size={16} className={`shrink-0 transition-transform ${isOpen ? 'rotate-90' : ''}`} />
+                    </div>
+                    {isOpen && (
+                        <div className="absolute z-50 w-full mt-1 bg-slate-800 border border-slate-700 rounded-lg shadow-xl max-h-60 overflow-y-auto">
+                            <div className="p-2 sticky top-0 bg-slate-800 border-b border-slate-700">
+                                <input type="text" autoFocus className="w-full bg-slate-900 border border-slate-600 rounded px-3 py-2 text-sm text-white focus:outline-none focus:border-blue-500" placeholder="Search..." value={search} onChange={e => setSearch(e.target.value)} />
+                            </div>
+                            {filtered.map(c => (
+                                <div key={c.code} className="px-4 py-3 hover:bg-slate-700 cursor-pointer flex items-center gap-3 text-slate-200" onClick={() => { onChange(c.code); setIsOpen(false); setSearch(''); }}>
+                                    <span className="text-xl">{c.flag}</span> <span className="font-medium">{c.name} ({c.code})</span>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                </div>
+            );
+        }
+
+        function DashboardView({ players }) {
+            return (
+                <div className="max-w-5xl mx-auto space-y-6">
+                    <header className="mb-8">
+                        <h1 className="text-3xl font-bold text-white">Global Rankings</h1>
+                        <p className="text-slate-400 mt-2">Based on the last 10 tournament performances.</p>
+                    </header>
+                    <div className="bg-slate-800 rounded-xl border border-slate-700 overflow-hidden">
+                        <div className="overflow-x-auto">
+                            <table className="w-full text-left border-collapse">
+                                <thead>
+                                    <tr className="bg-slate-900/50 text-slate-300 text-sm uppercase tracking-wider">
+                                        <th className="p-4 font-semibold w-16 text-center">Rank</th>
+                                        <th className="p-4 font-semibold">Player</th>
+                                        <th className="p-4 font-semibold">Points</th>
+                                        <th className="p-4 font-semibold text-center">W-L</th>
+                                        <th className="p-4 font-semibold hidden md:table-cell">Recent Form</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-slate-700">
+                                    {players.map((player) => (
+                                        <tr key={player.id} className="hover:bg-slate-700/30 transition-colors">
+                                            <td className="p-4 text-center font-bold text-slate-400">{player.rank}</td>
+                                            <td className="p-4 font-medium text-white flex items-center gap-3">
+                                                <img src={player.imageUrl || "https://via.placeholder.com/40"} className="w-10 h-10 rounded-full object-cover border border-slate-600 shrink-0" />
+                                                <div><div>{getFlag(player.nationality)} {player.name}</div><div className="text-xs text-slate-400">{getCountryName(player.nationality)}</div></div>
+                                            </td>
+                                            <td className="p-4 font-bold text-blue-400">{player.points.toLocaleString()}</td>
+                                            <td className="p-4 text-center text-slate-300">{player.stats.wins} - {player.stats.losses}</td>
+                                            <td className="p-4 hidden md:table-cell">
+                                                <div className="flex gap-1">{player.recentTournaments.slice(0, 5).map((t, i) => (<div key={i} className={`w-3 h-3 rounded-sm ${t.result === 'Winner' ? 'bg-green-500' : t.result === 'Final' ? 'bg-blue-500' : 'bg-slate-500'}`} />))}</div>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
+        function NationsView({ players }) {
+            const nationStats = useMemo(() => {
+                const stats = {};
+                players.forEach(p => {
+                    const nat = p.nationality || 'UNK';
+                    if (!stats[nat]) stats[nat] = { code: nat, points: 0, wins: 0, losses: 0, players: 0, titles: 0 };
+                    stats[nat].points += p.points; stats[nat].wins += p.stats.wins; stats[nat].losses += p.stats.losses; stats[nat].players += 1;
+                    stats[nat].titles += p.recentTournaments.filter(t => t.result === 'Winner').length;
+                });
+                return Object.values(stats).sort((a,b) => b.points - a.points);
+            }, [players]);
+            return (
+                <div className="max-w-5xl mx-auto space-y-6">
+                    <header className="mb-8"><h1 className="text-3xl font-bold text-white">Nations Leaderboard</h1></header>
+                    <div className="bg-slate-800 rounded-xl border border-slate-700 overflow-hidden"><div className="overflow-x-auto">
+                        <table className="w-full text-left border-collapse">
+                            <thead><tr className="bg-slate-900/50 text-slate-300 text-sm uppercase">
+                                <th className="p-4 text-center w-16">#</th><th>Nation</th><th className="text-center">Players</th><th className="text-blue-400">Points</th><th className="text-center">Titles</th><th className="text-center">W-L</th>
+                            </tr></thead>
+                            <tbody className="divide-y divide-slate-700">{nationStats.map((n, idx) => (
+                                <tr key={n.code} className="hover:bg-slate-700/30 transition-colors">
+                                    <td className="p-4 text-center text-slate-400 font-bold">{idx + 1}</td>
+                                    <td className="p-4 font-medium text-white flex items-center gap-3"><span className="text-2xl">{getFlag(n.code)}</span>{getCountryName(n.code)}</td>
+                                    <td className="p-4 text-center text-slate-300">{n.players}</td>
+                                    <td className="p-4 font-bold text-blue-400">{n.points.toLocaleString()}</td>
+                                    <td className="p-4 text-center font-bold text-yellow-500">{n.titles}</td>
+                                    <td className="p-4 text-center text-slate-300">{n.wins} - {n.losses}</td>
+                                </tr>
+                            ))}</tbody>
+                        </table>
+                    </div></div>
+                </div>
+            );
+        }
+
+        function PlayersView({ players, onSelectPlayer, db, appId }) {
+            const [newPlayerName, setNewPlayerName] = useState('');
+            const [newPlayerNationality, setNewPlayerNationality] = useState('');
+            const [newPlayerImages, setNewPlayerImages] = useState(['', '', '']);
+            const [isAdding, setIsAdding] = useState(false);
+            const [showAddForm, setShowAddForm] = useState(false);
+
+            const handleAddPlayer = async (e) => {
+                e.preventDefault(); if (!newPlayerName.trim()) return;
+                setIsAdding(true);
+                try {
+                    const validImages = newPlayerImages.map(url => url.trim()).filter(Boolean);
+                    const playersRef = window.fb.collection(db, 'artifacts', appId, 'public', 'data', 'players');
+                    await window.fb.addDoc(playersRef, { name: newPlayerName.trim(), nationality: newPlayerNationality || 'UNK', imageUrl: validImages[0] || '', images: validImages, createdAt: Date.now() });
+                    setNewPlayerName(''); setNewPlayerNationality(''); setNewPlayerImages(['', '', '']); setShowAddForm(false);
+                } catch (err) { console.error(err); }
+                setIsAdding(false);
+            };
+
+            const generateDummyPlayers = async () => {
+                setIsAdding(true);
+                const dummyNames = [{n: "Roger F.", c: "SUI"}, {n: "Rafa N.", c: "ESP"}, {n: "Novak D.", c: "SRB"}, {n: "Andy M.", c: "GBR"}, {n: "Pete S.", c: "USA"}, {n: "Andre A.", c: "USA"}, {n: "Bjorn B.", c: "SWE"}, {n: "John M.", c: "USA"}];
+                const playersRef = window.fb.collection(db, 'artifacts', appId, 'public', 'data', 'players');
+                try {
+                    for (const p of dummyNames) {
+                        const url = `https://ui-avatars.com/api/?name=${p.n.replace(' ', '+')}&background=random&color=fff&size=500`;
+                        await window.fb.addDoc(playersRef, { name: p.n, nationality: p.c, imageUrl: url, images: [url], createdAt: Date.now() });
+                    }
+                } catch(err) { console.error(err); }
+                setIsAdding(false);
+            };
+
+            return (
+                <div className="max-w-5xl mx-auto space-y-6">
+                    <div className="flex justify-between items-center"><h1 className="text-3xl font-bold">Players</h1>
+                        <div className="flex gap-2">
+                            {players.length < 32 && <button onClick={generateDummyPlayers} className="bg-slate-700 px-4 py-2 rounded-lg flex items-center gap-2"><Activity size={16}/> Fill Dummies</button>}
+                            <button onClick={() => setShowAddForm(!showAddForm)} className="bg-blue-600 px-4 py-2 rounded-lg flex items-center gap-2">{showAddForm ? <X size={20}/> : <Plus size={20}/>} {showAddForm ? 'Cancel' : 'Add Player'}</button>
+                        </div>
+                    </div>
+                    {showAddForm && (
+                        <form onSubmit={handleAddPlayer} className="bg-slate-800 p-6 rounded-xl border border-slate-700 space-y-4">
+                            <div className="grid md:grid-cols-2 gap-4">
+                                <input type="text" placeholder="Name..." required className="bg-slate-900 border border-slate-700 rounded-lg px-4 py-3 text-white" value={newPlayerName} onChange={e => setNewPlayerName(e.target.value)} />
+                                <CountrySelect value={newPlayerNationality} onChange={setNewPlayerNationality} />
+                            </div>
+                            <div className="grid md:grid-cols-3 gap-4">
+                                {[0,1,2].map(i => <input key={i} type="url" placeholder={`Img URL ${i+1}`} className="bg-slate-900 border border-slate-700 rounded-lg px-4 py-3" value={newPlayerImages[i]} onChange={e => { const ni = [...newPlayerImages]; ni[i] = e.target.value; setNewPlayerImages(ni); }} />)}
+                            </div>
+                            <div className="flex justify-end"><button type="submit" className="bg-blue-600 px-8 py-2.5 rounded-lg font-bold">Save Player</button></div>
+                        </form>
+                    )}
+                    <div className="grid md:grid-cols-3 gap-4">{players.map(p => (
+                        <div key={p.id} onClick={() => onSelectPlayer(p.id)} className="bg-slate-800 border border-slate-700 rounded-xl p-5 hover:border-blue-500 cursor-pointer flex flex-col justify-between">
+                            <div className="flex items-center gap-4">
+                                <img src={p.imageUrl || "https://via.placeholder.com/60"} className="w-12 h-12 rounded-full object-cover" />
+                                <div><h3 className="font-bold flex items-center gap-2">{getFlag(p.nationality)} {p.name}</h3><div className="text-xs text-slate-400">Rank: #{p.rank}</div></div>
+                            </div>
+                        </div>
+                    ))}</div>
+                </div>
+            );
+        }
+
+        function PlayerProfile({ player, onBack, tournaments, db, appId }) {
+            const [isEditing, setIsEditing] = useState(false);
+            const [editName, setEditName] = useState('');
+            const [editNationality, setEditNationality] = useState('');
+            const [editImages, setEditImages] = useState(['', '', '']);
+            const [isSaving, setIsSaving] = useState(false);
+            const [showDelete, setShowDelete] = useState(false);
+
+            useEffect(() => {
+                if (player) {
+                    setEditName(player.name); setEditNationality(player.nationality || 'UNK');
+                    const imgs = player.images || [player.imageUrl];
+                    setEditImages([imgs[0] || '', imgs[1] || '', imgs[2] || '']);
+                }
+            }, [player]);
+
+            if (!player) return null;
+
+            const handleUpdate = async (e) => {
+                e.preventDefault(); setIsSaving(true);
+                try {
+                    const validImages = editImages.map(u => u.trim()).filter(Boolean);
+                    const pRef = window.fb.doc(db, 'artifacts', appId, 'public', 'data', 'players', player.id);
+                    await window.fb.updateDoc(pRef, { name: editName.trim(), nationality: editNationality, imageUrl: validImages[0] || '', images: validImages });
+                    setIsEditing(false);
+                } catch (err) { console.error(err); }
+                setIsSaving(false);
+            };
+
+            const handleDelete = async () => {
+                try { await window.fb.deleteDoc(window.fb.doc(db, 'artifacts', appId, 'public', 'data', 'players', player.id)); onBack(); } 
+                catch (err) { console.error(err); }
+            };
+
+            const matchHistory = useMemo(() => {
+                let matches = [];
+                tournaments.forEach(t => t.bracket.forEach((round, rIdx) => round.forEach(m => {
+                    if ((m.p1 === player.id || m.p2 === player.id) && m.winner) {
+                        matches.push({ tournamentName: t.name, roundName: ROUND_NAMES[rIdx], opponentId: m.p1 === player.id ? m.p2 : m.p1, isWin: m.winner === player.id, type: m.type, date: t.completedAt || t.createdAt });
+                    }
+                })));
+                return matches.sort((a,b) => b.date - a.date);
+            }, [player.id, tournaments]);
+
+            return (
+                <div className="max-w-4xl mx-auto space-y-6 pb-20">
+                    <button onClick={onBack} className="flex items-center gap-2 text-slate-400 hover:text-white"><ArrowLeft size={16}/> Back</button>
+                    {isEditing ? (
+                        <form onSubmit={handleUpdate} className="bg-slate-800 rounded-2xl p-8 space-y-4">
+                            <div className="grid md:grid-cols-2 gap-4">
+                                <input type="text" className="bg-slate-900 p-3 rounded-lg" value={editName} onChange={e => setEditName(e.target.value)} />
+                                <CountrySelect value={editNationality} onChange={setEditNationality} />
+                            </div>
+                            <div className="grid md:grid-cols-3 gap-4">
+                                {editImages.map((u, i) => <input key={i} className="bg-slate-900 p-3 rounded-lg" value={u} onChange={e => { const ni = [...editImages]; ni[i] = e.target.value; setEditImages(ni); }} />)}
+                            </div>
+                            <div className="flex justify-between">
+                                <button type="button" onClick={() => setShowDelete(true)} className="text-red-500 font-bold">Delete Player</button>
+                                <button type="submit" className="bg-blue-600 px-6 py-2 rounded-lg">Save</button>
+                            </div>
+                            {showDelete && <div className="mt-4 p-4 border border-red-500 bg-red-500/10 rounded flex justify-between items-center"><span>Are you sure?</span><div className="flex gap-2"><button type="button" onClick={handleDelete} className="bg-red-500 px-4 py-1 rounded">Yes</button><button type="button" onClick={() => setShowDelete(false)}>No</button></div></div>}
+                        </form>
+                    ) : (
+                        <>
+                            <div className="bg-slate-800 rounded-2xl p-8 border border-slate-700 flex flex-col md:flex-row gap-8 relative">
+                                <button onClick={() => setIsEditing(true)} className="absolute top-4 right-4 bg-slate-900 p-2 rounded-lg border border-slate-700"><Edit2 size={16}/></button>
+                                <img src={player.images?.[0] || player.imageUrl} className="w-32 h-48 md:w-40 md:h-56 rounded-lg object-cover border-4 border-slate-600" />
+                                <div className="flex-1">
+                                    <h1 className="text-4xl font-bold">{player.name}</h1>
+                                    <p className="text-xl text-blue-400 my-4">{getFlag(player.nationality)} {getCountryName(player.nationality)}</p>
+                                    <div className="flex gap-4">
+                                        <div className="bg-blue-900/30 p-4 rounded-lg text-center"><div className="text-blue-400 font-bold">Rank</div><div>#{player.rank}</div></div>
+                                        <div className="bg-slate-900/50 p-4 rounded-lg text-center"><div>Points</div><div>{player.points}</div></div>
+                                        <div className="bg-slate-900/50 p-4 rounded-lg text-center"><div>W-L</div><div>{player.stats.wins}-{player.stats.losses}</div></div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div className="grid md:grid-cols-2 gap-6">
+                                <div className="bg-slate-800 p-6 rounded-xl">
+                                    <h2 className="text-xl font-bold mb-4 flex items-center gap-2"><Star className="text-yellow-500"/> Scoring Tournaments</h2>
+                                    <div className="space-y-2">{player.recentTournaments.map((t, i) => (<div key={i} className="flex justify-between p-3 bg-slate-900/50 rounded-lg"><div>{t.tournamentName}</div><div className="font-bold">+{t.points}</div></div>))}</div>
+                                </div>
+                                <div className="bg-slate-800 p-6 rounded-xl">
+                                    <h2 className="text-xl font-bold mb-4 flex items-center gap-2"><History className="text-blue-400"/> Match History</h2>
+                                    <div className="space-y-2">{matchHistory.map((m, i) => (<div key={i} className={`p-3 rounded-lg border ${m.isWin ? 'border-green-500/30' : 'border-red-500/30'}`}><div>{m.tournamentName} • {m.roundName}</div><div className={m.isWin ? 'text-green-400' : 'text-red-400'}>{m.isWin ? 'W' : 'L'} vs Opponent</div></div>))}</div>
+                                </div>
+                                {player.images?.length > 1 && (
+                                    <div className="md:col-span-2 bg-slate-800 p-6 rounded-xl">
+                                        <h2 className="text-xl font-bold mb-4">Gallery</h2>
+                                        <div className="flex gap-4 overflow-x-auto pb-4">{player.images.map((img, i) => <img key={i} src={img} className="w-48 h-64 object-cover rounded-lg border-2 border-slate-600" />)}</div>
+                                    </div>
+                                )}
+                            </div>
+                        </>
+                    )}
+                </div>
+            );
+        }
+
+        function TournamentsView({ tournaments, onSelect, onCreate }) {
+            return (
+                <div className="max-w-5xl mx-auto space-y-6">
+                    <div className="flex justify-between items-center"><h1 className="text-3xl font-bold">Tournaments</h1><button onClick={onCreate} className="bg-blue-600 px-6 py-2 rounded-lg flex items-center gap-2 font-bold"><Plus size={20}/> New</button></div>
+                    <div className="grid md:grid-cols-3 gap-6">{tournaments.sort((a,b) => b.createdAt - a.createdAt).map(t => (
+                        <div key={t.id} onClick={() => onSelect(t.id)} className="bg-slate-800 p-6 rounded-xl border border-slate-700 hover:border-blue-500 cursor-pointer">
+                            <h3 className="font-bold text-xl mb-4 truncate">{t.name}</h3>
+                            <div className="text-slate-400 text-sm">{t.selectedPlayers?.length} Participants • {new Date(t.createdAt).toLocaleDateString()}</div>
+                            <div className={`mt-4 text-xs font-bold uppercase ${t.status === 'completed' ? 'text-green-400' : 'text-blue-400'}`}>{t.status}</div>
+                        </div>
+                    ))}</div>
+                </div>
+            );
+        }
+
+        function CreateTournamentView({ players, onBack, onSuccess, db, appId }) {
+            const [name, setName] = useState('');
+            const [selectedWildcards, setSelectedWildcards] = useState([]);
+            const [isGenerating, setIsGenerating] = useState(false);
+            const autoQualifiers = players.slice(0, 24);
+            const remainingPlayers = players.slice(24);
+            const toggleWildcard = (id) => {
+                if (selectedWildcards.includes(id)) setSelectedWildcards(selectedWildcards.filter(wId => wId !== id));
+                else if (selectedWildcards.length < 8) setSelectedWildcards([...selectedWildcards, id]);
+            };
+            const handleCreate = async () => {
+                if (!name.trim() || autoQualifiers.length + selectedWildcards.length !== 32) return;
+                setIsGenerating(true);
+                try {
+                    const selected = [...autoQualifiers, ...remainingPlayers.filter(p => selectedWildcards.includes(p.id))].sort((a,b) => a.rank - b.rank);
+                    const bracket = generate32Draw(selected);
+                    const docRef = await window.fb.addDoc(window.fb.collection(db, 'artifacts', appId, 'public', 'data', 'tournaments'), { name, status: 'active', createdAt: Date.now(), selectedPlayers: selected.map(p => p.id), bracket: JSON.stringify(bracket) });
+                    onSuccess(docRef.id);
+                } catch (err) { console.error(err); }
+                setIsGenerating(false);
+            };
+            if (players.length < 32) return <div className="text-center py-20"><Shield size={64} className="mx-auto mb-4 text-red-400"/><h2>Need 32 Players (Current: {players.length})</h2><button onClick={onBack} className="mt-4 bg-slate-700 px-4 py-2 rounded">Back</button></div>;
+            return (
+                <div className="max-w-4xl mx-auto space-y-8 pb-20">
+                    <button onClick={onBack} className="flex items-center gap-2 text-slate-400"><ArrowLeft size={16}/> Back</button>
+                    <div className="bg-slate-800 p-6 rounded-xl border border-slate-700">
+                        <h1 className="text-2xl font-bold mb-6">Create 32-Player Tournament</h1>
+                        <input type="text" className="w-full bg-slate-900 p-3 rounded-lg mb-8" placeholder="Tournament Name..." value={name} onChange={e => setName(e.target.value)} />
+                        <div className="grid md:grid-cols-2 gap-8">
+                            <div><h3 className="font-bold mb-4">Auto Qualifiers (Top 24)</h3><div className="bg-slate-900 rounded-lg p-2 h-80 overflow-y-auto space-y-1">{autoQualifiers.map(p => <div key={p.id} className="p-2 opacity-60 text-sm">#{p.rank} {getFlag(p.nationality)} {p.name}</div>)}</div></div>
+                            <div><h3 className="font-bold mb-4">Wildcards ({selectedWildcards.length}/8)</h3><div className="bg-slate-900 rounded-lg p-2 h-80 overflow-y-auto space-y-1">{remainingPlayers.map(p => { const isS = selectedWildcards.includes(p.id); return <div key={p.id} onClick={() => toggleWildcard(p.id)} className={`p-2 rounded cursor-pointer ${isS ? 'bg-blue-600/30 border border-blue-500/50' : 'hover:bg-slate-800'}`}>#{p.rank} {getFlag(p.nationality)} {p.name}</div> })}</div></div>
+                        </div>
+                        <div className="mt-8 flex justify-end"><button onClick={handleCreate} disabled={isGenerating} className="bg-blue-600 px-8 py-3 rounded-lg font-bold flex items-center gap-2"><Play size={20}/> {isGenerating ? 'Generating...' : 'Start Tournament'}</button></div>
+                    </div>
+                </div>
+            );
+        }
+
+        function TournamentBracket({ tournament, players, onBack, db, appId }) {
+            const [resolvingMatch, setResolvingMatch] = useState(null);
+            const [p1ImgIdx, setP1ImgIdx] = useState(0);
+            const [p2ImgIdx, setP2ImgIdx] = useState(0);
+            useEffect(() => { setP1ImgIdx(0); setP2ImgIdx(0); }, [resolvingMatch]);
+            const getPlayer = (id) => players.find(p => p.id === id) || { name: 'TBD', rank: '-', nationality: 'UNK' };
+            const getImages = (p) => p.images || [p.imageUrl];
+            const handleMatchClick = (rIdx, mIdx, match) => { if (tournament.status === 'completed' || !match.p1 || !match.p2 || match.winner) return; setResolvingMatch({ roundIndex: rIdx, matchIndex: mIdx, ...match }); };
+            const submitResult = async (winnerId, type) => {
+                const newBracket = JSON.parse(JSON.stringify(tournament.bracket));
+                const { roundIndex: rIdx, matchIndex: mIdx } = resolvingMatch;
+                newBracket[rIdx][mIdx].winner = winnerId; newBracket[rIdx][mIdx].type = type;
+                if (rIdx < 4) { const nRIdx = rIdx + 1; const nMIdx = Math.floor(mIdx / 2); if (mIdx % 2 === 0) newBracket[nRIdx][nMIdx].p1 = winnerId; else newBracket[nRIdx][nMIdx].p2 = winnerId; }
+                const tRef = window.fb.doc(db, 'artifacts', appId, 'public', 'data', 'tournaments', tournament.id);
+                let newStatus = tournament.status; let completedAt = tournament.completedAt;
+                if (rIdx === 4) { newStatus = 'completed'; completedAt = Date.now(); }
+                await window.fb.updateDoc(tRef, { bracket: JSON.stringify(newBracket), status: newStatus, completedAt: completedAt || null });
+                setResolvingMatch(null);
+            };
+
+            return (
+                <div className="h-full flex flex-col pb-20">
+                    <div className="flex justify-between items-center mb-6">
+                        <button onClick={onBack} className="flex items-center gap-2 text-slate-400"><ArrowLeft size={16}/> Back</button>
+                        <h1 className="text-2xl font-bold">{tournament.name} {tournament.status === 'completed' && <span className="text-green-400 text-sm ml-2">COMPLETE</span>}</h1>
+                    </div>
+                    <div className="flex-1 overflow-auto bg-slate-800/50 border border-slate-700 rounded-xl p-8 min-h-[800px] bracket-container">
+                        <div className="flex min-w-max h-full">
+                            {tournament.bracket.map((round, rIdx) => (
+                                <div key={rIdx} className="flex flex-col w-64 shrink-0 mr-12 h-full">
+                                    <div className="text-center text-slate-500 font-bold text-sm uppercase mb-4">{ROUND_NAMES[rIdx]}</div>
+                                    <div className="flex-1 flex flex-col">
+                                        {round.map((match, mIdx) => {
+                                            const p1 = getPlayer(match.p1), p2 = getPlayer(match.p2);
+                                            const isReady = match.p1 && match.p2 && !match.winner && tournament.status !== 'completed';
+                                            return (
+                                                <div key={match.id} className="flex-1 flex flex-col justify-center relative py-2">
+                                                    <div onClick={() => handleMatchClick(rIdx, mIdx, match)} className={`relative z-10 bg-slate-800 border-2 rounded-lg transition-all ${isReady ? 'border-blue-500 cursor-pointer hover:scale-105' : match.winner ? 'border-slate-600' : 'border-slate-700/50 opacity-60'}`}>
+                                                        <div className={`p-2 flex justify-between border-b border-slate-700/50 ${match.winner === match.p1 ? 'bg-slate-700/50' : ''}`}><span className="text-xs truncate">{getFlag(p1.nationality)} {p1.name}</span>{match.winner === match.p1 && <CheckCircle size={14} className="text-green-500"/>}</div>
+                                                        <div className={`p-2 flex justify-between ${match.winner === match.p2 ? 'bg-slate-700/50' : ''}`}><span className="text-xs truncate">{getFlag(p2.nationality)} {p2.name}</span>{match.winner === match.p2 && <CheckCircle size={14} className="text-green-500"/>}</div>
+                                                    </div>
+                                                    {rIdx > 0 && <div className="absolute -left-6 top-1/2 w-6 border-t-2 border-slate-600"></div>}
+                                                    {rIdx < 4 && <div className="absolute -right-6 top-1/2 w-6 border-t-2 border-slate-600"></div>}
+                                                    {rIdx < 4 && mIdx % 2 === 0 && <div className="absolute -right-6 top-1/2 w-[2px] bg-slate-600" style={{ height: '100%' }}></div>}
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                    {resolvingMatch && (
+                        <div className="fixed inset-0 bg-black/90 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+                            <div className="bg-slate-800 rounded-2xl p-6 w-full max-w-4xl border border-slate-700 overflow-y-auto max-h-[95vh]">
+                                <h2 className="text-2xl font-bold mb-8 text-center uppercase tracking-widest">Matchup Decision</h2>
+                                <div className="flex flex-col md:flex-row gap-8 relative items-stretch">
+                                    <div className="hidden md:flex absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-slate-900 border-2 border-slate-700 w-12 h-12 rounded-full items-center justify-center font-black text-slate-400 z-10">VS</div>
+                                    {[resolvingMatch.p1, resolvingMatch.p2].map((pid, idx) => {
+                                        const p = getPlayer(pid), imgs = getImages(p);
+                                        const iIdx = idx === 0 ? p1ImgIdx : p2ImgIdx, setIIdx = idx === 0 ? setP1ImgIdx : setP2ImgIdx;
+                                        return (
+                                            <div key={idx} className="flex-1 bg-slate-700/30 border border-slate-700 rounded-xl p-6 flex flex-col items-center">
+                                                <div className="relative group w-full max-w-[280px] mb-4">
+                                                    <img src={imgs[iIdx] || "https://via.placeholder.com/300x400"} className="w-full aspect-[3/4] rounded-xl object-cover border-4 border-slate-600 shadow-2xl" />
+                                                    {imgs.length > 1 && (
+                                                        <><button onClick={() => setIIdx(prev => (prev === 0 ? imgs.length-1 : prev-1))} className="absolute left-2 top-1/2 -translate-y-1/2 bg-black/50 p-2 rounded-full opacity-0 group-hover:opacity-100"><ChevronLeft size={20}/></button>
+                                                        <button onClick={() => setIIdx(prev => (prev === imgs.length-1 ? 0 : prev+1))} className="absolute right-2 top-1/2 -translate-y-1/2 bg-black/50 p-2 rounded-full opacity-0 group-hover:opacity-100"><ChevronRight size={20}/></button></>
+                                                    )}
+                                                </div>
+                                                <h3 className="text-2xl font-bold uppercase">{p.name}</h3>
+                                                <div className="text-blue-400 mb-6">{getFlag(p.nationality)} {getCountryName(p.nationality)}</div>
+                                                <div className="w-full space-y-3 mt-auto">
+                                                    <button onClick={() => submitResult(pid, 'close')} className="w-full bg-orange-500/20 text-orange-400 border border-orange-500/50 p-3 rounded-lg font-bold">Close Match</button>
+                                                    <button onClick={() => submitResult(pid, 'lopsided')} className="w-full bg-purple-500/20 text-purple-400 border border-purple-500/50 p-3 rounded-lg font-bold">Lopsided Win</button>
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                                <button onClick={() => setResolvingMatch(null)} className="mt-8 w-full text-slate-500 hover:text-white transition-colors">Cancel Resolution</button>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            );
+        }
+
+        // --- Main App Logic ---
+
+        function App() {
+            const [user, setUser] = useState(null);
+            const [db, setDb] = useState(null);
+            const [activeTab, setActiveTab] = useState('dashboard');
+            const [playersRaw, setPlayersRaw] = useState([]);
+            const [tournaments, setTournaments] = useState([]);
+            const [loading, setLoading] = useState(true);
+            const [selectedPlayerId, setSelectedPlayerId] = useState(null);
+            const [selectedTournamentId, setSelectedTournamentId] = useState(null);
+
+            useEffect(() => {
+                if (!window.fb) return;
+                const fbApp = window.fb.initializeApp(firebaseConfig);
+                const auth = window.fb.getAuth(fbApp);
+                const firestore = window.fb.getFirestore(fbApp);
+                setDb(firestore);
+                window.fb.signInAnonymously(auth).catch(console.error);
+                window.fb.onAuthStateChanged(auth, setUser);
+            }, []);
+
+            useEffect(() => {
+                if (!user || !db) return;
+                const pRef = window.fb.collection(db, 'artifacts', appId, 'public', 'data', 'players');
+                const tRef = window.fb.collection(db, 'artifacts', appId, 'public', 'data', 'tournaments');
+                const unsubP = window.fb.onSnapshot(pRef, snap => setPlayersRaw(snap.docs.map(d => ({ id: d.id, ...d.data() }))));
+                const unsubT = window.fb.onSnapshot(tRef, snap => { setTournaments(snap.docs.map(d => { const dt = d.data(); let b = []; try { b = typeof dt.bracket === 'string' ? JSON.parse(dt.bracket) : dt.bracket; } catch(e){} return { id: d.id, ...dt, bracket: b }; })); setLoading(false); });
+                return () => { unsubP(); unsubT(); };
+            }, [user, db]);
+
+            const players = useMemo(() => calculatePlayerRankings(playersRaw, tournaments), [playersRaw, tournaments]);
+            const navigateTo = (tab) => { setActiveTab(tab); setSelectedPlayerId(null); setSelectedTournamentId(null); };
+
+            if (!user || loading) return <div className="min-screen flex items-center justify-center bg-slate-900 text-slate-100 h-screen w-full"><div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div></div>;
+
+            return (
+                <div className="min-h-screen bg-slate-900 text-slate-100 flex font-sans overflow-hidden">
+                    <nav className="w-64 bg-slate-800 border-r border-slate-700 flex flex-col hidden md:flex shrink-0">
+                        <div className="p-6 border-b border-slate-700 flex items-center gap-2 text-xl font-bold text-blue-400"><Trophy size={24}/><span>ProRank ATP</span></div>
+                        <div className="flex-1 py-4">
+                            <button onClick={() => navigateTo('dashboard')} className={`w-full flex items-center gap-3 px-6 py-3 transition-colors ${activeTab === 'dashboard' ? 'bg-blue-600/20 text-blue-400 border-r-4 border-blue-500' : 'text-slate-300 hover:bg-slate-700/50'}`}><Activity size={18}/>Dashboard</button>
+                            <button onClick={() => navigateTo('players')} className={`w-full flex items-center gap-3 px-6 py-3 transition-colors ${activeTab === 'players' ? 'bg-blue-600/20 text-blue-400 border-r-4 border-blue-500' : 'text-slate-300 hover:bg-slate-700/50'}`}><Users size={18}/>Players</button>
+                            <button onClick={() => navigateTo('nations')} className={`w-full flex items-center gap-3 px-6 py-3 transition-colors ${activeTab === 'nations' ? 'bg-blue-600/20 text-blue-400 border-r-4 border-blue-500' : 'text-slate-300 hover:bg-slate-700/50'}`}><Globe size={18}/>Nations</button>
+                            <button onClick={() => navigateTo('tournaments')} className={`w-full flex items-center gap-3 px-6 py-3 transition-colors ${activeTab === 'tournaments' ? 'bg-blue-600/20 text-blue-400 border-r-4 border-blue-500' : 'text-slate-300 hover:bg-slate-700/50'}`}><Swords size={18}/>Tournaments</button>
+                        </div>
+                    </nav>
+                    <main className="flex-1 flex flex-col overflow-hidden">
+                        <div className="md:hidden bg-slate-800 p-4 flex justify-between items-center"><div className="flex items-center gap-2 font-bold text-blue-400"><Trophy size={20}/><span>ProRank</span></div><div className="flex gap-4"><button onClick={() => navigateTo('dashboard')}><Activity/></button><button onClick={() => navigateTo('players')}><Users/></button><button onClick={() => navigateTo('tournaments')}><Swords/></button></div></div>
+                        <div className="flex-1 overflow-auto p-4 md:p-8">
+                            {activeTab === 'dashboard' && <DashboardView players={players} />}
+                            {activeTab === 'nations' && <NationsView players={players} />}
+                            {activeTab === 'players' && !selectedPlayerId && <PlayersView players={players} onSelectPlayer={setSelectedPlayerId} db={db} appId={appId} />}
+                            {activeTab === 'players' && selectedPlayerId && <PlayerProfile player={players.find(p => p.id === selectedPlayerId)} onBack={() => setSelectedPlayerId(null)} tournaments={tournaments} db={db} appId={appId} />}
+                            {activeTab === 'tournaments' && !selectedTournamentId && <TournamentsView tournaments={tournaments} onSelect={setSelectedTournamentId} onCreate={() => setActiveTab('create_tournament')} />}
+                            {activeTab === 'tournaments' && selectedTournamentId && <TournamentBracket tournament={tournaments.find(t => t.id === selectedTournamentId)} players={players} onBack={() => setSelectedTournamentId(null)} db={db} appId={appId} />}
+                            {activeTab === 'create_tournament' && <CreateTournamentView players={players} onBack={() => navigateTo('tournaments')} onSuccess={id => { navigateTo('tournaments'); setSelectedTournamentId(id); }} db={db} appId={appId} />}
+                        </div>
+                    </main>
+                </div>
+            );
+        }
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
