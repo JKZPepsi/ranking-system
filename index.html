@@ -80,7 +80,7 @@
             { code: 'PAN', name: 'Panama', flag: '🇵🇦' },
             { code: 'PUR', name: 'Puerto Rico', flag: '🇵🇷' },
             { code: 'USA', name: 'United States', flag: '🇺🇸' },
-            
+
             // South America
             { code: 'ARG', name: 'Argentina', flag: '🇦🇷' },
             { code: 'BOL', name: 'Bolivia', flag: '🇧🇴' },
@@ -92,7 +92,7 @@
             { code: 'PER', name: 'Peru', flag: '🇵🇪' },
             { code: 'URU', name: 'Uruguay', flag: '🇺🇾' },
             { code: 'VEN', name: 'Venezuela', flag: '🇻🇪' },
-            
+
             // Europe
             { code: 'ALB', name: 'Albania', flag: '🇦🇱' },
             { code: 'AUT', name: 'Austria', flag: '🇦🇹' },
@@ -126,7 +126,7 @@
             { code: 'SWE', name: 'Sweden', flag: '🇸🇪' },
             { code: 'SUI', name: 'Switzerland', flag: '🇨🇭' },
             { code: 'UKR', name: 'Ukraine', flag: '🇺🇦' },
-            
+
             // Asia
             { code: 'AFG', name: 'Afghanistan', flag: '🇦🇫' },
             { code: 'CHN', name: 'China', flag: '🇨🇳' },
@@ -148,7 +148,7 @@
             { code: 'TUR', name: 'Turkey', flag: '🇹🇷' },
             { code: 'UAE', name: 'United Arab Emirates', flag: '🇦🇪' },
             { code: 'VIE', name: 'Vietnam', flag: '🇻🇳' },
-            
+
             // Africa
             { code: 'ALG', name: 'Algeria', flag: '🇩🇿' },
             { code: 'ANG', name: 'Angola', flag: '🇦🇴' },
@@ -161,13 +161,13 @@
             { code: 'SEN', name: 'Senegal', flag: '🇸🇳' },
             { code: 'RSA', name: 'South Africa', flag: '🇿🇦' },
             { code: 'TUN', name: 'Tunisia', flag: '🇹🇳' },
-            
+
             // Oceania
             { code: 'AUS', name: 'Australia', flag: '🇦🇺' },
             { code: 'FIJ', name: 'Fiji', flag: '🇫🇯' },
             { code: 'NZL', name: 'New Zealand', flag: '🇳🇿' },
             { code: 'PNG', name: 'Papua New Guinea', flag: '🇵🇬' },
-            
+
             // System
             { code: 'UNK', name: 'Unknown', flag: '🏳️' }
         ];
@@ -177,21 +177,13 @@
 
         // Replace with YOUR Firebase config if running outside preview
         const firebaseConfig = {
-
-  apiKey: "AIzaSyDHfnWgaeNG2-lZBSmPpa8JdZgUHNPMh4w",
-
-  authDomain: "prorank-7b6b3.firebaseapp.com",
-
-  projectId: "prorank-7b6b3",
-
-  storageBucket: "prorank-7b6b3.firebasestorage.app",
-
-  messagingSenderId: "991950932964",
-
-  appId: "1:991950932964:web:db0346d0aa7d23b5ac55f1"
-
-};
-
+            apiKey: "AIzaSyDHfnWgaeNG2-lZBSmPpa8JdZgUHNPMh4w",
+            authDomain: "prorank-7b6b3.firebaseapp.com",
+            projectId: "prorank-7b6b3",
+            storageBucket: "prorank-7b6b3.firebasestorage.app",
+            messagingSenderId: "991950932964",
+            appId: "1:991950932964:web:db0346d0aa7d23b5ac55f1"
+        };
 
         const appId = 'pro-rank-global';
 
@@ -210,6 +202,7 @@
                 for (const t of completedTournaments) {
                     if (recentTournaments.length >= 10) break;
                     let pointsForTournament = 0, playedInTournament = false, highestRound = -1, wonFinal = false;
+                    const totalRounds = t.bracket.length;
 
                     t.bracket.forEach((round, roundIndex) => {
                         round.forEach(match => {
@@ -218,7 +211,7 @@
                                 if (roundIndex > highestRound) highestRound = roundIndex;
                                 if (match.winner === player.id) {
                                     w++;
-                                    if (roundIndex === 4) wonFinal = true;
+                                    if (roundIndex === totalRounds - 1) wonFinal = true;
                                 } else if (match.winner && match.winner !== player.id) l++;
                             }
                         });
@@ -226,14 +219,15 @@
 
                     if (playedInTournament) {
                         if (wonFinal) pointsForTournament = POINTS.WINNER;
-                        else if (highestRound === 4) pointsForTournament = POINTS.FINALIST;
-                        else if (highestRound === 3) pointsForTournament = POINTS.SF;
-                        else if (highestRound === 2) pointsForTournament = POINTS.QF;
-                        else if (highestRound === 1) pointsForTournament = POINTS.R16;
-                        else if (highestRound === 0) pointsForTournament = POINTS.R32;
+                        else if (highestRound === totalRounds - 1) pointsForTournament = POINTS.FINALIST;
+                        else if (highestRound === totalRounds - 2) pointsForTournament = POINTS.SF;
+                        else if (highestRound === totalRounds - 3) pointsForTournament = POINTS.QF;
+                        else if (highestRound === totalRounds - 4) pointsForTournament = POINTS.R16;
+                        else if (highestRound === totalRounds - 5) pointsForTournament = POINTS.R32;
 
                         totalPoints += pointsForTournament;
-                        recentTournaments.push({ tournamentId: t.id, tournamentName: t.name, points: pointsForTournament, result: wonFinal ? 'Winner' : ROUND_NAMES[highestRound] });
+                        const rOffset = 5 - totalRounds;
+                        recentTournaments.push({ tournamentId: t.id, tournamentName: t.name, points: pointsForTournament, result: wonFinal ? 'Winner' : ROUND_NAMES[highestRound + rOffset] });
                     }
                 }
                 return { ...player, points: totalPoints, recentTournaments, stats: { wins: w, losses: l } };
@@ -254,6 +248,28 @@
             bracket.push(r32);
             let matchesInRound = 8;
             for (let r = 1; r < 5; r++) {
+                const roundMatches = [];
+                for (let i = 0; i < matchesInRound; i++) roundMatches.push({ id: `r${r}-m${i}`, p1: null, p2: null, winner: null, type: null });
+                bracket.push(roundMatches);
+                matchesInRound /= 2;
+            }
+            return bracket;
+        };
+
+        const generate16Draw = (selectedPlayers) => {
+            const draw = new Array(16).fill(null);
+            const seeds = selectedPlayers.slice(0, 4);
+            const others = selectedPlayers.slice(4).sort(() => Math.random() - 0.5);
+            const seedSlots = [0, 15, 7, 8]; // Top 4 seeds spacing
+            seeds.forEach((seed, i) => { if (seedSlots[i] !== undefined) draw[seedSlots[i]] = seed; });
+            let otherIndex = 0;
+            for (let i = 0; i < 16; i++) { if (!draw[i]) draw[i] = others[otherIndex++]; }
+            const bracket = [];
+            const r16 = [];
+            for (let i = 0; i < 8; i++) r16.push({ id: `r0-m${i}`, p1: draw[i * 2]?.id || null, p2: draw[i * 2 + 1]?.id || null, winner: null, type: null });
+            bracket.push(r16);
+            let matchesInRound = 4;
+            for (let r = 1; r < 4; r++) {
                 const roundMatches = [];
                 for (let i = 0; i < matchesInRound; i++) roundMatches.push({ id: `r${r}-m${i}`, p1: null, p2: null, winner: null, type: null });
                 bracket.push(roundMatches);
@@ -479,7 +495,8 @@
                 let matches = [];
                 tournaments.forEach(t => t.bracket.forEach((round, rIdx) => round.forEach(m => {
                     if ((m.p1 === player.id || m.p2 === player.id) && m.winner) {
-                        matches.push({ tournamentName: t.name, roundName: ROUND_NAMES[rIdx], opponentId: m.p1 === player.id ? m.p2 : m.p1, isWin: m.winner === player.id, type: m.type, date: t.completedAt || t.createdAt });
+                        const rOffset = 5 - t.bracket.length;
+                        matches.push({ tournamentName: t.name, roundName: ROUND_NAMES[rIdx + rOffset], opponentId: m.p1 === player.id ? m.p2 : m.p1, isWin: m.winner === player.id, type: m.type, date: t.completedAt || t.createdAt });
                     }
                 })));
                 return matches.sort((a,b) => b.date - a.date);
@@ -557,37 +574,53 @@
 
         function CreateTournamentView({ players, onBack, onSuccess, db, appId }) {
             const [name, setName] = useState('');
+            const [size, setSize] = useState(32);
             const [selectedWildcards, setSelectedWildcards] = useState([]);
             const [isGenerating, setIsGenerating] = useState(false);
-            const autoQualifiers = players.slice(0, 24);
-            const remainingPlayers = players.slice(24);
+            
+            const reqAuto = size === 32 ? 24 : 12;
+            const reqWc = size === 32 ? 8 : 4;
+            const autoQualifiers = players.slice(0, reqAuto);
+            const remainingPlayers = players.slice(reqAuto);
+            
             const toggleWildcard = (id) => {
                 if (selectedWildcards.includes(id)) setSelectedWildcards(selectedWildcards.filter(wId => wId !== id));
-                else if (selectedWildcards.length < 8) setSelectedWildcards([...selectedWildcards, id]);
+                else if (selectedWildcards.length < reqWc) setSelectedWildcards([...selectedWildcards, id]);
             };
+            
             const handleCreate = async () => {
-                if (!name.trim() || autoQualifiers.length + selectedWildcards.length !== 32) return;
+                if (!name.trim() || autoQualifiers.length + selectedWildcards.length !== size) return;
                 setIsGenerating(true);
                 try {
                     const selected = [...autoQualifiers, ...remainingPlayers.filter(p => selectedWildcards.includes(p.id))].sort((a,b) => a.rank - b.rank);
-                    const bracket = generate32Draw(selected);
+                    const bracket = size === 32 ? generate32Draw(selected) : generate16Draw(selected);
                     const docRef = await window.fb.addDoc(window.fb.collection(db, 'artifacts', appId, 'public', 'data', 'tournaments'), { name, status: 'active', createdAt: Date.now(), selectedPlayers: selected.map(p => p.id), bracket: JSON.stringify(bracket) });
                     onSuccess(docRef.id);
                 } catch (err) { console.error(err); }
                 setIsGenerating(false);
             };
-            if (players.length < 32) return <div className="text-center py-20"><Shield size={64} className="mx-auto mb-4 text-red-400"/><h2>Need 32 Players (Current: {players.length})</h2><button onClick={onBack} className="mt-4 bg-slate-700 px-4 py-2 rounded">Back</button></div>;
+
+            useEffect(() => { setSelectedWildcards([]); }, [size]);
+
+            if (players.length < 16) return <div className="text-center py-20"><Shield size={64} className="mx-auto mb-4 text-red-400"/><h2>Need at least 16 Players (Current: {players.length})</h2><button onClick={onBack} className="mt-4 bg-slate-700 px-4 py-2 rounded">Back</button></div>;
+            
             return (
                 <div className="max-w-4xl mx-auto space-y-8 pb-20">
                     <button onClick={onBack} className="flex items-center gap-2 text-slate-400"><ArrowLeft size={16}/> Back</button>
                     <div className="bg-slate-800 p-6 rounded-xl border border-slate-700">
-                        <h1 className="text-2xl font-bold mb-6">Create 32-Player Tournament</h1>
-                        <input type="text" className="w-full bg-slate-900 p-3 rounded-lg mb-8" placeholder="Tournament Name..." value={name} onChange={e => setName(e.target.value)} />
-                        <div className="grid md:grid-cols-2 gap-8">
-                            <div><h3 className="font-bold mb-4">Auto Qualifiers (Top 24)</h3><div className="bg-slate-900 rounded-lg p-2 h-80 overflow-y-auto space-y-1">{autoQualifiers.map(p => <div key={p.id} className="p-2 opacity-60 text-sm">#{p.rank} {getFlag(p.nationality)} {p.name}</div>)}</div></div>
-                            <div><h3 className="font-bold mb-4">Wildcards ({selectedWildcards.length}/8)</h3><div className="bg-slate-900 rounded-lg p-2 h-80 overflow-y-auto space-y-1">{remainingPlayers.map(p => { const isS = selectedWildcards.includes(p.id); return <div key={p.id} onClick={() => toggleWildcard(p.id)} className={`p-2 rounded cursor-pointer ${isS ? 'bg-blue-600/30 border border-blue-500/50' : 'hover:bg-slate-800'}`}>#{p.rank} {getFlag(p.nationality)} {p.name}</div> })}</div></div>
+                        <div className="flex flex-col md:flex-row md:justify-between md:items-center mb-6 gap-4">
+                            <h1 className="text-2xl font-bold">Create Tournament</h1>
+                            <div className="flex bg-slate-900 rounded-lg p-1 border border-slate-700 w-fit">
+                                <button onClick={() => setSize(16)} className={`px-4 py-1.5 rounded-md text-sm font-bold transition-colors ${size === 16 ? 'bg-blue-600 text-white' : 'text-slate-400 hover:text-white'}`}>16 Players</button>
+                                <button onClick={() => setSize(32)} disabled={players.length < 32} className={`px-4 py-1.5 rounded-md text-sm font-bold transition-colors ${size === 32 ? 'bg-blue-600 text-white' : 'text-slate-400 hover:text-white'} ${players.length < 32 ? 'opacity-50 cursor-not-allowed' : ''}`}>32 Players</button>
+                            </div>
                         </div>
-                        <div className="mt-8 flex justify-end"><button onClick={handleCreate} disabled={isGenerating} className="bg-blue-600 px-8 py-3 rounded-lg font-bold flex items-center gap-2"><Play size={20}/> {isGenerating ? 'Generating...' : 'Start Tournament'}</button></div>
+                        <input type="text" className="w-full bg-slate-900 p-3 rounded-lg mb-8 border border-slate-700" placeholder="Tournament Name..." value={name} onChange={e => setName(e.target.value)} />
+                        <div className="grid md:grid-cols-2 gap-8">
+                            <div><h3 className="font-bold mb-4">Auto Qualifiers (Top {reqAuto})</h3><div className="bg-slate-900 rounded-lg p-2 h-80 overflow-y-auto space-y-1">{autoQualifiers.map(p => <div key={p.id} className="p-2 opacity-60 text-sm flex items-center justify-between"><span>#{p.rank} {getFlag(p.nationality)} {p.name}</span><CheckCircle size={14} className="text-slate-500" /></div>)}</div></div>
+                            <div><h3 className="font-bold mb-4">Wildcards ({selectedWildcards.length}/{reqWc})</h3><div className="bg-slate-900 rounded-lg p-2 h-80 overflow-y-auto space-y-1">{remainingPlayers.map(p => { const isS = selectedWildcards.includes(p.id); return <div key={p.id} onClick={() => toggleWildcard(p.id)} className={`p-2 rounded cursor-pointer flex justify-between items-center ${isS ? 'bg-blue-600/30 border border-blue-500/50' : 'hover:bg-slate-800'}`}><span>#{p.rank} {getFlag(p.nationality)} {p.name}</span>{isS && <CheckCircle size={14} className="text-blue-400" />}</div> })}</div></div>
+                        </div>
+                        <div className="mt-8 flex justify-end"><button onClick={handleCreate} disabled={isGenerating || selectedWildcards.length !== reqWc || !name.trim()} className="bg-blue-600 px-8 py-3 rounded-lg font-bold flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"><Play size={20}/> {isGenerating ? 'Generating...' : 'Start Tournament'}</button></div>
                     </div>
                 </div>
             );
@@ -601,14 +634,18 @@
             const getPlayer = (id) => players.find(p => p.id === id) || { name: 'TBD', rank: '-', nationality: 'UNK' };
             const getImages = (p) => p.images || [p.imageUrl];
             const handleMatchClick = (rIdx, mIdx, match) => { if (tournament.status === 'completed' || !match.p1 || !match.p2 || match.winner) return; setResolvingMatch({ roundIndex: rIdx, matchIndex: mIdx, ...match }); };
+            
+            const totalRounds = tournament.bracket.length;
+            const rOffset = 5 - totalRounds;
+
             const submitResult = async (winnerId, type) => {
                 const newBracket = JSON.parse(JSON.stringify(tournament.bracket));
                 const { roundIndex: rIdx, matchIndex: mIdx } = resolvingMatch;
                 newBracket[rIdx][mIdx].winner = winnerId; newBracket[rIdx][mIdx].type = type;
-                if (rIdx < 4) { const nRIdx = rIdx + 1; const nMIdx = Math.floor(mIdx / 2); if (mIdx % 2 === 0) newBracket[nRIdx][nMIdx].p1 = winnerId; else newBracket[nRIdx][nMIdx].p2 = winnerId; }
+                if (rIdx < totalRounds - 1) { const nRIdx = rIdx + 1; const nMIdx = Math.floor(mIdx / 2); if (mIdx % 2 === 0) newBracket[nRIdx][nMIdx].p1 = winnerId; else newBracket[nRIdx][nMIdx].p2 = winnerId; }
                 const tRef = window.fb.doc(db, 'artifacts', appId, 'public', 'data', 'tournaments', tournament.id);
                 let newStatus = tournament.status; let completedAt = tournament.completedAt;
-                if (rIdx === 4) { newStatus = 'completed'; completedAt = Date.now(); }
+                if (rIdx === totalRounds - 1) { newStatus = 'completed'; completedAt = Date.now(); }
                 await window.fb.updateDoc(tRef, { bracket: JSON.stringify(newBracket), status: newStatus, completedAt: completedAt || null });
                 setResolvingMatch(null);
             };
@@ -623,7 +660,7 @@
                         <div className="flex min-w-max h-full">
                             {tournament.bracket.map((round, rIdx) => (
                                 <div key={rIdx} className="flex flex-col w-64 shrink-0 mr-12 h-full">
-                                    <div className="text-center text-slate-500 font-bold text-sm uppercase mb-4">{ROUND_NAMES[rIdx]}</div>
+                                    <div className="text-center text-slate-500 font-bold text-sm uppercase mb-4">{ROUND_NAMES[rIdx + rOffset]}</div>
                                     <div className="flex-1 flex flex-col">
                                         {round.map((match, mIdx) => {
                                             const p1 = getPlayer(match.p1), p2 = getPlayer(match.p2);
@@ -635,8 +672,8 @@
                                                         <div className={`p-2 flex justify-between ${match.winner === match.p2 ? 'bg-slate-700/50' : ''}`}><span className="text-xs truncate">{getFlag(p2.nationality)} {p2.name}</span>{match.winner === match.p2 && <CheckCircle size={14} className="text-green-500"/>}</div>
                                                     </div>
                                                     {rIdx > 0 && <div className="absolute -left-6 top-1/2 w-6 border-t-2 border-slate-600"></div>}
-                                                    {rIdx < 4 && <div className="absolute -right-6 top-1/2 w-6 border-t-2 border-slate-600"></div>}
-                                                    {rIdx < 4 && mIdx % 2 === 0 && <div className="absolute -right-6 top-1/2 w-[2px] bg-slate-600" style={{ height: '100%' }}></div>}
+                                                    {rIdx < totalRounds - 1 && <div className="absolute -right-6 top-1/2 w-6 border-t-2 border-slate-600"></div>}
+                                                    {rIdx < totalRounds - 1 && mIdx % 2 === 0 && <div className="absolute -right-6 top-1/2 w-[2px] bg-slate-600" style={{ height: '100%' }}></div>}
                                                 </div>
                                             );
                                         })}
@@ -748,5 +785,4 @@
         root.render(<App />);
     </script>
 </body>
-
 </html>
