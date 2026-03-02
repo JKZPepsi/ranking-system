@@ -66,33 +66,109 @@
         const POINTS = { WINNER: 1000, FINALIST: 600, SF: 360, QF: 180, R16: 90, R32: 45 };
         const ROUND_NAMES = ['Round of 32', 'Round of 16', 'Quarterfinals', 'Semifinals', 'Final'];
         const COUNTRIES = [
-            { code: 'ARG', name: 'Argentina', flag: '🇦🇷' },
-            { code: 'AUS', name: 'Australia', flag: '🇦🇺' },
-            { code: 'AUT', name: 'Austria', flag: '🇦🇹' },
-            { code: 'BRA', name: 'Brazil', flag: '🇧🇷' },
+            // North America & Caribbean
+            { code: 'ATG', name: 'Antigua and Barbuda', flag: '🇦🇬' },
+            { code: 'BHS', name: 'Bahamas', flag: '🇧🇸' },
+            { code: 'BRB', name: 'Barbados', flag: '🇧🇧' },
             { code: 'CAN', name: 'Canada', flag: '🇨🇦' },
-            { code: 'CHN', name: 'China', flag: '🇨🇳' },
+            { code: 'CUB', name: 'Cuba', flag: '🇨🇺' },
+            { code: 'DOM', name: 'Dominican Republic', flag: '🇩🇴' },
+            { code: 'GTM', name: 'Guatemala', flag: '🇬🇹' },
+            { code: 'HTI', name: 'Haiti', flag: '🇭🇹' },
+            { code: 'JAM', name: 'Jamaica', flag: '🇯🇲' },
+            { code: 'MEX', name: 'Mexico', flag: '🇲🇽' },
+            { code: 'PAN', name: 'Panama', flag: '🇵🇦' },
+            { code: 'PUR', name: 'Puerto Rico', flag: '🇵🇷' },
+            { code: 'USA', name: 'United States', flag: '🇺🇸' },
+            
+            // South America
+            { code: 'ARG', name: 'Argentina', flag: '🇦🇷' },
+            { code: 'BOL', name: 'Bolivia', flag: '🇧🇴' },
+            { code: 'BRA', name: 'Brazil', flag: '🇧🇷' },
+            { code: 'CHI', name: 'Chile', flag: '🇨🇱' },
+            { code: 'COL', name: 'Colombia', flag: '🇨🇴' },
+            { code: 'ECU', name: 'Ecuador', flag: '🇪🇨' },
+            { code: 'PAR', name: 'Paraguay', flag: '🇵🇾' },
+            { code: 'PER', name: 'Peru', flag: '🇵🇪' },
+            { code: 'URU', name: 'Uruguay', flag: '🇺🇾' },
+            { code: 'VEN', name: 'Venezuela', flag: '🇻🇪' },
+            
+            // Europe
+            { code: 'ALB', name: 'Albania', flag: '🇦🇱' },
+            { code: 'AUT', name: 'Austria', flag: '🇦🇹' },
+            { code: 'BEL', name: 'Belgium', flag: '🇧🇪' },
+            { code: 'BUL', name: 'Bulgaria', flag: '🇧🇬' },
             { code: 'CRO', name: 'Croatia', flag: '🇭🇷' },
             { code: 'CZE', name: 'Czechia', flag: '🇨🇿' },
             { code: 'DEN', name: 'Denmark', flag: '🇩🇰' },
-            { code: 'ESP', name: 'Spain', flag: '🇪🇸' },
+            { code: 'EST', name: 'Estonia', flag: '🇪🇪' },
+            { code: 'FIN', name: 'Finland', flag: '🇫🇮' },
             { code: 'FRA', name: 'France', flag: '🇫🇷' },
             { code: 'GBR', name: 'Great Britain', flag: '🇬🇧' },
             { code: 'GER', name: 'Germany', flag: '🇩🇪' },
             { code: 'GRE', name: 'Greece', flag: '🇬🇷' },
+            { code: 'HUN', name: 'Hungary', flag: '🇭🇺' },
+            { code: 'IRL', name: 'Ireland', flag: '🇮🇪' },
+            { code: 'ISL', name: 'Iceland', flag: '🇮🇸' },
             { code: 'ITA', name: 'Italy', flag: '🇮🇹' },
-            { code: 'JPN', name: 'Japan', flag: '🇯🇵' },
-            { code: 'MEX', name: 'Mexico', flag: '🇲🇽' },
+            { code: 'LAT', name: 'Latvia', flag: '🇱🇻' },
+            { code: 'LTU', name: 'Lithuania', flag: '🇱🇹' },
             { code: 'NED', name: 'Netherlands', flag: '🇳🇱' },
             { code: 'NOR', name: 'Norway', flag: '🇳🇴' },
             { code: 'POL', name: 'Poland', flag: '🇵🇱' },
             { code: 'POR', name: 'Portugal', flag: '🇵🇹' },
-            { code: 'RSA', name: 'South Africa', flag: '🇿🇦' },
+            { code: 'ROU', name: 'Romania', flag: '🇷🇴' },
             { code: 'RUS', name: 'Russia', flag: '🇷🇺' },
             { code: 'SRB', name: 'Serbia', flag: '🇷🇸' },
-            { code: 'SUI', name: 'Switzerland', flag: '🇨🇭' },
+            { code: 'SVK', name: 'Slovakia', flag: '🇸🇰' },
+            { code: 'SLO', name: 'Slovenia', flag: '🇸🇮' },
+            { code: 'ESP', name: 'Spain', flag: '🇪🇸' },
             { code: 'SWE', name: 'Sweden', flag: '🇸🇪' },
-            { code: 'USA', name: 'United States', flag: '🇺🇸' },
+            { code: 'SUI', name: 'Switzerland', flag: '🇨🇭' },
+            { code: 'UKR', name: 'Ukraine', flag: '🇺🇦' },
+            
+            // Asia
+            { code: 'AFG', name: 'Afghanistan', flag: '🇦🇫' },
+            { code: 'CHN', name: 'China', flag: '🇨🇳' },
+            { code: 'IND', name: 'India', flag: '🇮🇳' },
+            { code: 'IDN', name: 'Indonesia', flag: '🇮🇩' },
+            { code: 'IRI', name: 'Iran', flag: '🇮🇷' },
+            { code: 'IRQ', name: 'Iraq', flag: '🇮🇶' },
+            { code: 'ISR', name: 'Israel', flag: '🇮🇱' },
+            { code: 'JPN', name: 'Japan', flag: '🇯🇵' },
+            { code: 'KAZ', name: 'Kazakhstan', flag: '🇰🇿' },
+            { code: 'KOR', name: 'South Korea', flag: '🇰🇷' },
+            { code: 'MAS', name: 'Malaysia', flag: '🇲🇾' },
+            { code: 'PAK', name: 'Pakistan', flag: '🇵🇰' },
+            { code: 'PHI', name: 'Philippines', flag: '🇵🇭' },
+            { code: 'QAT', name: 'Qatar', flag: '🇶🇦' },
+            { code: 'KSA', name: 'Saudi Arabia', flag: '🇸🇦' },
+            { code: 'SGP', name: 'Singapore', flag: '🇸🇬' },
+            { code: 'THA', name: 'Thailand', flag: '🇹🇭' },
+            { code: 'TUR', name: 'Turkey', flag: '🇹🇷' },
+            { code: 'UAE', name: 'United Arab Emirates', flag: '🇦🇪' },
+            { code: 'VIE', name: 'Vietnam', flag: '🇻🇳' },
+            
+            // Africa
+            { code: 'ALG', name: 'Algeria', flag: '🇩🇿' },
+            { code: 'ANG', name: 'Angola', flag: '🇦🇴' },
+            { code: 'EGY', name: 'Egypt', flag: '🇪🇬' },
+            { code: 'ETH', name: 'Ethiopia', flag: '🇪🇹' },
+            { code: 'GHA', name: 'Ghana', flag: '🇬🇭' },
+            { code: 'KEN', name: 'Kenya', flag: '🇰🇪' },
+            { code: 'MAR', name: 'Morocco', flag: '🇲🇦' },
+            { code: 'NGR', name: 'Nigeria', flag: '🇳🇬' },
+            { code: 'SEN', name: 'Senegal', flag: '🇸🇳' },
+            { code: 'RSA', name: 'South Africa', flag: '🇿🇦' },
+            { code: 'TUN', name: 'Tunisia', flag: '🇹🇳' },
+            
+            // Oceania
+            { code: 'AUS', name: 'Australia', flag: '🇦🇺' },
+            { code: 'FIJ', name: 'Fiji', flag: '🇫🇯' },
+            { code: 'NZL', name: 'New Zealand', flag: '🇳🇿' },
+            { code: 'PNG', name: 'Papua New Guinea', flag: '🇵🇬' },
+            
+            // System
             { code: 'UNK', name: 'Unknown', flag: '🏳️' }
         ];
 
@@ -672,4 +748,5 @@
         root.render(<App />);
     </script>
 </body>
+
 </html>
