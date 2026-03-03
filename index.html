@@ -122,13 +122,28 @@
 
             return players.map(player => {
                 let recentTournaments = [];
+                let recentMatches = [];
                 let totalPoints = 0;
                 let w = 0, l = 0;
 
                 for (const t of completedTournaments) {
-                    if (recentTournaments.length >= 10) break;
+                    if (recentTournaments.length >= 24) break; // Extended to 24 tournaments
                     let pointsForTournament = 0, playedInTournament = false, highestRound = -1, wonFinal = false;
                     const totalRounds = t.bracket.length;
+
+                    // Extract the last 5 matches chronologically (reverse round order)
+                    for (let rIdx = totalRounds - 1; rIdx >= 0; rIdx--) {
+                        t.bracket[rIdx].forEach(match => {
+                            if ((match.p1 === player.id || match.p2 === player.id) && match.winner) {
+                                if (recentMatches.length < 5) {
+                                    recentMatches.push({
+                                        isWin: match.winner === player.id,
+                                        type: match.type || 'close'
+                                    });
+                                }
+                            }
+                        });
+                    }
 
                     t.bracket.forEach((round, roundIndex) => {
                         round.forEach(match => {
@@ -146,13 +161,18 @@
                     if (playedInTournament) {
                         const tierConf = TOURNAMENT_TIERS[t.tier || 'major'];
                         const pts = tierConf.points;
+                        
+                        // Scale points based on the bracket size
+                        let sizeMultiplier = 1;
+                        if (totalRounds === 4) sizeMultiplier = 0.75; // 16 Players
+                        if (totalRounds === 3) sizeMultiplier = 0.5;  // 8 Players
 
-                        if (wonFinal) pointsForTournament = pts.WINNER;
-                        else if (highestRound === totalRounds - 1) pointsForTournament = pts.FINALIST;
-                        else if (highestRound === totalRounds - 2) pointsForTournament = pts.SF;
-                        else if (highestRound === totalRounds - 3) pointsForTournament = pts.QF;
-                        else if (highestRound === totalRounds - 4) pointsForTournament = pts.R16;
-                        else if (highestRound === totalRounds - 5) pointsForTournament = pts.R32;
+                        if (wonFinal) pointsForTournament = Math.round(pts.WINNER * sizeMultiplier);
+                        else if (highestRound === totalRounds - 1) pointsForTournament = Math.round(pts.FINALIST * sizeMultiplier);
+                        else if (highestRound === totalRounds - 2) pointsForTournament = Math.round(pts.SF * sizeMultiplier);
+                        else if (highestRound === totalRounds - 3) pointsForTournament = Math.round(pts.QF * sizeMultiplier);
+                        else if (highestRound === totalRounds - 4) pointsForTournament = Math.round(pts.R16 * sizeMultiplier);
+                        else if (highestRound === totalRounds - 5) pointsForTournament = Math.round(pts.R32 * sizeMultiplier);
 
                         totalPoints += pointsForTournament;
                         const rOffset = 5 - totalRounds;
@@ -166,8 +186,11 @@
                         });
                     }
                 }
-                return { ...player, points: totalPoints, recentTournaments, stats: { wins: w, losses: l } };
-            }).sort((a, b) => b.points - a.points).map((p, index) => ({ ...p, rank: index + 1 }));
+                return { ...player, points: totalPoints, recentTournaments, recentMatches, stats: { wins: w, losses: l } };
+            })
+            // Added a secondary alphabetical sort to prevent tied players from shuffling randomly
+            .sort((a, b) => b.points - a.points || a.name.localeCompare(b.name))
+            .map((p, index) => ({ ...p, rank: index + 1 }));
         };
 
         const generate32Draw = (selectedPlayers) => {
@@ -340,7 +363,7 @@
                     <header className="mb-8 flex flex-col md:flex-row md:items-end justify-between gap-6">
                         <div>
                             <h1 className="text-3xl font-bold text-white">Global Rankings</h1>
-                            <p className="text-slate-400 mt-2">Based on the last 10 tournament performances.</p>
+                            <p className="text-slate-400 mt-2">Based on the last 24 tournament performances.</p>
                         </div>
                         <HistoricalTournamentSelect tournaments={tournaments} value={asOfId} onChange={setAsOfId} />
                     </header>
@@ -353,7 +376,8 @@
                                         <th className="p-4 font-semibold">Player</th>
                                         <th className="p-4 font-semibold">Points</th>
                                         <th className="p-4 font-semibold text-center">W-L</th>
-                                        <th className="p-4 font-semibold hidden md:table-cell">Recent Form</th>
+                                        <th className="p-4 font-semibold hidden md:table-cell">Tour Form</th>
+                                        <th className="p-4 font-semibold hidden lg:table-cell">Match Form</th>
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-slate-700">
@@ -367,7 +391,52 @@
                                             <td className="p-4 font-bold text-blue-400">{player.points.toLocaleString()}</td>
                                             <td className="p-4 text-center text-slate-300">{player.stats.wins} - {player.stats.losses}</td>
                                             <td className="p-4 hidden md:table-cell">
-                                                <div className="flex gap-1">{player.recentTournaments.slice(0, 5).map((t, i) => (<div key={i} className={`w-3 h-3 rounded-sm ${t.result === 'Winner' ? 'bg-green-500' : t.result === 'Final' ? 'bg-blue-500' : (t.result === 'Semifinals' && t.totalRounds > 3) ? 'bg-yellow-500' : 'bg-slate-500'}`} title={`${t.tournamentName} (${t.result})`} />))}</div>
+                                                <div className="flex gap-1.5">
+                                                    {player.recentTournaments.slice(0, 5).map((t, i) => {
+                                                        let lbl = '';
+                                                        if (t.result === 'Winner') lbl = 'W';
+                                                        else if (t.result === 'Final') lbl = 'F';
+                                                        else if (t.result === 'Semifinals') lbl = 'SF';
+                                                        else if (t.result === 'Quarterfinals') lbl = 'QF';
+                                                        else if (t.result === 'Round of 16') lbl = '16';
+                                                        else if (t.result === 'Round of 32') lbl = '32';
+                                                        
+                                                        const isSFHighlight = t.result === 'Semifinals' && t.totalRounds > 3;
+                                                        const bgClass = t.result === 'Winner' ? 'bg-green-500 text-green-950' : 
+                                                                        t.result === 'Final' ? 'bg-blue-500 text-blue-950' : 
+                                                                        isSFHighlight ? 'bg-yellow-500 text-yellow-950' : 
+                                                                        'bg-slate-600 text-slate-200';
+
+                                                        return (
+                                                            <div 
+                                                                key={i} 
+                                                                title={`${t.tournamentName} (${t.result})`} 
+                                                                className={`w-5 h-5 flex items-center justify-center rounded-sm text-[10px] font-bold ${bgClass}`}
+                                                            >
+                                                                {lbl}
+                                                            </div>
+                                                        );
+                                                    })}
+                                                    {player.recentTournaments.length === 0 && <span className="text-slate-600 text-xs">-</span>}
+                                                </div>
+                                            </td>
+                                            <td className="p-4 hidden lg:table-cell">
+                                                <div className="flex gap-1.5">
+                                                    {player.recentMatches.map((m, i) => (
+                                                        <div 
+                                                            key={i} 
+                                                            title={`${m.isWin ? 'Win' : 'Loss'} (${m.type === 'lopsided' ? 'Lopsided' : 'Close'})`} 
+                                                            className={`w-5 h-5 flex items-center justify-center rounded-sm text-[10px] font-bold ${
+                                                                m.isWin 
+                                                                    ? (m.type === 'lopsided' ? 'bg-green-500 text-green-950' : 'bg-green-900/40 text-green-400 border border-green-500/50') 
+                                                                    : (m.type === 'lopsided' ? 'bg-red-500 text-red-950' : 'bg-orange-900/40 text-orange-400 border border-orange-500/50')
+                                                            }`}
+                                                        >
+                                                            {m.isWin ? 'W' : 'L'}
+                                                        </div>
+                                                    ))}
+                                                    {player.recentMatches.length === 0 && <span className="text-slate-600 text-xs">-</span>}
+                                                </div>
                                             </td>
                                         </tr>
                                     ))}
@@ -423,7 +492,8 @@
             const [searchQuery, setSearchQuery] = useState('');
 
             const displayedPlayers = useMemo(() => {
-                let filtered = players;
+                // FIXED: Create a copy of the array before sorting so we don't accidentally mutate the global rank-ordered player list!
+                let filtered = [...players];
                 if (searchQuery.trim()) {
                     filtered = players.filter(p => p.name.toLowerCase().includes(searchQuery.toLowerCase()));
                 }
@@ -570,6 +640,42 @@
                 return Object.values(stats).sort((a,b) => (b.wins + b.losses) - (a.wins + a.losses) || b.wins - a.wins);
             }, [matchHistory, players]);
 
+            const achievements = useMemo(() => {
+                const list = [];
+                tournaments.forEach(t => {
+                    if (t.status !== 'completed') return;
+                    if (t.tier !== 'grand_slam' && t.tier !== 'major') return;
+                    
+                    let highestRound = -1;
+                    let wonFinal = false;
+                    const totalRounds = t.bracket.length;
+                    
+                    t.bracket.forEach((round, rIdx) => {
+                        round.forEach(m => {
+                            if (m.p1 === player.id || m.p2 === player.id) {
+                                if (rIdx > highestRound) highestRound = rIdx;
+                                if (m.winner === player.id && rIdx === totalRounds - 1) wonFinal = true;
+                            }
+                        });
+                    });
+                    
+                    if (highestRound >= totalRounds - 2) {
+                        let resultStr = '';
+                        if (wonFinal) resultStr = 'Winner';
+                        else if (highestRound === totalRounds - 1) resultStr = 'Finalist';
+                        else if (highestRound === totalRounds - 2) resultStr = 'Semifinalist';
+                        
+                        list.push({
+                            tournamentName: t.name,
+                            tier: t.tier,
+                            result: resultStr,
+                            date: t.completedAt || t.createdAt
+                        });
+                    }
+                });
+                return list.sort((a,b) => b.date - a.date);
+            }, [player.id, tournaments]);
+
             return (
                 <div className="max-w-4xl mx-auto space-y-6 pb-20">
                     <button onClick={onBack} className="flex items-center gap-2 text-slate-400 hover:text-white"><ArrowLeft size={16}/> Back</button>
@@ -606,7 +712,7 @@
                             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
                                 <div className="bg-slate-800 p-6 rounded-xl border border-slate-700">
                                     <h2 className="text-xl font-bold mb-4 flex items-center gap-2"><Star className="text-yellow-500"/> Scoring Tournaments</h2>
-                                    <div className="space-y-2">{player.recentTournaments.map((t, i) => {
+                                    <div className="space-y-2 max-h-96 overflow-y-auto pr-2">{player.recentTournaments.map((t, i) => {
                                         const tierConf = TOURNAMENT_TIERS[t.tier || 'major'];
                                         return (
                                             <div key={i} className="flex justify-between p-3 bg-slate-900/50 rounded-lg border border-slate-700/50">
@@ -661,6 +767,23 @@
                                         <div className="flex gap-4 overflow-x-auto pb-4">{player.images.map((img, i) => <img key={i} src={img} className="w-48 h-64 object-cover rounded-lg border-2 border-slate-600" />)}</div>
                                     </div>
                                 )}
+                                <div className="md:col-span-2 lg:col-span-3 bg-slate-800 p-6 rounded-xl border border-slate-700">
+                                    <h2 className="text-xl font-bold mb-4 flex items-center gap-2"><Trophy className="text-yellow-400"/> Major Achievements</h2>
+                                    {achievements.length === 0 ? (
+                                        <p className="text-slate-400 text-sm">No major achievements yet. Reaching Semifinals or better in Major and Grand Slam tournaments will be recorded here.</p>
+                                    ) : (
+                                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                                            {achievements.map((ach, i) => (
+                                                <div key={i} className="bg-slate-900/50 p-4 rounded-xl border border-slate-700/50 flex flex-col items-center text-center">
+                                                    <Trophy size={32} className={`mb-3 ${ach.result === 'Winner' ? 'text-yellow-400' : ach.result === 'Finalist' ? 'text-slate-300' : 'text-orange-400'}`} />
+                                                    <span className={`text-[10px] uppercase font-bold tracking-widest px-2 py-0.5 rounded mb-2 ${ach.tier === 'grand_slam' ? 'bg-purple-500/20 text-purple-400' : 'bg-yellow-500/20 text-yellow-400'}`}>{TOURNAMENT_TIERS[ach.tier].name}</span>
+                                                    <div className="font-bold text-white text-lg">{ach.result}</div>
+                                                    <div className="text-sm text-slate-400 mt-1">{ach.tournamentName}</div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
                             </div>
                         </>
                     )}
@@ -672,7 +795,8 @@
             return (
                 <div className="max-w-5xl mx-auto space-y-6">
                     <div className="flex justify-between items-center"><h1 className="text-3xl font-bold">Tournaments</h1><button onClick={onCreate} className="bg-blue-600 px-6 py-2 rounded-lg flex items-center gap-2 font-bold"><Plus size={20}/> New</button></div>
-                    <div className="grid md:grid-cols-3 gap-6">{tournaments.sort((a,b) => b.createdAt - a.createdAt).map(t => {
+                    {/* Fixed array mutation bug by spreading the array before sorting */}
+                    <div className="grid md:grid-cols-3 gap-6">{[...tournaments].sort((a,b) => b.createdAt - a.createdAt).map(t => {
                         const tierConf = TOURNAMENT_TIERS[t.tier || 'major'];
                         return (
                             <div key={t.id} onClick={() => onSelect(t.id)} className={`bg-slate-800 p-6 rounded-xl border-2 transition-all cursor-pointer flex flex-col h-full hover:scale-105 ${t.status === 'completed' ? 'border-slate-700 hover:border-slate-500' : tierConf.border + ' shadow-lg shadow-black/20'}`}>
@@ -701,8 +825,15 @@
             const tierConf = TOURNAMENT_TIERS[tier];
             const isSmallAllowed = ['pro', 'challenger'].includes(tier);
             
-            // Ranks 1 to excludeTop are filtered out. (Since rank is 1-based, p.rank > excludeTop perfectly means if excludeTop=4, ranks 1,2,3,4 are filtered out).
-            const eligiblePlayers = players.filter(p => p.rank > tierConf.excludeTop);
+            // Calculate dynamic points for the label based on size multiplier
+            const sizeMultiplier = size === 32 ? 1 : (size === 16 ? 0.75 : 0.5);
+            const expectedWinnerPoints = Math.round(tierConf.points.WINNER * sizeMultiplier);
+            
+            // FIXED: Defensively clone and sort the eligible players so they are always 100% strictly sorted by rank,
+            // entirely ignoring any alphabetical sorting applied by other views.
+            const eligiblePlayers = [...players]
+                .filter(p => p.rank > tierConf.excludeTop)
+                .sort((a, b) => a.rank - b.rank);
             
             const reqWc = tierConf.wcCount[size];
             const reqAuto = size - reqWc;
@@ -780,7 +911,7 @@
                         </div>
 
                         <div className="bg-slate-900 p-4 rounded-lg border border-slate-700 mb-8 text-sm text-slate-300">
-                            <div className="flex items-center gap-2 mb-1"><span className={`font-bold ${tierConf.color}`}>{tierConf.name}:</span> Winner gets <strong className="text-white">{tierConf.points.WINNER} points</strong>.</div>
+                            <div className="flex items-center gap-2 mb-1"><span className={`font-bold ${tierConf.color}`}>{tierConf.name}:</span> Winner gets <strong className="text-white">{expectedWinnerPoints} points</strong>.</div>
                             <div>{tierConf.excludeTop > 0 ? `The Top ${tierConf.excludeTop} ranked players in the world are strictly excluded from competing.` : 'Open to all competitors.'} This {size}-player bracket format requires <strong className="text-white">{reqWc} wildcards</strong>.</div>
                         </div>
 
