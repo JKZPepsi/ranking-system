@@ -14,6 +14,11 @@
         .bracket-container::-webkit-scrollbar-track { background: #1e293b; }
         .bracket-container::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
         .aspect-3-4 { aspect-ratio: 3 / 4; }
+        
+        /* Smooth scrolling for charts */
+        .chart-scroll::-webkit-scrollbar { height: 10px; }
+        .chart-scroll::-webkit-scrollbar-track { background: #0f172a; border-radius: 8px; }
+        .chart-scroll::-webkit-scrollbar-thumb { background: #3b82f6; border-radius: 8px; }
     </style>
 </head>
 <body>
@@ -54,37 +59,34 @@
         const X = (props) => <Icon d="M18 6 6 18M6 6l12 12" {...props} />;
         const Globe = (props) => <Icon d="M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20ZM2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10Z" {...props} />;
         const Shuffle = (props) => <Icon d="M2 18h1.4c1.3 0 2.5-.6 3.3-1.7l6.1-8.6c.7-1.1 2-1.7 3.3-1.7H22M18 2l4 4-4 4M2 6h1.9c1.5 0 2.8.8 3.6 2l3.5 5c.8 1.2 2.1 2 3.6 2H22M18 14l4 4-4 4" {...props} />;
+        const TrendingUp = (props) => <Icon d="M23 6l-9.5 9.5-5-5L1 18M23 6h-6M23 6v6" {...props} />;
+        const BarChart2 = (props) => <Icon d="M18 20V10M12 20V4M6 20v-6" {...props} />;
 
         // --- Configuration & Constants ---
         
-        // Tournament Tiers define prestige, point rewards, rank lockouts, and wildcard allowances.
         const TOURNAMENT_TIERS = {
             'grand_slam': {
                 name: 'Grand Slam',
                 points: { WINNER: 2000, FINALIST: 1200, SF: 720, QF: 360, R16: 180, R32: 90 },
-                excludeTop: 0, // No exclusions
-                wcCount: { 32: 8, 16: 4, 8: 2 },
+                excludeTop: 0, wcCount: { 32: 8, 16: 4, 8: 2 },
                 color: 'text-purple-400', bg: 'bg-purple-500/20', border: 'border-purple-500/50'
             },
             'major': {
                 name: 'Major',
                 points: { WINNER: 1000, FINALIST: 600, SF: 360, QF: 180, R16: 90, R32: 45 },
-                excludeTop: 0, // No exclusions
-                wcCount: { 32: 8, 16: 4, 8: 2 },
+                excludeTop: 0, wcCount: { 32: 8, 16: 4, 8: 2 },
                 color: 'text-yellow-400', bg: 'bg-yellow-500/20', border: 'border-yellow-500/50'
             },
             'pro': {
                 name: 'Pro Series',
                 points: { WINNER: 500, FINALIST: 300, SF: 180, QF: 90, R16: 45, R32: 20 },
-                excludeTop: 4, // Top 4 ranked players excluded
-                wcCount: { 32: 10, 16: 6, 8: 3 },
+                excludeTop: 4, wcCount: { 32: 10, 16: 6, 8: 3 },
                 color: 'text-blue-400', bg: 'bg-blue-500/20', border: 'border-blue-500/50'
             },
             'challenger': {
                 name: 'Challenger',
                 points: { WINNER: 250, FINALIST: 150, SF: 90, QF: 45, R16: 20, R32: 10 },
-                excludeTop: 8, // Top 8 ranked players excluded
-                wcCount: { 32: 16, 16: 8, 8: 4 },
+                excludeTop: 8, wcCount: { 32: 16, 16: 8, 8: 4 },
                 color: 'text-green-400', bg: 'bg-green-500/20', border: 'border-green-500/50'
             }
         };
@@ -102,6 +104,14 @@
 
         const getFlag = (code) => COUNTRIES.find(c => c.code === code)?.flag || '🏳️';
         const getCountryName = (code) => COUNTRIES.find(c => c.code === code)?.name || code || 'Unknown';
+        
+        // Consistent hash-based color generator for charts
+        const CHART_COLORS = ['#ef4444', '#f97316', '#f59e0b', '#84cc16', '#22c55e', '#10b981', '#06b6d4', '#3b82f6', '#6366f1', '#a855f7', '#d946ef', '#ec4899', '#f43f5e', '#fb923c', '#fbbf24', '#a3e635', '#4ade80', '#2dd4bf', '#38bdf8', '#60a5fa', '#818cf8', '#c084fc', '#e879f9', '#f472b6'];
+        const getPlayerColor = (id) => {
+            let hash = 0;
+            for (let i = 0; i < id.length; i++) hash = id.charCodeAt(i) + ((hash << 5) - hash);
+            return CHART_COLORS[Math.abs(hash) % CHART_COLORS.length];
+        };
 
         const firebaseConfig = {
             apiKey: "AIzaSyDHfnWgaeNG2-lZBSmPpa8JdZgUHNPMh4w",
@@ -127,11 +137,10 @@
                 let w = 0, l = 0;
 
                 for (const t of completedTournaments) {
-                    if (recentTournaments.length >= 24) break; // Extended to 24 tournaments
+                    if (recentTournaments.length >= 24) break; 
                     let pointsForTournament = 0, playedInTournament = false, highestRound = -1, wonFinal = false;
                     const totalRounds = t.bracket.length;
 
-                    // Extract the last 5 matches chronologically (reverse round order)
                     for (let rIdx = totalRounds - 1; rIdx >= 0; rIdx--) {
                         t.bracket[rIdx].forEach(match => {
                             if ((match.p1 === player.id || match.p2 === player.id) && match.winner) {
@@ -161,11 +170,9 @@
                     if (playedInTournament) {
                         const tierConf = TOURNAMENT_TIERS[t.tier || 'major'];
                         const pts = tierConf.points;
-                        
-                        // Scale points based on the bracket size
                         let sizeMultiplier = 1;
-                        if (totalRounds === 4) sizeMultiplier = 0.75; // 16 Players
-                        if (totalRounds === 3) sizeMultiplier = 0.5;  // 8 Players
+                        if (totalRounds === 4) sizeMultiplier = 0.75; 
+                        if (totalRounds === 3) sizeMultiplier = 0.5;  
 
                         if (wonFinal) pointsForTournament = Math.round(pts.WINNER * sizeMultiplier);
                         else if (highestRound === totalRounds - 1) pointsForTournament = Math.round(pts.FINALIST * sizeMultiplier);
@@ -188,7 +195,6 @@
                 }
                 return { ...player, points: totalPoints, recentTournaments, recentMatches, stats: { wins: w, losses: l } };
             })
-            // Added a secondary alphabetical sort to prevent tied players from shuffling randomly
             .sort((a, b) => b.points - a.points || a.name.localeCompare(b.name))
             .map((p, index) => ({ ...p, rank: index + 1 }));
         };
@@ -259,7 +265,695 @@
             return bracket;
         };
 
+        // Unified History Generator for all Charts
+        const getGlobalHistory = (playersRaw, tournaments) => {
+            const completed = tournaments.filter(t => t.status === 'completed').sort((a, b) => a.completedAt - b.completedAt);
+            const history = [];
+
+            completed.forEach((currentT, index) => {
+                const relevantTournaments = completed.slice(Math.max(0, index - 23), index + 1); // Last 24 timeframe
+                
+                const playerPoints = playersRaw.map(p => {
+                    let pts = 0;
+                    relevantTournaments.forEach(t => {
+                        let highestRound = -1;
+                        let wonFinal = false;
+                        const parsedBracket = typeof t.bracket === 'string' ? JSON.parse(t.bracket) : t.bracket;
+                        const totalRounds = parsedBracket.length;
+                        
+                        parsedBracket.forEach((round, rIdx) => {
+                            round.forEach(match => {
+                                if (match.p1 === p.id || match.p2 === p.id) {
+                                    if (rIdx > highestRound) highestRound = rIdx;
+                                    if (match.winner === p.id && rIdx === totalRounds - 1) wonFinal = true;
+                                }
+                            });
+                        });
+
+                        if (highestRound > -1) {
+                            const tierConf = TOURNAMENT_TIERS[t.tier || 'major'];
+                            let sizeMultiplier = 1;
+                            if (totalRounds === 4) sizeMultiplier = 0.75;
+                            if (totalRounds === 3) sizeMultiplier = 0.5;
+
+                            if (wonFinal) pts += Math.round(tierConf.points.WINNER * sizeMultiplier);
+                            else if (highestRound === totalRounds - 1) pts += Math.round(tierConf.points.FINALIST * sizeMultiplier);
+                            else if (highestRound === totalRounds - 2) pts += Math.round(tierConf.points.SF * sizeMultiplier);
+                            else if (highestRound === totalRounds - 3) pts += Math.round(tierConf.points.QF * sizeMultiplier);
+                            else if (highestRound === totalRounds - 4) pts += Math.round(tierConf.points.R16 * sizeMultiplier);
+                            else if (highestRound === totalRounds - 5) pts += Math.round(tierConf.points.R32 * sizeMultiplier);
+                        }
+                    });
+                    return { id: p.id, name: p.name, pts, imageUrl: p.imageUrl, nationality: p.nationality };
+                });
+
+                playerPoints.sort((a, b) => b.pts - a.pts || a.name.localeCompare(b.name));
+                playerPoints.forEach((p, idx) => p.rank = idx + 1);
+
+                history.push({
+                    tournamentId: currentT.id,
+                    tournamentName: currentT.name,
+                    date: currentT.completedAt,
+                    standings: playerPoints
+                });
+            });
+
+            return history;
+        };
+
         // --- Custom Views ---
+
+        function IndividualPlayerChart({ history, type }) {
+            const [range, setRange] = useState(10);
+            const [hoveredPointData, setHoveredPointData] = useState(null);
+
+            const data = history.slice(range === 'all' ? 0 : -range);
+            if (data.length < 1) return <p className="text-slate-400 text-sm mt-4">Not enough tournament history.</p>;
+
+            // Width is fixed at 1000 so the SVG naturally squishes to fit container width seamlessly.
+            const width = 1000;
+            
+            let minVal = type === 'rank' ? 1 : 0;
+            let maxVal = type === 'rank' ? Math.max(10, ...data.map(d => d.rank)) + 2 : Math.max(100, ...data.map(d => d.points)) * 1.1;
+
+            const pad = { top: 50, right: 60, bottom: 40, left: 60 };
+
+            // Dynamic height calculation for Rank chart to prevent vertical squishing
+            const pixelsPerRank = 35; // The baseline visual vertical distance each rank commands
+            const dynamicHeight = type === 'rank' ? Math.max(350, (maxVal - minVal) * pixelsPerRank + pad.top + pad.bottom) : 350;
+            const height = dynamicHeight;
+
+            const getX = (i) => data.length === 1 ? (width / 2) : pad.left + (i * ((width - pad.left - pad.right) / (data.length - 1)));
+            const getY = (val) => {
+                if (type === 'rank') return pad.top + ((val - minVal) / (maxVal - minVal)) * (height - pad.top - pad.bottom);
+                return height - pad.bottom - ((val - minVal) / (maxVal - minVal)) * (height - pad.top - pad.bottom);
+            };
+
+            const pathD = data.map((d, i) => `${i === 0 ? 'M' : 'L'} ${getX(i)} ${getY(type === 'rank' ? d.rank : d.points)}`).join(' ');
+
+            // Dynamic Step calculation so numbers don't overlap when highly horizontally squished
+            const labelStep = Math.max(1, Math.ceil(data.length / 15));
+
+            const getAchColor = (ach) => {
+                if (!ach) return '#64748b';
+                if (ach.result === 'Winner') return '#facc15';
+                if (ach.result === 'Finalist') return '#cbd5e1';
+                return '#fb923c'; // Semifinalist
+            };
+
+            return (
+                <div className="mt-4 flex flex-col items-center w-full">
+                    <div className="flex gap-2 mb-6 w-full justify-start">
+                        <button onClick={() => setRange(10)} className={`px-4 py-1.5 rounded-lg text-sm font-bold transition-colors ${range === 10 ? 'bg-blue-600 text-white' : 'bg-slate-700/50 text-slate-400 hover:text-slate-200'}`}>Last 10</button>
+                        <button onClick={() => setRange(20)} className={`px-4 py-1.5 rounded-lg text-sm font-bold transition-colors ${range === 20 ? 'bg-blue-600 text-white' : 'bg-slate-700/50 text-slate-400 hover:text-slate-200'}`}>Last 20</button>
+                        <button onClick={() => setRange('all')} className={`px-4 py-1.5 rounded-lg text-sm font-bold transition-colors ${range === 'all' ? 'bg-blue-600 text-white' : 'bg-slate-700/50 text-slate-400 hover:text-slate-200'}`}>All Time</button>
+                    </div>
+                    <div className="w-full bg-slate-900/50 rounded-xl border border-slate-700/50 pb-2 relative overflow-hidden">
+                        <svg viewBox={`0 0 ${width} ${height}`} className="w-full h-auto overflow-visible">
+                            {/* Grid lines */}
+                            {type === 'rank' ? (
+                                [...Array(Math.floor(maxVal))].map((_, i) => {
+                                    const r = i + 1;
+                                    return (
+                                        <g key={`grid-${i}`}>
+                                            <line x1={pad.left} y1={getY(r)} x2={width - pad.right} y2={getY(r)} stroke="#334155" strokeWidth="1" strokeDasharray="4 4" />
+                                            <text x={pad.left - 10} y={getY(r)} fill="#94a3b8" fontSize="12" fontWeight="bold" textAnchor="end" alignmentBaseline="middle">#{r}</text>
+                                        </g>
+                                    );
+                                })
+                            ) : (
+                                (() => {
+                                    const step = Math.max(10, Math.ceil(maxVal / 8)); 
+                                    const yLines = [];
+                                    for(let v = 0; v <= maxVal; v += step) yLines.push(v);
+                                    return yLines.map((p, i) => (
+                                        <g key={`grid-${i}`}>
+                                            <line x1={pad.left} y1={getY(p)} x2={width - pad.right} y2={getY(p)} stroke="#334155" strokeWidth="1" strokeDasharray="4 4" />
+                                            <text x={pad.left - 10} y={getY(p)} fill="#94a3b8" fontSize="12" fontWeight="bold" textAnchor="end" alignmentBaseline="middle">{p.toLocaleString()}</text>
+                                        </g>
+                                    ));
+                                })()
+                            )}
+                            
+                            {data.length > 1 && <path d={pathD} fill="none" stroke="#3b82f6" strokeWidth="3" strokeLinejoin="round" />}
+                            
+                            {data.map((d, i) => {
+                                const ptX = getX(i);
+                                const ptY = getY(type === 'rank' ? d.rank : d.points);
+                                const isHovered = hoveredPointData && hoveredPointData.date === d.date;
+                                
+                                // Always show the last label, otherwise only show according to the safe step size
+                                const showLabel = i % labelStep === 0 || i === data.length - 1;
+
+                                return (
+                                    <g key={i}>
+                                        <circle cx={ptX} cy={ptY} r={isHovered ? "8" : "5"} fill="#1e293b" stroke="#3b82f6" strokeWidth="2" style={{ transition: 'r 0.2s ease' }} />
+                                        
+                                        {/* Value Label - Bigger font */}
+                                        {showLabel && (
+                                            <text x={ptX} y={ptY - 18} fill="#3b82f6" fontSize="16" fontWeight="900" textAnchor="middle" stroke="#0f172a" strokeWidth="4" paintOrder="stroke">
+                                                {type === 'rank' ? `#${d.rank}` : d.points.toLocaleString()}
+                                            </text>
+                                        )}
+
+                                        {/* Achievement Icon logic for Points chart */}
+                                        {type === 'points' && d.achievement && (
+                                            <g transform={`translate(${ptX - 10}, ${ptY - 60})`}>
+                                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={getAchColor(d.achievement)} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                                    <path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6M18 9h1.5a2.5 2.5 0 0 0 0-5H18M4 22h16M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22M18 2H6v7a6 6 0 0 0 12 0V2Z"/>
+                                                </svg>
+                                            </g>
+                                        )}
+
+                                        {/* Invisible hover area */}
+                                        <circle cx={ptX} cy={ptY} r="20" fill="transparent" cursor="crosshair" onMouseEnter={() => setHoveredPointData(d)} onMouseLeave={() => setHoveredPointData(null)} />
+                                    </g>
+                                );
+                            })}
+                        </svg>
+                    </div>
+
+                    {/* Bottom Hover Display Label */}
+                    <div className="h-10 mt-4 flex items-center justify-center bg-slate-900 border border-slate-700 rounded-full px-6 min-w-[300px] shadow-lg transition-all duration-200">
+                        {hoveredPointData ? (
+                            <span className="text-white font-bold tracking-wide">
+                                {hoveredPointData.tournamentName} <span className="text-blue-400 font-normal ml-2">| {type === 'rank' ? `Rank #${hoveredPointData.rank}` : `${hoveredPointData.points.toLocaleString()} pts`}</span>
+                            </span>
+                        ) : (
+                            <span className="text-slate-500 text-sm font-medium">Hover over a point for tournament details</span>
+                        )}
+                    </div>
+                </div>
+            );
+        }
+
+        function TopPlayersChart({ globalHistory, playersRaw, type, onNavigate }) {
+            const [range, setRange] = useState(10);
+            const [selectedLineId, setSelectedLineId] = useState(null);
+            const [hoveredLineId, setHoveredLineId] = useState(null);
+            
+            const historyData = globalHistory.slice(range === 'all' ? 0 : -range);
+            if (historyData.length < 1) return <p className="text-slate-400 text-sm mt-4">Not enough tournament history to generate a graph.</p>;
+
+            // Find ANY player who touched the Top 12 during this timeframe
+            const includedPlayerIds = new Set();
+            historyData.forEach(h => {
+                h.standings.forEach(s => {
+                    if (s.rank <= 12) includedPlayerIds.add(s.id);
+                });
+            });
+
+            // Extrapolate and build continuous path segments mapping Drop-offs
+            const lines = [];
+            Array.from(includedPlayerIds).forEach(pid => {
+                const player = playersRaw.find(p => p.id === pid);
+                if (!player) return;
+
+                const visiblePoints = [];
+                for (let k = 0; k < historyData.length; k++) {
+                    const s = historyData[k].standings.find(st => st.id === pid);
+                    if (!s) continue;
+                    
+                    const prevS = k > 0 ? historyData[k-1].standings.find(st => st.id === pid) : null;
+                    const nextS = k < historyData.length - 1 ? historyData[k+1].standings.find(st => st.id === pid) : null;
+
+                    // Plot if Top 12 NOW, was Top 12 PREVIOUSLY, or will be Top 12 NEXT.
+                    const isTop12 = s.rank <= 12;
+                    const prevTop12 = prevS && prevS.rank <= 12;
+                    const nextTop12 = nextS && nextS.rank <= 12;
+
+                    if (isTop12 || prevTop12 || nextTop12) {
+                        visiblePoints.push({ k, s, h: historyData[k] });
+                    }
+                }
+
+                // Break into continuous segment arrays (so skipped timeframes break the line cleanly)
+                const segments = [];
+                let currentSegment = [];
+                for (let i = 0; i < visiblePoints.length; i++) {
+                    if (currentSegment.length === 0) {
+                        currentSegment.push(visiblePoints[i]);
+                    } else {
+                        if (visiblePoints[i].k === currentSegment[currentSegment.length - 1].k + 1) {
+                            currentSegment.push(visiblePoints[i]);
+                        } else {
+                            segments.push(currentSegment);
+                            currentSegment = [visiblePoints[i]];
+                        }
+                    }
+                }
+                if (currentSegment.length > 0) segments.push(currentSegment);
+
+                if (segments.length > 0) {
+                    lines.push({ player, segments, color: getPlayerColor(player.id) });
+                }
+            });
+
+            // Base SVG sizes. Rank chart gets significantly taller to prevent label overlap for lines.
+            const width = 1200;
+            const height = type === 'rank' ? 900 : 650; 
+            const pad = { top: 40, right: 260, bottom: 80, left: type === 'rank' ? 60 : 80 }; 
+
+            let maxPointsVal = 100;
+            historyData.forEach(h => { h.standings.forEach(s => { if (includedPlayerIds.has(s.id) && s.pts > maxPointsVal) maxPointsVal = s.pts; }) });
+            maxPointsVal = Math.ceil(maxPointsVal * 1.05);
+
+            const maxRankDisplay = 17; // Lower limit correctly applied to 17
+
+            const getX = (i) => historyData.length === 1 ? (pad.left + (width - pad.left - pad.right) / 2) : pad.left + (i * ((width - pad.left - pad.right) / (historyData.length - 1)));
+            
+            const getY = (val) => {
+                if (type === 'rank') {
+                    if (val > maxRankDisplay) return pad.top + ((maxRankDisplay + 1) / (maxRankDisplay + 1.5)) * (height - pad.top - pad.bottom); // Drop to Gap
+                    return pad.top + ((val - 1) / (maxRankDisplay + 1.5)) * (height - pad.top - pad.bottom);
+                } else {
+                    return height - pad.bottom - ((val - 0) / (maxPointsVal - 0)) * (height - pad.top - pad.bottom);
+                }
+            };
+
+            // Pre-calculate SVG Paths
+            lines.forEach(line => {
+                line.paths = line.segments.map(seg => {
+                    return seg.map((pt, i) => `${i === 0 ? 'M' : 'L'} ${getX(pt.k)} ${getY(type === 'rank' ? pt.s.rank : pt.s.pts)}`).join(' ');
+                });
+            });
+
+            // --- ANTI-OVERLAP COLLISION ALGORITHM FOR LABELS ---
+            // Computed on the STABLE array so that hovering doesn't recalculate and move them!
+            const endLabels = lines.map(line => {
+                const lastSeg = line.segments[line.segments.length - 1];
+                const endPt = lastSeg[lastSeg.length - 1];
+                const rawY = getY(type === 'rank' ? endPt.s.rank : endPt.s.pts);
+                return { id: line.player.id, targetY: rawY, currentY: rawY };
+            }).sort((a, b) => a.targetY - b.targetY);
+
+            const LABEL_HEIGHT = 44; 
+            for (let iter = 0; iter < 15; iter++) {
+                for (let i = 0; i < endLabels.length - 1; i++) {
+                    const diff = endLabels[i+1].currentY - endLabels[i].currentY;
+                    if (diff < LABEL_HEIGHT) {
+                        const overlap = LABEL_HEIGHT - diff;
+                        endLabels[i].currentY -= overlap / 2;
+                        endLabels[i+1].currentY += overlap / 2;
+                    }
+                }
+            }
+            const labelPositions = {};
+            endLabels.forEach(el => labelPositions[el.id] = el.currentY);
+            // ---------------------------------------------------
+
+            // Sort lines strictly for rendering (so hovered draws last on top)
+            const sortedLines = [...lines].sort((a, b) => {
+                if (a.player.id === selectedLineId || a.player.id === hoveredLineId) return 1;
+                if (b.player.id === selectedLineId || b.player.id === hoveredLineId) return -1;
+                return 0;
+            });
+
+            return (
+                <div className="w-full">
+                    <div className="flex justify-between items-center mb-6">
+                        <div className="flex gap-2">
+                            <button onClick={() => setRange(10)} className={`px-4 py-1.5 rounded-lg text-sm font-bold transition-colors ${range === 10 ? 'bg-blue-600 text-white' : 'bg-slate-700/50 text-slate-400 hover:text-slate-200'}`}>Last 10</button>
+                            <button onClick={() => setRange(20)} className={`px-4 py-1.5 rounded-lg text-sm font-bold transition-colors ${range === 20 ? 'bg-blue-600 text-white' : 'bg-slate-700/50 text-slate-400 hover:text-slate-200'}`}>Last 20</button>
+                            <button onClick={() => setRange('all')} className={`px-4 py-1.5 rounded-lg text-sm font-bold transition-colors ${range === 'all' ? 'bg-blue-600 text-white' : 'bg-slate-700/50 text-slate-400 hover:text-slate-200'}`}>All Time</button>
+                        </div>
+                        {selectedLineId && (
+                            <button onClick={() => setSelectedLineId(null)} className="text-sm font-medium text-slate-400 hover:text-white px-3 py-1 bg-slate-800 rounded-md border border-slate-700 transition-colors">Clear Selection</button>
+                        )}
+                    </div>
+                    
+                    <div className="w-full bg-slate-900/50 rounded-xl border border-slate-700/50 pb-2 relative overflow-hidden">
+                        <svg viewBox={`0 0 ${width} ${height}`} className="w-full h-auto overflow-visible font-sans">
+                            <defs>
+                                {lines.map(line => (
+                                    <clipPath id={`clip-${type}-${line.player.id}`} key={`clip-${line.player.id}`}>
+                                        <circle cx="14" cy="14" r="14" />
+                                    </clipPath>
+                                ))}
+                            </defs>
+
+                            {/* Heavy Gridlines */}
+                            {type === 'rank' ? (
+                                <>
+                                    {/* Lines 1 through the display maximum */}
+                                    {[...Array(maxRankDisplay)].map((_, i) => {
+                                        const r = i + 1;
+                                        return (
+                                            <g key={`grid-${i}`}>
+                                                <line x1={pad.left} y1={getY(r)} x2={width - pad.right + 20} y2={getY(r)} stroke="#334155" strokeWidth="1" strokeDasharray="4 4" />
+                                                <text x={pad.left - 15} y={getY(r)} fill="#94a3b8" fontSize="12" fontWeight="bold" textAnchor="end" alignmentBaseline="middle">#{r}</text>
+                                            </g>
+                                        );
+                                    })}
+                                    {/* The visual gap border for ranks below max */}
+                                    <g>
+                                        <rect x={pad.left} y={getY(maxRankDisplay + 0.5)} width={width - pad.left - pad.right + 20} height="40" fill="#0f172a" opacity="0.6" />
+                                        <line x1={pad.left} y1={getY(maxRankDisplay + 0.5)} x2={width - pad.right + 20} y2={getY(maxRankDisplay + 0.5)} stroke="#ef4444" strokeWidth="1" strokeDasharray="8 4" opacity="0.5" />
+                                        <text x={pad.left - 15} y={getY(maxRankDisplay + 1)} fill="#ef4444" fontSize="12" fontWeight="bold" textAnchor="end" alignmentBaseline="middle" opacity="0.8">{maxRankDisplay + 1}+</text>
+                                    </g>
+                                </>
+                            ) : (
+                                (() => {
+                                    const step = Math.max(10, Math.ceil(maxPointsVal / 15)); // Approx 15 tight lines
+                                    const yLines = [];
+                                    for(let v = 0; v <= maxPointsVal; v += step) yLines.push(v);
+                                    return yLines.map((p, i) => (
+                                        <g key={`grid-${i}`}>
+                                            <line x1={pad.left} y1={getY(p)} x2={width - pad.right + 20} y2={getY(p)} stroke="#334155" strokeWidth="1" strokeDasharray="4 4" />
+                                            <text x={pad.left - 15} y={getY(p)} fill="#94a3b8" fontSize="12" fontWeight="bold" textAnchor="end" alignmentBaseline="middle">{p.toLocaleString()}</text>
+                                        </g>
+                                    ));
+                                })()
+                            )}
+                            
+                            {/* Render Ordered Lines (Uses specific key to prevent jumping/falling animation on hover) */}
+                            {sortedLines.map((line) => {
+                                const isHighlighted = selectedLineId === line.player.id || hoveredLineId === line.player.id;
+                                const isFaded = (selectedLineId || hoveredLineId) && !isHighlighted;
+                                return line.paths.map((pStr, pIdx) => (
+                                    <path 
+                                        key={`path-${line.player.id}-${pIdx}`} 
+                                        d={pStr} fill="none" stroke={line.color} 
+                                        strokeWidth={isHighlighted ? 6 : 3} 
+                                        opacity={isFaded ? 0.15 : 0.9} 
+                                        strokeLinejoin="round" strokeLinecap="round" 
+                                        style={{ transition: 'stroke-width 0.2s ease, opacity 0.2s ease' }}
+                                        className="cursor-pointer"
+                                        onClick={() => setSelectedLineId(line.player.id === selectedLineId ? null : line.player.id)}
+                                        onMouseEnter={() => setHoveredLineId(line.player.id)}
+                                        onMouseLeave={() => setHoveredLineId(null)}
+                                    />
+                                ));
+                            })}
+                            
+                            {/* Render Dots and Labels */}
+                            {sortedLines.map((line) => {
+                                const isHighlighted = selectedLineId === line.player.id || hoveredLineId === line.player.id;
+                                const isFaded = (selectedLineId || hoveredLineId) && !isHighlighted;
+                                
+                                const lastSeg = line.segments[line.segments.length - 1];
+                                const endPt = lastSeg[lastSeg.length - 1];
+                                const endX = getX(endPt.k);
+                                const endY = getY(type === 'rank' ? endPt.s.rank : endPt.s.pts);
+                                const adjY = labelPositions[line.player.id];
+
+                                return (
+                                    <g key={`overlay-${line.player.id}`} style={{ transition: 'opacity 0.2s ease' }} opacity={isFaded ? 0.2 : 1}>
+                                        {/* Plotted points */}
+                                        {line.segments.map((seg, sIdx) => seg.map((pt, i) => {
+                                            const ptX = getX(pt.k);
+                                            const ptY = getY(type === 'rank' ? pt.s.rank : pt.s.pts);
+                                            return (
+                                                <g key={`pt-${line.player.id}-${sIdx}-${i}`} className="group cursor-crosshair">
+                                                    <circle cx={ptX} cy={ptY} r={isHighlighted ? "6" : "5"} fill="#0f172a" stroke={line.color} strokeWidth={isHighlighted ? 4 : 2} style={{ transition: 'r 0.2s ease, stroke-width 0.2s ease' }} />
+                                                    
+                                                    {type === 'points' && (
+                                                        <text x={ptX} y={ptY - 12} fill={line.color} fontSize="12" fontWeight="900" textAnchor="middle" stroke="#0f172a" strokeWidth="4" paintOrder="stroke" className="opacity-0 group-hover:opacity-100" style={{ transition: 'opacity 0.2s ease' }}>
+                                                            {pt.s.pts.toLocaleString()}
+                                                        </text>
+                                                    )}
+                                                    {type === 'rank' && pt.s.rank > maxRankDisplay && (
+                                                        <text x={ptX} y={ptY + 20} fill="#ef4444" fontSize="12" fontWeight="900" textAnchor="middle" stroke="#0f172a" strokeWidth="4" paintOrder="stroke" className="opacity-0 group-hover:opacity-100" style={{ transition: 'opacity 0.2s ease' }}>
+                                                            #{pt.s.rank}
+                                                        </text>
+                                                    )}
+
+                                                    <circle cx={ptX} cy={ptY} r="20" fill="transparent" />
+                                                    <title>{`${pt.h.tournamentName}\n${line.player.name}\nRank: #${pt.s.rank}\nPoints: ${pt.s.pts.toLocaleString()}`}</title>
+                                                </g>
+                                            );
+                                        }))}
+
+                                        {/* Connecting Line if Label was moved to avoid overlap */}
+                                        {Math.abs(adjY - endY) > 2 && (
+                                            <path d={`M ${endX} ${endY} C ${endX + 10} ${endY}, ${endX + 10} ${adjY}, ${endX + 20} ${adjY}`} fill="none" stroke={line.color} strokeWidth="2" opacity="0.6" strokeDasharray="3 3" />
+                                        )}
+
+                                        {/* Interactive Inline Profile Label anchored perfectly without CSS transform scales (prevents flying bug) */}
+                                        <g 
+                                            transform={`translate(${endX + 20}, ${adjY - 14})`} 
+                                            className="cursor-pointer"
+                                            onClick={(e) => { e.stopPropagation(); onNavigate(line.player.id); }}
+                                            onMouseEnter={() => setHoveredLineId(line.player.id)}
+                                            onMouseLeave={() => setHoveredLineId(null)}
+                                        >
+                                            <rect x="-4" y="-4" width="180" height="36" rx="18" fill="#0f172a" fillOpacity={isHighlighted ? "1" : "0.85"} stroke={line.color} strokeWidth={isHighlighted ? 2 : 1} style={{ filter: isHighlighted ? 'drop-shadow(0 0 8px rgba(255,255,255,0.3))' : 'drop-shadow(0 4px 6px rgba(0,0,0,0.5))' }} />
+                                            {line.player.imageUrl ? (
+                                                <image href={line.player.imageUrl} x="0" y="0" width="28" height="28" clipPath={`url(#clip-${type}-${line.player.id})`} preserveAspectRatio="xMidYMid slice" />
+                                            ) : (
+                                                <circle cx="14" cy="14" r="14" fill="#334155" />
+                                            )}
+                                            <text x="36" y="19" fill="#f8fafc" fontSize="14" fontWeight="bold" style={{ textShadow: "0px 2px 4px black" }}>{line.player.name}</text>
+                                        </g>
+                                    </g>
+                                );
+                            })}
+                        </svg>
+                    </div>
+                </div>
+            );
+        }
+
+        function TopNationsChart({ globalHistory }) {
+            const [range, setRange] = useState(10);
+            const [selectedLineId, setSelectedLineId] = useState(null);
+            const [hoveredLineId, setHoveredLineId] = useState(null);
+            
+            const historyData = globalHistory.slice(range === 'all' ? 0 : -range);
+            if (historyData.length < 1) return <p className="text-slate-400 text-sm mt-4">Not enough tournament history to generate a graph.</p>;
+
+            const includedNations = new Set();
+            historyData.forEach(h => {
+                h.standings.forEach(s => {
+                    if (s.nationality) includedNations.add(s.nationality);
+                });
+            });
+
+            let maxPointsVal = 10;
+            const lines = [];
+
+            Array.from(includedNations).forEach(nat => {
+                const points = historyData.map((h, k) => {
+                    let pts = 0;
+                    h.standings.forEach(s => { if (s.nationality === nat) pts += s.pts; });
+                    return { k, pts, h };
+                });
+                
+                const maxP = Math.max(...points.map(p => p.pts));
+                if (maxP > maxPointsVal) maxPointsVal = maxP;
+
+                if (maxP > 0) {
+                    lines.push({ id: nat, name: getCountryName(nat), flag: getFlag(nat), points, color: getPlayerColor(nat) });
+                }
+            });
+
+            maxPointsVal = Math.ceil(maxPointsVal * 1.05);
+
+            const width = 1200;
+            const height = 650;
+            const pad = { top: 40, right: 260, bottom: 80, left: 80 }; 
+
+            const getX = (i) => historyData.length === 1 ? (pad.left + (width - pad.left - pad.right) / 2) : pad.left + (i * ((width - pad.left - pad.right) / (historyData.length - 1)));
+            const getY = (val) => height - pad.bottom - ((val - 0) / (maxPointsVal - 0)) * (height - pad.top - pad.bottom);
+
+            lines.forEach(line => {
+                line.path = line.points.map((pt, i) => `${i === 0 ? 'M' : 'L'} ${getX(pt.k)} ${getY(pt.pts)}`).join(' ');
+            });
+
+            // Collision Algorithm for Nation Labels (Stable array)
+            const endLabels = lines.map(line => {
+                const endPt = line.points[line.points.length - 1];
+                const rawY = getY(endPt.pts);
+                return { id: line.id, targetY: rawY, currentY: rawY };
+            }).sort((a, b) => a.targetY - b.targetY);
+
+            const LABEL_HEIGHT = 36; 
+            for (let iter = 0; iter < 15; iter++) {
+                for (let i = 0; i < endLabels.length - 1; i++) {
+                    const diff = endLabels[i+1].currentY - endLabels[i].currentY;
+                    if (diff < LABEL_HEIGHT) {
+                        const overlap = LABEL_HEIGHT - diff;
+                        endLabels[i].currentY -= overlap / 2;
+                        endLabels[i+1].currentY += overlap / 2;
+                    }
+                }
+            }
+            const labelPositions = {};
+            endLabels.forEach(el => labelPositions[el.id] = el.currentY);
+
+            // Sort for highlighting
+            const sortedLines = [...lines].sort((a, b) => {
+                if (a.id === selectedLineId || a.id === hoveredLineId) return 1;
+                if (b.id === selectedLineId || b.id === hoveredLineId) return -1;
+                return 0;
+            });
+
+            return (
+                <div className="w-full">
+                    <div className="flex justify-between items-center mb-6">
+                        <div className="flex gap-2">
+                            <button onClick={() => setRange(10)} className={`px-4 py-1.5 rounded-lg text-sm font-bold transition-colors ${range === 10 ? 'bg-blue-600 text-white' : 'bg-slate-700/50 text-slate-400 hover:text-slate-200'}`}>Last 10</button>
+                            <button onClick={() => setRange(20)} className={`px-4 py-1.5 rounded-lg text-sm font-bold transition-colors ${range === 20 ? 'bg-blue-600 text-white' : 'bg-slate-700/50 text-slate-400 hover:text-slate-200'}`}>Last 20</button>
+                            <button onClick={() => setRange('all')} className={`px-4 py-1.5 rounded-lg text-sm font-bold transition-colors ${range === 'all' ? 'bg-blue-600 text-white' : 'bg-slate-700/50 text-slate-400 hover:text-slate-200'}`}>All Time</button>
+                        </div>
+                        {selectedLineId && (
+                            <button onClick={() => setSelectedLineId(null)} className="text-sm font-medium text-slate-400 hover:text-white px-3 py-1 bg-slate-800 rounded-md border border-slate-700 transition-colors">Clear Selection</button>
+                        )}
+                    </div>
+                    
+                    <div className="w-full bg-slate-900/50 rounded-xl border border-slate-700/50 pb-2 relative overflow-hidden">
+                        <svg viewBox={`0 0 ${width} ${height}`} className="w-full h-auto overflow-visible font-sans">
+                            {/* Gridlines */}
+                            {(() => {
+                                const step = Math.max(10, Math.ceil(maxPointsVal / 15)); 
+                                const yLines = [];
+                                for(let v = 0; v <= maxPointsVal; v += step) yLines.push(v);
+                                return yLines.map((p, i) => (
+                                    <g key={`grid-${i}`}>
+                                        <line x1={pad.left} y1={getY(p)} x2={width - pad.right + 20} y2={getY(p)} stroke="#334155" strokeWidth="1" strokeDasharray="4 4" />
+                                        <text x={pad.left - 15} y={getY(p)} fill="#94a3b8" fontSize="12" fontWeight="bold" textAnchor="end" alignmentBaseline="middle">{p.toLocaleString()}</text>
+                                    </g>
+                                ));
+                            })()}
+                            
+                            {/* Lines */}
+                            {sortedLines.map((line) => {
+                                const isHighlighted = selectedLineId === line.id || hoveredLineId === line.id;
+                                const isFaded = (selectedLineId || hoveredLineId) && !isHighlighted;
+                                return (
+                                    <path 
+                                        key={`path-${line.id}`} 
+                                        d={line.path} fill="none" stroke={line.color} 
+                                        strokeWidth={isHighlighted ? 6 : 3} 
+                                        opacity={isFaded ? 0.15 : 0.9} 
+                                        strokeLinejoin="round" strokeLinecap="round" 
+                                        style={{ transition: 'stroke-width 0.2s ease, opacity 0.2s ease' }}
+                                        className="cursor-pointer"
+                                        onClick={() => setSelectedLineId(line.id === selectedLineId ? null : line.id)}
+                                        onMouseEnter={() => setHoveredLineId(line.id)}
+                                        onMouseLeave={() => setHoveredLineId(null)}
+                                    />
+                                );
+                            })}
+                            
+                            {/* Dots and Labels */}
+                            {sortedLines.map((line) => {
+                                const isHighlighted = selectedLineId === line.id || hoveredLineId === line.id;
+                                const isFaded = (selectedLineId || hoveredLineId) && !isHighlighted;
+                                
+                                const endPt = line.points[line.points.length - 1];
+                                const endX = getX(endPt.k);
+                                const endY = getY(endPt.pts);
+                                const adjY = labelPositions[line.id];
+
+                                return (
+                                    <g key={`overlay-${line.id}`} style={{ transition: 'opacity 0.2s ease' }} opacity={isFaded ? 0.2 : 1}>
+                                        {/* Plotted points */}
+                                        {line.points.map((pt, i) => {
+                                            const ptX = getX(pt.k);
+                                            const ptY = getY(pt.pts);
+                                            return (
+                                                <g key={`pt-${line.id}-${i}`} className="group cursor-crosshair">
+                                                    <circle cx={ptX} cy={ptY} r={isHighlighted ? "6" : "5"} fill="#0f172a" stroke={line.color} strokeWidth={isHighlighted ? 4 : 2} style={{ transition: 'r 0.2s ease' }} />
+                                                    
+                                                    <text x={ptX} y={ptY - 12} fill={line.color} fontSize="12" fontWeight="900" textAnchor="middle" stroke="#0f172a" strokeWidth="4" paintOrder="stroke" className="opacity-0 group-hover:opacity-100" style={{ transition: 'opacity 0.2s ease' }}>
+                                                        {pt.pts.toLocaleString()}
+                                                    </text>
+
+                                                    <circle cx={ptX} cy={ptY} r="20" fill="transparent" />
+                                                    <title>{`${pt.h.tournamentName}\n${line.name}\nPoints: ${pt.pts.toLocaleString()}`}</title>
+                                                </g>
+                                            );
+                                        })}
+
+                                        {/* Connecting Line if Label moved */}
+                                        {Math.abs(adjY - endY) > 2 && (
+                                            <path d={`M ${endX} ${endY} C ${endX + 10} ${endY}, ${endX + 10} ${adjY}, ${endX + 20} ${adjY}`} fill="none" stroke={line.color} strokeWidth="2" opacity="0.6" strokeDasharray="3 3" />
+                                        )}
+
+                                        {/* Interactive Inline Profile Label */}
+                                        <g 
+                                            transform={`translate(${endX + 20}, ${adjY - 14})`} 
+                                            className="cursor-pointer"
+                                            onClick={() => setSelectedLineId(line.id === selectedLineId ? null : line.id)}
+                                            onMouseEnter={() => setHoveredLineId(line.id)}
+                                            onMouseLeave={() => setHoveredLineId(null)}
+                                        >
+                                            <rect x="-4" y="-4" width="180" height="36" rx="18" fill="#0f172a" fillOpacity={isHighlighted ? "1" : "0.85"} stroke={line.color} strokeWidth={isHighlighted ? 2 : 1} style={{ filter: isHighlighted ? 'drop-shadow(0 0 8px rgba(255,255,255,0.3))' : 'drop-shadow(0 4px 6px rgba(0,0,0,0.5))' }} />
+                                            <text x="12" y="21" fontSize="18" style={{ textShadow: "0px 2px 4px black" }}>{line.flag}</text>
+                                            <text x="40" y="19" fill="#f8fafc" fontSize="14" fontWeight="bold" style={{ textShadow: "0px 2px 4px black" }}>{line.name}</text>
+                                        </g>
+                                    </g>
+                                );
+                            })}
+                        </svg>
+                    </div>
+                </div>
+            );
+        }
+
+        function AnalyticsView({ playersRaw, tournaments, players, onNavigate }) {
+            const globalHistory = useMemo(() => getGlobalHistory(playersRaw, tournaments), [playersRaw, tournaments]);
+
+            const nationStats = useMemo(() => {
+                const stats = {};
+                players.forEach(p => {
+                    const nat = p.nationality || 'UNK';
+                    if (!stats[nat]) stats[nat] = { code: nat, points: 0, wins: 0, losses: 0, players: 0, titles: 0 };
+                    stats[nat].points += p.points;
+                    stats[nat].wins += p.stats.wins;
+                    stats[nat].losses += p.stats.losses;
+                    stats[nat].players += 1;
+                    stats[nat].titles += p.recentTournaments.filter(t => t.result === 'Winner').length;
+                });
+                return Object.values(stats).sort((a,b) => b.points - a.points);
+            }, [players]);
+
+            return (
+                <div className="max-w-[1400px] mx-auto space-y-16 pb-20">
+                    <header className="mb-4">
+                        <h1 className="text-3xl font-bold text-white flex items-center gap-3"><TrendingUp className="text-blue-400 w-8 h-8"/> Global Analytics</h1>
+                        <p className="text-slate-400 mt-2">Click or hover on any line or profile picture to isolate their trajectory.</p>
+                    </header>
+
+                    <div className="bg-slate-800 p-6 rounded-2xl border border-slate-700 shadow-xl">
+                        <h2 className="text-2xl font-bold text-white mb-6">Top 12 Rank Progression</h2>
+                        <TopPlayersChart globalHistory={globalHistory} playersRaw={playersRaw} type="rank" onNavigate={onNavigate} />
+                    </div>
+                    <div className="bg-slate-800 p-6 rounded-2xl border border-slate-700 shadow-xl">
+                        <h2 className="text-2xl font-bold text-white flex items-center gap-3 mb-6"><BarChart2 className="text-yellow-400 w-7 h-7"/> Top 12 Points Progression</h2>
+                        <TopPlayersChart globalHistory={globalHistory} playersRaw={playersRaw} type="points" onNavigate={onNavigate} />
+                    </div>
+                    <div className="bg-slate-800 p-6 rounded-2xl border border-slate-700 shadow-xl">
+                        <h2 className="text-2xl font-bold text-white flex items-center gap-3 mb-6"><Globe className="text-emerald-400 w-7 h-7"/> Global Nations Trajectory</h2>
+                        <TopNationsChart globalHistory={globalHistory} />
+                        
+                        <div className="mt-8 border-t border-slate-700 pt-8">
+                            <h3 className="text-xl font-bold text-white mb-4">Nations Leaderboard</h3>
+                            <div className="bg-slate-900/50 rounded-xl border border-slate-700/50 overflow-hidden">
+                                <div className="overflow-x-auto">
+                                    <table className="w-full text-left border-collapse">
+                                        <thead><tr className="bg-slate-900/80 text-slate-300 text-sm uppercase">
+                                            <th className="p-4 text-center w-16">#</th><th>Nation</th><th className="text-center">Players</th><th className="text-blue-400">Points</th><th className="text-center">Titles</th><th className="text-center">W-L</th>
+                                        </tr></thead>
+                                        <tbody className="divide-y divide-slate-700/50">{nationStats.map((n, idx) => (
+                                            <tr key={n.code} className="hover:bg-slate-800/80 transition-colors">
+                                                <td className="p-4 text-center text-slate-400 font-bold">{idx + 1}</td>
+                                                <td className="p-4 font-medium text-white flex items-center gap-3"><span className="text-2xl">{getFlag(n.code)}</span>{getCountryName(n.code)}</td>
+                                                <td className="p-4 text-center text-slate-300">{n.players}</td>
+                                                <td className="p-4 font-bold text-blue-400">{n.points.toLocaleString()}</td>
+                                                <td className="p-4 text-center font-bold text-yellow-500">{n.titles}</td>
+                                                <td className="p-4 text-center text-slate-300">{n.wins} - {n.losses}</td>
+                                            </tr>
+                                        ))}</tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            );
+        }
 
         function HistoricalTournamentSelect({ tournaments, value, onChange }) {
             const [isOpen, setIsOpen] = useState(false);
@@ -344,7 +1038,7 @@
             );
         }
 
-        function DashboardView({ playersRaw, tournaments, onSelectPlayer }) {
+        function DashboardView({ playersRaw, tournaments, onSelectPlayer, players }) {
             const [asOfId, setAsOfId] = useState('');
 
             const displayPlayers = useMemo(() => {
@@ -359,7 +1053,7 @@
             }, [playersRaw, tournaments, asOfId]);
 
             return (
-                <div className="max-w-5xl mx-auto space-y-6">
+                <div className="max-w-5xl mx-auto space-y-6 pb-20">
                     <header className="mb-8 flex flex-col md:flex-row md:items-end justify-between gap-6">
                         <div>
                             <h1 className="text-3xl font-bold text-white">Global Rankings</h1>
@@ -448,41 +1142,6 @@
             );
         }
 
-        function NationsView({ players }) {
-            const nationStats = useMemo(() => {
-                const stats = {};
-                players.forEach(p => {
-                    const nat = p.nationality || 'UNK';
-                    if (!stats[nat]) stats[nat] = { code: nat, points: 0, wins: 0, losses: 0, players: 0, titles: 0 };
-                    stats[nat].points += p.points; stats[nat].wins += p.stats.wins; stats[nat].losses += p.stats.losses; stats[nat].players += 1;
-                    stats[nat].titles += p.recentTournaments.filter(t => t.result === 'Winner').length;
-                });
-                return Object.values(stats).sort((a,b) => b.points - a.points);
-            }, [players]);
-            return (
-                <div className="max-w-5xl mx-auto space-y-6">
-                    <header className="mb-8"><h1 className="text-3xl font-bold text-white">Nations Leaderboard</h1></header>
-                    <div className="bg-slate-800 rounded-xl border border-slate-700 overflow-hidden"><div className="overflow-x-auto">
-                        <table className="w-full text-left border-collapse">
-                            <thead><tr className="bg-slate-900/50 text-slate-300 text-sm uppercase">
-                                <th className="p-4 text-center w-16">#</th><th>Nation</th><th className="text-center">Players</th><th className="text-blue-400">Points</th><th className="text-center">Titles</th><th className="text-center">W-L</th>
-                            </tr></thead>
-                            <tbody className="divide-y divide-slate-700">{nationStats.map((n, idx) => (
-                                <tr key={n.code} className="hover:bg-slate-700/30 transition-colors">
-                                    <td className="p-4 text-center text-slate-400 font-bold">{idx + 1}</td>
-                                    <td className="p-4 font-medium text-white flex items-center gap-3"><span className="text-2xl">{getFlag(n.code)}</span>{getCountryName(n.code)}</td>
-                                    <td className="p-4 text-center text-slate-300">{n.players}</td>
-                                    <td className="p-4 font-bold text-blue-400">{n.points.toLocaleString()}</td>
-                                    <td className="p-4 text-center font-bold text-yellow-500">{n.titles}</td>
-                                    <td className="p-4 text-center text-slate-300">{n.wins} - {n.losses}</td>
-                                </tr>
-                            ))}</tbody>
-                        </table>
-                    </div></div>
-                </div>
-            );
-        }
-
         function PlayersView({ players, onSelectPlayer, db, appId }) {
             const [newPlayerName, setNewPlayerName] = useState('');
             const [newPlayerNationality, setNewPlayerNationality] = useState('');
@@ -492,7 +1151,6 @@
             const [searchQuery, setSearchQuery] = useState('');
 
             const displayedPlayers = useMemo(() => {
-                // FIXED: Create a copy of the array before sorting so we don't accidentally mutate the global rank-ordered player list!
                 let filtered = [...players];
                 if (searchQuery.trim()) {
                     filtered = players.filter(p => p.name.toLowerCase().includes(searchQuery.toLowerCase()));
@@ -607,14 +1265,23 @@
 
             const matchHistory = useMemo(() => {
                 let matches = [];
-                tournaments.forEach(t => t.bracket.forEach((round, rIdx) => round.forEach(m => {
-                    if ((m.p1 === player.id || m.p2 === player.id) && m.winner) {
-                        const rOffset = 5 - t.bracket.length;
-                        const oppId = m.p1 === player.id ? m.p2 : m.p1;
-                        const oppName = players.find(p => p.id === oppId)?.name || 'Unknown';
-                        matches.push({ tournamentName: t.name, tier: t.tier || 'major', roundName: ROUND_NAMES[rIdx + rOffset], roundIndex: rIdx + rOffset, opponentId: oppId, opponentName: oppName, isWin: m.winner === player.id, type: m.type, date: t.completedAt || t.createdAt });
+                tournaments.forEach(t => {
+                    if (t.status !== 'completed') return;
+                    let parsedBracket = t.bracket;
+                    if (typeof t.bracket === 'string') {
+                        try { parsedBracket = JSON.parse(t.bracket); } catch(e){}
                     }
-                })));
+                    if (!Array.isArray(parsedBracket)) return;
+                    
+                    parsedBracket.forEach((round, rIdx) => round.forEach(m => {
+                        if ((m.p1 === player.id || m.p2 === player.id) && m.winner) {
+                            const rOffset = 5 - parsedBracket.length;
+                            const oppId = m.p1 === player.id ? m.p2 : m.p1;
+                            const oppName = players.find(p => p.id === oppId)?.name || 'Unknown';
+                            matches.push({ tournamentName: t.name, tier: t.tier || 'major', roundName: ROUND_NAMES[rIdx + rOffset], roundIndex: rIdx + rOffset, opponentId: oppId, opponentName: oppName, isWin: m.winner === player.id, type: m.type, date: t.completedAt || t.createdAt });
+                        }
+                    }));
+                });
                 return matches.sort((a,b) => {
                     if (b.date !== a.date) return b.date - a.date;
                     return b.roundIndex - a.roundIndex;
@@ -645,12 +1312,17 @@
                 tournaments.forEach(t => {
                     if (t.status !== 'completed') return;
                     if (t.tier !== 'grand_slam' && t.tier !== 'major') return;
+                    let parsedBracket = t.bracket;
+                    if (typeof t.bracket === 'string') {
+                        try { parsedBracket = JSON.parse(t.bracket); } catch(e){}
+                    }
+                    if (!Array.isArray(parsedBracket)) return;
                     
                     let highestRound = -1;
                     let wonFinal = false;
-                    const totalRounds = t.bracket.length;
+                    const totalRounds = parsedBracket.length;
                     
-                    t.bracket.forEach((round, rIdx) => {
+                    parsedBracket.forEach((round, rIdx) => {
                         round.forEach(m => {
                             if (m.p1 === player.id || m.p2 === player.id) {
                                 if (rIdx > highestRound) highestRound = rIdx;
@@ -676,6 +1348,21 @@
                 return list.sort((a,b) => b.date - a.date);
             }, [player.id, tournaments]);
 
+            const rankingHistory = useMemo(() => {
+                const globalHist = getGlobalHistory(players, tournaments);
+                return globalHist.map(h => {
+                    const pStanding = h.standings.find(s => s.id === player.id);
+                    const ach = achievements.find(a => a.tournamentName === h.tournamentName && a.date === h.date);
+                    return {
+                        tournamentName: h.tournamentName,
+                        date: h.date,
+                        rank: pStanding ? pStanding.rank : 0,
+                        points: pStanding ? pStanding.pts : 0,
+                        achievement: ach || null
+                    };
+                }).filter(h => h.rank > 0);
+            }, [player.id, players, tournaments, achievements]);
+
             return (
                 <div className="max-w-4xl mx-auto space-y-6 pb-20">
                     <button onClick={onBack} className="flex items-center gap-2 text-slate-400 hover:text-white"><ArrowLeft size={16}/> Back</button>
@@ -700,18 +1387,18 @@
                                 <button onClick={() => setIsEditing(true)} className="absolute top-4 right-4 bg-slate-900 p-2 rounded-lg border border-slate-700 hover:border-slate-500 transition-colors"><Edit2 size={16}/></button>
                                 <img src={player.images?.[0] || player.imageUrl} className="w-32 h-48 md:w-40 md:h-56 rounded-lg object-cover border-4 border-slate-600" />
                                 <div className="flex-1">
-                                    <h1 className="text-4xl font-bold">{player.name}</h1>
+                                    <h1 className="text-4xl font-bold text-white">{player.name}</h1>
                                     <p className="text-xl text-blue-400 my-4 flex items-center gap-2"><span className="text-2xl">{getFlag(player.nationality)}</span> {getCountryName(player.nationality)}</p>
                                     <div className="flex flex-wrap gap-4">
-                                        <div className="bg-blue-900/30 border border-blue-500/30 p-4 rounded-lg text-center min-w-[100px]"><div className="text-blue-400 font-bold uppercase text-xs tracking-widest mb-1">Rank</div><div className="text-2xl font-black">#{player.rank}</div></div>
-                                        <div className="bg-slate-900/50 border border-slate-700 p-4 rounded-lg text-center min-w-[100px]"><div className="text-slate-400 font-bold uppercase text-xs tracking-widest mb-1">Points</div><div className="text-2xl font-black">{player.points.toLocaleString()}</div></div>
-                                        <div className="bg-slate-900/50 border border-slate-700 p-4 rounded-lg text-center min-w-[100px]"><div className="text-slate-400 font-bold uppercase text-xs tracking-widest mb-1">W-L</div><div className="text-2xl font-black">{player.stats.wins}-{player.stats.losses}</div></div>
+                                        <div className="bg-blue-900/30 border border-blue-500/30 p-4 rounded-lg text-center min-w-[100px]"><div className="text-blue-400 font-bold uppercase text-xs tracking-widest mb-1">Rank</div><div className="text-2xl font-black text-white">#{player.rank}</div></div>
+                                        <div className="bg-slate-900/50 border border-slate-700 p-4 rounded-lg text-center min-w-[100px]"><div className="text-slate-400 font-bold uppercase text-xs tracking-widest mb-1">Points</div><div className="text-2xl font-black text-white">{player.points.toLocaleString()}</div></div>
+                                        <div className="bg-slate-900/50 border border-slate-700 p-4 rounded-lg text-center min-w-[100px]"><div className="text-slate-400 font-bold uppercase text-xs tracking-widest mb-1">W-L</div><div className="text-2xl font-black text-white">{player.stats.wins}-{player.stats.losses}</div></div>
                                     </div>
                                 </div>
                             </div>
                             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
                                 <div className="bg-slate-800 p-6 rounded-xl border border-slate-700">
-                                    <h2 className="text-xl font-bold mb-4 flex items-center gap-2"><Star className="text-yellow-500"/> Scoring Tournaments</h2>
+                                    <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2"><Star className="text-yellow-500"/> Scoring Tournaments</h2>
                                     <div className="space-y-2 max-h-96 overflow-y-auto pr-2">{player.recentTournaments.map((t, i) => {
                                         const tierConf = TOURNAMENT_TIERS[t.tier || 'major'];
                                         return (
@@ -727,7 +1414,7 @@
                                     })}</div>
                                 </div>
                                 <div className="bg-slate-800 p-6 rounded-xl border border-slate-700">
-                                    <h2 className="text-xl font-bold mb-4 flex items-center gap-2"><History className="text-blue-400"/> Match History</h2>
+                                    <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2"><History className="text-blue-400"/> Match History</h2>
                                     <div className="space-y-2 max-h-96 overflow-y-auto pr-2">{matchHistory.map((m, i) => {
                                         const tierConf = TOURNAMENT_TIERS[m.tier];
                                         return (
@@ -742,7 +1429,7 @@
                                     })}</div>
                                 </div>
                                 <div className="bg-slate-800 p-6 rounded-xl border border-slate-700">
-                                    <h2 className="text-xl font-bold mb-4 flex items-center gap-2"><Users className="text-purple-400"/> Head-to-Head</h2>
+                                    <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2"><Users className="text-purple-400"/> Head-to-Head</h2>
                                     <div className="space-y-2 max-h-96 overflow-y-auto pr-2">
                                         {h2hStats.length === 0 ? (
                                             <p className="text-slate-400 text-sm">No match records yet.</p>
@@ -753,8 +1440,13 @@
                                                 const color = isPos ? 'text-green-400' : (isNeg ? 'text-red-400' : 'text-slate-400');
                                                 return (
                                                     <div key={h.opponentId} className={`flex justify-between items-center p-3 bg-slate-900/50 rounded-lg border ${isPos ? 'border-green-500/20' : (isNeg ? 'border-red-500/20' : 'border-slate-700/50')}`}>
-                                                        <div className="font-medium text-slate-200 flex items-center gap-2"><span>{h.opponentFlag}</span> {h.opponentName}</div>
-                                                        <div className={`font-bold ${color}`}>{h.wins} - {h.losses}</div>
+                                                        <div className="font-medium text-slate-200 flex items-start gap-2 pr-4 min-w-0">
+                                                            <span className="shrink-0 mt-0.5">{h.opponentFlag}</span> 
+                                                            <span className="break-words">{h.opponentName}</span>
+                                                        </div>
+                                                        <div className={`font-bold ${color} text-lg ml-auto whitespace-nowrap shrink-0`}>
+                                                            {h.wins} - {h.losses}
+                                                        </div>
                                                     </div>
                                                 );
                                             })
@@ -763,12 +1455,12 @@
                                 </div>
                                 {player.images?.length > 1 && (
                                     <div className="md:col-span-2 lg:col-span-3 bg-slate-800 p-6 rounded-xl border border-slate-700">
-                                        <h2 className="text-xl font-bold mb-4">Gallery</h2>
+                                        <h2 className="text-xl font-bold text-white mb-4">Gallery</h2>
                                         <div className="flex gap-4 overflow-x-auto pb-4">{player.images.map((img, i) => <img key={i} src={img} className="w-48 h-64 object-cover rounded-lg border-2 border-slate-600" />)}</div>
                                     </div>
                                 )}
                                 <div className="md:col-span-2 lg:col-span-3 bg-slate-800 p-6 rounded-xl border border-slate-700">
-                                    <h2 className="text-xl font-bold mb-4 flex items-center gap-2"><Trophy className="text-yellow-400"/> Major Achievements</h2>
+                                    <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2"><Trophy className="text-yellow-400"/> Major Achievements</h2>
                                     {achievements.length === 0 ? (
                                         <p className="text-slate-400 text-sm">No major achievements yet. Reaching Semifinals or better in Major and Grand Slam tournaments will be recorded here.</p>
                                     ) : (
@@ -784,6 +1476,14 @@
                                         </div>
                                     )}
                                 </div>
+                                <div className="md:col-span-2 lg:col-span-3 bg-slate-800 p-6 rounded-xl border border-slate-700">
+                                    <h2 className="text-2xl font-bold text-white flex items-center gap-2 mb-6"><TrendingUp className="text-blue-400"/> Career Ranking Trajectory</h2>
+                                    <IndividualPlayerChart history={rankingHistory} type="rank" />
+                                </div>
+                                <div className="md:col-span-2 lg:col-span-3 bg-slate-800 p-6 rounded-xl border border-slate-700">
+                                    <h2 className="text-2xl font-bold text-white flex items-center gap-2 mb-6"><BarChart2 className="text-yellow-400"/> Career Points Accumulation</h2>
+                                    <IndividualPlayerChart history={rankingHistory} type="points" />
+                                </div>
                             </div>
                         </>
                     )}
@@ -794,20 +1494,30 @@
         function TournamentsView({ tournaments, onSelect, onCreate }) {
             return (
                 <div className="max-w-5xl mx-auto space-y-6">
-                    <div className="flex justify-between items-center"><h1 className="text-3xl font-bold">Tournaments</h1><button onClick={onCreate} className="bg-blue-600 px-6 py-2 rounded-lg flex items-center gap-2 font-bold"><Plus size={20}/> New</button></div>
-                    {/* Fixed array mutation bug by spreading the array before sorting */}
+                    <div className="flex justify-between items-center"><h1 className="text-3xl font-bold text-white">Tournaments</h1><button onClick={onCreate} className="bg-blue-600 px-6 py-2 rounded-lg flex items-center gap-2 font-bold text-white"><Plus size={20}/> New</button></div>
                     <div className="grid md:grid-cols-3 gap-6">{[...tournaments].sort((a,b) => b.createdAt - a.createdAt).map(t => {
                         const tierConf = TOURNAMENT_TIERS[t.tier || 'major'];
+                        let parsedBracket = t.bracket;
+                        if (typeof t.bracket === 'string') {
+                            try { parsedBracket = JSON.parse(t.bracket); } catch(e){}
+                        }
+                        
+                        let drawSize = 32;
+                        if (parsedBracket && Array.isArray(parsedBracket)) {
+                            if (parsedBracket.length === 4) drawSize = 16;
+                            if (parsedBracket.length === 3) drawSize = 8;
+                        }
+
                         return (
                             <div key={t.id} onClick={() => onSelect(t.id)} className={`bg-slate-800 p-6 rounded-xl border-2 transition-all cursor-pointer flex flex-col h-full hover:scale-105 ${t.status === 'completed' ? 'border-slate-700 hover:border-slate-500' : tierConf.border + ' shadow-lg shadow-black/20'}`}>
                                 <div className="flex justify-between items-start mb-2">
-                                    <h3 className="font-bold text-xl truncate pr-2">{t.name}</h3>
+                                    <h3 className="font-bold text-xl text-white truncate pr-2">{t.name}</h3>
                                 </div>
                                 <div className="flex gap-2 mb-4">
                                     <span className={`text-xs font-bold uppercase tracking-wider px-2 py-1 rounded ${tierConf.bg} ${tierConf.color}`}>{tierConf.name}</span>
                                     <span className={`text-xs font-bold uppercase tracking-wider px-2 py-1 rounded ${t.status === 'completed' ? 'bg-green-500/20 text-green-400' : 'bg-slate-700 text-slate-300'}`}>{t.status}</span>
                                 </div>
-                                <div className="text-slate-400 text-sm mt-auto">{t.selectedPlayers?.length} Participants • {new Date(t.createdAt).toLocaleDateString()}</div>
+                                <div className="text-slate-400 text-sm mt-auto">{drawSize} Participants • {new Date(t.createdAt).toLocaleDateString()}</div>
                             </div>
                         );
                     })}</div>
@@ -820,19 +1530,17 @@
             const [tier, setTier] = useState('major');
             const [size, setSize] = useState(32);
             const [selectedWildcards, setSelectedWildcards] = useState([]);
+            const [withdrawnIds, setWithdrawnIds] = useState([]);
             const [isGenerating, setIsGenerating] = useState(false);
             
             const tierConf = TOURNAMENT_TIERS[tier];
             const isSmallAllowed = ['pro', 'challenger'].includes(tier);
             
-            // Calculate dynamic points for the label based on size multiplier
             const sizeMultiplier = size === 32 ? 1 : (size === 16 ? 0.75 : 0.5);
             const expectedWinnerPoints = Math.round(tierConf.points.WINNER * sizeMultiplier);
             
-            // FIXED: Defensively clone and sort the eligible players so they are always 100% strictly sorted by rank,
-            // entirely ignoring any alphabetical sorting applied by other views.
             const eligiblePlayers = [...players]
-                .filter(p => p.rank > tierConf.excludeTop)
+                .filter(p => p.rank > tierConf.excludeTop && !withdrawnIds.includes(p.id))
                 .sort((a, b) => a.rank - b.rank);
             
             const reqWc = tierConf.wcCount[size];
@@ -840,10 +1548,31 @@
             const autoQualifiers = eligiblePlayers.slice(0, reqAuto);
             const remainingPlayers = eligiblePlayers.slice(reqAuto);
             const hasEnoughPlayers = eligiblePlayers.length >= size;
+
+            const withdrawnPlayers = [...players]
+                .filter(p => withdrawnIds.includes(p.id))
+                .sort((a, b) => a.rank - b.rank);
             
             const toggleWildcard = (id) => {
                 if (selectedWildcards.includes(id)) setSelectedWildcards(selectedWildcards.filter(wId => wId !== id));
                 else if (selectedWildcards.length < reqWc) setSelectedWildcards([...selectedWildcards, id]);
+            };
+
+            const toggleWithdraw = (id) => {
+                if (withdrawnIds.includes(id)) {
+                    setWithdrawnIds(withdrawnIds.filter(wId => wId !== id));
+                } else {
+                    setWithdrawnIds([...withdrawnIds, id]);
+                    if (selectedWildcards.includes(id)) {
+                        setSelectedWildcards(selectedWildcards.filter(wId => wId !== id));
+                    }
+                }
+            };
+            
+            const withdrawTopSeeds = () => {
+                const dropCount = Math.floor(reqAuto / 2);
+                const topSeeds = autoQualifiers.slice(0, dropCount).map(p => p.id);
+                setWithdrawnIds([...withdrawnIds, ...topSeeds]);
             };
             
             const selectRandomWildcards = () => {
@@ -877,6 +1606,7 @@
             useEffect(() => { 
                 if (size === 8 && !isSmallAllowed) setSize(16);
                 setSelectedWildcards([]); 
+                setWithdrawnIds([]);
             }, [size, tier]);
 
             if (players.length < 8) return <div className="text-center py-12 border-2 border-dashed border-red-500/30 rounded-xl bg-red-500/5 mt-8 max-w-2xl mx-auto"><Shield size={48} className="mx-auto mb-3 text-red-400"/><h3 className="text-xl font-bold text-white mb-2">Need at least 8 Players</h3><p className="text-slate-400">You currently have {players.length} players.</p><button onClick={onBack} className="mt-4 bg-slate-700 hover:bg-slate-600 text-white px-4 py-2 rounded transition-colors">Go Back</button></div>;
@@ -912,7 +1642,7 @@
 
                         <div className="bg-slate-900 p-4 rounded-lg border border-slate-700 mb-8 text-sm text-slate-300">
                             <div className="flex items-center gap-2 mb-1"><span className={`font-bold ${tierConf.color}`}>{tierConf.name}:</span> Winner gets <strong className="text-white">{expectedWinnerPoints} points</strong>.</div>
-                            <div>{tierConf.excludeTop > 0 ? `The Top ${tierConf.excludeTop} ranked players in the world are strictly excluded from competing.` : 'Open to all competitors.'} This {size}-player bracket format requires <strong className="text-white">{reqWc} wildcards</strong>.</div>
+                            <div>{tierConf.excludeTop > 0 ? `The Top ${tierConf.excludeTop} ranked players in the world are strictly excluded from competing.` : 'Open to all competitors.'} This {size}-player bracket format requires <strong className="text-white">{reqWc} wildcards</strong>. Click an Auto Qualifier to simulate a withdrawal.</div>
                         </div>
 
                         {!hasEnoughPlayers ? (
@@ -925,19 +1655,45 @@
                             <>
                                 <div className="grid md:grid-cols-2 gap-8">
                                     <div>
-                                        <h3 className="font-bold text-white mb-4">Auto Qualifiers (Top {reqAuto})</h3>
-                                        <div className="bg-slate-900 rounded-lg p-2 h-80 overflow-y-auto space-y-1 border border-slate-700">
+                                        <div className="flex justify-between items-center mb-4">
+                                            <div className="flex items-center gap-3">
+                                                <h3 className="font-bold text-white">Auto Qualifiers (Top {reqAuto})</h3>
+                                                {autoQualifiers.length > 2 && (
+                                                    <button onClick={withdrawTopSeeds} className="text-[10px] uppercase tracking-wider font-bold bg-red-500/20 text-red-400 hover:bg-red-500/30 px-2 py-1 rounded transition-colors">
+                                                        Drop Top Seeds
+                                                    </button>
+                                                )}
+                                            </div>
+                                        </div>
+                                        <div className="bg-slate-900 rounded-lg p-2 max-h-[320px] overflow-y-auto border border-slate-700 space-y-1">
                                             {autoQualifiers.map(p => (
-                                                <div key={p.id} className="p-2 opacity-60 text-sm flex items-center justify-between text-white">
+                                                <div key={p.id} onClick={() => toggleWithdraw(p.id)} className="p-2 opacity-90 hover:opacity-100 text-sm flex items-center justify-between text-white cursor-pointer hover:bg-red-500/20 rounded transition-colors group">
                                                     <span className="flex items-center">
                                                         <span className="font-mono text-slate-500 mr-2 w-6">#{p.rank}</span> 
                                                         <span className="mr-2">{getFlag(p.nationality)}</span> {p.name}
-                                                        <span className="text-xs text-slate-400 ml-2">({p.points.toLocaleString()} pts)</span>
+                                                        <span className="text-xs text-slate-400 ml-2 group-hover:text-red-300">({p.points.toLocaleString()} pts)</span>
                                                     </span>
-                                                    <CheckCircle size={14} className="text-slate-500" />
+                                                    <X size={14} className="text-red-500 opacity-0 group-hover:opacity-100 transition-opacity" />
                                                 </div>
                                             ))}
                                         </div>
+                                        
+                                        {withdrawnPlayers.length > 0 && (
+                                            <div className="mt-4">
+                                                <h3 className="font-bold text-slate-400 mb-2 text-xs uppercase tracking-widest">Withdrawn / Skipped</h3>
+                                                <div className="bg-slate-900/50 rounded-lg p-2 max-h-32 overflow-y-auto border border-slate-700/50 space-y-1">
+                                                    {withdrawnPlayers.map(p => (
+                                                        <div key={p.id} onClick={() => toggleWithdraw(p.id)} className="p-2 text-sm flex items-center justify-between text-slate-500 cursor-pointer hover:bg-slate-800 rounded transition-colors group">
+                                                            <span className="flex items-center line-through">
+                                                                <span className="font-mono mr-2 w-6">#{p.rank}</span> 
+                                                                <span className="mr-2">{getFlag(p.nationality)}</span> {p.name}
+                                                            </span>
+                                                            <Plus size={14} className="text-green-500 opacity-0 group-hover:opacity-100 transition-opacity" />
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        )}
                                     </div>
                                     <div>
                                         <div className="flex justify-between items-center mb-4">
@@ -984,14 +1740,20 @@
             const getPlayer = (id) => players.find(p => p.id === id) || { name: 'TBD', rank: '-', nationality: 'UNK' };
             const getImages = (p) => p.images || [p.imageUrl];
             
-            const totalRounds = tournament.bracket.length;
+            let parsedBracket = tournament.bracket;
+            if (typeof parsedBracket === 'string') {
+                try { parsedBracket = JSON.parse(parsedBracket); } catch(e){}
+            }
+            if (!Array.isArray(parsedBracket)) parsedBracket = [];
+
+            const totalRounds = parsedBracket.length;
             const rOffset = 5 - totalRounds;
             const tierConf = TOURNAMENT_TIERS[tournament.tier || 'major'];
 
             const handleMatchClick = (rIdx, mIdx, match) => { if (tournament.status === 'completed' || !match.p1 || !match.p2 || match.winner) return; setResolvingMatch({ roundIndex: rIdx, matchIndex: mIdx, ...match }); };
 
             const submitResult = async (winnerId, type) => {
-                const newBracket = JSON.parse(JSON.stringify(tournament.bracket));
+                const newBracket = JSON.parse(JSON.stringify(parsedBracket));
                 const { roundIndex: rIdx, matchIndex: mIdx } = resolvingMatch;
                 newBracket[rIdx][mIdx].winner = winnerId; newBracket[rIdx][mIdx].type = type;
                 if (rIdx < totalRounds - 1) { const nRIdx = rIdx + 1; const nMIdx = Math.floor(mIdx / 2); if (mIdx % 2 === 0) newBracket[nRIdx][nMIdx].p1 = winnerId; else newBracket[nRIdx][nMIdx].p2 = winnerId; }
@@ -1014,7 +1776,11 @@
                 let total = 0;
                 
                 allTournaments.forEach(t => {
-                    t.bracket.forEach(round => {
+                    let tb = t.bracket;
+                    if (typeof tb === 'string') { try { tb = JSON.parse(tb); } catch(e){ return; } }
+                    if (!Array.isArray(tb)) return;
+
+                    tb.forEach(round => {
                         round.forEach(m => {
                             if (m.winner && ((m.p1 === resolvingMatch.p1 && m.p2 === resolvingMatch.p2) || (m.p1 === resolvingMatch.p2 && m.p2 === resolvingMatch.p1))) {
                                 total++;
@@ -1031,7 +1797,7 @@
                 <div className="h-full flex flex-col pb-20">
                     <div className="flex justify-between items-center mb-6">
                         <button onClick={onBack} className="flex items-center gap-2 text-slate-400 hover:text-white"><ArrowLeft size={16}/> Back</button>
-                        <h1 className="text-2xl font-bold flex items-center gap-3">
+                        <h1 className="text-2xl font-bold text-white flex items-center gap-3">
                             <span className={`${tierConf.color} text-sm uppercase tracking-widest border border-current px-2 py-1 rounded`}>{tierConf.name}</span>
                             {tournament.name}
                             {tournament.status === 'completed' && <span className="bg-green-500/20 text-green-400 text-xs px-2 py-1 rounded ml-2">COMPLETED</span>}
@@ -1039,7 +1805,7 @@
                     </div>
                     <div className="flex-1 overflow-auto bg-slate-800/50 border border-slate-700 rounded-xl p-8 min-h-[800px] bracket-container">
                         <div className="flex min-w-max h-full">
-                            {tournament.bracket.map((round, rIdx) => (
+                            {parsedBracket.map((round, rIdx) => (
                                 <div key={rIdx} className="flex flex-col w-64 shrink-0 mr-12 h-full">
                                     <div className="text-center text-slate-500 font-bold text-sm uppercase tracking-wider mb-4">{ROUND_NAMES[rIdx + rOffset]}</div>
                                     <div className="flex-1 flex flex-col">
@@ -1153,9 +1919,33 @@
                 return () => { unsubP(); unsubT(); };
             }, [user, db]);
 
+            // Sync app state with Browser History for Back/Forward button support
+            useEffect(() => {
+                window.history.replaceState({ tab: 'dashboard', playerId: null, tournamentId: null }, '');
+                
+                const handlePopState = (event) => {
+                    if (event.state) {
+                        setActiveTab(event.state.tab);
+                        setSelectedPlayerId(event.state.playerId);
+                        setSelectedTournamentId(event.state.tournamentId);
+                    }
+                };
+                
+                window.addEventListener('popstate', handlePopState);
+                return () => window.removeEventListener('popstate', handlePopState);
+            }, []);
+
             const players = useMemo(() => calculatePlayerRankings(playersRaw, tournaments), [playersRaw, tournaments]);
-            const navigateTo = (tab) => { setActiveTab(tab); setSelectedPlayerId(null); setSelectedTournamentId(null); };
-            const handlePlayerSelect = (id) => { setActiveTab('players'); setSelectedPlayerId(id); };
+            
+            const navigate = (tab, playerId = null, tournamentId = null) => {
+                setActiveTab(tab);
+                setSelectedPlayerId(playerId);
+                setSelectedTournamentId(tournamentId);
+                window.history.pushState({ tab, playerId, tournamentId }, '');
+            };
+
+            const navigateTo = (tab) => navigate(tab);
+            const handlePlayerSelect = (id) => navigate('players', id);
 
             if (!user || loading) return <div className="min-screen flex items-center justify-center bg-slate-900 text-slate-100 h-screen w-full"><div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div></div>;
 
@@ -1165,21 +1955,29 @@
                         <div className="p-6 border-b border-slate-700 flex items-center gap-2 text-xl font-bold text-blue-400"><Trophy size={24}/><span>ProRank ATP</span></div>
                         <div className="flex-1 py-4 space-y-1">
                             <button onClick={() => navigateTo('dashboard')} className={`w-full flex items-center gap-3 px-6 py-3 font-medium transition-colors ${activeTab === 'dashboard' ? 'bg-blue-600/20 text-blue-400 border-r-4 border-blue-500' : 'text-slate-300 hover:bg-slate-700/50'}`}><Activity size={20}/>Dashboard</button>
+                            <button onClick={() => navigateTo('analytics')} className={`w-full flex items-center gap-3 px-6 py-3 font-medium transition-colors ${activeTab === 'analytics' ? 'bg-blue-600/20 text-blue-400 border-r-4 border-blue-500' : 'text-slate-300 hover:bg-slate-700/50'}`}><TrendingUp size={20}/>Analytics</button>
                             <button onClick={() => navigateTo('players')} className={`w-full flex items-center gap-3 px-6 py-3 font-medium transition-colors ${activeTab === 'players' ? 'bg-blue-600/20 text-blue-400 border-r-4 border-blue-500' : 'text-slate-300 hover:bg-slate-700/50'}`}><Users size={20}/>Players</button>
-                            <button onClick={() => navigateTo('nations')} className={`w-full flex items-center gap-3 px-6 py-3 font-medium transition-colors ${activeTab === 'nations' ? 'bg-blue-600/20 text-blue-400 border-r-4 border-blue-500' : 'text-slate-300 hover:bg-slate-700/50'}`}><Globe size={20}/>Nations</button>
                             <button onClick={() => navigateTo('tournaments')} className={`w-full flex items-center gap-3 px-6 py-3 font-medium transition-colors ${activeTab === 'tournaments' ? 'bg-blue-600/20 text-blue-400 border-r-4 border-blue-500' : 'text-slate-300 hover:bg-slate-700/50'}`}><Swords size={20}/>Tournaments</button>
                         </div>
                     </nav>
                     <main className="flex-1 flex flex-col overflow-hidden">
-                        <div className="md:hidden bg-slate-800 p-4 flex justify-between items-center border-b border-slate-700"><div className="flex items-center gap-2 font-bold text-blue-400"><Trophy size={20}/><span>ProRank</span></div><div className="flex gap-4"><button onClick={() => navigateTo('dashboard')} className={activeTab === 'dashboard' ? 'text-blue-400' : 'text-slate-400'}><Activity/></button><button onClick={() => navigateTo('players')} className={activeTab === 'players' ? 'text-blue-400' : 'text-slate-400'}><Users/></button><button onClick={() => navigateTo('tournaments')} className={activeTab === 'tournaments' ? 'text-blue-400' : 'text-slate-400'}><Swords/></button></div></div>
+                        <div className="md:hidden bg-slate-800 p-4 flex justify-between items-center border-b border-slate-700 overflow-x-auto">
+                            <div className="flex items-center gap-2 font-bold text-blue-400 mr-4"><Trophy size={20}/><span>ProRank</span></div>
+                            <div className="flex gap-4">
+                                <button onClick={() => navigateTo('dashboard')} className={activeTab === 'dashboard' ? 'text-blue-400' : 'text-slate-400'}><Activity/></button>
+                                <button onClick={() => navigateTo('analytics')} className={activeTab === 'analytics' ? 'text-blue-400' : 'text-slate-400'}><TrendingUp/></button>
+                                <button onClick={() => navigateTo('players')} className={activeTab === 'players' ? 'text-blue-400' : 'text-slate-400'}><Users/></button>
+                                <button onClick={() => navigateTo('tournaments')} className={activeTab === 'tournaments' ? 'text-blue-400' : 'text-slate-400'}><Swords/></button>
+                            </div>
+                        </div>
                         <div className="flex-1 overflow-auto p-4 md:p-8">
-                            {activeTab === 'dashboard' && <DashboardView playersRaw={playersRaw} tournaments={tournaments} onSelectPlayer={handlePlayerSelect} />}
-                            {activeTab === 'nations' && <NationsView players={players} />}
-                            {activeTab === 'players' && !selectedPlayerId && <PlayersView players={players} onSelectPlayer={setSelectedPlayerId} db={db} appId={appId} />}
-                            {activeTab === 'players' && selectedPlayerId && <PlayerProfile player={players.find(p => p.id === selectedPlayerId)} players={players} onBack={() => setSelectedPlayerId(null)} tournaments={tournaments} db={db} appId={appId} />}
-                            {activeTab === 'tournaments' && !selectedTournamentId && <TournamentsView tournaments={tournaments} onSelect={setSelectedTournamentId} onCreate={() => setActiveTab('create_tournament')} />}
-                            {activeTab === 'tournaments' && selectedTournamentId && <TournamentBracket tournament={tournaments.find(t => t.id === selectedTournamentId)} allTournaments={tournaments} players={players} onBack={() => setSelectedTournamentId(null)} db={db} appId={appId} />}
-                            {activeTab === 'create_tournament' && <CreateTournamentView players={players} onBack={() => navigateTo('tournaments')} onSuccess={id => { navigateTo('tournaments'); setSelectedTournamentId(id); }} db={db} appId={appId} />}
+                            {activeTab === 'dashboard' && <DashboardView playersRaw={playersRaw} tournaments={tournaments} onSelectPlayer={handlePlayerSelect} players={players} />}
+                            {activeTab === 'analytics' && <AnalyticsView playersRaw={playersRaw} tournaments={tournaments} players={players} onNavigate={handlePlayerSelect} />}
+                            {activeTab === 'players' && !selectedPlayerId && <PlayersView players={players} onSelectPlayer={handlePlayerSelect} db={db} appId={appId} />}
+                            {activeTab === 'players' && selectedPlayerId && <PlayerProfile player={players.find(p => p.id === selectedPlayerId)} players={players} onBack={() => navigateTo('players')} tournaments={tournaments} db={db} appId={appId} />}
+                            {activeTab === 'tournaments' && !selectedTournamentId && <TournamentsView tournaments={tournaments} onSelect={(id) => navigate('tournaments', null, id)} onCreate={() => navigateTo('create_tournament')} />}
+                            {activeTab === 'tournaments' && selectedTournamentId && <TournamentBracket tournament={tournaments.find(t => t.id === selectedTournamentId)} allTournaments={tournaments} players={players} onBack={() => navigateTo('tournaments')} db={db} appId={appId} />}
+                            {activeTab === 'create_tournament' && <CreateTournamentView players={players} onBack={() => navigateTo('tournaments')} onSuccess={id => navigate('tournaments', null, id)} db={db} appId={appId} />}
                         </div>
                     </main>
                 </div>
