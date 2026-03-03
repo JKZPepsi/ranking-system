@@ -67,31 +67,37 @@
         const TOURNAMENT_TIERS = {
             'grand_slam': {
                 name: 'Grand Slam',
-                points: { WINNER: 2000, FINALIST: 1200, SF: 720, QF: 360, R16: 180, R32: 90 },
-                excludeTop: 0, wcCount: { 32: 8, 16: 4, 8: 2 },
+                points: { WINNER: 2000, FINALIST: 1200, SF: 720, QF: 360, R16: 180, R32: 90, R64: 45 },
+                excludeTop: 0, wcCount: { 64: 16 },
                 color: 'text-purple-400', bg: 'bg-purple-500/20', border: 'border-purple-500/50'
+            },
+            'finals': {
+                name: 'ATP Finals',
+                points: { WINNER: 1500, FINALIST: 1000, SF: 400, RR_WIN: 200 },
+                excludeTop: 0, wcCount: { 8: 0 },
+                color: 'text-cyan-400', bg: 'bg-cyan-500/20', border: 'border-cyan-500/50'
             },
             'major': {
                 name: 'Major',
-                points: { WINNER: 1000, FINALIST: 600, SF: 360, QF: 180, R16: 90, R32: 45 },
-                excludeTop: 0, wcCount: { 32: 8, 16: 4, 8: 2 },
+                points: { WINNER: 1000, FINALIST: 600, SF: 360, QF: 180, R16: 90, R32: 45, R64: 20 },
+                excludeTop: 0, wcCount: { 64: 16, 32: 8 },
                 color: 'text-yellow-400', bg: 'bg-yellow-500/20', border: 'border-yellow-500/50'
             },
             'pro': {
                 name: 'Pro Series',
-                points: { WINNER: 500, FINALIST: 300, SF: 180, QF: 90, R16: 45, R32: 20 },
-                excludeTop: 4, wcCount: { 32: 10, 16: 6, 8: 3 },
+                points: { WINNER: 500, FINALIST: 300, SF: 180, QF: 90, R16: 45, R32: 20, R64: 10 },
+                excludeTop: 4, wcCount: { 64: 16, 32: 8, 16: 4 },
                 color: 'text-blue-400', bg: 'bg-blue-500/20', border: 'border-blue-500/50'
             },
             'challenger': {
                 name: 'Challenger',
-                points: { WINNER: 250, FINALIST: 150, SF: 90, QF: 45, R16: 20, R32: 10 },
-                excludeTop: 8, wcCount: { 32: 16, 16: 8, 8: 4 },
+                points: { WINNER: 250, FINALIST: 150, SF: 90, QF: 45, R16: 20, R32: 10, R64: 5 },
+                excludeTop: 8, wcCount: { 64: 16, 32: 8, 16: 4, 8: 2 },
                 color: 'text-green-400', bg: 'bg-green-500/20', border: 'border-green-500/50'
             }
         };
 
-        const ROUND_NAMES = ['Round of 32', 'Round of 16', 'Quarterfinals', 'Semifinals', 'Final'];
+        const ROUND_NAMES = ['Round of 64', 'Round of 32', 'Round of 16', 'Quarterfinals', 'Semifinals', 'Final'];
         const COUNTRIES = [
             { code: 'ATG', name: 'Antigua and Barbuda', flag: '🇦🇬' }, { code: 'BHS', name: 'Bahamas', flag: '🇧🇸' }, { code: 'BRB', name: 'Barbados', flag: '🇧🇧' }, { code: 'CAN', name: 'Canada', flag: '🇨🇦' }, { code: 'CUB', name: 'Cuba', flag: '🇨🇺' }, { code: 'DOM', name: 'Dominican Republic', flag: '🇩🇴' }, { code: 'GTM', name: 'Guatemala', flag: '🇬🇹' }, { code: 'HTI', name: 'Haiti', flag: '🇭🇹' }, { code: 'JAM', name: 'Jamaica', flag: '🇯🇲' }, { code: 'MEX', name: 'Mexico', flag: '🇲🇽' }, { code: 'PAN', name: 'Panama', flag: '🇵🇦' }, { code: 'PUR', name: 'Puerto Rico', flag: '🇵🇷' }, { code: 'USA', name: 'United States', flag: '🇺🇸' },
             { code: 'ARG', name: 'Argentina', flag: '🇦🇷' }, { code: 'BOL', name: 'Bolivia', flag: '🇧🇴' }, { code: 'BRA', name: 'Brazil', flag: '🇧🇷' }, { code: 'CHI', name: 'Chile', flag: '🇨🇱' }, { code: 'COL', name: 'Colombia', flag: '🇨🇴' }, { code: 'ECU', name: 'Ecuador', flag: '🇪🇨' }, { code: 'PAR', name: 'Paraguay', flag: '🇵🇾' }, { code: 'PER', name: 'Peru', flag: '🇵🇪' }, { code: 'URU', name: 'Uruguay', flag: '🇺🇾' }, { code: 'VEN', name: 'Venezuela', flag: '🇻🇪' },
@@ -123,7 +129,116 @@
         };
         const appId = 'pro-rank-global';
 
-        // --- Utility Functions ---
+        // --- Core Utility Functions ---
+
+        const getTournamentTier = (t) => {
+            if (t.format === 'atp_finals') return 'finals';
+            let parsed = t.bracket;
+            if (typeof parsed === 'string') {
+                try { parsed = JSON.parse(parsed); } catch(e) { return t.tier || 'major'; }
+            }
+            if (!parsed || !Array.isArray(parsed)) return t.tier || 'major';
+            // Grand slams strictly demoted if less than 64 draw (6 rounds)
+            if (t.tier === 'grand_slam' && parsed.length < 6) return 'major';
+            return t.tier || 'major';
+        };
+
+        const getDrawSize = (t) => {
+            if (t.format === 'atp_finals') return 8;
+            let bracket = t.bracket;
+            if (typeof bracket === 'string') {
+                try { bracket = JSON.parse(bracket); } catch(e) {}
+            }
+            if (!bracket || !Array.isArray(bracket) || !bracket.length) return 32;
+            if (bracket.length === 6) return 64;
+            if (bracket.length === 5) return 32;
+            if (bracket.length === 4) return 16;
+            if (bracket.length === 3) return 8;
+            return 32;
+        };
+
+        const getTournamentPointsAndResult = (playerId, t) => {
+            let pts = 0, w = 0, l = 0, played = false;
+            let resultStr = '';
+            let wonFinal = false;
+
+            if (t.format === 'atp_finals') {
+                let groupMatches = [];
+                let knockout = [[],[]];
+                try { groupMatches = typeof t.groupMatches === 'string' ? JSON.parse(t.groupMatches) : (t.groupMatches || []); } catch(e){}
+                try { knockout = typeof t.bracket === 'string' ? JSON.parse(t.bracket) : (t.bracket || []); } catch(e){}
+                if (!Array.isArray(groupMatches)) groupMatches = [];
+                if (!Array.isArray(knockout)) knockout = [[],[]];
+                
+                groupMatches.forEach(m => {
+                    if (m && (m.p1 === playerId || m.p2 === playerId)) {
+                        played = true;
+                        resultStr = 'Round Robin';
+                        if (m.winner === playerId) { pts += 200; w++; }
+                        else if (m.winner) { l++; }
+                    }
+                });
+
+                if (played) {
+                    knockout.forEach((round, rIdx) => {
+                        if (!Array.isArray(round)) return;
+                        round.forEach(m => {
+                            if (m && (m.p1 === playerId || m.p2 === playerId)) {
+                                if (rIdx === 0) resultStr = 'Semifinalist';
+                                if (rIdx === 1) resultStr = 'Finalist';
+                                if (m.winner === playerId) {
+                                    w++;
+                                    if (rIdx === 0) pts += 400; // SF Win
+                                    if (rIdx === 1) { pts += 500; wonFinal = true; resultStr = 'Winner'; } // Final Win
+                                } else if (m.winner) { l++; }
+                            }
+                        });
+                    });
+                }
+            } else {
+                let parsedBracket = [];
+                try { parsedBracket = typeof t.bracket === 'string' ? JSON.parse(t.bracket) : (t.bracket || []); } catch(e){}
+                if (!Array.isArray(parsedBracket)) parsedBracket = [];
+                
+                const totalRounds = parsedBracket.length;
+                let highestRound = -1;
+
+                parsedBracket.forEach((round, rIdx) => {
+                    if (!Array.isArray(round)) return;
+                    round.forEach(m => {
+                        if (m && (m.p1 === playerId || m.p2 === playerId)) {
+                            played = true;
+                            if (rIdx > highestRound) highestRound = rIdx;
+                            if (m.winner === playerId && m.type !== 'bye') w++;
+                            else if (m.winner && m.winner !== playerId) l++;
+                            if (m.winner === playerId && rIdx === totalRounds - 1) wonFinal = true;
+                        }
+                    });
+                });
+                
+                if (played && highestRound > -1) {
+                    const tierKey = getTournamentTier(t);
+                    const tierConf = TOURNAMENT_TIERS[tierKey];
+                    const drawSize = getDrawSize(t);
+                    let sizeMultiplier = 1;
+                    if (tierKey !== 'grand_slam') {
+                        if (drawSize === 16) sizeMultiplier = 0.75;
+                        if (drawSize === 8) sizeMultiplier = 0.5;
+                    }
+                    if (wonFinal) pts = Math.round(tierConf.points.WINNER * sizeMultiplier);
+                    else if (highestRound === totalRounds - 1) pts = Math.round(tierConf.points.FINALIST * sizeMultiplier);
+                    else if (highestRound === totalRounds - 2) pts = Math.round(tierConf.points.SF * sizeMultiplier);
+                    else if (highestRound === totalRounds - 3) pts = Math.round(tierConf.points.QF * sizeMultiplier);
+                    else if (highestRound === totalRounds - 4) pts = Math.round(tierConf.points.R16 * sizeMultiplier);
+                    else if (highestRound === totalRounds - 5) pts = Math.round(tierConf.points.R32 * sizeMultiplier);
+                    else if (highestRound === totalRounds - 6) pts = Math.round(tierConf.points.R64 * sizeMultiplier);
+
+                    const rOffset = 6 - totalRounds; 
+                    resultStr = wonFinal ? 'Winner' : ROUND_NAMES[highestRound + rOffset];
+                }
+            }
+            return { pts, w, l, played, resultStr, wonFinal };
+        };
 
         const calculatePlayerRankings = (players, tournaments) => {
             const completedTournaments = tournaments
@@ -134,69 +249,135 @@
                 let recentTournaments = [];
                 let recentMatches = [];
                 let totalPoints = 0;
-                let w = 0, l = 0;
+                let totalW = 0, totalL = 0;
 
                 for (const t of completedTournaments) {
                     if (recentTournaments.length >= 24) break; 
-                    let pointsForTournament = 0, playedInTournament = false, highestRound = -1, wonFinal = false;
-                    const totalRounds = t.bracket.length;
-
-                    for (let rIdx = totalRounds - 1; rIdx >= 0; rIdx--) {
-                        t.bracket[rIdx].forEach(match => {
-                            if ((match.p1 === player.id || match.p2 === player.id) && match.winner) {
-                                if (recentMatches.length < 5) {
-                                    recentMatches.push({
-                                        isWin: match.winner === player.id,
-                                        type: match.type || 'close'
-                                    });
+                    
+                    // Match Form Extraction
+                    if (t.format === 'atp_finals') {
+                        let knockout = [];
+                        let groupMatches = [];
+                        try { knockout = typeof t.bracket === 'string' ? JSON.parse(t.bracket) : (t.bracket || []); } catch(e){}
+                        try { groupMatches = typeof t.groupMatches === 'string' ? JSON.parse(t.groupMatches) : (t.groupMatches || []); } catch(e){}
+                        if (!Array.isArray(knockout)) knockout = [];
+                        if (!Array.isArray(groupMatches)) groupMatches = [];
+                        
+                        [...knockout].reverse().forEach(round => {
+                            if (!Array.isArray(round)) return;
+                            round.forEach(m => {
+                                if (m && (m.p1 === player.id || m.p2 === player.id) && m.winner && recentMatches.length < 5) {
+                                    recentMatches.push({ isWin: m.winner === player.id, type: m.type || 'close' });
                                 }
+                            });
+                        });
+                        [...groupMatches].reverse().forEach(m => {
+                            if (m && (m.p1 === player.id || m.p2 === player.id) && m.winner && recentMatches.length < 5) {
+                                    recentMatches.push({ isWin: m.winner === player.id, type: m.type || 'close' });
                             }
                         });
+                    } else {
+                        let parsedBracket = [];
+                        try { parsedBracket = typeof t.bracket === 'string' ? JSON.parse(t.bracket) : t.bracket; } catch(e){}
+                        if (parsedBracket && Array.isArray(parsedBracket)) {
+                            for (let rIdx = parsedBracket.length - 1; rIdx >= 0; rIdx--) {
+                                if (!Array.isArray(parsedBracket[rIdx])) continue;
+                                parsedBracket[rIdx].forEach(match => {
+                                    if (match && (match.p1 === player.id || match.p2 === player.id) && match.winner && match.type !== 'bye') {
+                                        if (recentMatches.length < 5) {
+                                            recentMatches.push({ isWin: match.winner === player.id, type: match.type || 'close' });
+                                        }
+                                    }
+                                });
+                            }
+                        }
                     }
 
-                    t.bracket.forEach((round, roundIndex) => {
-                        round.forEach(match => {
-                            if (match.p1 === player.id || match.p2 === player.id) {
-                                playedInTournament = true;
-                                if (roundIndex > highestRound) highestRound = roundIndex;
-                                if (match.winner === player.id) {
-                                    w++;
-                                    if (roundIndex === totalRounds - 1) wonFinal = true;
-                                } else if (match.winner && match.winner !== player.id) l++;
+                    // Tournament Points Extraction
+                    const res = getTournamentPointsAndResult(player.id, t);
+                    if (res.played) {
+                        totalPoints += res.pts;
+                        totalW += res.w;
+                        totalL += res.l;
+                        let totalRounds = 0;
+                        if (t.format === 'atp_finals') {
+                            totalRounds = 5;
+                        } else if (t.bracket) {
+                            let parsedBracket = [];
+                            try { parsedBracket = typeof t.bracket === 'string' ? JSON.parse(t.bracket) : t.bracket; } catch(e){}
+                            if (Array.isArray(parsedBracket)) {
+                                totalRounds = parsedBracket.length;
                             }
-                        });
-                    });
+                        }
 
-                    if (playedInTournament) {
-                        const tierConf = TOURNAMENT_TIERS[t.tier || 'major'];
-                        const pts = tierConf.points;
-                        let sizeMultiplier = 1;
-                        if (totalRounds === 4) sizeMultiplier = 0.75; 
-                        if (totalRounds === 3) sizeMultiplier = 0.5;  
-
-                        if (wonFinal) pointsForTournament = Math.round(pts.WINNER * sizeMultiplier);
-                        else if (highestRound === totalRounds - 1) pointsForTournament = Math.round(pts.FINALIST * sizeMultiplier);
-                        else if (highestRound === totalRounds - 2) pointsForTournament = Math.round(pts.SF * sizeMultiplier);
-                        else if (highestRound === totalRounds - 3) pointsForTournament = Math.round(pts.QF * sizeMultiplier);
-                        else if (highestRound === totalRounds - 4) pointsForTournament = Math.round(pts.R16 * sizeMultiplier);
-                        else if (highestRound === totalRounds - 5) pointsForTournament = Math.round(pts.R32 * sizeMultiplier);
-
-                        totalPoints += pointsForTournament;
-                        const rOffset = 5 - totalRounds;
                         recentTournaments.push({ 
                             tournamentId: t.id, 
                             tournamentName: t.name, 
-                            tier: t.tier || 'major',
-                            points: pointsForTournament, 
-                            result: wonFinal ? 'Winner' : ROUND_NAMES[highestRound + rOffset],
+                            tier: getTournamentTier(t),
+                            points: res.pts, 
+                            result: res.resultStr,
                             totalRounds: totalRounds
                         });
                     }
                 }
-                return { ...player, points: totalPoints, recentTournaments, recentMatches, stats: { wins: w, losses: l } };
+                return { ...player, points: totalPoints, recentTournaments, recentMatches, stats: { wins: totalW, losses: totalL } };
             })
             .sort((a, b) => b.points - a.points || a.name.localeCompare(b.name))
             .map((p, index) => ({ ...p, rank: index + 1 }));
+        };
+
+        const getGlobalHistory = (playersRaw, tournaments) => {
+            const completed = tournaments.filter(t => t.status === 'completed').sort((a, b) => a.completedAt - b.completedAt);
+            const history = [];
+
+            completed.forEach((currentT, index) => {
+                const relevantTournaments = completed.slice(Math.max(0, index - 23), index + 1);
+                
+                const playerPoints = playersRaw.map(p => {
+                    let pts = 0;
+                    relevantTournaments.forEach(t => {
+                        const res = getTournamentPointsAndResult(p.id, t);
+                        pts += res.pts;
+                    });
+                    return { id: p.id, name: p.name, pts, imageUrl: p.imageUrl, nationality: p.nationality };
+                });
+
+                playerPoints.sort((a, b) => b.pts - a.pts || a.name.localeCompare(b.name));
+                playerPoints.forEach((p, idx) => p.rank = idx + 1);
+
+                history.push({
+                    tournamentId: currentT.id,
+                    tournamentName: currentT.name,
+                    date: currentT.completedAt,
+                    standings: playerPoints
+                });
+            });
+
+            return history;
+        };
+
+        // --- Draw Generators ---
+
+        const generate64Draw = (selectedPlayers) => {
+            const draw = new Array(64).fill(null);
+            const seeds = selectedPlayers.slice(0, 16);
+            const others = selectedPlayers.slice(16).sort(() => Math.random() - 0.5);
+            const seedSlots = [0, 63, 31, 32, 15, 48, 16, 47, 7, 56, 24, 39, 8, 55, 23, 40];
+            seeds.forEach((seed, i) => { if (seedSlots[i] !== undefined) draw[seedSlots[i]] = seed; });
+            let otherIndex = 0;
+            for (let i = 0; i < 64; i++) { if (!draw[i]) draw[i] = others[otherIndex++]; }
+            const bracket = [];
+            const r64 = [];
+            for (let i = 0; i < 32; i++) r64.push({ id: `r0-m${i}`, p1: draw[i * 2]?.id || null, p2: draw[i * 2 + 1]?.id || null, winner: null, type: null });
+            bracket.push(r64);
+            let matchesInRound = 16;
+            for (let r = 1; r < 6; r++) {
+                const roundMatches = [];
+                for (let i = 0; i < matchesInRound; i++) roundMatches.push({ id: `r${r}-m${i}`, p1: null, p2: null, winner: null, type: null });
+                bracket.push(roundMatches);
+                matchesInRound /= 2;
+            }
+            return bracket;
         };
 
         const generate32Draw = (selectedPlayers) => {
@@ -265,61 +446,55 @@
             return bracket;
         };
 
-        // Unified History Generator for all Charts
-        const getGlobalHistory = (playersRaw, tournaments) => {
-            const completed = tournaments.filter(t => t.status === 'completed').sort((a, b) => a.completedAt - b.completedAt);
-            const history = [];
+        const generateATPFinalsDraw = (selectedPlayers) => {
+            // Strictly Top 8 Players
+            const seeds = selectedPlayers.slice(0, 8);
+            const groupA = [seeds[0]];
+            const groupB = [seeds[1]];
+            
+            Math.random() > 0.5 ? (groupA.push(seeds[2]), groupB.push(seeds[3])) : (groupA.push(seeds[3]), groupB.push(seeds[2]));
+            Math.random() > 0.5 ? (groupA.push(seeds[4]), groupB.push(seeds[5])) : (groupA.push(seeds[5]), groupB.push(seeds[4]));
+            Math.random() > 0.5 ? (groupA.push(seeds[6]), groupB.push(seeds[7])) : (groupA.push(seeds[7]), groupB.push(seeds[6]));
 
-            completed.forEach((currentT, index) => {
-                const relevantTournaments = completed.slice(Math.max(0, index - 23), index + 1); // Last 24 timeframe
-                
-                const playerPoints = playersRaw.map(p => {
-                    let pts = 0;
-                    relevantTournaments.forEach(t => {
-                        let highestRound = -1;
-                        let wonFinal = false;
-                        const parsedBracket = typeof t.bracket === 'string' ? JSON.parse(t.bracket) : t.bracket;
-                        const totalRounds = parsedBracket.length;
-                        
-                        parsedBracket.forEach((round, rIdx) => {
-                            round.forEach(match => {
-                                if (match.p1 === p.id || match.p2 === p.id) {
-                                    if (rIdx > highestRound) highestRound = rIdx;
-                                    if (match.winner === p.id && rIdx === totalRounds - 1) wonFinal = true;
-                                }
-                            });
-                        });
+            const makeMatches = (group, name) => {
+                return [
+                    { id: `${name}-1`, p1: group[0].id, p2: group[1].id, winner: null, type: null, group: name },
+                    { id: `${name}-2`, p1: group[2].id, p2: group[3].id, winner: null, type: null, group: name },
+                    { id: `${name}-3`, p1: group[0].id, p2: group[2].id, winner: null, type: null, group: name },
+                    { id: `${name}-4`, p1: group[1].id, p2: group[3].id, winner: null, type: null, group: name },
+                    { id: `${name}-5`, p1: group[0].id, p2: group[3].id, winner: null, type: null, group: name },
+                    { id: `${name}-6`, p1: group[1].id, p2: group[2].id, winner: null, type: null, group: name },
+                ];
+            };
 
-                        if (highestRound > -1) {
-                            const tierConf = TOURNAMENT_TIERS[t.tier || 'major'];
-                            let sizeMultiplier = 1;
-                            if (totalRounds === 4) sizeMultiplier = 0.75;
-                            if (totalRounds === 3) sizeMultiplier = 0.5;
-
-                            if (wonFinal) pts += Math.round(tierConf.points.WINNER * sizeMultiplier);
-                            else if (highestRound === totalRounds - 1) pts += Math.round(tierConf.points.FINALIST * sizeMultiplier);
-                            else if (highestRound === totalRounds - 2) pts += Math.round(tierConf.points.SF * sizeMultiplier);
-                            else if (highestRound === totalRounds - 3) pts += Math.round(tierConf.points.QF * sizeMultiplier);
-                            else if (highestRound === totalRounds - 4) pts += Math.round(tierConf.points.R16 * sizeMultiplier);
-                            else if (highestRound === totalRounds - 5) pts += Math.round(tierConf.points.R32 * sizeMultiplier);
-                        }
-                    });
-                    return { id: p.id, name: p.name, pts, imageUrl: p.imageUrl, nationality: p.nationality };
-                });
-
-                playerPoints.sort((a, b) => b.pts - a.pts || a.name.localeCompare(b.name));
-                playerPoints.forEach((p, idx) => p.rank = idx + 1);
-
-                history.push({
-                    tournamentId: currentT.id,
-                    tournamentName: currentT.name,
-                    date: currentT.completedAt,
-                    standings: playerPoints
-                });
-            });
-
-            return history;
+            return {
+                format: 'atp_finals',
+                groups: { A: groupA.map(p=>p.id), B: groupB.map(p=>p.id) },
+                groupMatches: JSON.stringify([...makeMatches(groupA, 'A'), ...makeMatches(groupB, 'B')]),
+                knockout: JSON.stringify([
+                    [{ id: 'sf-1', p1: null, p2: null, winner: null, type: null }, { id: 'sf-2', p1: null, p2: null, winner: null, type: null }],
+                    [{ id: 'f-1', p1: null, p2: null, winner: null, type: null }]
+                ])
+            };
         };
+
+        const calcGroupStandings = (groupId, matches) => {
+            const scores = {};
+            if (!Array.isArray(matches)) return [];
+            matches.filter(m => m && m.group === groupId).forEach(m => {
+                if (!scores[m.p1]) scores[m.p1] = { id: m.p1, wins: 0, losses: 0, tiebreaker: 0 };
+                if (!scores[m.p2]) scores[m.p2] = { id: m.p2, wins: 0, losses: 0, tiebreaker: 0 };
+                if (m.winner) {
+                    const loser = m.winner === m.p1 ? m.p2 : m.p1;
+                    scores[m.winner].wins += 1;
+                    scores[loser].losses += 1;
+                    scores[m.winner].tiebreaker += (m.type === 'lopsided' ? 2 : 1);
+                    scores[loser].tiebreaker -= (m.type === 'lopsided' ? 2 : 1);
+                }
+            });
+            return Object.values(scores).sort((a,b) => b.wins - a.wins || b.tiebreaker - a.tiebreaker);
+        };
+
 
         // --- Custom Views ---
 
@@ -330,16 +505,13 @@
             const data = history.slice(range === 'all' ? 0 : -range);
             if (data.length < 1) return <p className="text-slate-400 text-sm mt-4">Not enough tournament history.</p>;
 
-            // Width is fixed at 1000 so the SVG naturally squishes to fit container width seamlessly.
             const width = 1000;
             
             let minVal = type === 'rank' ? 1 : 0;
             let maxVal = type === 'rank' ? Math.max(10, ...data.map(d => d.rank)) + 2 : Math.max(100, ...data.map(d => d.points)) * 1.1;
 
             const pad = { top: 50, right: 60, bottom: 40, left: 60 };
-
-            // Dynamic height calculation for Rank chart to prevent vertical squishing
-            const pixelsPerRank = 35; // The baseline visual vertical distance each rank commands
+            const pixelsPerRank = 35;
             const dynamicHeight = type === 'rank' ? Math.max(350, (maxVal - minVal) * pixelsPerRank + pad.top + pad.bottom) : 350;
             const height = dynamicHeight;
 
@@ -351,14 +523,13 @@
 
             const pathD = data.map((d, i) => `${i === 0 ? 'M' : 'L'} ${getX(i)} ${getY(type === 'rank' ? d.rank : d.points)}`).join(' ');
 
-            // Dynamic Step calculation so numbers don't overlap when highly horizontally squished
             const labelStep = Math.max(1, Math.ceil(data.length / 15));
 
             const getAchColor = (ach) => {
                 if (!ach) return '#64748b';
                 if (ach.result === 'Winner') return '#facc15';
                 if (ach.result === 'Finalist') return '#cbd5e1';
-                return '#fb923c'; // Semifinalist
+                return '#fb923c';
             };
 
             return (
@@ -370,7 +541,6 @@
                     </div>
                     <div className="w-full bg-slate-900/50 rounded-xl border border-slate-700/50 pb-2 relative overflow-hidden">
                         <svg viewBox={`0 0 ${width} ${height}`} className="w-full h-auto overflow-visible">
-                            {/* Grid lines */}
                             {type === 'rank' ? (
                                 [...Array(Math.floor(maxVal))].map((_, i) => {
                                     const r = i + 1;
@@ -402,21 +572,18 @@
                                 const ptY = getY(type === 'rank' ? d.rank : d.points);
                                 const isHovered = hoveredPointData && hoveredPointData.date === d.date;
                                 
-                                // Always show the last label, otherwise only show according to the safe step size
                                 const showLabel = i % labelStep === 0 || i === data.length - 1;
 
                                 return (
                                     <g key={i}>
                                         <circle cx={ptX} cy={ptY} r={isHovered ? "8" : "5"} fill="#1e293b" stroke="#3b82f6" strokeWidth="2" style={{ transition: 'r 0.2s ease' }} />
                                         
-                                        {/* Value Label - Bigger font */}
                                         {showLabel && (
                                             <text x={ptX} y={ptY - 18} fill="#3b82f6" fontSize="16" fontWeight="900" textAnchor="middle" stroke="#0f172a" strokeWidth="4" paintOrder="stroke">
                                                 {type === 'rank' ? `#${d.rank}` : d.points.toLocaleString()}
                                             </text>
                                         )}
 
-                                        {/* Achievement Icon logic for Points chart */}
                                         {type === 'points' && d.achievement && (
                                             <g transform={`translate(${ptX - 10}, ${ptY - 60})`}>
                                                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={getAchColor(d.achievement)} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -425,7 +592,6 @@
                                             </g>
                                         )}
 
-                                        {/* Invisible hover area */}
                                         <circle cx={ptX} cy={ptY} r="20" fill="transparent" cursor="crosshair" onMouseEnter={() => setHoveredPointData(d)} onMouseLeave={() => setHoveredPointData(null)} />
                                     </g>
                                 );
@@ -433,7 +599,6 @@
                         </svg>
                     </div>
 
-                    {/* Bottom Hover Display Label */}
                     <div className="h-10 mt-4 flex items-center justify-center bg-slate-900 border border-slate-700 rounded-full px-6 min-w-[300px] shadow-lg transition-all duration-200">
                         {hoveredPointData ? (
                             <span className="text-white font-bold tracking-wide">
@@ -455,7 +620,6 @@
             const historyData = globalHistory.slice(range === 'all' ? 0 : -range);
             if (historyData.length < 1) return <p className="text-slate-400 text-sm mt-4">Not enough tournament history to generate a graph.</p>;
 
-            // Find ANY player who touched the Top 12 during this timeframe
             const includedPlayerIds = new Set();
             historyData.forEach(h => {
                 h.standings.forEach(s => {
@@ -463,7 +627,6 @@
                 });
             });
 
-            // Extrapolate and build continuous path segments mapping Drop-offs
             const lines = [];
             Array.from(includedPlayerIds).forEach(pid => {
                 const player = playersRaw.find(p => p.id === pid);
@@ -477,7 +640,6 @@
                     const prevS = k > 0 ? historyData[k-1].standings.find(st => st.id === pid) : null;
                     const nextS = k < historyData.length - 1 ? historyData[k+1].standings.find(st => st.id === pid) : null;
 
-                    // Plot if Top 12 NOW, was Top 12 PREVIOUSLY, or will be Top 12 NEXT.
                     const isTop12 = s.rank <= 12;
                     const prevTop12 = prevS && prevS.rank <= 12;
                     const nextTop12 = nextS && nextS.rank <= 12;
@@ -487,7 +649,6 @@
                     }
                 }
 
-                // Break into continuous segment arrays (so skipped timeframes break the line cleanly)
                 const segments = [];
                 let currentSegment = [];
                 for (let i = 0; i < visiblePoints.length; i++) {
@@ -509,7 +670,6 @@
                 }
             });
 
-            // Base SVG sizes. Rank chart gets significantly taller to prevent label overlap for lines.
             const width = 1200;
             const height = type === 'rank' ? 900 : 650; 
             const pad = { top: 40, right: 260, bottom: 80, left: type === 'rank' ? 60 : 80 }; 
@@ -518,28 +678,25 @@
             historyData.forEach(h => { h.standings.forEach(s => { if (includedPlayerIds.has(s.id) && s.pts > maxPointsVal) maxPointsVal = s.pts; }) });
             maxPointsVal = Math.ceil(maxPointsVal * 1.05);
 
-            const maxRankDisplay = 17; // Lower limit correctly applied to 17
+            const maxRankDisplay = 17; 
 
             const getX = (i) => historyData.length === 1 ? (pad.left + (width - pad.left - pad.right) / 2) : pad.left + (i * ((width - pad.left - pad.right) / (historyData.length - 1)));
             
             const getY = (val) => {
                 if (type === 'rank') {
-                    if (val > maxRankDisplay) return pad.top + ((maxRankDisplay + 1) / (maxRankDisplay + 1.5)) * (height - pad.top - pad.bottom); // Drop to Gap
+                    if (val > maxRankDisplay) return pad.top + ((maxRankDisplay + 1) / (maxRankDisplay + 1.5)) * (height - pad.top - pad.bottom); 
                     return pad.top + ((val - 1) / (maxRankDisplay + 1.5)) * (height - pad.top - pad.bottom);
                 } else {
                     return height - pad.bottom - ((val - 0) / (maxPointsVal - 0)) * (height - pad.top - pad.bottom);
                 }
             };
 
-            // Pre-calculate SVG Paths
             lines.forEach(line => {
                 line.paths = line.segments.map(seg => {
                     return seg.map((pt, i) => `${i === 0 ? 'M' : 'L'} ${getX(pt.k)} ${getY(type === 'rank' ? pt.s.rank : pt.s.pts)}`).join(' ');
                 });
             });
 
-            // --- ANTI-OVERLAP COLLISION ALGORITHM FOR LABELS ---
-            // Computed on the STABLE array so that hovering doesn't recalculate and move them!
             const endLabels = lines.map(line => {
                 const lastSeg = line.segments[line.segments.length - 1];
                 const endPt = lastSeg[lastSeg.length - 1];
@@ -560,9 +717,7 @@
             }
             const labelPositions = {};
             endLabels.forEach(el => labelPositions[el.id] = el.currentY);
-            // ---------------------------------------------------
 
-            // Sort lines strictly for rendering (so hovered draws last on top)
             const sortedLines = [...lines].sort((a, b) => {
                 if (a.player.id === selectedLineId || a.player.id === hoveredLineId) return 1;
                 if (b.player.id === selectedLineId || b.player.id === hoveredLineId) return -1;
@@ -595,7 +750,6 @@
                             {/* Heavy Gridlines */}
                             {type === 'rank' ? (
                                 <>
-                                    {/* Lines 1 through the display maximum */}
                                     {[...Array(maxRankDisplay)].map((_, i) => {
                                         const r = i + 1;
                                         return (
@@ -605,7 +759,6 @@
                                             </g>
                                         );
                                     })}
-                                    {/* The visual gap border for ranks below max */}
                                     <g>
                                         <rect x={pad.left} y={getY(maxRankDisplay + 0.5)} width={width - pad.left - pad.right + 20} height="40" fill="#0f172a" opacity="0.6" />
                                         <line x1={pad.left} y1={getY(maxRankDisplay + 0.5)} x2={width - pad.right + 20} y2={getY(maxRankDisplay + 0.5)} stroke="#ef4444" strokeWidth="1" strokeDasharray="8 4" opacity="0.5" />
@@ -614,7 +767,7 @@
                                 </>
                             ) : (
                                 (() => {
-                                    const step = Math.max(10, Math.ceil(maxPointsVal / 15)); // Approx 15 tight lines
+                                    const step = Math.max(10, Math.ceil(maxPointsVal / 15)); 
                                     const yLines = [];
                                     for(let v = 0; v <= maxPointsVal; v += step) yLines.push(v);
                                     return yLines.map((p, i) => (
@@ -626,7 +779,7 @@
                                 })()
                             )}
                             
-                            {/* Render Ordered Lines (Uses specific key to prevent jumping/falling animation on hover) */}
+                            {/* Lines */}
                             {sortedLines.map((line) => {
                                 const isHighlighted = selectedLineId === line.player.id || hoveredLineId === line.player.id;
                                 const isFaded = (selectedLineId || hoveredLineId) && !isHighlighted;
@@ -646,7 +799,7 @@
                                 ));
                             })}
                             
-                            {/* Render Dots and Labels */}
+                            {/* Dots and Labels */}
                             {sortedLines.map((line) => {
                                 const isHighlighted = selectedLineId === line.player.id || hoveredLineId === line.player.id;
                                 const isFaded = (selectedLineId || hoveredLineId) && !isHighlighted;
@@ -1094,6 +1247,8 @@
                                                         else if (t.result === 'Quarterfinals') lbl = 'QF';
                                                         else if (t.result === 'Round of 16') lbl = '16';
                                                         else if (t.result === 'Round of 32') lbl = '32';
+                                                        else if (t.result === 'Round of 64') lbl = '64';
+                                                        else if (t.result === 'Round Robin') lbl = 'RR';
                                                         
                                                         const isSFHighlight = t.result === 'Semifinals' && t.totalRounds > 3;
                                                         const bgClass = t.result === 'Winner' ? 'bg-green-500 text-green-950' : 
@@ -1172,7 +1327,7 @@
 
             const generateDummyPlayers = async () => {
                 setIsAdding(true);
-                const dummyNames = [{n: "Roger F.", c: "SUI"}, {n: "Rafa N.", c: "ESP"}, {n: "Novak D.", c: "SRB"}, {n: "Andy M.", c: "GBR"}, {n: "Pete S.", c: "USA"}, {n: "Andre A.", c: "USA"}, {n: "Bjorn B.", c: "SWE"}, {n: "John M.", c: "USA"}];
+                const dummyNames = [{n: "Roger F.", c: "SUI"}, {n: "Rafa N.", c: "ESP"}, {n: "Novak D.", c: "SRB"}, {n: "Andy M.", c: "GBR"}, {n: "Pete S.", c: "USA"}, {n: "Andre A.", c: "USA"}, {n: "Bjorn B.", c: "SWE"}, {n: "John M.", c: "USA"}, {n: "Carlos A.", c: "ESP"}, {n: "Jannik S.", c: "ITA"}, {n: "Daniil M.", c: "RUS"}, {n: "Alex Z.", c: "GER"}];
                 const playersRef = window.fb.collection(db, 'artifacts', appId, 'public', 'data', 'players');
                 try {
                     for (const p of dummyNames) {
@@ -1196,7 +1351,7 @@
                                 onChange={e => setSearchQuery(e.target.value)}
                             />
                             <div className="flex gap-2 w-full md:w-auto">
-                                {players.length < 32 && <button onClick={generateDummyPlayers} className="flex-1 md:flex-none bg-slate-700 px-4 py-2 rounded-lg flex items-center justify-center gap-2 whitespace-nowrap hover:bg-slate-600 transition-colors"><Activity size={16}/> Fill Dummies</button>}
+                                {players.length < 64 && <button onClick={generateDummyPlayers} className="flex-1 md:flex-none bg-slate-700 px-4 py-2 rounded-lg flex items-center justify-center gap-2 whitespace-nowrap hover:bg-slate-600 transition-colors"><Activity size={16}/> Add Dummies</button>}
                                 <button onClick={() => setShowAddForm(!showAddForm)} className="flex-1 md:flex-none bg-blue-600 px-4 py-2 rounded-lg flex items-center justify-center gap-2 whitespace-nowrap hover:bg-blue-500 transition-colors">{showAddForm ? <X size={20}/> : <Plus size={20}/>} {showAddForm ? 'Cancel' : 'Add Player'}</button>
                             </div>
                         </div>
@@ -1267,20 +1422,49 @@
                 let matches = [];
                 tournaments.forEach(t => {
                     if (t.status !== 'completed') return;
-                    let parsedBracket = t.bracket;
-                    if (typeof t.bracket === 'string') {
-                        try { parsedBracket = JSON.parse(t.bracket); } catch(e){}
-                    }
-                    if (!Array.isArray(parsedBracket)) return;
                     
-                    parsedBracket.forEach((round, rIdx) => round.forEach(m => {
-                        if ((m.p1 === player.id || m.p2 === player.id) && m.winner) {
-                            const rOffset = 5 - parsedBracket.length;
-                            const oppId = m.p1 === player.id ? m.p2 : m.p1;
-                            const oppName = players.find(p => p.id === oppId)?.name || 'Unknown';
-                            matches.push({ tournamentName: t.name, tier: t.tier || 'major', roundName: ROUND_NAMES[rIdx + rOffset], roundIndex: rIdx + rOffset, opponentId: oppId, opponentName: oppName, isWin: m.winner === player.id, type: m.type, date: t.completedAt || t.createdAt });
-                        }
-                    }));
+                    if (t.format === 'atp_finals') {
+                        let groupMatches = [];
+                        let knockout = [];
+                        try { groupMatches = typeof t.groupMatches === 'string' ? JSON.parse(t.groupMatches) : (t.groupMatches || []); } catch(e){}
+                        try { knockout = typeof t.bracket === 'string' ? JSON.parse(t.bracket) : (t.bracket || []); } catch(e){}
+                        if (!Array.isArray(groupMatches)) groupMatches = [];
+                        if (!Array.isArray(knockout)) knockout = [];
+                        
+                        groupMatches.forEach(m => {
+                            if (m && (m.p1 === player.id || m.p2 === player.id) && m.winner) {
+                                const oppId = m.p1 === player.id ? m.p2 : m.p1;
+                                const oppName = players.find(p => p.id === oppId)?.name || 'Unknown';
+                                matches.push({ tournamentName: t.name, tier: 'finals', roundName: 'Round Robin', roundIndex: 0, opponentId: oppId, opponentName: oppName, isWin: m.winner === player.id, type: m.type, date: t.completedAt || t.createdAt });
+                            }
+                        });
+                        knockout.forEach((round, rIdx) => {
+                            if (!Array.isArray(round)) return;
+                            round.forEach(m => {
+                                if (m && (m.p1 === player.id || m.p2 === player.id) && m.winner) {
+                                    const oppId = m.p1 === player.id ? m.p2 : m.p1;
+                                    const oppName = players.find(p => p.id === oppId)?.name || 'Unknown';
+                                    matches.push({ tournamentName: t.name, tier: 'finals', roundName: rIdx === 0 ? 'Semifinals' : 'Final', roundIndex: rIdx + 1, opponentId: oppId, opponentName: oppName, isWin: m.winner === player.id, type: m.type, date: t.completedAt || t.createdAt });
+                                }
+                            });
+                        });
+                    } else {
+                        let parsedBracket = [];
+                        try { parsedBracket = typeof t.bracket === 'string' ? JSON.parse(t.bracket) : (t.bracket || []); } catch(e){}
+                        if (!Array.isArray(parsedBracket)) return;
+                        
+                        parsedBracket.forEach((round, rIdx) => {
+                            if (!Array.isArray(round)) return;
+                            round.forEach(m => {
+                                if (m && (m.p1 === player.id || m.p2 === player.id) && m.winner && m.type !== 'bye') {
+                                    const rOffset = 6 - parsedBracket.length;
+                                    const oppId = m.p1 === player.id ? m.p2 : m.p1;
+                                    const oppName = players.find(p => p.id === oppId)?.name || 'Unknown';
+                                    matches.push({ tournamentName: t.name, tier: getTournamentTier(t), roundName: ROUND_NAMES[rIdx + rOffset], roundIndex: rIdx + rOffset, opponentId: oppId, opponentName: oppName, isWin: m.winner === player.id, type: m.type, date: t.completedAt || t.createdAt });
+                                }
+                            })
+                        });
+                    }
                 });
                 return matches.sort((a,b) => {
                     if (b.date !== a.date) return b.date - a.date;
@@ -1311,36 +1495,16 @@
                 const list = [];
                 tournaments.forEach(t => {
                     if (t.status !== 'completed') return;
-                    if (t.tier !== 'grand_slam' && t.tier !== 'major') return;
-                    let parsedBracket = t.bracket;
-                    if (typeof t.bracket === 'string') {
-                        try { parsedBracket = JSON.parse(t.bracket); } catch(e){}
-                    }
-                    if (!Array.isArray(parsedBracket)) return;
+                    const tTier = getTournamentTier(t);
+                    if (tTier !== 'grand_slam' && tTier !== 'major' && tTier !== 'finals') return;
                     
-                    let highestRound = -1;
-                    let wonFinal = false;
-                    const totalRounds = parsedBracket.length;
+                    const res = getTournamentPointsAndResult(player.id, t);
                     
-                    parsedBracket.forEach((round, rIdx) => {
-                        round.forEach(m => {
-                            if (m.p1 === player.id || m.p2 === player.id) {
-                                if (rIdx > highestRound) highestRound = rIdx;
-                                if (m.winner === player.id && rIdx === totalRounds - 1) wonFinal = true;
-                            }
-                        });
-                    });
-                    
-                    if (highestRound >= totalRounds - 2) {
-                        let resultStr = '';
-                        if (wonFinal) resultStr = 'Winner';
-                        else if (highestRound === totalRounds - 1) resultStr = 'Finalist';
-                        else if (highestRound === totalRounds - 2) resultStr = 'Semifinalist';
-                        
+                    if (res.played && (res.resultStr === 'Winner' || res.resultStr === 'Finalist' || res.resultStr === 'Semifinalist')) {
                         list.push({
                             tournamentName: t.name,
-                            tier: t.tier,
-                            result: resultStr,
+                            tier: tTier,
+                            result: res.resultStr,
                             date: t.completedAt || t.createdAt
                         });
                     }
@@ -1404,7 +1568,7 @@
                                         return (
                                             <div key={i} className="flex justify-between p-3 bg-slate-900/50 rounded-lg border border-slate-700/50">
                                                 <div>
-                                                    <span className={`${tierConf.color} font-bold text-xs uppercase mr-2 tracking-wider`}>[{tierConf.name}]</span>
+                                                    <span className={`${tierConf?.color || 'text-slate-400'} font-bold text-xs uppercase mr-2 tracking-wider`}>[{tierConf?.name || 'Tournament'}]</span>
                                                     <span className="font-medium text-slate-200">{t.tournamentName}</span>
                                                     <div className="text-xs text-slate-400 mt-1">{t.result}</div>
                                                 </div>
@@ -1420,7 +1584,7 @@
                                         return (
                                             <div key={i} className={`p-3 rounded-lg border ${m.isWin ? 'bg-green-900/10 border-green-500/30' : 'bg-red-900/10 border-red-500/30'}`}>
                                                 <div className="flex justify-between items-start mb-1">
-                                                    <span className="text-xs text-slate-400"><span className={tierConf.color}>[{tierConf.name}]</span> {m.tournamentName} • {m.roundName}</span>
+                                                    <span className="text-xs text-slate-400"><span className={tierConf?.color || 'text-slate-400'}>[{tierConf?.name || 'Tournament'}]</span> {m.tournamentName} • {m.roundName}</span>
                                                     <span className={`text-[10px] px-2 py-0.5 rounded uppercase font-bold tracking-widest ${m.type === 'lopsided' ? 'bg-purple-500/20 text-purple-400' : 'bg-orange-500/20 text-orange-400'}`}>{m.type === 'lopsided' ? 'Lopsided' : 'Close'}</span>
                                                 </div>
                                                 <div className="flex items-center gap-2 font-medium"><span className={m.isWin ? 'text-green-400' : 'text-red-400'}>{m.isWin ? 'W' : 'L'}</span><span className="text-slate-300">vs {m.opponentName}</span></div>
@@ -1462,13 +1626,13 @@
                                 <div className="md:col-span-2 lg:col-span-3 bg-slate-800 p-6 rounded-xl border border-slate-700">
                                     <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2"><Trophy className="text-yellow-400"/> Major Achievements</h2>
                                     {achievements.length === 0 ? (
-                                        <p className="text-slate-400 text-sm">No major achievements yet. Reaching Semifinals or better in Major and Grand Slam tournaments will be recorded here.</p>
+                                        <p className="text-slate-400 text-sm">No major achievements yet. Reaching Semifinals or better in Major, Grand Slam, or Finals tournaments will be recorded here.</p>
                                     ) : (
                                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                                             {achievements.map((ach, i) => (
                                                 <div key={i} className="bg-slate-900/50 p-4 rounded-xl border border-slate-700/50 flex flex-col items-center text-center">
                                                     <Trophy size={32} className={`mb-3 ${ach.result === 'Winner' ? 'text-yellow-400' : ach.result === 'Finalist' ? 'text-slate-300' : 'text-orange-400'}`} />
-                                                    <span className={`text-[10px] uppercase font-bold tracking-widest px-2 py-0.5 rounded mb-2 ${ach.tier === 'grand_slam' ? 'bg-purple-500/20 text-purple-400' : 'bg-yellow-500/20 text-yellow-400'}`}>{TOURNAMENT_TIERS[ach.tier].name}</span>
+                                                    <span className={`text-[10px] uppercase font-bold tracking-widest px-2 py-0.5 rounded mb-2 ${ach.tier === 'grand_slam' ? 'bg-purple-500/20 text-purple-400' : (ach.tier === 'finals' ? 'bg-cyan-500/20 text-cyan-400' : 'bg-yellow-500/20 text-yellow-400')}`}>{TOURNAMENT_TIERS[ach.tier].name}</span>
                                                     <div className="font-bold text-white text-lg">{ach.result}</div>
                                                     <div className="text-sm text-slate-400 mt-1">{ach.tournamentName}</div>
                                                 </div>
@@ -1496,25 +1660,17 @@
                 <div className="max-w-5xl mx-auto space-y-6">
                     <div className="flex justify-between items-center"><h1 className="text-3xl font-bold text-white">Tournaments</h1><button onClick={onCreate} className="bg-blue-600 px-6 py-2 rounded-lg flex items-center gap-2 font-bold text-white"><Plus size={20}/> New</button></div>
                     <div className="grid md:grid-cols-3 gap-6">{[...tournaments].sort((a,b) => b.createdAt - a.createdAt).map(t => {
-                        const tierConf = TOURNAMENT_TIERS[t.tier || 'major'];
-                        let parsedBracket = t.bracket;
-                        if (typeof t.bracket === 'string') {
-                            try { parsedBracket = JSON.parse(t.bracket); } catch(e){}
-                        }
-                        
-                        let drawSize = 32;
-                        if (parsedBracket && Array.isArray(parsedBracket)) {
-                            if (parsedBracket.length === 4) drawSize = 16;
-                            if (parsedBracket.length === 3) drawSize = 8;
-                        }
+                        const tierKey = getTournamentTier(t);
+                        const tierConf = TOURNAMENT_TIERS[tierKey];
+                        const drawSize = getDrawSize(t);
 
                         return (
-                            <div key={t.id} onClick={() => onSelect(t.id)} className={`bg-slate-800 p-6 rounded-xl border-2 transition-all cursor-pointer flex flex-col h-full hover:scale-105 ${t.status === 'completed' ? 'border-slate-700 hover:border-slate-500' : tierConf.border + ' shadow-lg shadow-black/20'}`}>
+                            <div key={t.id} onClick={() => onSelect(t.id)} className={`bg-slate-800 p-6 rounded-xl border-2 transition-all cursor-pointer flex flex-col h-full hover:scale-105 ${t.status === 'completed' ? 'border-slate-700 hover:border-slate-500' : tierConf?.border + ' shadow-lg shadow-black/20'}`}>
                                 <div className="flex justify-between items-start mb-2">
                                     <h3 className="font-bold text-xl text-white truncate pr-2">{t.name}</h3>
                                 </div>
                                 <div className="flex gap-2 mb-4">
-                                    <span className={`text-xs font-bold uppercase tracking-wider px-2 py-1 rounded ${tierConf.bg} ${tierConf.color}`}>{tierConf.name}</span>
+                                    <span className={`text-xs font-bold uppercase tracking-wider px-2 py-1 rounded ${tierConf?.bg || 'bg-slate-700'} ${tierConf?.color || 'text-slate-300'}`}>{tierConf?.name || 'Tournament'}</span>
                                     <span className={`text-xs font-bold uppercase tracking-wider px-2 py-1 rounded ${t.status === 'completed' ? 'bg-green-500/20 text-green-400' : 'bg-slate-700 text-slate-300'}`}>{t.status}</span>
                                 </div>
                                 <div className="text-slate-400 text-sm mt-auto">{drawSize} Participants • {new Date(t.createdAt).toLocaleDateString()}</div>
@@ -1534,16 +1690,34 @@
             const [isGenerating, setIsGenerating] = useState(false);
             
             const tierConf = TOURNAMENT_TIERS[tier];
-            const isSmallAllowed = ['pro', 'challenger'].includes(tier);
             
-            const sizeMultiplier = size === 32 ? 1 : (size === 16 ? 0.75 : 0.5);
+            // Dynamic Size Availability based on Tier Rules
+            const allowedSizes = useMemo(() => {
+                if (tier === 'finals') return [8];
+                if (tier === 'grand_slam') return [64];
+                if (tier === 'major') return [32, 64];
+                if (tier === 'pro') return [16, 32, 64];
+                return [8, 16, 32, 64]; // Challenger
+            }, [tier]);
+
+            useEffect(() => { 
+                if (!allowedSizes.includes(size)) setSize(allowedSizes[0]);
+                setSelectedWildcards([]); 
+                setWithdrawnIds([]);
+            }, [tier, allowedSizes]);
+
+            let sizeMultiplier = 1;
+            if (tier !== 'finals' && tier !== 'grand_slam') {
+                if (size === 16) sizeMultiplier = 0.75;
+                if (size === 8) sizeMultiplier = 0.5;
+            }
             const expectedWinnerPoints = Math.round(tierConf.points.WINNER * sizeMultiplier);
             
             const eligiblePlayers = [...players]
                 .filter(p => p.rank > tierConf.excludeTop && !withdrawnIds.includes(p.id))
                 .sort((a, b) => a.rank - b.rank);
             
-            const reqWc = tierConf.wcCount[size];
+            const reqWc = tierConf.wcCount[size] || 0;
             const reqAuto = size - reqWc;
             const autoQualifiers = eligiblePlayers.slice(0, reqAuto);
             const remainingPlayers = eligiblePlayers.slice(reqAuto);
@@ -1594,20 +1768,37 @@
                 setIsGenerating(true);
                 try {
                     const selected = [...autoQualifiers, ...remainingPlayers.filter(p => selectedWildcards.includes(p.id))].sort((a,b) => a.rank - b.rank);
-                    const bracket = size === 32 ? generate32Draw(selected) : (size === 16 ? generate16Draw(selected) : generate8Draw(selected));
+                    
+                    let bracket;
+                    let format = 'elimination';
+                    let groupMatches = null;
+                    let groups = null;
+
+                    if (tier === 'finals') {
+                        const finalsData = generateATPFinalsDraw(selected);
+                        bracket = finalsData.knockout;
+                        format = finalsData.format;
+                        groupMatches = finalsData.groupMatches;
+                        groups = finalsData.groups;
+                    } else if (size === 64) {
+                        bracket = JSON.stringify(generate64Draw(selected));
+                    } else if (size === 32) {
+                        bracket = JSON.stringify(generate32Draw(selected));
+                    } else if (size === 16) {
+                        bracket = JSON.stringify(generate16Draw(selected));
+                    } else {
+                        bracket = JSON.stringify(generate8Draw(selected));
+                    }
+
                     const docRef = await window.fb.addDoc(window.fb.collection(db, 'artifacts', appId, 'public', 'data', 'tournaments'), { 
-                        name, tier, status: 'active', createdAt: Date.now(), selectedPlayers: selected.map(p => p.id), bracket: JSON.stringify(bracket) 
+                        name, tier, status: 'active', createdAt: Date.now(), selectedPlayers: selected.map(p => p.id), 
+                        format, bracket,
+                        ...(groupMatches ? { groupMatches, groups } : {})
                     });
                     onSuccess(docRef.id);
                 } catch (err) { console.error(err); }
                 setIsGenerating(false);
             };
-
-            useEffect(() => { 
-                if (size === 8 && !isSmallAllowed) setSize(16);
-                setSelectedWildcards([]); 
-                setWithdrawnIds([]);
-            }, [size, tier]);
 
             if (players.length < 8) return <div className="text-center py-12 border-2 border-dashed border-red-500/30 rounded-xl bg-red-500/5 mt-8 max-w-2xl mx-auto"><Shield size={48} className="mx-auto mb-3 text-red-400"/><h3 className="text-xl font-bold text-white mb-2">Need at least 8 Players</h3><p className="text-slate-400">You currently have {players.length} players.</p><button onClick={onBack} className="mt-4 bg-slate-700 hover:bg-slate-600 text-white px-4 py-2 rounded transition-colors">Go Back</button></div>;
 
@@ -1618,9 +1809,11 @@
                         <div className="flex flex-col md:flex-row md:justify-between md:items-center mb-6 gap-4">
                             <h1 className="text-2xl font-bold text-white">Create Tournament</h1>
                             <div className="flex bg-slate-900 rounded-lg p-1 border border-slate-700 w-fit">
-                                {isSmallAllowed && <button onClick={() => setSize(8)} className={`px-4 py-1.5 rounded-md text-sm font-bold transition-colors ${size === 8 ? 'bg-blue-600 text-white' : 'text-slate-400 hover:text-white'}`}>8 Players</button>}
-                                <button onClick={() => setSize(16)} className={`px-4 py-1.5 rounded-md text-sm font-bold transition-colors ${size === 16 ? 'bg-blue-600 text-white' : 'text-slate-400 hover:text-white'}`}>16 Players</button>
-                                <button onClick={() => setSize(32)} className={`px-4 py-1.5 rounded-md text-sm font-bold transition-colors ${size === 32 ? 'bg-blue-600 text-white' : 'text-slate-400 hover:text-white'}`}>32 Players</button>
+                                {allowedSizes.map(s => (
+                                    <button key={s} onClick={() => setSize(s)} className={`px-4 py-1.5 rounded-md text-sm font-bold transition-colors ${size === s ? 'bg-blue-600 text-white' : 'text-slate-400 hover:text-white'}`}>
+                                        {s} Players
+                                    </button>
+                                ))}
                             </div>
                         </div>
 
@@ -1642,7 +1835,7 @@
 
                         <div className="bg-slate-900 p-4 rounded-lg border border-slate-700 mb-8 text-sm text-slate-300">
                             <div className="flex items-center gap-2 mb-1"><span className={`font-bold ${tierConf.color}`}>{tierConf.name}:</span> Winner gets <strong className="text-white">{expectedWinnerPoints} points</strong>.</div>
-                            <div>{tierConf.excludeTop > 0 ? `The Top ${tierConf.excludeTop} ranked players in the world are strictly excluded from competing.` : 'Open to all competitors.'} This {size}-player bracket format requires <strong className="text-white">{reqWc} wildcards</strong>. Click an Auto Qualifier to simulate a withdrawal.</div>
+                            <div>{tierConf.excludeTop > 0 ? `The Top ${tierConf.excludeTop} ranked players in the world are strictly excluded from competing.` : (tier === 'finals' ? 'Exclusive to the Top 8 Players in the World. Uses Round Robin Group Stage format.' : 'Open to all competitors.')} {reqWc > 0 && <span>This {size}-player bracket format requires <strong className="text-white">{reqWc} wildcards</strong>.</span>} Click an Auto Qualifier to simulate a withdrawal.</div>
                         </div>
 
                         {!hasEnoughPlayers ? (
@@ -1698,27 +1891,34 @@
                                     <div>
                                         <div className="flex justify-between items-center mb-4">
                                             <h3 className="font-bold text-white">Wildcards ({selectedWildcards.length}/{reqWc})</h3>
-                                            {selectedWildcards.length < reqWc && (
+                                            {selectedWildcards.length < reqWc && reqWc > 0 && (
                                                 <button onClick={selectRandomWildcards} className="text-xs flex items-center gap-1 bg-slate-700 hover:bg-slate-600 text-slate-200 px-2 py-1 rounded transition-colors">
                                                     <Shuffle size={12} /> Randomize
                                                 </button>
                                             )}
                                         </div>
-                                        <div className="bg-slate-900 rounded-lg p-2 h-80 overflow-y-auto space-y-1 border border-slate-700">
-                                            {remainingPlayers.map(p => { 
-                                                const isS = selectedWildcards.includes(p.id); 
-                                                return (
-                                                    <div key={p.id} onClick={() => toggleWildcard(p.id)} className={`p-2 rounded cursor-pointer flex justify-between items-center text-sm font-medium transition-colors ${isS ? 'bg-blue-600/30 border border-blue-500/50 text-white' : 'hover:bg-slate-800 text-slate-300 border border-transparent'}`}>
-                                                        <span className="flex items-center">
-                                                            <span className="font-mono text-slate-500 mr-2 w-6">#{p.rank}</span> 
-                                                            <span className="mr-2">{getFlag(p.nationality)}</span> {p.name}
-                                                            <span className={`text-xs ml-2 ${isS ? 'text-blue-300' : 'text-slate-500'}`}>({p.points.toLocaleString()} pts)</span>
-                                                        </span>
-                                                        {isS && <CheckCircle size={14} className="text-blue-400" />}
-                                                    </div>
-                                                ) 
-                                            })}
-                                        </div>
+                                        {reqWc > 0 ? (
+                                            <div className="bg-slate-900 rounded-lg p-2 h-80 overflow-y-auto space-y-1 border border-slate-700">
+                                                {remainingPlayers.map(p => { 
+                                                    const isS = selectedWildcards.includes(p.id); 
+                                                    return (
+                                                        <div key={p.id} onClick={() => toggleWildcard(p.id)} className={`p-2 rounded cursor-pointer flex justify-between items-center text-sm font-medium transition-colors ${isS ? 'bg-blue-600/30 border border-blue-500/50 text-white' : 'hover:bg-slate-800 text-slate-300 border border-transparent'}`}>
+                                                            <span className="flex items-center">
+                                                                <span className="font-mono text-slate-500 mr-2 w-6">#{p.rank}</span> 
+                                                                <span className="mr-2">{getFlag(p.nationality)}</span> {p.name}
+                                                                <span className={`text-xs ml-2 ${isS ? 'text-blue-300' : 'text-slate-500'}`}>({p.points.toLocaleString()} pts)</span>
+                                                            </span>
+                                                            {isS && <CheckCircle size={14} className="text-blue-400" />}
+                                                        </div>
+                                                    ) 
+                                                })}
+                                            </div>
+                                        ) : (
+                                            <div className="bg-slate-900/50 rounded-lg p-6 h-80 flex flex-col items-center justify-center border border-slate-700/50 text-center">
+                                                <Shield className="text-slate-600 w-12 h-12 mb-2" />
+                                                <p className="text-slate-400">No wildcards allowed in this exclusive format.</p>
+                                            </div>
+                                        )}
                                     </div>
                                 </div>
                                 <div className="mt-8 pt-6 border-t border-slate-700 flex justify-end">
@@ -1738,25 +1938,32 @@
             useEffect(() => { setP1ImgIdx(0); setP2ImgIdx(0); }, [resolvingMatch]);
             
             const getPlayer = (id) => players.find(p => p.id === id) || { name: 'TBD', rank: '-', nationality: 'UNK' };
-            const getImages = (p) => p.images || [p.imageUrl];
+            const getImages = (p) => (p && p.images && p.images.length > 0) ? p.images : (p && p.imageUrl ? [p.imageUrl] : []);
             
-            let parsedBracket = tournament.bracket;
-            if (typeof parsedBracket === 'string') {
-                try { parsedBracket = JSON.parse(parsedBracket); } catch(e){}
-            }
+            let parsedBracket = [];
+            try { parsedBracket = typeof tournament.bracket === 'string' ? JSON.parse(tournament.bracket) : tournament.bracket; } catch(e){}
             if (!Array.isArray(parsedBracket)) parsedBracket = [];
 
             const totalRounds = parsedBracket.length;
-            const rOffset = 5 - totalRounds;
-            const tierConf = TOURNAMENT_TIERS[tournament.tier || 'major'];
+            const rOffset = 6 - totalRounds; 
+            const tierConf = TOURNAMENT_TIERS[getTournamentTier(tournament)];
 
-            const handleMatchClick = (rIdx, mIdx, match) => { if (tournament.status === 'completed' || !match.p1 || !match.p2 || match.winner) return; setResolvingMatch({ roundIndex: rIdx, matchIndex: mIdx, ...match }); };
+            const handleMatchClick = (rIdx, mIdx, match) => { 
+                if (tournament.status === 'completed' || !match || !match.p1 || !match.p2 || match.winner) return; 
+                if (match.type === 'bye') return; // Cannot resolve byes
+                setResolvingMatch({ roundIndex: rIdx, matchIndex: mIdx, ...match }); 
+            };
 
             const submitResult = async (winnerId, type) => {
                 const newBracket = JSON.parse(JSON.stringify(parsedBracket));
                 const { roundIndex: rIdx, matchIndex: mIdx } = resolvingMatch;
                 newBracket[rIdx][mIdx].winner = winnerId; newBracket[rIdx][mIdx].type = type;
-                if (rIdx < totalRounds - 1) { const nRIdx = rIdx + 1; const nMIdx = Math.floor(mIdx / 2); if (mIdx % 2 === 0) newBracket[nRIdx][nMIdx].p1 = winnerId; else newBracket[nRIdx][nMIdx].p2 = winnerId; }
+                if (rIdx < totalRounds - 1) { 
+                    const nRIdx = rIdx + 1; 
+                    const nMIdx = Math.floor(mIdx / 2); 
+                    if (mIdx % 2 === 0) newBracket[nRIdx][nMIdx].p1 = winnerId; 
+                    else newBracket[nRIdx][nMIdx].p2 = winnerId; 
+                }
                 const tRef = window.fb.doc(db, 'artifacts', appId, 'public', 'data', 'tournaments', tournament.id);
                 let newStatus = tournament.status; let completedAt = tournament.completedAt;
                 if (rIdx === totalRounds - 1) { newStatus = 'completed'; completedAt = Date.now(); }
@@ -1776,18 +1983,26 @@
                 let total = 0;
                 
                 allTournaments.forEach(t => {
-                    let tb = t.bracket;
-                    if (typeof tb === 'string') { try { tb = JSON.parse(tb); } catch(e){ return; } }
-                    if (!Array.isArray(tb)) return;
-
-                    tb.forEach(round => {
-                        round.forEach(m => {
-                            if (m.winner && ((m.p1 === resolvingMatch.p1 && m.p2 === resolvingMatch.p2) || (m.p1 === resolvingMatch.p2 && m.p2 === resolvingMatch.p1))) {
-                                total++;
-                                if (m.winner === resolvingMatch.p1) p1Wins++;
-                                else if (m.winner === resolvingMatch.p2) p2Wins++;
-                            }
-                        });
+                    let mList = [];
+                    if (t.format === 'atp_finals') {
+                        let gm = [];
+                        let ko = [];
+                        try { gm = typeof t.groupMatches === 'string' ? JSON.parse(t.groupMatches) : (t.groupMatches || []); } catch(e){}
+                        try { ko = typeof t.bracket === 'string' ? JSON.parse(t.bracket) : (t.bracket || []); } catch(e){}
+                        if (!Array.isArray(gm)) gm = [];
+                        if (!Array.isArray(ko)) ko = [];
+                        mList = [...gm, ...(ko.flat())];
+                    } else {
+                        let tb = [];
+                        try { tb = typeof t.bracket === 'string' ? JSON.parse(t.bracket) : t.bracket; } catch(e){}
+                        if (Array.isArray(tb)) mList = tb.flat();
+                    }
+                    mList.forEach(m => {
+                        if (m && m.winner && m.type !== 'bye' && ((m.p1 === resolvingMatch.p1 && m.p2 === resolvingMatch.p2) || (m.p1 === resolvingMatch.p2 && m.p2 === resolvingMatch.p1))) {
+                            total++;
+                            if (m.winner === resolvingMatch.p1) p1Wins++;
+                            else if (m.winner === resolvingMatch.p2) p2Wins++;
+                        }
                     });
                 });
                 return { p1Wins, p2Wins, total };
@@ -1798,25 +2013,30 @@
                     <div className="flex justify-between items-center mb-6">
                         <button onClick={onBack} className="flex items-center gap-2 text-slate-400 hover:text-white"><ArrowLeft size={16}/> Back</button>
                         <h1 className="text-2xl font-bold text-white flex items-center gap-3">
-                            <span className={`${tierConf.color} text-sm uppercase tracking-widest border border-current px-2 py-1 rounded`}>{tierConf.name}</span>
+                            <span className={`${tierConf?.color || 'text-slate-400'} text-sm uppercase tracking-widest border border-current px-2 py-1 rounded`}>{tierConf?.name || 'Tournament'}</span>
                             {tournament.name}
                             {tournament.status === 'completed' && <span className="bg-green-500/20 text-green-400 text-xs px-2 py-1 rounded ml-2">COMPLETED</span>}
                         </h1>
                     </div>
                     <div className="flex-1 overflow-auto bg-slate-800/50 border border-slate-700 rounded-xl p-8 min-h-[800px] bracket-container">
                         <div className="flex min-w-max h-full">
-                            {parsedBracket.map((round, rIdx) => (
+                            {parsedBracket.map((round, rIdx) => {
+                                if (!Array.isArray(round)) return null;
+                                return (
                                 <div key={rIdx} className="flex flex-col w-64 shrink-0 mr-12 h-full">
                                     <div className="text-center text-slate-500 font-bold text-sm uppercase tracking-wider mb-4">{ROUND_NAMES[rIdx + rOffset]}</div>
                                     <div className="flex-1 flex flex-col">
                                         {round.map((match, mIdx) => {
+                                            if (!match) return null;
                                             const p1 = getPlayer(match.p1), p2 = getPlayer(match.p2);
-                                            const isReady = match.p1 && match.p2 && !match.winner && tournament.status !== 'completed';
+                                            const isBye = match.type === 'bye';
+                                            const isReady = match.p1 && match.p2 && !match.winner && tournament.status !== 'completed' && !isBye;
+                                            
                                             return (
                                                 <div key={match.id} className="flex-1 flex flex-col justify-center relative py-2">
                                                     <div onClick={() => handleMatchClick(rIdx, mIdx, match)} className={`relative z-10 bg-slate-800 border-2 rounded-lg transition-all shadow-md ${isReady ? 'border-blue-500 cursor-pointer hover:scale-105 shadow-blue-500/20' : match.winner ? 'border-slate-600' : 'border-slate-700/50 opacity-60'}`}>
-                                                        <div className={`p-2.5 flex justify-between items-center border-b border-slate-700/50 ${match.winner === match.p1 ? 'bg-slate-700/50' : ''}`}><span className={`text-sm font-medium flex items-center gap-2 ${match.winner && match.winner !== match.p1 ? 'text-slate-500 line-through' : 'text-slate-100'}`}>{match.p1 ? <>{getFlag(p1.nationality)} {p1.name}</> : 'TBD'}</span>{match.winner === match.p1 && <CheckCircle size={16} className="text-green-500"/>}</div>
-                                                        <div className={`p-2.5 flex justify-between items-center ${match.winner === match.p2 ? 'bg-slate-700/50' : ''}`}><span className={`text-sm font-medium flex items-center gap-2 ${match.winner && match.winner !== match.p2 ? 'text-slate-500 line-through' : 'text-slate-100'}`}>{match.p2 ? <>{getFlag(p2.nationality)} {p2.name}</> : 'TBD'}</span>{match.winner === match.p2 && <CheckCircle size={16} className="text-green-500"/>}</div>
+                                                        <div className={`p-2.5 flex justify-between items-center border-b border-slate-700/50 ${match.winner === match.p1 && !isBye ? 'bg-slate-700/50' : ''}`}><span className={`text-sm font-medium flex items-center gap-2 ${match.winner && match.winner !== match.p1 && !isBye ? 'text-slate-500 line-through' : 'text-slate-100'}`}>{match.p1 ? <>{getFlag(p1.nationality)} {p1.name}</> : 'TBD'}</span>{match.winner === match.p1 && !isBye && <CheckCircle size={16} className="text-green-500"/>}</div>
+                                                        <div className={`p-2.5 flex justify-between items-center ${match.winner === match.p2 && !isBye ? 'bg-slate-700/50' : ''}`}><span className={`text-sm font-medium flex items-center gap-2 ${match.winner && match.winner !== match.p2 && !isBye ? 'text-slate-500 line-through' : 'text-slate-100'}`}>{match.p2 ? <>{getFlag(p2.nationality)} {p2.name}</> : (isBye ? <span className="text-slate-500 italic font-bold tracking-widest">BYE</span> : 'TBD')}</span>{match.winner === match.p2 && !isBye && <CheckCircle size={16} className="text-green-500"/>}</div>
                                                     </div>
                                                     {rIdx > 0 && <div className="absolute -left-6 top-1/2 w-6 border-t-2 border-slate-600 z-0"></div>}
                                                     {rIdx < totalRounds - 1 && <div className="absolute -right-6 top-1/2 w-6 border-t-2 border-slate-600 z-0"></div>}
@@ -1826,11 +2046,305 @@
                                         })}
                                     </div>
                                 </div>
-                            ))}
+                            )})}
                         </div>
                     </div>
                     {resolvingMatch && (
-                        <div className="fixed inset-0 bg-black/90 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+                        <div className="fixed inset-0 bg-black/90 backdrop-blur-sm z-50 flex items-center justify-center p-4 z-[100]">
+                            <div className="bg-slate-800 rounded-2xl p-6 w-full max-w-4xl border border-slate-700 overflow-y-auto max-h-[95vh] shadow-2xl">
+                                <h2 className="text-2xl font-bold mb-4 text-center text-white uppercase tracking-widest">Resolve Match</h2>
+                                
+                                {matchH2H.total > 0 ? (
+                                    <div className="text-center mb-8">
+                                        <div className="inline-block bg-slate-900 border border-slate-700 rounded-full px-6 py-2 text-sm font-medium text-slate-300">
+                                            Head-to-Head: <span className="text-white font-bold ml-2">{getPlayer(resolvingMatch.p1).name} <span className="text-blue-400 mx-1">{matchH2H.p1Wins} - {matchH2H.p2Wins}</span> {getPlayer(resolvingMatch.p2).name}</span>
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <div className="text-center mb-8">
+                                        <div className="inline-block bg-slate-900 border border-slate-700 rounded-full px-6 py-2 text-sm font-medium text-slate-400 italic">
+                                            First Career Meeting
+                                        </div>
+                                    </div>
+                                )}
+
+                                <div className="flex flex-col md:flex-row gap-8 relative items-stretch">
+                                    <div className="hidden md:flex absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-slate-900 border-2 border-slate-700 w-12 h-12 rounded-full items-center justify-center font-black text-slate-400 z-10">VS</div>
+                                    {[resolvingMatch.p1, resolvingMatch.p2].map((pid, idx) => {
+                                        const p = getPlayer(pid), imgs = getImages(p);
+                                        const iIdx = idx === 0 ? p1ImgIdx : p2ImgIdx, setIIdx = idx === 0 ? setP1ImgIdx : setP2ImgIdx;
+                                        return (
+                                            <div key={idx} className="flex-1 bg-slate-700/30 border border-slate-700 rounded-xl p-6 flex flex-col items-center shadow-inner">
+                                                <div className="relative group w-full max-w-[280px] mb-6">
+                                                    {imgs[iIdx] ? (
+                                                        <img src={imgs[iIdx]} className="w-full aspect-[3/4] rounded-xl object-cover border-4 border-slate-600 shadow-2xl transition-all duration-300" />
+                                                    ) : (
+                                                        <div className="w-full aspect-[3/4] bg-slate-800 rounded-xl border-4 border-slate-600 flex items-center justify-center"><UserCircle size={64} className="text-slate-600"/></div>
+                                                    )}
+                                                    {imgs.length > 1 && (
+                                                        <><button onClick={() => setIIdx(prev => (prev === 0 ? imgs.length-1 : prev-1))} className="absolute left-2 top-1/2 -translate-y-1/2 bg-black/60 hover:bg-black p-2 rounded-full text-white opacity-0 group-hover:opacity-100 transition-opacity"><ChevronLeft size={20}/></button>
+                                                        <button onClick={() => setIIdx(prev => (prev === imgs.length-1 ? 0 : prev+1))} className="absolute right-2 top-1/2 -translate-y-1/2 bg-black/60 hover:bg-black p-2 rounded-full text-white opacity-0 group-hover:opacity-100 transition-opacity"><ChevronRight size={20}/></button>
+                                                        <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5 bg-black/40 px-2 py-1 rounded-full">{imgs.map((_, i) => <div key={i} className={`w-2 h-2 rounded-full ${i === iIdx ? 'bg-blue-500' : 'bg-white/40'}`} />)}</div></>
+                                                    )}
+                                                </div>
+                                                <h3 className="text-3xl font-black text-white uppercase text-center mb-1">{p.name}</h3>
+                                                <div className="text-blue-400 font-medium mb-8 flex items-center gap-2"><span className="text-2xl">{getFlag(p.nationality)}</span> {getCountryName(p.nationality)}</div>
+                                                <div className="w-full space-y-3 mt-auto">
+                                                    <button onClick={() => submitResult(pid, 'close')} className="w-full bg-orange-500/20 hover:bg-orange-500/30 text-orange-400 border border-orange-500/50 p-4 rounded-xl font-bold transition-colors">Win (Close Match)</button>
+                                                    <button onClick={() => submitResult(pid, 'lopsided')} className="w-full bg-purple-500/20 hover:bg-purple-500/30 text-purple-400 border border-purple-500/50 p-4 rounded-xl font-bold transition-colors">Win (Lopsided)</button>
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                                <div className="mt-8 flex flex-col md:flex-row gap-4 pt-6 border-t border-slate-700">
+                                    <button onClick={handleRandomize} className="flex-1 bg-indigo-600/20 hover:bg-indigo-600/30 border border-indigo-500/50 text-indigo-400 py-3.5 rounded-xl font-bold transition-colors flex items-center justify-center gap-2">🎲 Randomize (Coin Toss)</button>
+                                    <button onClick={() => setResolvingMatch(null)} className="flex-1 bg-slate-800 hover:bg-slate-700 border border-slate-600 text-slate-300 hover:text-white py-3.5 rounded-xl font-bold transition-colors">Cancel</button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            );
+        }
+
+        function ATPFinalsBracket({ tournament, players, onBack, db, appId, allTournaments }) {
+            const [resolvingMatch, setResolvingMatch] = useState(null);
+            const [p1ImgIdx, setP1ImgIdx] = useState(0);
+            const [p2ImgIdx, setP2ImgIdx] = useState(0);
+            useEffect(() => { setP1ImgIdx(0); setP2ImgIdx(0); }, [resolvingMatch]);
+
+            const getPlayer = (id) => players.find(p => p.id === id) || { name: 'TBD', rank: '-', nationality: 'UNK' };
+            const getImages = (p) => (p && p.images && p.images.length > 0) ? p.images : (p && p.imageUrl ? [p.imageUrl] : []);
+
+            let groupMatches = [];
+            let knockout = [[],[]];
+            
+            if (typeof tournament.groupMatches === 'string') {
+                try { groupMatches = JSON.parse(tournament.groupMatches); } catch(e){}
+            } else {
+                groupMatches = tournament.groupMatches || [];
+            }
+            if (!Array.isArray(groupMatches)) groupMatches = [];
+            
+            if (typeof tournament.bracket === 'string') {
+                try { knockout = JSON.parse(tournament.bracket); } catch(e){}
+            } else {
+                knockout = tournament.bracket || [[],[]];
+            }
+            if (!Array.isArray(knockout) || knockout.length < 2) knockout = [[],[]];
+
+            const standingsA = useMemo(() => calcGroupStandings('A', groupMatches), [groupMatches]);
+            const standingsB = useMemo(() => calcGroupStandings('B', groupMatches), [groupMatches]);
+
+            const isGroupStageComplete = useMemo(() => {
+                return groupMatches.length === 12 && groupMatches.every(m => m && m.winner);
+            }, [groupMatches]);
+
+            const handleMatchClick = (type, mIdx, match) => {
+                if (tournament.status === 'completed' || !match || !match.p1 || !match.p2 || match.winner) return;
+                setResolvingMatch({ matchType: type, matchIndex: mIdx, ...match });
+            };
+
+            const submitResult = async (winnerId, winType) => {
+                const newT = JSON.parse(JSON.stringify(tournament));
+                const { matchType, matchIndex } = resolvingMatch;
+                let isNowComplete = false;
+
+                let parsedGM = [];
+                let parsedKO = [[], []];
+                try { parsedGM = typeof newT.groupMatches === 'string' ? JSON.parse(newT.groupMatches) : newT.groupMatches; } catch(e){}
+                try { parsedKO = typeof newT.bracket === 'string' ? JSON.parse(newT.bracket) : newT.bracket; } catch(e){}
+
+                if (matchType === 'group') {
+                    parsedGM[matchIndex].winner = winnerId;
+                    parsedGM[matchIndex].type = winType;
+                    
+                    const allGroupsDone = parsedGM.every(m => m && m.winner);
+                    if (allGroupsDone) {
+                        const sA = calcGroupStandings('A', parsedGM);
+                        const sB = calcGroupStandings('B', parsedGM);
+                        if(sA.length >= 2 && sB.length >= 2) {
+                            parsedKO[0][0].p1 = sA[0].id;
+                            parsedKO[0][0].p2 = sB[1].id;
+                            parsedKO[0][1].p1 = sB[0].id;
+                            parsedKO[0][1].p2 = sA[1].id;
+                        }
+                    }
+                } else if (matchType === 'sf') {
+                    parsedKO[0][matchIndex].winner = winnerId;
+                    parsedKO[0][matchIndex].type = winType;
+                    if (matchIndex === 0) parsedKO[1][0].p1 = winnerId;
+                    else parsedKO[1][0].p2 = winnerId;
+                } else if (matchType === 'f') {
+                    parsedKO[1][0].winner = winnerId;
+                    parsedKO[1][0].type = winType;
+                    newT.status = 'completed';
+                    newT.completedAt = Date.now();
+                    isNowComplete = true;
+                }
+                
+                newT.groupMatches = JSON.stringify(parsedGM);
+                newT.bracket = JSON.stringify(parsedKO);
+
+                await window.fb.updateDoc(window.fb.doc(db, 'artifacts', appId, 'public', 'data', 'tournaments', tournament.id), newT);
+                setResolvingMatch(null);
+            };
+
+            const handleRandomize = () => {
+                const winnerId = Math.random() < 0.5 ? resolvingMatch.p1 : resolvingMatch.p2;
+                submitResult(winnerId, 'close');
+            };
+
+            const matchH2H = useMemo(() => {
+                if (!resolvingMatch || !resolvingMatch.p1 || !resolvingMatch.p2) return { p1Wins: 0, p2Wins: 0, total: 0 };
+                let p1Wins = 0, p2Wins = 0, total = 0;
+                allTournaments.forEach(t => {
+                    let mList = [];
+                    if (t.format === 'atp_finals') {
+                        let gm = [];
+                        let ko = [];
+                        try { gm = typeof t.groupMatches === 'string' ? JSON.parse(t.groupMatches) : (t.groupMatches || []); } catch(e){}
+                        try { ko = typeof t.bracket === 'string' ? JSON.parse(t.bracket) : (t.bracket || []); } catch(e){}
+                        if (!Array.isArray(gm)) gm = [];
+                        if (!Array.isArray(ko)) ko = [];
+                        mList = [...gm, ...(ko.flat())];
+                    } else {
+                        let tb = [];
+                        try { tb = typeof t.bracket === 'string' ? JSON.parse(t.bracket) : t.bracket; } catch(e){}
+                        if (Array.isArray(tb)) mList = tb.flat();
+                    }
+                    mList.forEach(m => {
+                        if (m && m.winner && m.type !== 'bye' && ((m.p1 === resolvingMatch.p1 && m.p2 === resolvingMatch.p2) || (m.p1 === resolvingMatch.p2 && m.p2 === resolvingMatch.p1))) {
+                            total++;
+                            if (m.winner === resolvingMatch.p1) p1Wins++;
+                            else if (m.winner === resolvingMatch.p2) p2Wins++;
+                        }
+                    });
+                });
+                return { p1Wins, p2Wins, total };
+            }, [resolvingMatch, allTournaments]);
+
+            const renderStandingsTable = (groupName, standings) => (
+                <div className="bg-slate-800 rounded-xl border border-slate-700 overflow-hidden shadow-lg w-full">
+                    <div className="bg-slate-900/80 p-3 border-b border-slate-700 font-bold text-white flex justify-between">
+                        <span>Group {groupName}</span>
+                        {isGroupStageComplete && <span className="text-xs bg-green-500/20 text-green-400 px-2 py-0.5 rounded uppercase tracking-wider">Final</span>}
+                    </div>
+                    <table className="w-full text-left text-sm">
+                        <thead className="bg-slate-900/50 text-slate-400">
+                            <tr><th className="p-3">Player</th><th className="p-3 text-center">W-L</th><th className="p-3 text-center">Tiebreaker</th></tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-700/50 text-white font-medium">
+                            {standings.map((s, idx) => {
+                                const p = getPlayer(s.id);
+                                return (
+                                    <tr key={s.id} className={isGroupStageComplete && idx < 2 ? 'bg-green-900/10' : ''}>
+                                        <td className="p-3 flex items-center gap-2">
+                                            <span className={`w-5 h-5 flex items-center justify-center rounded-full text-xs font-bold ${isGroupStageComplete && idx < 2 ? 'bg-green-500 text-green-950' : 'bg-slate-700 text-slate-300'}`}>{idx+1}</span>
+                                            {getFlag(p.nationality)} {p.name}
+                                        </td>
+                                        <td className="p-3 text-center">{s.wins}-{s.losses}</td>
+                                        <td className={`p-3 text-center ${s.tiebreaker > 0 ? 'text-green-400' : s.tiebreaker < 0 ? 'text-red-400' : 'text-slate-400'}`}>{s.tiebreaker > 0 ? `+${s.tiebreaker}` : s.tiebreaker}</td>
+                                    </tr>
+                                );
+                            })}
+                            {standings.length === 0 && tournament.groups && tournament.groups[groupName] && tournament.groups[groupName].map((pid, idx) => {
+                                const p = getPlayer(pid);
+                                return (
+                                    <tr key={pid}>
+                                        <td className="p-3 flex items-center gap-2"><span className="w-5 h-5 flex items-center justify-center rounded-full text-xs font-bold bg-slate-700 text-slate-300">-</span> {getFlag(p.nationality)} {p.name}</td>
+                                        <td className="p-3 text-center text-slate-500">0-0</td>
+                                        <td className="p-3 text-center text-slate-500">0</td>
+                                    </tr>
+                                );
+                            })}
+                        </tbody>
+                    </table>
+                </div>
+            );
+
+            return (
+                <div className="h-full flex flex-col pb-20 max-w-6xl mx-auto space-y-8">
+                    <div className="flex justify-between items-center shrink-0">
+                        <div>
+                            <button onClick={onBack} className="flex items-center gap-2 text-slate-400 hover:text-white transition-colors mb-2">
+                                <ArrowLeft className="w-4 h-4" /> Back to Tournaments
+                            </button>
+                            <h1 className="text-3xl font-bold text-white flex items-center gap-3">
+                                <span className="text-cyan-400 text-sm uppercase tracking-widest border border-cyan-500/50 px-2 py-1 rounded bg-cyan-500/20">ATP Finals</span>
+                                {tournament.name}
+                                {tournament.status === 'completed' && <span className="bg-green-500/20 text-green-400 text-sm px-2 py-1 rounded font-bold uppercase">Completed</span>}
+                            </h1>
+                        </div>
+                    </div>
+
+                    {/* Group Stage Overview */}
+                    <div className="grid md:grid-cols-2 gap-8">
+                        {renderStandingsTable('A', standingsA)}
+                        {renderStandingsTable('B', standingsB)}
+                    </div>
+
+                    <div>
+                        <h2 className="text-xl font-bold text-white mb-4">Round Robin Matches</h2>
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                            {groupMatches.map((match, mIdx) => {
+                                if (!match) return null;
+                                const p1 = getPlayer(match.p1), p2 = getPlayer(match.p2);
+                                const isReady = !match.winner;
+                                return (
+                                    <div key={match.id} onClick={() => handleMatchClick('group', mIdx, match)} className={`bg-slate-800 border-2 rounded-xl p-3 shadow-md transition-all ${isReady ? 'border-blue-500 hover:scale-105 cursor-pointer shadow-blue-500/20' : 'border-slate-700/50 opacity-70'}`}>
+                                        <div className="text-xs font-bold text-slate-500 mb-2 uppercase tracking-wider">Group {match.group}</div>
+                                        <div className={`flex justify-between items-center mb-2 ${match.winner === match.p1 ? 'bg-slate-700/50 rounded px-1' : ''}`}><span className={`text-sm font-medium flex items-center gap-2 ${match.winner && match.winner !== match.p1 ? 'text-slate-500 line-through' : 'text-white'}`}>{getFlag(p1.nationality)} {p1.name}</span>{match.winner === match.p1 && <CheckCircle className="w-4 h-4 text-green-500" />}</div>
+                                        <div className={`flex justify-between items-center ${match.winner === match.p2 ? 'bg-slate-700/50 rounded px-1' : ''}`}><span className={`text-sm font-medium flex items-center gap-2 ${match.winner && match.winner !== match.p2 ? 'text-slate-500 line-through' : 'text-white'}`}>{getFlag(p2.nationality)} {p2.name}</span>{match.winner === match.p2 && <CheckCircle className="w-4 h-4 text-green-500" />}</div>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    </div>
+
+                    {/* Knockout Stage */}
+                    <div className="border-t border-slate-700 pt-8">
+                        <h2 className="text-xl font-bold text-white mb-6">Knockout Stage</h2>
+                        <div className="flex flex-col md:flex-row gap-8 items-center justify-center">
+                            {/* Semifinals */}
+                            <div className="flex flex-col gap-6 w-full md:w-72">
+                                <div className="text-center text-slate-500 font-bold text-sm tracking-wider uppercase mb-2">Semifinals</div>
+                                {knockout[0]?.map((match, mIdx) => {
+                                    if (!match) return null;
+                                    const p1 = getPlayer(match.p1), p2 = getPlayer(match.p2);
+                                    const isReady = match.p1 && match.p2 && !match.winner && tournament.status !== 'completed';
+                                    return (
+                                        <div key={match.id} onClick={() => handleMatchClick('sf', mIdx, match)} className={`bg-slate-800 border-2 rounded-xl p-3 shadow-md transition-all ${isReady ? 'border-blue-500 hover:scale-105 cursor-pointer shadow-blue-500/20' : match.winner ? 'border-slate-600' : 'border-slate-700/50 border-dashed opacity-50'}`}>
+                                            <div className={`flex justify-between items-center mb-2 ${match.winner === match.p1 ? 'bg-slate-700/50 rounded px-1' : ''}`}><span className={`text-sm font-medium flex items-center gap-2 ${match.winner && match.winner !== match.p1 ? 'text-slate-500 line-through' : 'text-white'}`}>{match.p1 ? <>{getFlag(p1.nationality)} {p1.name}</> : 'TBD'}</span>{match.winner === match.p1 && <CheckCircle className="w-4 h-4 text-green-500" />}</div>
+                                            <div className={`flex justify-between items-center ${match.winner === match.p2 ? 'bg-slate-700/50 rounded px-1' : ''}`}><span className={`text-sm font-medium flex items-center gap-2 ${match.winner && match.winner !== match.p2 ? 'text-slate-500 line-through' : 'text-white'}`}>{match.p2 ? <>{getFlag(p2.nationality)} {p2.name}</> : 'TBD'}</span>{match.winner === match.p2 && <CheckCircle className="w-4 h-4 text-green-500" />}</div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                            
+                            <div className="hidden md:block w-8 border-t-2 border-slate-600"></div>
+
+                            {/* Final */}
+                            <div className="flex flex-col gap-6 w-full md:w-80 relative">
+                                <div className="text-center text-yellow-500 font-bold text-sm tracking-wider uppercase mb-2 flex items-center justify-center gap-2"><Trophy className="w-4 h-4"/> Championship</div>
+                                {knockout[1]?.map((match, mIdx) => {
+                                    if (!match) return null;
+                                    const p1 = getPlayer(match.p1), p2 = getPlayer(match.p2);
+                                    const isReady = match.p1 && match.p2 && !match.winner && tournament.status !== 'completed';
+                                    return (
+                                        <div key={match.id} onClick={() => handleMatchClick('f', mIdx, match)} className={`bg-slate-800 border-2 rounded-xl p-4 shadow-2xl transition-all ${isReady ? 'border-yellow-500 hover:scale-105 cursor-pointer shadow-yellow-500/20' : match.winner ? 'border-yellow-600/50' : 'border-slate-700/50 border-dashed opacity-50'}`}>
+                                            <div className={`flex justify-between items-center mb-3 ${match.winner === match.p1 ? 'bg-yellow-500/10 rounded px-2 py-1' : ''}`}><span className={`text-base font-bold flex items-center gap-2 ${match.winner && match.winner !== match.p1 ? 'text-slate-500 line-through' : match.winner === match.p1 ? 'text-yellow-400' : 'text-white'}`}>{match.p1 ? <>{getFlag(p1.nationality)} {p1.name}</> : 'TBD'}</span>{match.winner === match.p1 && <Trophy className="w-5 h-5 text-yellow-500" />}</div>
+                                            <div className={`flex justify-between items-center ${match.winner === match.p2 ? 'bg-yellow-500/10 rounded px-2 py-1' : ''}`}><span className={`text-base font-bold flex items-center gap-2 ${match.winner && match.winner !== match.p2 ? 'text-slate-500 line-through' : match.winner === match.p2 ? 'text-yellow-400' : 'text-white'}`}>{match.p2 ? <>{getFlag(p2.nationality)} {p2.name}</> : 'TBD'}</span>{match.winner === match.p2 && <Trophy className="w-5 h-5 text-yellow-500" />}</div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        </div>
+                    </div>
+
+                    {resolvingMatch && (
+                        <div className="fixed inset-0 bg-black/90 backdrop-blur-sm z-50 flex items-center justify-center p-4 z-[100]">
                             <div className="bg-slate-800 rounded-2xl p-6 w-full max-w-4xl border border-slate-700 overflow-y-auto max-h-[95vh] shadow-2xl">
                                 <h2 className="text-2xl font-bold mb-4 text-center text-white uppercase tracking-widest">Resolve Match</h2>
                                 
@@ -1915,7 +2429,23 @@
                 const pRef = window.fb.collection(db, 'artifacts', appId, 'public', 'data', 'players');
                 const tRef = window.fb.collection(db, 'artifacts', appId, 'public', 'data', 'tournaments');
                 const unsubP = window.fb.onSnapshot(pRef, snap => setPlayersRaw(snap.docs.map(d => ({ id: d.id, ...d.data() }))));
-                const unsubT = window.fb.onSnapshot(tRef, snap => { setTournaments(snap.docs.map(d => { const dt = d.data(); let b = []; try { b = typeof dt.bracket === 'string' ? JSON.parse(dt.bracket) : dt.bracket; } catch(e){} return { id: d.id, ...dt, bracket: b }; })); setLoading(false); });
+                const unsubT = window.fb.onSnapshot(tRef, snap => { 
+                    setTournaments(snap.docs.map(d => { 
+                        const dt = d.data(); 
+                        let b = []; 
+                        // Only try to parse the default bracket if it's not the new ATP finals format, 
+                        // as the finals format handles its own string parsing in its specific components.
+                        if (dt.format !== 'atp_finals') {
+                            try { 
+                                b = typeof dt.bracket === 'string' ? JSON.parse(dt.bracket) : dt.bracket; 
+                            } catch(e){
+                                console.error("Error parsing traditional bracket", e);
+                            } 
+                        }
+                        return { id: d.id, ...dt, bracket: dt.format === 'atp_finals' ? dt.bracket : b }; 
+                    })); 
+                    setLoading(false); 
+                });
                 return () => { unsubP(); unsubT(); };
             }, [user, db]);
 
@@ -1976,7 +2506,11 @@
                             {activeTab === 'players' && !selectedPlayerId && <PlayersView players={players} onSelectPlayer={handlePlayerSelect} db={db} appId={appId} />}
                             {activeTab === 'players' && selectedPlayerId && <PlayerProfile player={players.find(p => p.id === selectedPlayerId)} players={players} onBack={() => navigateTo('players')} tournaments={tournaments} db={db} appId={appId} />}
                             {activeTab === 'tournaments' && !selectedTournamentId && <TournamentsView tournaments={tournaments} onSelect={(id) => navigate('tournaments', null, id)} onCreate={() => navigateTo('create_tournament')} />}
-                            {activeTab === 'tournaments' && selectedTournamentId && <TournamentBracket tournament={tournaments.find(t => t.id === selectedTournamentId)} allTournaments={tournaments} players={players} onBack={() => navigateTo('tournaments')} db={db} appId={appId} />}
+                            {activeTab === 'tournaments' && selectedTournamentId && (
+                                tournaments.find(t => t.id === selectedTournamentId)?.format === 'atp_finals' ? 
+                                    <ATPFinalsBracket tournament={tournaments.find(t => t.id === selectedTournamentId)} players={players} onBack={() => navigateTo('tournaments')} db={db} appId={appId} allTournaments={tournaments} /> :
+                                    <TournamentBracket tournament={tournaments.find(t => t.id === selectedTournamentId)} allTournaments={tournaments} players={players} onBack={() => navigateTo('tournaments')} db={db} appId={appId} />
+                            )}
                             {activeTab === 'create_tournament' && <CreateTournamentView players={players} onBack={() => navigateTo('tournaments')} onSuccess={id => navigate('tournaments', null, id)} db={db} appId={appId} />}
                         </div>
                     </main>
