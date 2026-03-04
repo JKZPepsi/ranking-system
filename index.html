@@ -3,22 +3,50 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ProRank ATP - Global Ranking System</title>
+    <title>SNB Tour - Global Ranking System</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        royal: {
+                            950: '#020b08',
+                            900: '#051611',
+                            800: '#0a241c',
+                            700: '#13382d',
+                            600: '#1a4538',
+                            500: '#245a4a',
+                            400: '#517568',
+                            300: '#789e90',
+                            200: '#a0bdb2',
+                            100: '#cde0d9',
+                            50:  '#e2ede9',
+                        },
+                        gold: {
+                            400: '#e8cd7d',
+                            500: '#d4af37',
+                            600: '#c29d2c',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
     <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <style>
-        body { background-color: #0f172a; color: #f1f5f9; margin: 0; font-family: sans-serif; }
+        body { background-color: #020b08; color: #f8fafc; margin: 0; font-family: sans-serif; }
         .bracket-container::-webkit-scrollbar { height: 8px; }
-        .bracket-container::-webkit-scrollbar-track { background: #1e293b; }
-        .bracket-container::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+        .bracket-container::-webkit-scrollbar-track { background: #051611; }
+        .bracket-container::-webkit-scrollbar-thumb { background: #13382d; border-radius: 4px; }
         .aspect-3-4 { aspect-ratio: 3 / 4; }
         
         /* Smooth scrolling for charts */
         .chart-scroll::-webkit-scrollbar { height: 10px; }
-        .chart-scroll::-webkit-scrollbar-track { background: #0f172a; border-radius: 8px; }
-        .chart-scroll::-webkit-scrollbar-thumb { background: #3b82f6; border-radius: 8px; }
+        .chart-scroll::-webkit-scrollbar-track { background: #020b08; border-radius: 8px; }
+        .chart-scroll::-webkit-scrollbar-thumb { background: #d4af37; border-radius: 8px; }
     </style>
 </head>
 <body>
@@ -72,7 +100,7 @@
                 color: 'text-purple-400', bg: 'bg-purple-500/20', border: 'border-purple-500/50'
             },
             'finals': {
-                name: 'ATP Finals',
+                name: 'SNB Internationals',
                 points: { WINNER: 1500, FINALIST: 1000, SF: 400, RR_WIN: 200 },
                 excludeTop: 0, wcCount: { 8: 0 },
                 color: 'text-cyan-400', bg: 'bg-cyan-500/20', border: 'border-cyan-500/50'
@@ -112,8 +140,9 @@
         const getCountryName = (code) => COUNTRIES.find(c => c.code === code)?.name || code || 'Unknown';
         
         // Consistent hash-based color generator for charts
-        const CHART_COLORS = ['#ef4444', '#f97316', '#f59e0b', '#84cc16', '#22c55e', '#10b981', '#06b6d4', '#3b82f6', '#6366f1', '#a855f7', '#d946ef', '#ec4899', '#f43f5e', '#fb923c', '#fbbf24', '#a3e635', '#4ade80', '#2dd4bf', '#38bdf8', '#60a5fa', '#818cf8', '#c084fc', '#e879f9', '#f472b6'];
+        const CHART_COLORS = ['#d4af37', '#10b981', '#0ea5e9', '#f43f5e', '#8b5cf6', '#eab308', '#f97316', '#84cc16', '#3b82f6'];
         const getPlayerColor = (id) => {
+            if (!id) return CHART_COLORS[0];
             let hash = 0;
             for (let i = 0; i < id.length; i++) hash = id.charCodeAt(i) + ((hash << 5) - hash);
             return CHART_COLORS[Math.abs(hash) % CHART_COLORS.length];
@@ -138,7 +167,6 @@
                 try { parsed = JSON.parse(parsed); } catch(e) { return t.tier || 'major'; }
             }
             if (!parsed || !Array.isArray(parsed)) return t.tier || 'major';
-            // Grand slams strictly demoted if less than 64 draw (6 rounds)
             if (t.tier === 'grand_slam' && parsed.length < 6) return 'major';
             return t.tier || 'major';
         };
@@ -243,7 +271,7 @@
         const calculatePlayerRankings = (players, tournaments) => {
             const completedTournaments = tournaments
                 .filter(t => t.status === 'completed')
-                .sort((a, b) => b.completedAt - a.completedAt);
+                .sort((a, b) => (b.completedAt || 0) - (a.completedAt || 0));
 
             return players.map(player => {
                 let recentTournaments = [];
@@ -254,7 +282,6 @@
                 for (const t of completedTournaments) {
                     if (recentTournaments.length >= 24) break; 
                     
-                    // Match Form Extraction
                     if (t.format === 'atp_finals') {
                         let knockout = [];
                         let groupMatches = [];
@@ -266,13 +293,13 @@
                         [...knockout].reverse().forEach(round => {
                             if (!Array.isArray(round)) return;
                             round.forEach(m => {
-                                if (m && (m.p1 === player.id || m.p2 === player.id) && m.winner && recentMatches.length < 5) {
+                                if (m && (m.p1 === player.id || m.p2 === player.id) && m.winner && recentMatches.length < 7) {
                                     recentMatches.push({ isWin: m.winner === player.id, type: m.type || 'close' });
                                 }
                             });
                         });
                         [...groupMatches].reverse().forEach(m => {
-                            if (m && (m.p1 === player.id || m.p2 === player.id) && m.winner && recentMatches.length < 5) {
+                            if (m && (m.p1 === player.id || m.p2 === player.id) && m.winner && recentMatches.length < 7) {
                                     recentMatches.push({ isWin: m.winner === player.id, type: m.type || 'close' });
                             }
                         });
@@ -284,7 +311,7 @@
                                 if (!Array.isArray(parsedBracket[rIdx])) continue;
                                 parsedBracket[rIdx].forEach(match => {
                                     if (match && (match.p1 === player.id || match.p2 === player.id) && match.winner && match.type !== 'bye') {
-                                        if (recentMatches.length < 5) {
+                                        if (recentMatches.length < 7) {
                                             recentMatches.push({ isWin: match.winner === player.id, type: match.type || 'close' });
                                         }
                                     }
@@ -293,7 +320,6 @@
                         }
                     }
 
-                    // Tournament Points Extraction
                     const res = getTournamentPointsAndResult(player.id, t);
                     if (res.played) {
                         totalPoints += res.pts;
@@ -322,12 +348,12 @@
                 }
                 return { ...player, points: totalPoints, recentTournaments, recentMatches, stats: { wins: totalW, losses: totalL } };
             })
-            .sort((a, b) => b.points - a.points || a.name.localeCompare(b.name))
+            .sort((a, b) => b.points - a.points || (a.name || '').localeCompare(b.name || ''))
             .map((p, index) => ({ ...p, rank: index + 1 }));
         };
 
         const getGlobalHistory = (playersRaw, tournaments) => {
-            const completed = tournaments.filter(t => t.status === 'completed').sort((a, b) => a.completedAt - b.completedAt);
+            const completed = tournaments.filter(t => t.status === 'completed').sort((a, b) => (a.completedAt || 0) - (b.completedAt || 0));
             const history = [];
 
             completed.forEach((currentT, index) => {
@@ -339,10 +365,10 @@
                         const res = getTournamentPointsAndResult(p.id, t);
                         pts += res.pts;
                     });
-                    return { id: p.id, name: p.name, pts, imageUrl: p.imageUrl, nationality: p.nationality };
+                    return { id: p.id, name: p.name, pts, imageUrl: p.imageUrl, nationality: p.nationality || 'UNK' };
                 });
 
-                playerPoints.sort((a, b) => b.pts - a.pts || a.name.localeCompare(b.name));
+                playerPoints.sort((a, b) => b.pts - a.pts || (a.name || '').localeCompare(b.name || ''));
                 playerPoints.forEach((p, idx) => p.rank = idx + 1);
 
                 history.push({
@@ -447,7 +473,6 @@
         };
 
         const generateATPFinalsDraw = (selectedPlayers) => {
-            // Strictly Top 8 Players
             const seeds = selectedPlayers.slice(0, 8);
             const groupA = [seeds[0]];
             const groupB = [seeds[1]];
@@ -503,7 +528,7 @@
             const [hoveredPointData, setHoveredPointData] = useState(null);
 
             const data = history.slice(range === 'all' ? 0 : -range);
-            if (data.length < 1) return <p className="text-slate-400 text-sm mt-4">Not enough tournament history.</p>;
+            if (data.length < 1) return <p className="text-royal-300 text-sm mt-4">Not enough tournament history.</p>;
 
             const width = 1000;
             
@@ -526,28 +551,29 @@
             const labelStep = Math.max(1, Math.ceil(data.length / 15));
 
             const getAchColor = (ach) => {
-                if (!ach) return '#64748b';
-                if (ach.result === 'Winner') return '#facc15';
-                if (ach.result === 'Finalist') return '#cbd5e1';
-                return '#fb923c';
+                if (!ach) return '#789e90';
+                if (ach.result === 'Winner') return '#d4af37'; 
+                if (ach.result === 'Finalist' || ach.result === 'Final') return '#cde0d9'; 
+                return '#f97316'; 
             };
 
             return (
                 <div className="mt-4 flex flex-col items-center w-full">
                     <div className="flex gap-2 mb-6 w-full justify-start">
-                        <button onClick={() => setRange(10)} className={`px-4 py-1.5 rounded-lg text-sm font-bold transition-colors ${range === 10 ? 'bg-blue-600 text-white' : 'bg-slate-700/50 text-slate-400 hover:text-slate-200'}`}>Last 10</button>
-                        <button onClick={() => setRange(20)} className={`px-4 py-1.5 rounded-lg text-sm font-bold transition-colors ${range === 20 ? 'bg-blue-600 text-white' : 'bg-slate-700/50 text-slate-400 hover:text-slate-200'}`}>Last 20</button>
-                        <button onClick={() => setRange('all')} className={`px-4 py-1.5 rounded-lg text-sm font-bold transition-colors ${range === 'all' ? 'bg-blue-600 text-white' : 'bg-slate-700/50 text-slate-400 hover:text-slate-200'}`}>All Time</button>
+                        <button onClick={() => setRange(10)} className={`px-4 py-1.5 rounded-lg text-sm font-bold transition-colors ${range === 10 ? 'bg-gold-500 text-royal-950' : 'bg-royal-800 text-royal-300 hover:text-white'}`}>Last 10</button>
+                        <button onClick={() => setRange(20)} className={`px-4 py-1.5 rounded-lg text-sm font-bold transition-colors ${range === 20 ? 'bg-gold-500 text-royal-950' : 'bg-royal-800 text-royal-300 hover:text-white'}`}>Last 20</button>
+                        <button onClick={() => setRange('all')} className={`px-4 py-1.5 rounded-lg text-sm font-bold transition-colors ${range === 'all' ? 'bg-gold-500 text-royal-950' : 'bg-royal-800 text-royal-300 hover:text-white'}`}>All Time</button>
                     </div>
-                    <div className="w-full bg-slate-900/50 rounded-xl border border-slate-700/50 pb-2 relative overflow-hidden">
+                    <div className="w-full bg-royal-900/50 rounded-xl border border-royal-700 pb-2 relative overflow-hidden">
                         <svg viewBox={`0 0 ${width} ${height}`} className="w-full h-auto overflow-visible">
+                            {/* Grid lines */}
                             {type === 'rank' ? (
                                 [...Array(Math.floor(maxVal))].map((_, i) => {
                                     const r = i + 1;
                                     return (
                                         <g key={`grid-${i}`}>
-                                            <line x1={pad.left} y1={getY(r)} x2={width - pad.right} y2={getY(r)} stroke="#334155" strokeWidth="1" strokeDasharray="4 4" />
-                                            <text x={pad.left - 10} y={getY(r)} fill="#94a3b8" fontSize="12" fontWeight="bold" textAnchor="end" alignmentBaseline="middle">#{r}</text>
+                                            <line x1={pad.left} y1={getY(r)} x2={width - pad.right} y2={getY(r)} stroke="#13382d" strokeWidth="1" strokeDasharray="4 4" />
+                                            <text x={pad.left - 10} y={getY(r)} fill="#789e90" fontSize="12" fontWeight="bold" textAnchor="end" alignmentBaseline="middle">#{r}</text>
                                         </g>
                                     );
                                 })
@@ -558,14 +584,14 @@
                                     for(let v = 0; v <= maxVal; v += step) yLines.push(v);
                                     return yLines.map((p, i) => (
                                         <g key={`grid-${i}`}>
-                                            <line x1={pad.left} y1={getY(p)} x2={width - pad.right} y2={getY(p)} stroke="#334155" strokeWidth="1" strokeDasharray="4 4" />
-                                            <text x={pad.left - 10} y={getY(p)} fill="#94a3b8" fontSize="12" fontWeight="bold" textAnchor="end" alignmentBaseline="middle">{p.toLocaleString()}</text>
+                                            <line x1={pad.left} y1={getY(p)} x2={width - pad.right} y2={getY(p)} stroke="#13382d" strokeWidth="1" strokeDasharray="4 4" />
+                                            <text x={pad.left - 10} y={getY(p)} fill="#789e90" fontSize="12" fontWeight="bold" textAnchor="end" alignmentBaseline="middle">{p.toLocaleString()}</text>
                                         </g>
                                     ));
                                 })()
                             )}
                             
-                            {data.length > 1 && <path d={pathD} fill="none" stroke="#3b82f6" strokeWidth="3" strokeLinejoin="round" />}
+                            {data.length > 1 && <path d={pathD} fill="none" stroke="#d4af37" strokeWidth="3" strokeLinejoin="round" />}
                             
                             {data.map((d, i) => {
                                 const ptX = getX(i);
@@ -576,10 +602,10 @@
 
                                 return (
                                     <g key={i}>
-                                        <circle cx={ptX} cy={ptY} r={isHovered ? "8" : "5"} fill="#1e293b" stroke="#3b82f6" strokeWidth="2" style={{ transition: 'r 0.2s ease' }} />
+                                        <circle cx={ptX} cy={ptY} r={isHovered ? "8" : "5"} fill="#051611" stroke="#d4af37" strokeWidth="2" style={{ transition: 'r 0.2s ease' }} />
                                         
                                         {showLabel && (
-                                            <text x={ptX} y={ptY - 18} fill="#3b82f6" fontSize="16" fontWeight="900" textAnchor="middle" stroke="#0f172a" strokeWidth="4" paintOrder="stroke">
+                                            <text x={ptX} y={ptY - 18} fill="#d4af37" fontSize="16" fontWeight="900" textAnchor="middle" stroke="#051611" strokeWidth="4" paintOrder="stroke">
                                                 {type === 'rank' ? `#${d.rank}` : d.points.toLocaleString()}
                                             </text>
                                         )}
@@ -599,13 +625,13 @@
                         </svg>
                     </div>
 
-                    <div className="h-10 mt-4 flex items-center justify-center bg-slate-900 border border-slate-700 rounded-full px-6 min-w-[300px] shadow-lg transition-all duration-200">
+                    <div className="h-10 mt-4 flex items-center justify-center bg-royal-900 border border-royal-800 rounded-full px-6 min-w-[300px] shadow-lg transition-all duration-200">
                         {hoveredPointData ? (
                             <span className="text-white font-bold tracking-wide">
-                                {hoveredPointData.tournamentName} <span className="text-blue-400 font-normal ml-2">| {type === 'rank' ? `Rank #${hoveredPointData.rank}` : `${hoveredPointData.points.toLocaleString()} pts`}</span>
+                                {hoveredPointData.tournamentName} <span className="text-gold-500 font-normal ml-2">| {type === 'rank' ? `Rank #${hoveredPointData.rank}` : `${hoveredPointData.points.toLocaleString()} pts`}</span>
                             </span>
                         ) : (
-                            <span className="text-slate-500 text-sm font-medium">Hover over a point for tournament details</span>
+                            <span className="text-royal-300 text-sm font-medium">Hover over a point for tournament details</span>
                         )}
                     </div>
                 </div>
@@ -618,7 +644,7 @@
             const [hoveredLineId, setHoveredLineId] = useState(null);
             
             const historyData = globalHistory.slice(range === 'all' ? 0 : -range);
-            if (historyData.length < 1) return <p className="text-slate-400 text-sm mt-4">Not enough tournament history to generate a graph.</p>;
+            if (historyData.length < 1) return <p className="text-royal-300 text-sm mt-4">Not enough tournament history to generate a graph.</p>;
 
             const includedPlayerIds = new Set();
             historyData.forEach(h => {
@@ -728,16 +754,16 @@
                 <div className="w-full">
                     <div className="flex justify-between items-center mb-6">
                         <div className="flex gap-2">
-                            <button onClick={() => setRange(10)} className={`px-4 py-1.5 rounded-lg text-sm font-bold transition-colors ${range === 10 ? 'bg-blue-600 text-white' : 'bg-slate-700/50 text-slate-400 hover:text-slate-200'}`}>Last 10</button>
-                            <button onClick={() => setRange(20)} className={`px-4 py-1.5 rounded-lg text-sm font-bold transition-colors ${range === 20 ? 'bg-blue-600 text-white' : 'bg-slate-700/50 text-slate-400 hover:text-slate-200'}`}>Last 20</button>
-                            <button onClick={() => setRange('all')} className={`px-4 py-1.5 rounded-lg text-sm font-bold transition-colors ${range === 'all' ? 'bg-blue-600 text-white' : 'bg-slate-700/50 text-slate-400 hover:text-slate-200'}`}>All Time</button>
+                            <button onClick={() => setRange(10)} className={`px-4 py-1.5 rounded-lg text-sm font-bold transition-colors ${range === 10 ? 'bg-gold-500 text-royal-950' : 'bg-royal-800 text-royal-300 hover:text-white'}`}>Last 10</button>
+                            <button onClick={() => setRange(20)} className={`px-4 py-1.5 rounded-lg text-sm font-bold transition-colors ${range === 20 ? 'bg-gold-500 text-royal-950' : 'bg-royal-800 text-royal-300 hover:text-white'}`}>Last 20</button>
+                            <button onClick={() => setRange('all')} className={`px-4 py-1.5 rounded-lg text-sm font-bold transition-colors ${range === 'all' ? 'bg-gold-500 text-royal-950' : 'bg-royal-800 text-royal-300 hover:text-white'}`}>All Time</button>
                         </div>
                         {selectedLineId && (
-                            <button onClick={() => setSelectedLineId(null)} className="text-sm font-medium text-slate-400 hover:text-white px-3 py-1 bg-slate-800 rounded-md border border-slate-700 transition-colors">Clear Selection</button>
+                            <button onClick={() => setSelectedLineId(null)} className="text-sm font-medium text-gold-500 hover:text-white px-3 py-1 bg-royal-800 rounded-md border border-royal-700 transition-colors">Clear Selection</button>
                         )}
                     </div>
                     
-                    <div className="w-full bg-slate-900/50 rounded-xl border border-slate-700/50 pb-2 relative overflow-hidden">
+                    <div className="w-full bg-royal-900/50 rounded-xl border border-royal-700 pb-2 relative overflow-hidden">
                         <svg viewBox={`0 0 ${width} ${height}`} className="w-full h-auto overflow-visible font-sans">
                             <defs>
                                 {lines.map(line => (
@@ -754,13 +780,13 @@
                                         const r = i + 1;
                                         return (
                                             <g key={`grid-${i}`}>
-                                                <line x1={pad.left} y1={getY(r)} x2={width - pad.right + 20} y2={getY(r)} stroke="#334155" strokeWidth="1" strokeDasharray="4 4" />
-                                                <text x={pad.left - 15} y={getY(r)} fill="#94a3b8" fontSize="12" fontWeight="bold" textAnchor="end" alignmentBaseline="middle">#{r}</text>
+                                                <line x1={pad.left} y1={getY(r)} x2={width - pad.right + 20} y2={getY(r)} stroke="#13382d" strokeWidth="1" strokeDasharray="4 4" />
+                                                <text x={pad.left - 15} y={getY(r)} fill="#789e90" fontSize="12" fontWeight="bold" textAnchor="end" alignmentBaseline="middle">#{r}</text>
                                             </g>
                                         );
                                     })}
                                     <g>
-                                        <rect x={pad.left} y={getY(maxRankDisplay + 0.5)} width={width - pad.left - pad.right + 20} height="40" fill="#0f172a" opacity="0.6" />
+                                        <rect x={pad.left} y={getY(maxRankDisplay + 0.5)} width={width - pad.left - pad.right + 20} height="40" fill="#051611" opacity="0.6" />
                                         <line x1={pad.left} y1={getY(maxRankDisplay + 0.5)} x2={width - pad.right + 20} y2={getY(maxRankDisplay + 0.5)} stroke="#ef4444" strokeWidth="1" strokeDasharray="8 4" opacity="0.5" />
                                         <text x={pad.left - 15} y={getY(maxRankDisplay + 1)} fill="#ef4444" fontSize="12" fontWeight="bold" textAnchor="end" alignmentBaseline="middle" opacity="0.8">{maxRankDisplay + 1}+</text>
                                     </g>
@@ -772,8 +798,8 @@
                                     for(let v = 0; v <= maxPointsVal; v += step) yLines.push(v);
                                     return yLines.map((p, i) => (
                                         <g key={`grid-${i}`}>
-                                            <line x1={pad.left} y1={getY(p)} x2={width - pad.right + 20} y2={getY(p)} stroke="#334155" strokeWidth="1" strokeDasharray="4 4" />
-                                            <text x={pad.left - 15} y={getY(p)} fill="#94a3b8" fontSize="12" fontWeight="bold" textAnchor="end" alignmentBaseline="middle">{p.toLocaleString()}</text>
+                                            <line x1={pad.left} y1={getY(p)} x2={width - pad.right + 20} y2={getY(p)} stroke="#13382d" strokeWidth="1" strokeDasharray="4 4" />
+                                            <text x={pad.left - 15} y={getY(p)} fill="#789e90" fontSize="12" fontWeight="bold" textAnchor="end" alignmentBaseline="middle">{p.toLocaleString()}</text>
                                         </g>
                                     ));
                                 })()
@@ -818,15 +844,15 @@
                                             const ptY = getY(type === 'rank' ? pt.s.rank : pt.s.pts);
                                             return (
                                                 <g key={`pt-${line.player.id}-${sIdx}-${i}`} className="group cursor-crosshair">
-                                                    <circle cx={ptX} cy={ptY} r={isHighlighted ? "6" : "5"} fill="#0f172a" stroke={line.color} strokeWidth={isHighlighted ? 4 : 2} style={{ transition: 'r 0.2s ease, stroke-width 0.2s ease' }} />
+                                                    <circle cx={ptX} cy={ptY} r={isHighlighted ? "6" : "5"} fill="#051611" stroke={line.color} strokeWidth={isHighlighted ? 4 : 2} style={{ transition: 'r 0.2s ease, stroke-width 0.2s ease' }} />
                                                     
                                                     {type === 'points' && (
-                                                        <text x={ptX} y={ptY - 12} fill={line.color} fontSize="12" fontWeight="900" textAnchor="middle" stroke="#0f172a" strokeWidth="4" paintOrder="stroke" className="opacity-0 group-hover:opacity-100" style={{ transition: 'opacity 0.2s ease' }}>
+                                                        <text x={ptX} y={ptY - 12} fill={line.color} fontSize="12" fontWeight="900" textAnchor="middle" stroke="#051611" strokeWidth="4" paintOrder="stroke" className="opacity-0 group-hover:opacity-100" style={{ transition: 'opacity 0.2s ease' }}>
                                                             {pt.s.pts.toLocaleString()}
                                                         </text>
                                                     )}
                                                     {type === 'rank' && pt.s.rank > maxRankDisplay && (
-                                                        <text x={ptX} y={ptY + 20} fill="#ef4444" fontSize="12" fontWeight="900" textAnchor="middle" stroke="#0f172a" strokeWidth="4" paintOrder="stroke" className="opacity-0 group-hover:opacity-100" style={{ transition: 'opacity 0.2s ease' }}>
+                                                        <text x={ptX} y={ptY + 20} fill="#ef4444" fontSize="12" fontWeight="900" textAnchor="middle" stroke="#051611" strokeWidth="4" paintOrder="stroke" className="opacity-0 group-hover:opacity-100" style={{ transition: 'opacity 0.2s ease' }}>
                                                             #{pt.s.rank}
                                                         </text>
                                                     )}
@@ -850,11 +876,11 @@
                                             onMouseEnter={() => setHoveredLineId(line.player.id)}
                                             onMouseLeave={() => setHoveredLineId(null)}
                                         >
-                                            <rect x="-4" y="-4" width="180" height="36" rx="18" fill="#0f172a" fillOpacity={isHighlighted ? "1" : "0.85"} stroke={line.color} strokeWidth={isHighlighted ? 2 : 1} style={{ filter: isHighlighted ? 'drop-shadow(0 0 8px rgba(255,255,255,0.3))' : 'drop-shadow(0 4px 6px rgba(0,0,0,0.5))' }} />
+                                            <rect x="-4" y="-4" width="180" height="36" rx="18" fill="#051611" fillOpacity={isHighlighted ? "1" : "0.85"} stroke={line.color} strokeWidth={isHighlighted ? 2 : 1} style={{ filter: isHighlighted ? 'drop-shadow(0 0 8px rgba(255,255,255,0.3))' : 'drop-shadow(0 4px 6px rgba(0,0,0,0.5))' }} />
                                             {line.player.imageUrl ? (
                                                 <image href={line.player.imageUrl} x="0" y="0" width="28" height="28" clipPath={`url(#clip-${type}-${line.player.id})`} preserveAspectRatio="xMidYMid slice" />
                                             ) : (
-                                                <circle cx="14" cy="14" r="14" fill="#334155" />
+                                                <circle cx="14" cy="14" r="14" fill="#0a241c" />
                                             )}
                                             <text x="36" y="19" fill="#f8fafc" fontSize="14" fontWeight="bold" style={{ textShadow: "0px 2px 4px black" }}>{line.player.name}</text>
                                         </g>
@@ -873,12 +899,12 @@
             const [hoveredLineId, setHoveredLineId] = useState(null);
             
             const historyData = globalHistory.slice(range === 'all' ? 0 : -range);
-            if (historyData.length < 1) return <p className="text-slate-400 text-sm mt-4">Not enough tournament history to generate a graph.</p>;
+            if (historyData.length < 1) return <p className="text-royal-300 text-sm mt-4">Not enough tournament history to generate a graph.</p>;
 
             const includedNations = new Set();
             historyData.forEach(h => {
                 h.standings.forEach(s => {
-                    if (s.nationality) includedNations.add(s.nationality);
+                    if (s.nationality) includedNations.add(s.nationality || 'UNK');
                 });
             });
 
@@ -888,7 +914,7 @@
             Array.from(includedNations).forEach(nat => {
                 const points = historyData.map((h, k) => {
                     let pts = 0;
-                    h.standings.forEach(s => { if (s.nationality === nat) pts += s.pts; });
+                    h.standings.forEach(s => { if ((s.nationality || 'UNK') === nat) pts += s.pts; });
                     return { k, pts, h };
                 });
                 
@@ -945,16 +971,16 @@
                 <div className="w-full">
                     <div className="flex justify-between items-center mb-6">
                         <div className="flex gap-2">
-                            <button onClick={() => setRange(10)} className={`px-4 py-1.5 rounded-lg text-sm font-bold transition-colors ${range === 10 ? 'bg-blue-600 text-white' : 'bg-slate-700/50 text-slate-400 hover:text-slate-200'}`}>Last 10</button>
-                            <button onClick={() => setRange(20)} className={`px-4 py-1.5 rounded-lg text-sm font-bold transition-colors ${range === 20 ? 'bg-blue-600 text-white' : 'bg-slate-700/50 text-slate-400 hover:text-slate-200'}`}>Last 20</button>
-                            <button onClick={() => setRange('all')} className={`px-4 py-1.5 rounded-lg text-sm font-bold transition-colors ${range === 'all' ? 'bg-blue-600 text-white' : 'bg-slate-700/50 text-slate-400 hover:text-slate-200'}`}>All Time</button>
+                            <button onClick={() => setRange(10)} className={`px-4 py-1.5 rounded-lg text-sm font-bold transition-colors ${range === 10 ? 'bg-gold-500 text-royal-950' : 'bg-royal-800 text-royal-300 hover:text-white'}`}>Last 10</button>
+                            <button onClick={() => setRange(20)} className={`px-4 py-1.5 rounded-lg text-sm font-bold transition-colors ${range === 20 ? 'bg-gold-500 text-royal-950' : 'bg-royal-800 text-royal-300 hover:text-white'}`}>Last 20</button>
+                            <button onClick={() => setRange('all')} className={`px-4 py-1.5 rounded-lg text-sm font-bold transition-colors ${range === 'all' ? 'bg-gold-500 text-royal-950' : 'bg-royal-800 text-royal-300 hover:text-white'}`}>All Time</button>
                         </div>
                         {selectedLineId && (
-                            <button onClick={() => setSelectedLineId(null)} className="text-sm font-medium text-slate-400 hover:text-white px-3 py-1 bg-slate-800 rounded-md border border-slate-700 transition-colors">Clear Selection</button>
+                            <button onClick={() => setSelectedLineId(null)} className="text-sm font-medium text-gold-500 hover:text-white px-3 py-1 bg-royal-800 rounded-md border border-royal-700 transition-colors">Clear Selection</button>
                         )}
                     </div>
                     
-                    <div className="w-full bg-slate-900/50 rounded-xl border border-slate-700/50 pb-2 relative overflow-hidden">
+                    <div className="w-full bg-royal-900/50 rounded-xl border border-royal-700 pb-2 relative overflow-hidden">
                         <svg viewBox={`0 0 ${width} ${height}`} className="w-full h-auto overflow-visible font-sans">
                             {/* Gridlines */}
                             {(() => {
@@ -963,8 +989,8 @@
                                 for(let v = 0; v <= maxPointsVal; v += step) yLines.push(v);
                                 return yLines.map((p, i) => (
                                     <g key={`grid-${i}`}>
-                                        <line x1={pad.left} y1={getY(p)} x2={width - pad.right + 20} y2={getY(p)} stroke="#334155" strokeWidth="1" strokeDasharray="4 4" />
-                                        <text x={pad.left - 15} y={getY(p)} fill="#94a3b8" fontSize="12" fontWeight="bold" textAnchor="end" alignmentBaseline="middle">{p.toLocaleString()}</text>
+                                        <line x1={pad.left} y1={getY(p)} x2={width - pad.right + 20} y2={getY(p)} stroke="#13382d" strokeWidth="1" strokeDasharray="4 4" />
+                                        <text x={pad.left - 15} y={getY(p)} fill="#789e90" fontSize="12" fontWeight="bold" textAnchor="end" alignmentBaseline="middle">{p.toLocaleString()}</text>
                                     </g>
                                 ));
                             })()}
@@ -1007,9 +1033,9 @@
                                             const ptY = getY(pt.pts);
                                             return (
                                                 <g key={`pt-${line.id}-${i}`} className="group cursor-crosshair">
-                                                    <circle cx={ptX} cy={ptY} r={isHighlighted ? "6" : "5"} fill="#0f172a" stroke={line.color} strokeWidth={isHighlighted ? 4 : 2} style={{ transition: 'r 0.2s ease' }} />
+                                                    <circle cx={ptX} cy={ptY} r={isHighlighted ? "6" : "5"} fill="#051611" stroke={line.color} strokeWidth={isHighlighted ? 4 : 2} style={{ transition: 'r 0.2s ease' }} />
                                                     
-                                                    <text x={ptX} y={ptY - 12} fill={line.color} fontSize="12" fontWeight="900" textAnchor="middle" stroke="#0f172a" strokeWidth="4" paintOrder="stroke" className="opacity-0 group-hover:opacity-100" style={{ transition: 'opacity 0.2s ease' }}>
+                                                    <text x={ptX} y={ptY - 12} fill={line.color} fontSize="12" fontWeight="900" textAnchor="middle" stroke="#051611" strokeWidth="4" paintOrder="stroke" className="opacity-0 group-hover:opacity-100" style={{ transition: 'opacity 0.2s ease' }}>
                                                         {pt.pts.toLocaleString()}
                                                     </text>
 
@@ -1032,7 +1058,7 @@
                                             onMouseEnter={() => setHoveredLineId(line.id)}
                                             onMouseLeave={() => setHoveredLineId(null)}
                                         >
-                                            <rect x="-4" y="-4" width="180" height="36" rx="18" fill="#0f172a" fillOpacity={isHighlighted ? "1" : "0.85"} stroke={line.color} strokeWidth={isHighlighted ? 2 : 1} style={{ filter: isHighlighted ? 'drop-shadow(0 0 8px rgba(255,255,255,0.3))' : 'drop-shadow(0 4px 6px rgba(0,0,0,0.5))' }} />
+                                            <rect x="-4" y="-4" width="180" height="36" rx="18" fill="#051611" fillOpacity={isHighlighted ? "1" : "0.85"} stroke={line.color} strokeWidth={isHighlighted ? 2 : 1} style={{ filter: isHighlighted ? 'drop-shadow(0 0 8px rgba(255,255,255,0.3))' : 'drop-shadow(0 4px 6px rgba(0,0,0,0.5))' }} />
                                             <text x="12" y="21" fontSize="18" style={{ textShadow: "0px 2px 4px black" }}>{line.flag}</text>
                                             <text x="40" y="19" fill="#f8fafc" fontSize="14" fontWeight="bold" style={{ textShadow: "0px 2px 4px black" }}>{line.name}</text>
                                         </g>
@@ -1065,38 +1091,38 @@
             return (
                 <div className="max-w-[1400px] mx-auto space-y-16 pb-20">
                     <header className="mb-4">
-                        <h1 className="text-3xl font-bold text-white flex items-center gap-3"><TrendingUp className="text-blue-400 w-8 h-8"/> Global Analytics</h1>
-                        <p className="text-slate-400 mt-2">Click or hover on any line or profile picture to isolate their trajectory.</p>
+                        <h1 className="text-3xl font-bold text-white flex items-center gap-3"><TrendingUp className="text-gold-500 w-8 h-8"/> Global Analytics</h1>
+                        <p className="text-royal-300 mt-2">Click or hover on any line or profile picture to isolate their trajectory.</p>
                     </header>
 
-                    <div className="bg-slate-800 p-6 rounded-2xl border border-slate-700 shadow-xl">
+                    <div className="bg-royal-900 p-6 rounded-2xl border border-royal-800 shadow-xl">
                         <h2 className="text-2xl font-bold text-white mb-6">Top 12 Rank Progression</h2>
                         <TopPlayersChart globalHistory={globalHistory} playersRaw={playersRaw} type="rank" onNavigate={onNavigate} />
                     </div>
-                    <div className="bg-slate-800 p-6 rounded-2xl border border-slate-700 shadow-xl">
-                        <h2 className="text-2xl font-bold text-white flex items-center gap-3 mb-6"><BarChart2 className="text-yellow-400 w-7 h-7"/> Top 12 Points Progression</h2>
+                    <div className="bg-royal-900 p-6 rounded-2xl border border-royal-800 shadow-xl">
+                        <h2 className="text-2xl font-bold text-white flex items-center gap-3 mb-6"><BarChart2 className="text-gold-500 w-7 h-7"/> Top 12 Points Progression</h2>
                         <TopPlayersChart globalHistory={globalHistory} playersRaw={playersRaw} type="points" onNavigate={onNavigate} />
                     </div>
-                    <div className="bg-slate-800 p-6 rounded-2xl border border-slate-700 shadow-xl">
-                        <h2 className="text-2xl font-bold text-white flex items-center gap-3 mb-6"><Globe className="text-emerald-400 w-7 h-7"/> Global Nations Trajectory</h2>
+                    <div className="bg-royal-900 p-6 rounded-2xl border border-royal-800 shadow-xl">
+                        <h2 className="text-2xl font-bold text-white flex items-center gap-3 mb-6"><Globe className="text-gold-500 w-7 h-7"/> Global Nations Trajectory</h2>
                         <TopNationsChart globalHistory={globalHistory} />
                         
-                        <div className="mt-8 border-t border-slate-700 pt-8">
+                        <div className="mt-8 border-t border-royal-800 pt-8">
                             <h3 className="text-xl font-bold text-white mb-4">Nations Leaderboard</h3>
-                            <div className="bg-slate-900/50 rounded-xl border border-slate-700/50 overflow-hidden">
+                            <div className="bg-royal-950/50 rounded-xl border border-royal-800 overflow-hidden">
                                 <div className="overflow-x-auto">
                                     <table className="w-full text-left border-collapse">
-                                        <thead><tr className="bg-slate-900/80 text-slate-300 text-sm uppercase">
-                                            <th className="p-4 text-center w-16">#</th><th>Nation</th><th className="text-center">Players</th><th className="text-blue-400">Points</th><th className="text-center">Titles</th><th className="text-center">W-L</th>
+                                        <thead><tr className="bg-royal-900/80 text-royal-200 text-sm uppercase">
+                                            <th className="p-4 text-center w-16">#</th><th>Nation</th><th className="text-center">Players</th><th className="text-gold-500">Points</th><th className="text-center">Titles</th><th className="text-center">W-L</th>
                                         </tr></thead>
-                                        <tbody className="divide-y divide-slate-700/50">{nationStats.map((n, idx) => (
-                                            <tr key={n.code} className="hover:bg-slate-800/80 transition-colors">
-                                                <td className="p-4 text-center text-slate-400 font-bold">{idx + 1}</td>
+                                        <tbody className="divide-y divide-royal-800/50">{nationStats.map((n, idx) => (
+                                            <tr key={n.code} className="hover:bg-royal-800/80 transition-colors">
+                                                <td className="p-4 text-center text-royal-400 font-bold">{idx + 1}</td>
                                                 <td className="p-4 font-medium text-white flex items-center gap-3"><span className="text-2xl">{getFlag(n.code)}</span>{getCountryName(n.code)}</td>
-                                                <td className="p-4 text-center text-slate-300">{n.players}</td>
-                                                <td className="p-4 font-bold text-blue-400">{n.points.toLocaleString()}</td>
-                                                <td className="p-4 text-center font-bold text-yellow-500">{n.titles}</td>
-                                                <td className="p-4 text-center text-slate-300">{n.wins} - {n.losses}</td>
+                                                <td className="p-4 text-center text-royal-200">{n.players}</td>
+                                                <td className="p-4 font-bold text-gold-500">{n.points.toLocaleString()}</td>
+                                                <td className="p-4 text-center font-bold text-gold-400">{n.titles}</td>
+                                                <td className="p-4 text-center text-royal-200">{n.wins} - {n.losses}</td>
                                             </tr>
                                         ))}</tbody>
                                     </table>
@@ -1119,14 +1145,14 @@
                 return () => document.removeEventListener("mousedown", handleClickOutside);
             }, []);
             
-            const completed = useMemo(() => tournaments.filter(t => t.status === 'completed').sort((a, b) => b.completedAt - a.completedAt), [tournaments]);
+            const completed = useMemo(() => tournaments.filter(t => t.status === 'completed').sort((a, b) => (b.completedAt || 0) - (a.completedAt || 0)), [tournaments]);
             const filtered = completed.filter(t => t.name.toLowerCase().includes(search.toLowerCase()));
             const selectedT = completed.find(t => t.id === value);
 
             return (
                 <div ref={wrapperRef} className="relative w-full md:w-80">
                     <div 
-                        className="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-3 text-white flex justify-between items-center cursor-pointer hover:border-slate-500 transition-colors shadow-inner"
+                        className="w-full bg-royal-900 border border-royal-700 rounded-lg px-4 py-3 text-white flex justify-between items-center cursor-pointer hover:border-royal-600 transition-colors shadow-inner"
                         onClick={() => setIsOpen(!isOpen)}
                     >
                         <span className="truncate text-sm font-medium">
@@ -1135,20 +1161,20 @@
                         <ChevronRight size={16} className={`shrink-0 transition-transform ${isOpen ? 'rotate-90' : ''}`} />
                     </div>
                     {isOpen && (
-                        <div className="absolute z-50 w-full mt-1 bg-slate-800 border border-slate-700 rounded-lg shadow-xl max-h-72 overflow-y-auto">
-                            <div className="p-2 sticky top-0 bg-slate-800 border-b border-slate-700">
-                                <input type="text" autoFocus className="w-full bg-slate-900 border border-slate-600 rounded px-3 py-2 text-sm text-white focus:outline-none focus:border-blue-500" placeholder="Search history..." value={search} onChange={e => setSearch(e.target.value)} />
+                        <div className="absolute z-50 w-full mt-1 bg-royal-800 border border-royal-700 rounded-lg shadow-xl max-h-72 overflow-y-auto">
+                            <div className="p-2 sticky top-0 bg-royal-800 border-b border-royal-700">
+                                <input type="text" autoFocus className="w-full bg-royal-950 border border-royal-600 rounded px-3 py-2 text-sm text-white focus:outline-none focus:border-gold-500" placeholder="Search history..." value={search} onChange={e => setSearch(e.target.value)} />
                             </div>
-                            <div className="px-4 py-3 hover:bg-slate-700 cursor-pointer flex items-center gap-2 text-slate-200 border-b border-slate-700/50" onClick={() => { onChange(''); setIsOpen(false); setSearch(''); }}>
-                                <span className="font-bold text-green-400">🟢 Current (Live Rankings)</span>
+                            <div className="px-4 py-3 hover:bg-royal-700 cursor-pointer flex items-center gap-2 text-royal-100 border-b border-royal-700/50" onClick={() => { onChange(''); setIsOpen(false); setSearch(''); }}>
+                                <span className="font-bold text-emerald-500">🟢 Current (Live Rankings)</span>
                             </div>
                             {filtered.map(t => (
-                                <div key={t.id} className="px-4 py-3 hover:bg-slate-700 cursor-pointer flex flex-col text-slate-200" onClick={() => { onChange(t.id); setIsOpen(false); setSearch(''); }}>
+                                <div key={t.id} className="px-4 py-3 hover:bg-royal-700 cursor-pointer flex flex-col text-royal-100" onClick={() => { onChange(t.id); setIsOpen(false); setSearch(''); }}>
                                     <span className="font-medium text-sm">{t.name}</span>
-                                    <span className="text-[10px] text-slate-400 mt-0.5">{new Date(t.completedAt).toLocaleDateString()}</span>
+                                    <span className="text-[10px] text-royal-300 mt-0.5">{new Date(t.completedAt).toLocaleDateString()}</span>
                                 </div>
                             ))}
-                            {filtered.length === 0 && <div className="p-4 text-center text-slate-500 text-sm">No tournaments found</div>}
+                            {filtered.length === 0 && <div className="p-4 text-center text-royal-400 text-sm">No tournaments found</div>}
                         </div>
                     )}
                 </div>
@@ -1169,19 +1195,19 @@
             return (
                 <div ref={wrapperRef} className="relative w-full md:w-auto min-w-[200px]">
                     <div 
-                        className={`w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-3 text-white flex justify-between items-center transition-colors ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer hover:border-slate-500'}`}
+                        className={`w-full bg-royal-950 border border-royal-800 rounded-lg px-4 py-3 text-white flex justify-between items-center transition-colors ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer hover:border-royal-600'}`}
                         onClick={() => !disabled && setIsOpen(!isOpen)}
                     >
                         <span className="truncate">{selectedCountry ? `${selectedCountry.flag} ${selectedCountry.name}` : 'Select Nationality...'}</span>
                         <ChevronRight size={16} className={`shrink-0 transition-transform ${isOpen ? 'rotate-90' : ''}`} />
                     </div>
                     {isOpen && (
-                        <div className="absolute z-50 w-full mt-1 bg-slate-800 border border-slate-700 rounded-lg shadow-xl max-h-60 overflow-y-auto">
-                            <div className="p-2 sticky top-0 bg-slate-800 border-b border-slate-700">
-                                <input type="text" autoFocus className="w-full bg-slate-900 border border-slate-600 rounded px-3 py-2 text-sm text-white focus:outline-none focus:border-blue-500" placeholder="Search..." value={search} onChange={e => setSearch(e.target.value)} />
+                        <div className="absolute z-50 w-full mt-1 bg-royal-800 border border-royal-700 rounded-lg shadow-xl max-h-60 overflow-y-auto">
+                            <div className="p-2 sticky top-0 bg-royal-800 border-b border-royal-700">
+                                <input type="text" autoFocus className="w-full bg-royal-950 border border-royal-600 rounded px-3 py-2 text-sm text-white focus:outline-none focus:border-gold-500" placeholder="Search..." value={search} onChange={e => setSearch(e.target.value)} />
                             </div>
                             {filtered.map(c => (
-                                <div key={c.code} className="px-4 py-3 hover:bg-slate-700 cursor-pointer flex items-center gap-3 text-slate-200" onClick={() => { onChange(c.code); setIsOpen(false); setSearch(''); }}>
+                                <div key={c.code} className="px-4 py-3 hover:bg-royal-700 cursor-pointer flex items-center gap-3 text-royal-100" onClick={() => { onChange(c.code); setIsOpen(false); setSearch(''); }}>
                                     <span className="text-xl">{c.flag}</span> <span className="font-medium">{c.name} ({c.code})</span>
                                 </div>
                             ))}
@@ -1201,7 +1227,7 @@
                 if (!targetT) return calculatePlayerRankings(playersRaw, tournaments);
                 
                 // Filter tournaments to only those completed BEFORE or AT the same time as the target
-                const filteredTournaments = tournaments.filter(t => t.status === 'completed' && t.completedAt <= targetT.completedAt);
+                const filteredTournaments = tournaments.filter(t => t.status === 'completed' && (t.completedAt || 0) <= (targetT.completedAt || 0));
                 return calculatePlayerRankings(playersRaw, filteredTournaments);
             }, [playersRaw, tournaments, asOfId]);
 
@@ -1210,15 +1236,15 @@
                     <header className="mb-8 flex flex-col md:flex-row md:items-end justify-between gap-6">
                         <div>
                             <h1 className="text-3xl font-bold text-white">Global Rankings</h1>
-                            <p className="text-slate-400 mt-2">Based on the last 24 tournament performances.</p>
+                            <p className="text-royal-300 mt-2">Based on the last 24 tournament performances.</p>
                         </div>
                         <HistoricalTournamentSelect tournaments={tournaments} value={asOfId} onChange={setAsOfId} />
                     </header>
-                    <div className="bg-slate-800 rounded-xl border border-slate-700 overflow-hidden shadow-xl">
+                    <div className="bg-royal-900 rounded-xl border border-royal-800 overflow-hidden shadow-xl">
                         <div className="overflow-x-auto">
                             <table className="w-full text-left border-collapse">
                                 <thead>
-                                    <tr className="bg-slate-900/50 text-slate-300 text-sm uppercase tracking-wider">
+                                    <tr className="bg-royal-950/50 text-royal-200 text-sm uppercase tracking-wider">
                                         <th className="p-4 font-semibold w-16 text-center">Rank</th>
                                         <th className="p-4 font-semibold">Player</th>
                                         <th className="p-4 font-semibold">Points</th>
@@ -1227,34 +1253,34 @@
                                         <th className="p-4 font-semibold hidden lg:table-cell">Match Form</th>
                                     </tr>
                                 </thead>
-                                <tbody className="divide-y divide-slate-700">
+                                <tbody className="divide-y divide-royal-800">
                                     {displayPlayers.map((player) => (
-                                        <tr key={player.id} onClick={() => onSelectPlayer(player.id)} className="hover:bg-slate-700/30 transition-colors cursor-pointer group">
-                                            <td className="p-4 text-center font-bold text-slate-400">{player.rank}</td>
+                                        <tr key={player.id} onClick={() => onSelectPlayer(player.id)} className="hover:bg-royal-800/50 transition-colors cursor-pointer group">
+                                            <td className="p-4 text-center font-bold text-royal-400">{player.rank}</td>
                                             <td className="p-4 font-medium text-white flex items-center gap-3">
-                                                <img src={player.imageUrl || "https://via.placeholder.com/40"} className="w-10 h-10 rounded-full object-cover border border-slate-600 shrink-0" />
-                                                <div><div className="group-hover:text-blue-400 transition-colors">{getFlag(player.nationality)} {player.name}</div><div className="text-xs text-slate-400">{getCountryName(player.nationality)}</div></div>
+                                                <img src={player.imageUrl || "https://via.placeholder.com/40"} className="w-10 h-10 rounded-full object-cover border border-royal-700 shrink-0" />
+                                                <div><div className="group-hover:text-gold-500 transition-colors">{getFlag(player.nationality)} {player.name}</div><div className="text-xs text-royal-300">{getCountryName(player.nationality)}</div></div>
                                             </td>
-                                            <td className="p-4 font-bold text-blue-400">{player.points.toLocaleString()}</td>
-                                            <td className="p-4 text-center text-slate-300">{player.stats.wins} - {player.stats.losses}</td>
+                                            <td className="p-4 font-bold text-gold-500">{player.points.toLocaleString()}</td>
+                                            <td className="p-4 text-center text-royal-200">{player.stats.wins} - {player.stats.losses}</td>
                                             <td className="p-4 hidden md:table-cell">
                                                 <div className="flex gap-1.5">
-                                                    {player.recentTournaments.slice(0, 5).map((t, i) => {
+                                                    {player.recentTournaments.slice(0, 7).map((t, i) => {
                                                         let lbl = '';
                                                         if (t.result === 'Winner') lbl = 'W';
-                                                        else if (t.result === 'Final') lbl = 'F';
-                                                        else if (t.result === 'Semifinals') lbl = 'SF';
+                                                        else if (t.result === 'Final' || t.result === 'Finalist') lbl = 'F';
+                                                        else if (t.result === 'Semifinals' || t.result === 'Semifinalist') lbl = 'SF';
                                                         else if (t.result === 'Quarterfinals') lbl = 'QF';
                                                         else if (t.result === 'Round of 16') lbl = '16';
                                                         else if (t.result === 'Round of 32') lbl = '32';
                                                         else if (t.result === 'Round of 64') lbl = '64';
                                                         else if (t.result === 'Round Robin') lbl = 'RR';
                                                         
-                                                        const isSFHighlight = t.result === 'Semifinals' && t.totalRounds > 3;
-                                                        const bgClass = t.result === 'Winner' ? 'bg-green-500 text-green-950' : 
-                                                                        t.result === 'Final' ? 'bg-blue-500 text-blue-950' : 
-                                                                        isSFHighlight ? 'bg-yellow-500 text-yellow-950' : 
-                                                                        'bg-slate-600 text-slate-200';
+                                                        const isSFHighlight = (t.result === 'Semifinals' || t.result === 'Semifinalist') && t.totalRounds > 3;
+                                                        const bgClass = t.result === 'Winner' ? 'bg-[#059669] text-[#022c22]' : 
+                                                                        (t.result === 'Final' || t.result === 'Finalist') ? 'bg-gold-500 text-royal-950' : 
+                                                                        isSFHighlight ? 'bg-orange-400 text-orange-950' : 
+                                                                        'bg-royal-700 text-royal-100';
 
                                                         return (
                                                             <div 
@@ -1266,25 +1292,25 @@
                                                             </div>
                                                         );
                                                     })}
-                                                    {player.recentTournaments.length === 0 && <span className="text-slate-600 text-xs">-</span>}
+                                                    {player.recentTournaments.length === 0 && <span className="text-royal-400 text-xs">-</span>}
                                                 </div>
                                             </td>
                                             <td className="p-4 hidden lg:table-cell">
                                                 <div className="flex gap-1.5">
-                                                    {player.recentMatches.map((m, i) => (
+                                                    {player.recentMatches.slice(0, 7).map((m, i) => (
                                                         <div 
                                                             key={i} 
                                                             title={`${m.isWin ? 'Win' : 'Loss'} (${m.type === 'lopsided' ? 'Lopsided' : 'Close'})`} 
                                                             className={`w-5 h-5 flex items-center justify-center rounded-sm text-[10px] font-bold ${
                                                                 m.isWin 
-                                                                    ? (m.type === 'lopsided' ? 'bg-green-500 text-green-950' : 'bg-green-900/40 text-green-400 border border-green-500/50') 
-                                                                    : (m.type === 'lopsided' ? 'bg-red-500 text-red-950' : 'bg-orange-900/40 text-orange-400 border border-orange-500/50')
+                                                                    ? (m.type === 'lopsided' ? 'bg-[#059669] text-[#022c22]' : 'bg-[#059669]/20 text-[#059669] border border-[#059669]/50') 
+                                                                    : (m.type === 'lopsided' ? 'bg-[#be123c] text-[#4c0519]' : 'bg-orange-900/40 text-orange-400 border border-orange-500/50')
                                                             }`}
                                                         >
                                                             {m.isWin ? 'W' : 'L'}
                                                         </div>
                                                     ))}
-                                                    {player.recentMatches.length === 0 && <span className="text-slate-600 text-xs">-</span>}
+                                                    {player.recentMatches.length === 0 && <span className="text-royal-400 text-xs">-</span>}
                                                 </div>
                                             </td>
                                         </tr>
@@ -1308,9 +1334,9 @@
             const displayedPlayers = useMemo(() => {
                 let filtered = [...players];
                 if (searchQuery.trim()) {
-                    filtered = players.filter(p => p.name.toLowerCase().includes(searchQuery.toLowerCase()));
+                    filtered = players.filter(p => (p.name || '').toLowerCase().includes(searchQuery.toLowerCase()));
                 }
-                return filtered.sort((a, b) => a.name.localeCompare(b.name));
+                return filtered.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
             }, [players, searchQuery]);
 
             const handleAddPlayer = async (e) => {
@@ -1346,38 +1372,38 @@
                             <input 
                                 type="text" 
                                 placeholder="Search players..." 
-                                className="bg-slate-900 border border-slate-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-blue-500 w-full md:w-56 lg:w-72"
+                                className="bg-royal-950 border border-royal-800 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-gold-500 w-full md:w-56 lg:w-72"
                                 value={searchQuery}
                                 onChange={e => setSearchQuery(e.target.value)}
                             />
                             <div className="flex gap-2 w-full md:w-auto">
-                                {players.length < 64 && <button onClick={generateDummyPlayers} className="flex-1 md:flex-none bg-slate-700 px-4 py-2 rounded-lg flex items-center justify-center gap-2 whitespace-nowrap hover:bg-slate-600 transition-colors"><Activity size={16}/> Add Dummies</button>}
-                                <button onClick={() => setShowAddForm(!showAddForm)} className="flex-1 md:flex-none bg-blue-600 px-4 py-2 rounded-lg flex items-center justify-center gap-2 whitespace-nowrap hover:bg-blue-500 transition-colors">{showAddForm ? <X size={20}/> : <Plus size={20}/>} {showAddForm ? 'Cancel' : 'Add Player'}</button>
+                                {players.length < 64 && <button onClick={generateDummyPlayers} className="flex-1 md:flex-none bg-royal-800 px-4 py-2 rounded-lg flex items-center justify-center gap-2 whitespace-nowrap hover:bg-royal-700 transition-colors text-white"><Activity size={16}/> Add Dummies</button>}
+                                <button onClick={() => setShowAddForm(!showAddForm)} className="flex-1 md:flex-none bg-gold-500 px-4 py-2 rounded-lg flex items-center justify-center gap-2 whitespace-nowrap hover:bg-gold-600 text-royal-950 font-bold transition-colors">{showAddForm ? <X size={20}/> : <Plus size={20}/>} {showAddForm ? 'Cancel' : 'Add Player'}</button>
                             </div>
                         </div>
                     </div>
                     {showAddForm && (
-                        <form onSubmit={handleAddPlayer} className="bg-slate-800 p-6 rounded-xl border border-slate-700 space-y-4">
+                        <form onSubmit={handleAddPlayer} className="bg-royal-900 p-6 rounded-xl border border-royal-800 space-y-4">
                             <div className="grid md:grid-cols-2 gap-4">
-                                <input type="text" placeholder="Name..." required className="bg-slate-900 border border-slate-700 rounded-lg px-4 py-3 text-white" value={newPlayerName} onChange={e => setNewPlayerName(e.target.value)} />
+                                <input type="text" placeholder="Name..." required className="bg-royal-950 border border-royal-800 rounded-lg px-4 py-3 text-white" value={newPlayerName} onChange={e => setNewPlayerName(e.target.value)} />
                                 <CountrySelect value={newPlayerNationality} onChange={setNewPlayerNationality} />
                             </div>
                             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                                {[0,1,2,3].map(i => <input key={i} type="url" placeholder={`Img URL ${i+1}`} className="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-3 text-white" value={newPlayerImages[i]} onChange={e => { const ni = [...newPlayerImages]; ni[i] = e.target.value; setNewPlayerImages(ni); }} />)}
+                                {[0,1,2,3].map(i => <input key={i} type="url" placeholder={`Img URL ${i+1}`} className="w-full bg-royal-950 border border-royal-800 rounded-lg px-4 py-3 text-white" value={newPlayerImages[i]} onChange={e => { const ni = [...newPlayerImages]; ni[i] = e.target.value; setNewPlayerImages(ni); }} />)}
                             </div>
-                            <div className="flex justify-end"><button type="submit" className="bg-blue-600 px-8 py-2.5 rounded-lg font-bold text-white hover:bg-blue-500 transition-colors">Save Player</button></div>
+                            <div className="flex justify-end"><button type="submit" className="bg-gold-500 px-8 py-2.5 rounded-lg font-bold text-royal-950 hover:bg-gold-600 transition-colors">Save Player</button></div>
                         </form>
                     )}
                     <div className="grid md:grid-cols-3 gap-4">{displayedPlayers.map(p => (
-                        <div key={p.id} onClick={() => onSelectPlayer(p.id)} className="bg-slate-800 border border-slate-700 rounded-xl p-5 hover:border-blue-500 cursor-pointer flex flex-col justify-between transition-all hover:scale-[1.02] hover:shadow-lg hover:shadow-blue-500/10">
+                        <div key={p.id} onClick={() => onSelectPlayer(p.id)} className="bg-royal-900 border border-royal-800 rounded-xl p-5 hover:border-gold-500 cursor-pointer flex flex-col justify-between transition-all hover:scale-[1.02] hover:shadow-lg hover:shadow-gold-500/10">
                             <div className="flex items-center gap-4">
-                                <img src={p.imageUrl || "https://via.placeholder.com/60"} className="w-12 h-12 rounded-full object-cover shrink-0 border border-slate-600" />
-                                <div><h3 className="font-bold text-white flex items-center gap-2">{getFlag(p.nationality)} {p.name}</h3><div className="text-xs text-slate-400 mt-0.5">Rank: #{p.rank} • {p.points.toLocaleString()} pts</div></div>
+                                <img src={p.imageUrl || "https://via.placeholder.com/60"} className="w-12 h-12 rounded-full object-cover shrink-0 border border-royal-600" />
+                                <div><h3 className="font-bold text-white flex items-center gap-2">{getFlag(p.nationality)} {p.name}</h3><div className="text-xs text-royal-300 mt-0.5">Rank: #{p.rank} • {p.points.toLocaleString()} pts</div></div>
                             </div>
                         </div>
                     ))}
                     {displayedPlayers.length === 0 && (
-                        <div className="col-span-3 text-center py-12 text-slate-500 border-2 border-dashed border-slate-700 rounded-xl">No players found matching your search.</div>
+                        <div className="col-span-3 text-center py-12 text-royal-400 border-2 border-dashed border-royal-800 rounded-xl">No players found matching your search.</div>
                     )}
                     </div>
                 </div>
@@ -1414,7 +1440,10 @@
             };
 
             const handleDelete = async () => {
-                try { await window.fb.deleteDoc(window.fb.doc(db, 'artifacts', appId, 'public', 'data', 'players', player.id)); onBack(); } 
+                try { 
+                    onBack();
+                    await window.fb.deleteDoc(window.fb.doc(db, 'artifacts', appId, 'public', 'data', 'players', player.id)); 
+                } 
                 catch (err) { console.error(err); }
             };
 
@@ -1467,7 +1496,7 @@
                     }
                 });
                 return matches.sort((a,b) => {
-                    if (b.date !== a.date) return b.date - a.date;
+                    if (b.date !== a.date) return (b.date || 0) - (a.date || 0);
                     return b.roundIndex - a.roundIndex;
                 });
             }, [player.id, tournaments, players]);
@@ -1500,16 +1529,23 @@
                     
                     const res = getTournamentPointsAndResult(player.id, t);
                     
-                    if (res.played && (res.resultStr === 'Winner' || res.resultStr === 'Finalist' || res.resultStr === 'Semifinalist')) {
-                        list.push({
-                            tournamentName: t.name,
-                            tier: tTier,
-                            result: res.resultStr,
-                            date: t.completedAt || t.createdAt
-                        });
+                    if (res.played) {
+                        let meets = false;
+                        if (tTier === 'grand_slam' && ['Winner', 'Finalist', 'Final', 'Semifinalist', 'Semifinals'].includes(res.resultStr)) meets = true;
+                        if (tTier === 'major' && ['Winner', 'Finalist', 'Final'].includes(res.resultStr)) meets = true;
+                        if (tTier === 'finals' && ['Winner', 'Finalist', 'Final', 'Semifinalist', 'Semifinals'].includes(res.resultStr)) meets = true;
+                        
+                        if (meets) {
+                            list.push({
+                                tournamentName: t.name,
+                                tier: tTier,
+                                result: res.resultStr,
+                                date: t.completedAt || t.createdAt
+                            });
+                        }
                     }
                 });
-                return list.sort((a,b) => b.date - a.date);
+                return list.sort((a,b) => (b.date || 0) - (a.date || 0));
             }, [player.id, tournaments]);
 
             const rankingHistory = useMemo(() => {
@@ -1529,82 +1565,82 @@
 
             return (
                 <div className="max-w-4xl mx-auto space-y-6 pb-20">
-                    <button onClick={onBack} className="flex items-center gap-2 text-slate-400 hover:text-white"><ArrowLeft size={16}/> Back</button>
+                    <button onClick={onBack} className="flex items-center gap-2 text-royal-200 hover:text-white"><ArrowLeft size={16}/> Back</button>
                     {isEditing ? (
-                        <form onSubmit={handleUpdate} className="bg-slate-800 rounded-2xl p-8 space-y-4">
+                        <form onSubmit={handleUpdate} className="bg-royal-900 rounded-2xl p-8 space-y-4">
                             <div className="grid md:grid-cols-2 gap-4">
-                                <input type="text" className="w-full bg-slate-900 p-3 rounded-lg text-white border border-slate-700" value={editName} onChange={e => setEditName(e.target.value)} />
+                                <input type="text" className="w-full bg-royal-950 p-3 rounded-lg text-white border border-royal-800" value={editName} onChange={e => setEditName(e.target.value)} />
                                 <CountrySelect value={editNationality} onChange={setEditNationality} />
                             </div>
                             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                                {editImages.map((u, i) => <input key={i} placeholder={`Img URL ${i+1}`} className="w-full bg-slate-900 p-3 rounded-lg text-white border border-slate-700" value={u} onChange={e => { const ni = [...editImages]; ni[i] = e.target.value; setEditImages(ni); }} />)}
+                                {editImages.map((u, i) => <input key={i} placeholder={`Img URL ${i+1}`} className="w-full bg-royal-950 p-3 rounded-lg text-white border border-royal-800" value={u} onChange={e => { const ni = [...editImages]; ni[i] = e.target.value; setEditImages(ni); }} />)}
                             </div>
                             <div className="flex justify-between pt-4">
                                 <button type="button" onClick={() => setShowDelete(true)} className="text-red-500 font-bold">Delete Player</button>
-                                <button type="submit" className="bg-blue-600 px-6 py-2 rounded-lg text-white font-bold">Save Changes</button>
+                                <button type="submit" className="bg-gold-500 px-6 py-2 rounded-lg text-royal-950 font-bold hover:bg-gold-600 transition-colors">Save Changes</button>
                             </div>
-                            {showDelete && <div className="mt-4 p-4 border border-red-500 bg-red-500/10 rounded flex justify-between items-center"><span>Are you sure?</span><div className="flex gap-2"><button type="button" onClick={handleDelete} className="bg-red-500 px-4 py-1 rounded font-bold">Yes</button><button type="button" onClick={() => setShowDelete(false)} className="text-slate-300">No</button></div></div>}
+                            {showDelete && <div className="mt-4 p-4 border border-red-500 bg-red-500/10 rounded flex justify-between items-center"><span>Are you sure?</span><div className="flex gap-2"><button type="button" onClick={handleDelete} className="bg-red-500 hover:bg-red-600 transition-colors px-4 py-1 rounded font-bold">Yes</button><button type="button" onClick={() => setShowDelete(false)} className="text-royal-200 hover:text-white">No</button></div></div>}
                         </form>
                     ) : (
                         <>
-                            <div className="bg-slate-800 rounded-2xl p-8 border border-slate-700 flex flex-col md:flex-row gap-8 relative">
-                                <button onClick={() => setIsEditing(true)} className="absolute top-4 right-4 bg-slate-900 p-2 rounded-lg border border-slate-700 hover:border-slate-500 transition-colors"><Edit2 size={16}/></button>
-                                <img src={player.images?.[0] || player.imageUrl} className="w-32 h-48 md:w-40 md:h-56 rounded-lg object-cover border-4 border-slate-600" />
+                            <div className="bg-royal-900 rounded-2xl p-8 border border-royal-800 flex flex-col md:flex-row gap-8 relative shadow-lg">
+                                <button onClick={() => setIsEditing(true)} className="absolute top-4 right-4 bg-royal-950 p-2 rounded-lg border border-royal-800 hover:border-gold-500 transition-colors"><Edit2 size={16} className="text-royal-300 hover:text-gold-500"/></button>
+                                <img src={player.images?.[0] || player.imageUrl} className="w-32 h-48 md:w-40 md:h-56 rounded-lg object-cover border-4 border-royal-700" />
                                 <div className="flex-1">
                                     <h1 className="text-4xl font-bold text-white">{player.name}</h1>
-                                    <p className="text-xl text-blue-400 my-4 flex items-center gap-2"><span className="text-2xl">{getFlag(player.nationality)}</span> {getCountryName(player.nationality)}</p>
+                                    <p className="text-xl text-gold-500 my-4 flex items-center gap-2"><span className="text-2xl">{getFlag(player.nationality)}</span> {getCountryName(player.nationality)}</p>
                                     <div className="flex flex-wrap gap-4">
-                                        <div className="bg-blue-900/30 border border-blue-500/30 p-4 rounded-lg text-center min-w-[100px]"><div className="text-blue-400 font-bold uppercase text-xs tracking-widest mb-1">Rank</div><div className="text-2xl font-black text-white">#{player.rank}</div></div>
-                                        <div className="bg-slate-900/50 border border-slate-700 p-4 rounded-lg text-center min-w-[100px]"><div className="text-slate-400 font-bold uppercase text-xs tracking-widest mb-1">Points</div><div className="text-2xl font-black text-white">{player.points.toLocaleString()}</div></div>
-                                        <div className="bg-slate-900/50 border border-slate-700 p-4 rounded-lg text-center min-w-[100px]"><div className="text-slate-400 font-bold uppercase text-xs tracking-widest mb-1">W-L</div><div className="text-2xl font-black text-white">{player.stats.wins}-{player.stats.losses}</div></div>
+                                        <div className="bg-gold-500/10 border border-gold-500/30 p-4 rounded-lg text-center min-w-[100px]"><div className="text-gold-500 font-bold uppercase text-xs tracking-widest mb-1">Rank</div><div className="text-2xl font-black text-white">#{player.rank}</div></div>
+                                        <div className="bg-royal-950/50 border border-royal-800 p-4 rounded-lg text-center min-w-[100px]"><div className="text-royal-200 font-bold uppercase text-xs tracking-widest mb-1">Points</div><div className="text-2xl font-black text-gold-500">{player.points.toLocaleString()}</div></div>
+                                        <div className="bg-royal-950/50 border border-royal-800 p-4 rounded-lg text-center min-w-[100px]"><div className="text-royal-200 font-bold uppercase text-xs tracking-widest mb-1">W-L</div><div className="text-2xl font-black text-white">{player.stats.wins}-{player.stats.losses}</div></div>
                                     </div>
                                 </div>
                             </div>
                             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-                                <div className="bg-slate-800 p-6 rounded-xl border border-slate-700">
-                                    <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2"><Star className="text-yellow-500"/> Scoring Tournaments</h2>
+                                <div className="bg-royal-900 p-6 rounded-xl border border-royal-800 shadow-md">
+                                    <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2"><Star className="text-gold-500"/> Scoring Tournaments</h2>
                                     <div className="space-y-2 max-h-96 overflow-y-auto pr-2">{player.recentTournaments.map((t, i) => {
                                         const tierConf = TOURNAMENT_TIERS[t.tier || 'major'];
                                         return (
-                                            <div key={i} className="flex justify-between p-3 bg-slate-900/50 rounded-lg border border-slate-700/50">
+                                            <div key={i} className="flex justify-between p-3 bg-royal-950/50 rounded-lg border border-royal-800">
                                                 <div>
-                                                    <span className={`${tierConf?.color || 'text-slate-400'} font-bold text-xs uppercase mr-2 tracking-wider`}>[{tierConf?.name || 'Tournament'}]</span>
-                                                    <span className="font-medium text-slate-200">{t.tournamentName}</span>
-                                                    <div className="text-xs text-slate-400 mt-1">{t.result}</div>
+                                                    <span className={`${tierConf?.color || 'text-royal-300'} font-bold text-xs uppercase mr-2 tracking-wider`}>[{tierConf?.name || 'Tournament'}]</span>
+                                                    <span className="font-medium text-royal-100">{t.tournamentName}</span>
+                                                    <div className="text-xs text-royal-400 mt-1">{t.result}</div>
                                                 </div>
-                                                <div className="font-bold text-blue-400">+{t.points}</div>
+                                                <div className="font-bold text-gold-500">+{t.points}</div>
                                             </div>
                                         )
                                     })}</div>
                                 </div>
-                                <div className="bg-slate-800 p-6 rounded-xl border border-slate-700">
-                                    <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2"><History className="text-blue-400"/> Match History</h2>
+                                <div className="bg-royal-900 p-6 rounded-xl border border-royal-800 shadow-md">
+                                    <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2"><History className="text-emerald-500"/> Match History</h2>
                                     <div className="space-y-2 max-h-96 overflow-y-auto pr-2">{matchHistory.map((m, i) => {
                                         const tierConf = TOURNAMENT_TIERS[m.tier];
                                         return (
-                                            <div key={i} className={`p-3 rounded-lg border ${m.isWin ? 'bg-green-900/10 border-green-500/30' : 'bg-red-900/10 border-red-500/30'}`}>
+                                            <div key={i} className={`p-3 rounded-lg border ${m.isWin ? 'bg-[#059669]/10 border-[#059669]/30' : 'bg-[#be123c]/10 border-[#be123c]/30'}`}>
                                                 <div className="flex justify-between items-start mb-1">
-                                                    <span className="text-xs text-slate-400"><span className={tierConf?.color || 'text-slate-400'}>[{tierConf?.name || 'Tournament'}]</span> {m.tournamentName} • {m.roundName}</span>
+                                                    <span className="text-xs text-royal-300"><span className={tierConf?.color || 'text-royal-300'}>[{tierConf?.name || 'Tournament'}]</span> {m.tournamentName} • {m.roundName}</span>
                                                     <span className={`text-[10px] px-2 py-0.5 rounded uppercase font-bold tracking-widest ${m.type === 'lopsided' ? 'bg-purple-500/20 text-purple-400' : 'bg-orange-500/20 text-orange-400'}`}>{m.type === 'lopsided' ? 'Lopsided' : 'Close'}</span>
                                                 </div>
-                                                <div className="flex items-center gap-2 font-medium"><span className={m.isWin ? 'text-green-400' : 'text-red-400'}>{m.isWin ? 'W' : 'L'}</span><span className="text-slate-300">vs {m.opponentName}</span></div>
+                                                <div className="flex items-center gap-2 font-medium"><span className={m.isWin ? 'text-[#059669]' : 'text-[#be123c]'}>{m.isWin ? 'W' : 'L'}</span><span className="text-royal-100">vs {m.opponentName}</span></div>
                                             </div>
                                         );
                                     })}</div>
                                 </div>
-                                <div className="bg-slate-800 p-6 rounded-xl border border-slate-700">
+                                <div className="bg-royal-900 p-6 rounded-xl border border-royal-800 shadow-md">
                                     <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2"><Users className="text-purple-400"/> Head-to-Head</h2>
                                     <div className="space-y-2 max-h-96 overflow-y-auto pr-2">
                                         {h2hStats.length === 0 ? (
-                                            <p className="text-slate-400 text-sm">No match records yet.</p>
+                                            <p className="text-royal-300 text-sm">No match records yet.</p>
                                         ) : (
                                             h2hStats.map(h => {
                                                 const isPos = h.wins > h.losses;
                                                 const isNeg = h.losses > h.wins;
-                                                const color = isPos ? 'text-green-400' : (isNeg ? 'text-red-400' : 'text-slate-400');
+                                                const color = isPos ? 'text-[#059669]' : (isNeg ? 'text-[#be123c]' : 'text-royal-300');
                                                 return (
-                                                    <div key={h.opponentId} className={`flex justify-between items-center p-3 bg-slate-900/50 rounded-lg border ${isPos ? 'border-green-500/20' : (isNeg ? 'border-red-500/20' : 'border-slate-700/50')}`}>
-                                                        <div className="font-medium text-slate-200 flex items-start gap-2 pr-4 min-w-0">
+                                                    <div key={h.opponentId} className={`flex justify-between items-center p-3 bg-royal-950/50 rounded-lg border ${isPos ? 'border-[#059669]/30' : (isNeg ? 'border-[#be123c]/30' : 'border-royal-800')}`}>
+                                                        <div className="font-medium text-royal-100 flex items-start gap-2 pr-4 min-w-0">
                                                             <span className="shrink-0 mt-0.5">{h.opponentFlag}</span> 
                                                             <span className="break-words">{h.opponentName}</span>
                                                         </div>
@@ -1618,34 +1654,34 @@
                                     </div>
                                 </div>
                                 {player.images?.length > 1 && (
-                                    <div className="md:col-span-2 lg:col-span-3 bg-slate-800 p-6 rounded-xl border border-slate-700">
+                                    <div className="md:col-span-2 lg:col-span-3 bg-royal-900 p-6 rounded-xl border border-royal-800 shadow-md">
                                         <h2 className="text-xl font-bold text-white mb-4">Gallery</h2>
-                                        <div className="flex gap-4 overflow-x-auto pb-4">{player.images.map((img, i) => <img key={i} src={img} className="w-48 h-64 object-cover rounded-lg border-2 border-slate-600" />)}</div>
+                                        <div className="flex gap-4 overflow-x-auto pb-4">{player.images.map((img, i) => <img key={i} src={img} className="w-48 h-64 object-cover rounded-lg border-2 border-royal-700" />)}</div>
                                     </div>
                                 )}
-                                <div className="md:col-span-2 lg:col-span-3 bg-slate-800 p-6 rounded-xl border border-slate-700">
-                                    <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2"><Trophy className="text-yellow-400"/> Major Achievements</h2>
+                                <div className="md:col-span-2 lg:col-span-3 bg-royal-900 p-6 rounded-xl border border-royal-800 shadow-md">
+                                    <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2"><Trophy className="text-gold-500"/> Major Achievements</h2>
                                     {achievements.length === 0 ? (
-                                        <p className="text-slate-400 text-sm">No major achievements yet. Reaching Semifinals or better in Major, Grand Slam, or Finals tournaments will be recorded here.</p>
+                                        <p className="text-royal-300 text-sm">No major achievements yet. Reaching Semifinals or better in Grand Slams or SNB Internationals, and Final or better in Majors will be recorded here.</p>
                                     ) : (
                                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                                             {achievements.map((ach, i) => (
-                                                <div key={i} className="bg-slate-900/50 p-4 rounded-xl border border-slate-700/50 flex flex-col items-center text-center">
-                                                    <Trophy size={32} className={`mb-3 ${ach.result === 'Winner' ? 'text-yellow-400' : ach.result === 'Finalist' ? 'text-slate-300' : 'text-orange-400'}`} />
-                                                    <span className={`text-[10px] uppercase font-bold tracking-widest px-2 py-0.5 rounded mb-2 ${ach.tier === 'grand_slam' ? 'bg-purple-500/20 text-purple-400' : (ach.tier === 'finals' ? 'bg-cyan-500/20 text-cyan-400' : 'bg-yellow-500/20 text-yellow-400')}`}>{TOURNAMENT_TIERS[ach.tier].name}</span>
+                                                <div key={i} className="bg-royal-950/50 p-4 rounded-xl border border-royal-800 flex flex-col items-center text-center">
+                                                    <Trophy size={32} className={`mb-3 ${ach.result === 'Winner' ? 'text-gold-500' : ach.result === 'Finalist' || ach.result === 'Final' ? 'text-royal-200' : 'text-orange-400'}`} />
+                                                    <span className={`text-[10px] uppercase font-bold tracking-widest px-2 py-0.5 rounded mb-2 ${ach.tier === 'grand_slam' ? 'bg-purple-500/20 text-purple-400' : (ach.tier === 'finals' ? 'bg-cyan-500/20 text-cyan-400' : 'bg-gold-500/20 text-gold-500')}`}>{TOURNAMENT_TIERS[ach.tier].name}</span>
                                                     <div className="font-bold text-white text-lg">{ach.result}</div>
-                                                    <div className="text-sm text-slate-400 mt-1">{ach.tournamentName}</div>
+                                                    <div className="text-sm text-royal-300 mt-1">{ach.tournamentName}</div>
                                                 </div>
                                             ))}
                                         </div>
                                     )}
                                 </div>
-                                <div className="md:col-span-2 lg:col-span-3 bg-slate-800 p-6 rounded-xl border border-slate-700">
-                                    <h2 className="text-2xl font-bold text-white flex items-center gap-2 mb-6"><TrendingUp className="text-blue-400"/> Career Ranking Trajectory</h2>
+                                <div className="md:col-span-2 lg:col-span-3 bg-royal-900 p-6 rounded-xl border border-royal-800 shadow-md">
+                                    <h2 className="text-2xl font-bold text-white flex items-center gap-2 mb-6"><TrendingUp className="text-gold-500"/> Career Ranking Trajectory</h2>
                                     <IndividualPlayerChart history={rankingHistory} type="rank" />
                                 </div>
-                                <div className="md:col-span-2 lg:col-span-3 bg-slate-800 p-6 rounded-xl border border-slate-700">
-                                    <h2 className="text-2xl font-bold text-white flex items-center gap-2 mb-6"><BarChart2 className="text-yellow-400"/> Career Points Accumulation</h2>
+                                <div className="md:col-span-2 lg:col-span-3 bg-royal-900 p-6 rounded-xl border border-royal-800 shadow-md">
+                                    <h2 className="text-2xl font-bold text-white flex items-center gap-2 mb-6"><BarChart2 className="text-gold-500"/> Career Points Accumulation</h2>
                                     <IndividualPlayerChart history={rankingHistory} type="points" />
                                 </div>
                             </div>
@@ -1658,22 +1694,22 @@
         function TournamentsView({ tournaments, onSelect, onCreate }) {
             return (
                 <div className="max-w-5xl mx-auto space-y-6">
-                    <div className="flex justify-between items-center"><h1 className="text-3xl font-bold text-white">Tournaments</h1><button onClick={onCreate} className="bg-blue-600 px-6 py-2 rounded-lg flex items-center gap-2 font-bold text-white"><Plus size={20}/> New</button></div>
+                    <div className="flex justify-between items-center"><h1 className="text-3xl font-bold text-white">Tournaments</h1><button onClick={onCreate} className="bg-gold-500 px-6 py-2 rounded-lg flex items-center gap-2 font-bold text-royal-950 hover:bg-gold-600 transition-colors"><Plus size={20}/> New</button></div>
                     <div className="grid md:grid-cols-3 gap-6">{[...tournaments].sort((a,b) => b.createdAt - a.createdAt).map(t => {
                         const tierKey = getTournamentTier(t);
                         const tierConf = TOURNAMENT_TIERS[tierKey];
                         const drawSize = getDrawSize(t);
 
                         return (
-                            <div key={t.id} onClick={() => onSelect(t.id)} className={`bg-slate-800 p-6 rounded-xl border-2 transition-all cursor-pointer flex flex-col h-full hover:scale-105 ${t.status === 'completed' ? 'border-slate-700 hover:border-slate-500' : tierConf?.border + ' shadow-lg shadow-black/20'}`}>
+                            <div key={t.id} onClick={() => onSelect(t.id)} className={`bg-royal-900 p-6 rounded-xl border-2 transition-all cursor-pointer flex flex-col h-full hover:scale-105 ${t.status === 'completed' ? 'border-royal-800 hover:border-gold-500' : tierConf?.border + ' shadow-lg shadow-black/20'}`}>
                                 <div className="flex justify-between items-start mb-2">
                                     <h3 className="font-bold text-xl text-white truncate pr-2">{t.name}</h3>
                                 </div>
                                 <div className="flex gap-2 mb-4">
-                                    <span className={`text-xs font-bold uppercase tracking-wider px-2 py-1 rounded ${tierConf?.bg || 'bg-slate-700'} ${tierConf?.color || 'text-slate-300'}`}>{tierConf?.name || 'Tournament'}</span>
-                                    <span className={`text-xs font-bold uppercase tracking-wider px-2 py-1 rounded ${t.status === 'completed' ? 'bg-green-500/20 text-green-400' : 'bg-slate-700 text-slate-300'}`}>{t.status}</span>
+                                    <span className={`text-xs font-bold uppercase tracking-wider px-2 py-1 rounded ${tierConf?.bg || 'bg-royal-800'} ${tierConf?.color || 'text-royal-200'}`}>{tierConf?.name || 'Tournament'}</span>
+                                    <span className={`text-xs font-bold uppercase tracking-wider px-2 py-1 rounded ${t.status === 'completed' ? 'bg-[#059669]/20 text-[#059669]' : 'bg-royal-800 text-royal-200'}`}>{t.status}</span>
                                 </div>
-                                <div className="text-slate-400 text-sm mt-auto">{drawSize} Participants • {new Date(t.createdAt).toLocaleDateString()}</div>
+                                <div className="text-royal-300 text-sm mt-auto">{drawSize} Participants • {new Date(t.createdAt).toLocaleDateString()}</div>
                             </div>
                         );
                     })}</div>
@@ -1800,17 +1836,17 @@
                 setIsGenerating(false);
             };
 
-            if (players.length < 8) return <div className="text-center py-12 border-2 border-dashed border-red-500/30 rounded-xl bg-red-500/5 mt-8 max-w-2xl mx-auto"><Shield size={48} className="mx-auto mb-3 text-red-400"/><h3 className="text-xl font-bold text-white mb-2">Need at least 8 Players</h3><p className="text-slate-400">You currently have {players.length} players.</p><button onClick={onBack} className="mt-4 bg-slate-700 hover:bg-slate-600 text-white px-4 py-2 rounded transition-colors">Go Back</button></div>;
+            if (players.length < 8) return <div className="text-center py-12 border-2 border-dashed border-red-500/30 rounded-xl bg-red-500/5 mt-8 max-w-2xl mx-auto"><Shield size={48} className="mx-auto mb-3 text-red-400"/><h3 className="text-xl font-bold text-white mb-2">Need at least 8 Players</h3><p className="text-royal-300">You currently have {players.length} players.</p><button onClick={onBack} className="mt-4 bg-royal-800 hover:bg-royal-700 text-white px-4 py-2 rounded transition-colors">Go Back</button></div>;
 
             return (
                 <div className="max-w-4xl mx-auto space-y-8 pb-20">
-                    <button onClick={onBack} className="flex items-center gap-2 text-slate-400 hover:text-white transition-colors"><ArrowLeft size={16}/> Back</button>
-                    <div className="bg-slate-800 p-6 rounded-xl border border-slate-700 shadow-xl">
+                    <button onClick={onBack} className="flex items-center gap-2 text-royal-200 hover:text-white transition-colors"><ArrowLeft size={16}/> Back</button>
+                    <div className="bg-royal-900 p-6 rounded-xl border border-royal-800 shadow-xl">
                         <div className="flex flex-col md:flex-row md:justify-between md:items-center mb-6 gap-4">
                             <h1 className="text-2xl font-bold text-white">Create Tournament</h1>
-                            <div className="flex bg-slate-900 rounded-lg p-1 border border-slate-700 w-fit">
+                            <div className="flex bg-royal-950 rounded-lg p-1 border border-royal-800 w-fit">
                                 {allowedSizes.map(s => (
-                                    <button key={s} onClick={() => setSize(s)} className={`px-4 py-1.5 rounded-md text-sm font-bold transition-colors ${size === s ? 'bg-blue-600 text-white' : 'text-slate-400 hover:text-white'}`}>
+                                    <button key={s} onClick={() => setSize(s)} className={`px-4 py-1.5 rounded-md text-sm font-bold transition-colors ${size === s ? 'bg-gold-500 text-royal-950' : 'text-royal-200 hover:text-white'}`}>
                                         {s} Players
                                     </button>
                                 ))}
@@ -1818,22 +1854,22 @@
                         </div>
 
                         <div className="mb-6">
-                            <label className="block text-sm font-medium text-slate-400 mb-2">Tournament Name</label>
-                            <input type="text" className="w-full bg-slate-900 border border-slate-700 text-white px-4 py-3 rounded-lg focus:outline-none focus:border-blue-500" placeholder="e.g. World Championship 2026..." value={name} onChange={e => setName(e.target.value)} />
+                            <label className="block text-sm font-medium text-royal-300 mb-2">Tournament Name</label>
+                            <input type="text" className="w-full bg-royal-950 border border-royal-800 text-white px-4 py-3 rounded-lg focus:outline-none focus:border-gold-500" placeholder="e.g. World Championship 2026..." value={name} onChange={e => setName(e.target.value)} />
                         </div>
 
                         <div className="mb-6">
-                            <label className="block text-sm font-medium text-slate-400 mb-2">Prestige Tier</label>
+                            <label className="block text-sm font-medium text-royal-300 mb-2">Tournament Tier</label>
                             <div className="flex flex-wrap gap-2">
                                 {Object.entries(TOURNAMENT_TIERS).map(([k, conf]) => (
-                                    <button key={k} onClick={() => setTier(k)} className={`px-5 py-2 rounded-lg text-sm font-bold transition-all border ${tier === k ? `${conf.bg} ${conf.color} ${conf.border}` : 'bg-slate-900 border-slate-700 text-slate-400 hover:border-slate-500'}`}>
+                                    <button key={k} onClick={() => setTier(k)} className={`px-5 py-2 rounded-lg text-sm font-bold transition-all border ${tier === k ? `${conf.bg} ${conf.color} ${conf.border}` : 'bg-royal-950 border-royal-800 text-royal-300 hover:border-royal-700'}`}>
                                         {conf.name}
                                     </button>
                                 ))}
                             </div>
                         </div>
 
-                        <div className="bg-slate-900 p-4 rounded-lg border border-slate-700 mb-8 text-sm text-slate-300">
+                        <div className="bg-royal-950 p-4 rounded-lg border border-royal-800 mb-8 text-sm text-royal-200">
                             <div className="flex items-center gap-2 mb-1"><span className={`font-bold ${tierConf.color}`}>{tierConf.name}:</span> Winner gets <strong className="text-white">{expectedWinnerPoints} points</strong>.</div>
                             <div>{tierConf.excludeTop > 0 ? `The Top ${tierConf.excludeTop} ranked players in the world are strictly excluded from competing.` : (tier === 'finals' ? 'Exclusive to the Top 8 Players in the World. Uses Round Robin Group Stage format.' : 'Open to all competitors.')} {reqWc > 0 && <span>This {size}-player bracket format requires <strong className="text-white">{reqWc} wildcards</strong>.</span>} Click an Auto Qualifier to simulate a withdrawal.</div>
                         </div>
@@ -1842,7 +1878,7 @@
                             <div className="text-center py-12 border-2 border-dashed border-red-500/30 rounded-xl bg-red-500/5">
                                 <Shield size={48} className="mx-auto mb-3 text-red-400"/>
                                 <h3 className="text-xl font-bold text-white mb-2">Not Enough Eligible Players</h3>
-                                <p className="text-slate-400 max-w-md mx-auto">Because this tier excludes the Top {tierConf.excludeTop}, you need at least {size + tierConf.excludeTop} total active players in your database to run a {size}-man format here.<br/><br/>You currently have <strong className="text-white">{eligiblePlayers.length}</strong> eligible players, but need <strong className="text-white">{size}</strong>.</p>
+                                <p className="text-royal-300 max-w-md mx-auto">Because this tier excludes the Top {tierConf.excludeTop}, you need at least {size + tierConf.excludeTop} total active players in your database to run a {size}-man format here.<br/><br/>You currently have <strong className="text-white">{eligiblePlayers.length}</strong> eligible players, but need <strong className="text-white">{size}</strong>.</p>
                             </div>
                         ) : (
                             <>
@@ -1858,13 +1894,13 @@
                                                 )}
                                             </div>
                                         </div>
-                                        <div className="bg-slate-900 rounded-lg p-2 max-h-[320px] overflow-y-auto border border-slate-700 space-y-1">
+                                        <div className="bg-royal-950 rounded-lg p-2 max-h-[320px] overflow-y-auto border border-royal-800 space-y-1">
                                             {autoQualifiers.map(p => (
                                                 <div key={p.id} onClick={() => toggleWithdraw(p.id)} className="p-2 opacity-90 hover:opacity-100 text-sm flex items-center justify-between text-white cursor-pointer hover:bg-red-500/20 rounded transition-colors group">
                                                     <span className="flex items-center">
-                                                        <span className="font-mono text-slate-500 mr-2 w-6">#{p.rank}</span> 
+                                                        <span className="font-mono text-royal-400 mr-2 w-6">#{p.rank}</span> 
                                                         <span className="mr-2">{getFlag(p.nationality)}</span> {p.name}
-                                                        <span className="text-xs text-slate-400 ml-2 group-hover:text-red-300">({p.points.toLocaleString()} pts)</span>
+                                                        <span className="text-xs text-royal-300 ml-2 group-hover:text-red-300">({p.points.toLocaleString()} pts)</span>
                                                     </span>
                                                     <X size={14} className="text-red-500 opacity-0 group-hover:opacity-100 transition-opacity" />
                                                 </div>
@@ -1873,15 +1909,15 @@
                                         
                                         {withdrawnPlayers.length > 0 && (
                                             <div className="mt-4">
-                                                <h3 className="font-bold text-slate-400 mb-2 text-xs uppercase tracking-widest">Withdrawn / Skipped</h3>
-                                                <div className="bg-slate-900/50 rounded-lg p-2 max-h-32 overflow-y-auto border border-slate-700/50 space-y-1">
+                                                <h3 className="font-bold text-royal-300 mb-2 text-xs uppercase tracking-widest">Withdrawn / Skipped</h3>
+                                                <div className="bg-royal-950/50 rounded-lg p-2 max-h-32 overflow-y-auto border border-royal-800/50 space-y-1">
                                                     {withdrawnPlayers.map(p => (
-                                                        <div key={p.id} onClick={() => toggleWithdraw(p.id)} className="p-2 text-sm flex items-center justify-between text-slate-500 cursor-pointer hover:bg-slate-800 rounded transition-colors group">
+                                                        <div key={p.id} onClick={() => toggleWithdraw(p.id)} className="p-2 text-sm flex items-center justify-between text-royal-400 cursor-pointer hover:bg-royal-900 rounded transition-colors group">
                                                             <span className="flex items-center line-through">
                                                                 <span className="font-mono mr-2 w-6">#{p.rank}</span> 
                                                                 <span className="mr-2">{getFlag(p.nationality)}</span> {p.name}
                                                             </span>
-                                                            <Plus size={14} className="text-green-500 opacity-0 group-hover:opacity-100 transition-opacity" />
+                                                            <Plus size={14} className="text-[#059669] opacity-0 group-hover:opacity-100 transition-opacity" />
                                                         </div>
                                                     ))}
                                                 </div>
@@ -1892,37 +1928,37 @@
                                         <div className="flex justify-between items-center mb-4">
                                             <h3 className="font-bold text-white">Wildcards ({selectedWildcards.length}/{reqWc})</h3>
                                             {selectedWildcards.length < reqWc && reqWc > 0 && (
-                                                <button onClick={selectRandomWildcards} className="text-xs flex items-center gap-1 bg-slate-700 hover:bg-slate-600 text-slate-200 px-2 py-1 rounded transition-colors">
+                                                <button onClick={selectRandomWildcards} className="text-xs flex items-center gap-1 bg-royal-800 hover:bg-royal-700 text-royal-100 px-2 py-1 rounded transition-colors">
                                                     <Shuffle size={12} /> Randomize
                                                 </button>
                                             )}
                                         </div>
                                         {reqWc > 0 ? (
-                                            <div className="bg-slate-900 rounded-lg p-2 h-80 overflow-y-auto space-y-1 border border-slate-700">
+                                            <div className="bg-royal-950 rounded-lg p-2 h-80 overflow-y-auto space-y-1 border border-royal-800">
                                                 {remainingPlayers.map(p => { 
                                                     const isS = selectedWildcards.includes(p.id); 
                                                     return (
-                                                        <div key={p.id} onClick={() => toggleWildcard(p.id)} className={`p-2 rounded cursor-pointer flex justify-between items-center text-sm font-medium transition-colors ${isS ? 'bg-blue-600/30 border border-blue-500/50 text-white' : 'hover:bg-slate-800 text-slate-300 border border-transparent'}`}>
+                                                        <div key={p.id} onClick={() => toggleWildcard(p.id)} className={`p-2 rounded cursor-pointer flex justify-between items-center text-sm font-medium transition-colors ${isS ? 'bg-gold-500/20 border border-gold-500/50 text-white' : 'hover:bg-royal-900 text-royal-200 border border-transparent'}`}>
                                                             <span className="flex items-center">
-                                                                <span className="font-mono text-slate-500 mr-2 w-6">#{p.rank}</span> 
+                                                                <span className="font-mono text-royal-400 mr-2 w-6">#{p.rank}</span> 
                                                                 <span className="mr-2">{getFlag(p.nationality)}</span> {p.name}
-                                                                <span className={`text-xs ml-2 ${isS ? 'text-blue-300' : 'text-slate-500'}`}>({p.points.toLocaleString()} pts)</span>
+                                                                <span className={`text-xs ml-2 ${isS ? 'text-gold-400' : 'text-royal-300'}`}>({p.points.toLocaleString()} pts)</span>
                                                             </span>
-                                                            {isS && <CheckCircle size={14} className="text-blue-400" />}
+                                                            {isS && <CheckCircle size={14} className="text-gold-500" />}
                                                         </div>
                                                     ) 
                                                 })}
                                             </div>
                                         ) : (
-                                            <div className="bg-slate-900/50 rounded-lg p-6 h-80 flex flex-col items-center justify-center border border-slate-700/50 text-center">
-                                                <Shield className="text-slate-600 w-12 h-12 mb-2" />
-                                                <p className="text-slate-400">No wildcards allowed in this exclusive format.</p>
+                                            <div className="bg-royal-950/50 rounded-lg p-6 h-80 flex flex-col items-center justify-center border border-royal-800/50 text-center">
+                                                <Shield className="text-royal-700 w-12 h-12 mb-2" />
+                                                <p className="text-royal-300">No wildcards allowed in this exclusive format.</p>
                                             </div>
                                         )}
                                     </div>
                                 </div>
-                                <div className="mt-8 pt-6 border-t border-slate-700 flex justify-end">
-                                    <button onClick={handleCreate} disabled={isGenerating || selectedWildcards.length !== reqWc || !name.trim()} className="bg-blue-600 hover:bg-blue-500 text-white px-8 py-3 rounded-lg font-bold flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-lg shadow-blue-500/20"><Play size={20}/> {isGenerating ? 'Generating...' : 'Start Tournament'}</button>
+                                <div className="mt-8 pt-6 border-t border-royal-800 flex justify-end">
+                                    <button onClick={handleCreate} disabled={isGenerating || selectedWildcards.length !== reqWc || !name.trim()} className="bg-gold-500 hover:bg-gold-600 text-royal-950 px-8 py-3 rounded-lg font-bold flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-lg shadow-gold-500/20"><Play size={20}/> {isGenerating ? 'Generating...' : 'Start Tournament'}</button>
                                 </div>
                             </>
                         )}
@@ -1935,6 +1971,8 @@
             const [resolvingMatch, setResolvingMatch] = useState(null);
             const [p1ImgIdx, setP1ImgIdx] = useState(0);
             const [p2ImgIdx, setP2ImgIdx] = useState(0);
+            const [showDelete, setShowDelete] = useState(false);
+            
             useEffect(() => { setP1ImgIdx(0); setP2ImgIdx(0); }, [resolvingMatch]);
             
             const getPlayer = (id) => players.find(p => p.id === id) || { name: 'TBD', rank: '-', nationality: 'UNK' };
@@ -1976,6 +2014,13 @@
                 submitResult(winnerId, 'close');
             };
 
+            const handleDelete = async () => {
+                try {
+                    onBack();
+                    await window.fb.deleteDoc(window.fb.doc(db, 'artifacts', appId, 'public', 'data', 'tournaments', tournament.id));
+                } catch(e) { console.error(e); }
+            };
+
             const matchH2H = useMemo(() => {
                 if (!resolvingMatch || !resolvingMatch.p1 || !resolvingMatch.p2) return { p1Wins: 0, p2Wins: 0, total: 0 };
                 let p1Wins = 0;
@@ -2008,23 +2053,57 @@
                 return { p1Wins, p2Wins, total };
             }, [resolvingMatch, allTournaments]);
 
+            const renderRecentForm = (playerId) => {
+                const pObj = players.find(p => p.id === playerId);
+                if (!pObj || !pObj.recentMatches || pObj.recentMatches.length === 0) return null;
+                const recent3 = pObj.recentMatches.slice(0, 3);
+                return (
+                    <div className="flex gap-1.5 justify-center mb-6">
+                        {recent3.map((m, i) => (
+                            <div key={i} title={m.isWin ? 'Win' : 'Loss'} className={`w-6 h-6 flex items-center justify-center rounded-sm text-[11px] font-bold ${
+                                m.isWin 
+                                    ? (m.type === 'lopsided' ? 'bg-[#059669] text-royal-950' : 'bg-[#059669]/20 text-[#059669] border border-[#059669]/50') 
+                                    : (m.type === 'lopsided' ? 'bg-[#be123c] text-white' : 'bg-[#be123c]/20 text-[#e11d48] border border-[#be123c]/50')
+                            }`}>
+                                {m.isWin ? 'W' : 'L'}
+                            </div>
+                        ))}
+                    </div>
+                );
+            };
+
             return (
                 <div className="h-full flex flex-col pb-20">
                     <div className="flex justify-between items-center mb-6">
-                        <button onClick={onBack} className="flex items-center gap-2 text-slate-400 hover:text-white"><ArrowLeft size={16}/> Back</button>
-                        <h1 className="text-2xl font-bold text-white flex items-center gap-3">
-                            <span className={`${tierConf?.color || 'text-slate-400'} text-sm uppercase tracking-widest border border-current px-2 py-1 rounded`}>{tierConf?.name || 'Tournament'}</span>
-                            {tournament.name}
-                            {tournament.status === 'completed' && <span className="bg-green-500/20 text-green-400 text-xs px-2 py-1 rounded ml-2">COMPLETED</span>}
-                        </h1>
+                        <div>
+                            <button onClick={onBack} className="flex items-center gap-2 text-royal-300 hover:text-white transition-colors mb-2">
+                                <ArrowLeft className="w-4 h-4" /> Back to Tournaments
+                            </button>
+                            <h1 className="text-2xl font-bold text-white flex items-center gap-3">
+                                <span className={`${tierConf?.color || 'text-royal-300'} text-sm uppercase tracking-widest border border-current px-2 py-1 rounded`}>{tierConf?.name || 'Tournament'}</span>
+                                {tournament.name}
+                                {tournament.status === 'completed' && <span className="bg-[#059669]/20 text-[#059669] text-xs px-2 py-1 rounded ml-2">COMPLETED</span>}
+                            </h1>
+                        </div>
+                        <div>
+                            {showDelete ? (
+                                <div className="flex items-center gap-2 bg-[#be123c]/10 border border-[#be123c]/30 p-2 rounded-lg">
+                                    <span className="text-[#e11d48] text-sm font-bold">Delete Tournament?</span>
+                                    <button onClick={handleDelete} className="bg-[#be123c] hover:bg-[#9f1239] text-white px-3 py-1 rounded text-sm font-bold transition-colors">Yes</button>
+                                    <button onClick={() => setShowDelete(false)} className="text-royal-300 hover:text-white text-sm px-2">Cancel</button>
+                                </div>
+                            ) : (
+                                <button onClick={() => setShowDelete(true)} className="flex items-center gap-2 text-[#e11d48] hover:text-[#fb7185] text-sm font-bold bg-royal-900 px-3 py-2 rounded-lg border border-royal-800 transition-colors"><Trash2 size={16}/> Delete</button>
+                            )}
+                        </div>
                     </div>
-                    <div className="flex-1 overflow-auto bg-slate-800/50 border border-slate-700 rounded-xl p-8 min-h-[800px] bracket-container">
+                    <div className="flex-1 overflow-auto bg-royal-950/50 border border-royal-800 rounded-xl p-8 min-h-[800px] bracket-container">
                         <div className="flex min-w-max h-full">
                             {parsedBracket.map((round, rIdx) => {
                                 if (!Array.isArray(round)) return null;
                                 return (
                                 <div key={rIdx} className="flex flex-col w-64 shrink-0 mr-12 h-full">
-                                    <div className="text-center text-slate-500 font-bold text-sm uppercase tracking-wider mb-4">{ROUND_NAMES[rIdx + rOffset]}</div>
+                                    <div className="text-center text-royal-400 font-bold text-sm uppercase tracking-wider mb-4">{ROUND_NAMES[rIdx + rOffset]}</div>
                                     <div className="flex-1 flex flex-col">
                                         {round.map((match, mIdx) => {
                                             if (!match) return null;
@@ -2034,13 +2113,13 @@
                                             
                                             return (
                                                 <div key={match.id} className="flex-1 flex flex-col justify-center relative py-2">
-                                                    <div onClick={() => handleMatchClick(rIdx, mIdx, match)} className={`relative z-10 bg-slate-800 border-2 rounded-lg transition-all shadow-md ${isReady ? 'border-blue-500 cursor-pointer hover:scale-105 shadow-blue-500/20' : match.winner ? 'border-slate-600' : 'border-slate-700/50 opacity-60'}`}>
-                                                        <div className={`p-2.5 flex justify-between items-center border-b border-slate-700/50 ${match.winner === match.p1 && !isBye ? 'bg-slate-700/50' : ''}`}><span className={`text-sm font-medium flex items-center gap-2 ${match.winner && match.winner !== match.p1 && !isBye ? 'text-slate-500 line-through' : 'text-slate-100'}`}>{match.p1 ? <>{getFlag(p1.nationality)} {p1.name}</> : 'TBD'}</span>{match.winner === match.p1 && !isBye && <CheckCircle size={16} className="text-green-500"/>}</div>
-                                                        <div className={`p-2.5 flex justify-between items-center ${match.winner === match.p2 && !isBye ? 'bg-slate-700/50' : ''}`}><span className={`text-sm font-medium flex items-center gap-2 ${match.winner && match.winner !== match.p2 && !isBye ? 'text-slate-500 line-through' : 'text-slate-100'}`}>{match.p2 ? <>{getFlag(p2.nationality)} {p2.name}</> : (isBye ? <span className="text-slate-500 italic font-bold tracking-widest">BYE</span> : 'TBD')}</span>{match.winner === match.p2 && !isBye && <CheckCircle size={16} className="text-green-500"/>}</div>
+                                                    <div onClick={() => handleMatchClick(rIdx, mIdx, match)} className={`relative z-10 bg-royal-900 border-2 rounded-lg transition-all shadow-md ${isReady ? 'border-gold-500 cursor-pointer hover:scale-105 shadow-gold-500/20' : match.winner ? 'border-royal-600' : 'border-royal-800 opacity-60'}`}>
+                                                        <div className={`p-2.5 flex justify-between items-center border-b border-royal-800 ${match.winner === match.p1 && !isBye ? 'bg-royal-800/50' : ''}`}><span className={`text-sm font-medium flex items-center gap-2 ${match.winner && match.winner !== match.p1 && !isBye ? 'text-royal-400 line-through' : 'text-royal-100'}`}>{match.p1 ? <>{getFlag(p1.nationality)} {p1.name}</> : 'TBD'}</span>{match.winner === match.p1 && !isBye && <CheckCircle size={16} className="text-[#059669]"/>}</div>
+                                                        <div className={`p-2.5 flex justify-between items-center ${match.winner === match.p2 && !isBye ? 'bg-royal-800/50' : ''}`}><span className={`text-sm font-medium flex items-center gap-2 ${match.winner && match.winner !== match.p2 && !isBye ? 'text-royal-400 line-through' : 'text-royal-100'}`}>{match.p2 ? <>{getFlag(p2.nationality)} {p2.name}</> : (isBye ? <span className="text-royal-400 italic font-bold tracking-widest">BYE</span> : 'TBD')}</span>{match.winner === match.p2 && !isBye && <CheckCircle size={16} className="text-[#059669]"/>}</div>
                                                     </div>
-                                                    {rIdx > 0 && <div className="absolute -left-6 top-1/2 w-6 border-t-2 border-slate-600 z-0"></div>}
-                                                    {rIdx < totalRounds - 1 && <div className="absolute -right-6 top-1/2 w-6 border-t-2 border-slate-600 z-0"></div>}
-                                                    {rIdx < totalRounds - 1 && mIdx % 2 === 0 && <div className="absolute -right-6 top-1/2 w-[2px] bg-slate-600 z-0" style={{ height: '100%' }}></div>}
+                                                    {rIdx > 0 && <div className="absolute -left-6 top-1/2 w-6 border-t-2 border-royal-700 z-0"></div>}
+                                                    {rIdx < totalRounds - 1 && <div className="absolute -right-6 top-1/2 w-6 border-t-2 border-royal-700 z-0"></div>}
+                                                    {rIdx < totalRounds - 1 && mIdx % 2 === 0 && <div className="absolute -right-6 top-1/2 w-[2px] bg-royal-700 z-0" style={{ height: '100%' }}></div>}
                                                 </div>
                                             );
                                         })}
@@ -2051,55 +2130,56 @@
                     </div>
                     {resolvingMatch && (
                         <div className="fixed inset-0 bg-black/90 backdrop-blur-sm z-50 flex items-center justify-center p-4 z-[100]">
-                            <div className="bg-slate-800 rounded-2xl p-6 w-full max-w-4xl border border-slate-700 overflow-y-auto max-h-[95vh] shadow-2xl">
+                            <div className="bg-royal-900 rounded-2xl p-6 w-full max-w-4xl border border-royal-800 overflow-y-auto max-h-[95vh] shadow-2xl">
                                 <h2 className="text-2xl font-bold mb-4 text-center text-white uppercase tracking-widest">Resolve Match</h2>
                                 
                                 {matchH2H.total > 0 ? (
                                     <div className="text-center mb-8">
-                                        <div className="inline-block bg-slate-900 border border-slate-700 rounded-full px-6 py-2 text-sm font-medium text-slate-300">
-                                            Head-to-Head: <span className="text-white font-bold ml-2">{getPlayer(resolvingMatch.p1).name} <span className="text-blue-400 mx-1">{matchH2H.p1Wins} - {matchH2H.p2Wins}</span> {getPlayer(resolvingMatch.p2).name}</span>
+                                        <div className="inline-block bg-royal-950 border border-royal-800 rounded-full px-6 py-2 text-sm font-medium text-royal-200">
+                                            Head-to-Head: <span className="text-white font-bold ml-2">{getPlayer(resolvingMatch.p1).name} <span className="text-gold-500 mx-1">{matchH2H.p1Wins} - {matchH2H.p2Wins}</span> {getPlayer(resolvingMatch.p2).name}</span>
                                         </div>
                                     </div>
                                 ) : (
                                     <div className="text-center mb-8">
-                                        <div className="inline-block bg-slate-900 border border-slate-700 rounded-full px-6 py-2 text-sm font-medium text-slate-400 italic">
+                                        <div className="inline-block bg-royal-950 border border-royal-800 rounded-full px-6 py-2 text-sm font-medium text-royal-400 italic">
                                             First Career Meeting
                                         </div>
                                     </div>
                                 )}
 
                                 <div className="flex flex-col md:flex-row gap-8 relative items-stretch">
-                                    <div className="hidden md:flex absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-slate-900 border-2 border-slate-700 w-12 h-12 rounded-full items-center justify-center font-black text-slate-400 z-10">VS</div>
+                                    <div className="hidden md:flex absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-royal-950 border-2 border-royal-800 w-12 h-12 rounded-full items-center justify-center font-black text-royal-400 z-10">VS</div>
                                     {[resolvingMatch.p1, resolvingMatch.p2].map((pid, idx) => {
                                         const p = getPlayer(pid), imgs = getImages(p);
                                         const iIdx = idx === 0 ? p1ImgIdx : p2ImgIdx, setIIdx = idx === 0 ? setP1ImgIdx : setP2ImgIdx;
                                         return (
-                                            <div key={idx} className="flex-1 bg-slate-700/30 border border-slate-700 rounded-xl p-6 flex flex-col items-center shadow-inner">
+                                            <div key={idx} className="flex-1 bg-royal-950/30 border border-royal-800 rounded-xl p-6 flex flex-col items-center shadow-inner">
                                                 <div className="relative group w-full max-w-[280px] mb-6">
                                                     {imgs[iIdx] ? (
-                                                        <img src={imgs[iIdx]} className="w-full aspect-[3/4] rounded-xl object-cover border-4 border-slate-600 shadow-2xl transition-all duration-300" />
+                                                        <img src={imgs[iIdx]} className="w-full aspect-[3/4] rounded-xl object-cover border-4 border-royal-700 shadow-2xl transition-all duration-300" />
                                                     ) : (
-                                                        <div className="w-full aspect-[3/4] bg-slate-800 rounded-xl border-4 border-slate-600 flex items-center justify-center"><UserCircle size={64} className="text-slate-600"/></div>
+                                                        <div className="w-full aspect-[3/4] bg-royal-800 rounded-xl border-4 border-royal-700 flex items-center justify-center"><UserCircle size={64} className="text-royal-400"/></div>
                                                     )}
                                                     {imgs.length > 1 && (
                                                         <><button onClick={() => setIIdx(prev => (prev === 0 ? imgs.length-1 : prev-1))} className="absolute left-2 top-1/2 -translate-y-1/2 bg-black/60 hover:bg-black p-2 rounded-full text-white opacity-0 group-hover:opacity-100 transition-opacity"><ChevronLeft size={20}/></button>
                                                         <button onClick={() => setIIdx(prev => (prev === imgs.length-1 ? 0 : prev+1))} className="absolute right-2 top-1/2 -translate-y-1/2 bg-black/60 hover:bg-black p-2 rounded-full text-white opacity-0 group-hover:opacity-100 transition-opacity"><ChevronRight size={20}/></button>
-                                                        <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5 bg-black/40 px-2 py-1 rounded-full">{imgs.map((_, i) => <div key={i} className={`w-2 h-2 rounded-full ${i === iIdx ? 'bg-blue-500' : 'bg-white/40'}`} />)}</div></>
+                                                        <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5 bg-black/40 px-2 py-1 rounded-full">{imgs.map((_, i) => <div key={i} className={`w-2 h-2 rounded-full ${i === iIdx ? 'bg-gold-500' : 'bg-white/40'}`} />)}</div></>
                                                     )}
                                                 </div>
                                                 <h3 className="text-3xl font-black text-white uppercase text-center mb-1">{p.name}</h3>
-                                                <div className="text-blue-400 font-medium mb-8 flex items-center gap-2"><span className="text-2xl">{getFlag(p.nationality)}</span> {getCountryName(p.nationality)}</div>
+                                                <div className="text-gold-500 font-medium mb-3 flex items-center justify-center gap-2"><span className="text-2xl">{getFlag(p.nationality)}</span> {getCountryName(p.nationality)}</div>
+                                                {renderRecentForm(pid)}
                                                 <div className="w-full space-y-3 mt-auto">
-                                                    <button onClick={() => submitResult(pid, 'close')} className="w-full bg-orange-500/20 hover:bg-orange-500/30 text-orange-400 border border-orange-500/50 p-4 rounded-xl font-bold transition-colors">Win (Close Match)</button>
-                                                    <button onClick={() => submitResult(pid, 'lopsided')} className="w-full bg-purple-500/20 hover:bg-purple-500/30 text-purple-400 border border-purple-500/50 p-4 rounded-xl font-bold transition-colors">Win (Lopsided)</button>
+                                                    <button onClick={() => submitResult(pid, 'close')} className="w-full bg-[#d4af37]/10 hover:bg-[#d4af37]/20 text-[#d4af37] border border-[#d4af37]/50 p-4 rounded-xl font-bold transition-colors">Win (Close Match)</button>
+                                                    <button onClick={() => submitResult(pid, 'lopsided')} className="w-full bg-[#059669]/10 hover:bg-[#059669]/20 text-[#059669] border border-[#059669]/50 p-4 rounded-xl font-bold transition-colors">Win (Lopsided)</button>
                                                 </div>
                                             </div>
                                         );
                                     })}
                                 </div>
-                                <div className="mt-8 flex flex-col md:flex-row gap-4 pt-6 border-t border-slate-700">
-                                    <button onClick={handleRandomize} className="flex-1 bg-indigo-600/20 hover:bg-indigo-600/30 border border-indigo-500/50 text-indigo-400 py-3.5 rounded-xl font-bold transition-colors flex items-center justify-center gap-2">🎲 Randomize (Coin Toss)</button>
-                                    <button onClick={() => setResolvingMatch(null)} className="flex-1 bg-slate-800 hover:bg-slate-700 border border-slate-600 text-slate-300 hover:text-white py-3.5 rounded-xl font-bold transition-colors">Cancel</button>
+                                <div className="mt-8 flex flex-col md:flex-row gap-4 pt-6 border-t border-royal-800">
+                                    <button onClick={handleRandomize} className="flex-1 bg-royal-800 hover:bg-royal-700 border border-royal-600 text-royal-100 py-3.5 rounded-xl font-bold transition-colors flex items-center justify-center gap-2">🎲 Randomize (Coin Toss)</button>
+                                    <button onClick={() => setResolvingMatch(null)} className="flex-1 bg-royal-950 hover:bg-royal-900 border border-royal-800 text-royal-300 hover:text-white py-3.5 rounded-xl font-bold transition-colors">Cancel</button>
                                 </div>
                             </div>
                         </div>
@@ -2108,10 +2188,12 @@
             );
         }
 
-        function ATPFinalsBracket({ tournament, players, onBack, db, appId, allTournaments }) {
+        function SNBInternationalsBracket({ tournament, players, onBack, db, appId, allTournaments }) {
             const [resolvingMatch, setResolvingMatch] = useState(null);
             const [p1ImgIdx, setP1ImgIdx] = useState(0);
             const [p2ImgIdx, setP2ImgIdx] = useState(0);
+            const [showDelete, setShowDelete] = useState(false);
+            
             useEffect(() => { setP1ImgIdx(0); setP2ImgIdx(0); }, [resolvingMatch]);
 
             const getPlayer = (id) => players.find(p => p.id === id) || { name: 'TBD', rank: '-', nationality: 'UNK' };
@@ -2196,9 +2278,19 @@
                 submitResult(winnerId, 'close');
             };
 
+            const handleDelete = async () => {
+                try {
+                    onBack();
+                    await window.fb.deleteDoc(window.fb.doc(db, 'artifacts', appId, 'public', 'data', 'tournaments', tournament.id));
+                } catch(e) { console.error(e); }
+            };
+
             const matchH2H = useMemo(() => {
                 if (!resolvingMatch || !resolvingMatch.p1 || !resolvingMatch.p2) return { p1Wins: 0, p2Wins: 0, total: 0 };
-                let p1Wins = 0, p2Wins = 0, total = 0;
+                let p1Wins = 0;
+                let p2Wins = 0;
+                let total = 0;
+                
                 allTournaments.forEach(t => {
                     let mList = [];
                     if (t.format === 'atp_finals') {
@@ -2226,26 +2318,26 @@
             }, [resolvingMatch, allTournaments]);
 
             const renderStandingsTable = (groupName, standings) => (
-                <div className="bg-slate-800 rounded-xl border border-slate-700 overflow-hidden shadow-lg w-full">
-                    <div className="bg-slate-900/80 p-3 border-b border-slate-700 font-bold text-white flex justify-between">
+                <div className="bg-royal-800 rounded-xl border border-royal-700 overflow-hidden shadow-lg w-full">
+                    <div className="bg-royal-950/80 p-3 border-b border-royal-700 font-bold text-white flex justify-between">
                         <span>Group {groupName}</span>
-                        {isGroupStageComplete && <span className="text-xs bg-green-500/20 text-green-400 px-2 py-0.5 rounded uppercase tracking-wider">Final</span>}
+                        {isGroupStageComplete && <span className="text-xs bg-[#059669]/20 text-[#059669] px-2 py-0.5 rounded uppercase tracking-wider">Final</span>}
                     </div>
                     <table className="w-full text-left text-sm">
-                        <thead className="bg-slate-900/50 text-slate-400">
+                        <thead className="bg-royal-950/50 text-royal-300">
                             <tr><th className="p-3">Player</th><th className="p-3 text-center">W-L</th><th className="p-3 text-center">Tiebreaker</th></tr>
                         </thead>
-                        <tbody className="divide-y divide-slate-700/50 text-white font-medium">
+                        <tbody className="divide-y divide-royal-700/50 text-white font-medium">
                             {standings.map((s, idx) => {
                                 const p = getPlayer(s.id);
                                 return (
-                                    <tr key={s.id} className={isGroupStageComplete && idx < 2 ? 'bg-green-900/10' : ''}>
+                                    <tr key={s.id} className={isGroupStageComplete && idx < 2 ? 'bg-[#059669]/10' : ''}>
                                         <td className="p-3 flex items-center gap-2">
-                                            <span className={`w-5 h-5 flex items-center justify-center rounded-full text-xs font-bold ${isGroupStageComplete && idx < 2 ? 'bg-green-500 text-green-950' : 'bg-slate-700 text-slate-300'}`}>{idx+1}</span>
+                                            <span className={`w-5 h-5 flex items-center justify-center rounded-full text-xs font-bold ${isGroupStageComplete && idx < 2 ? 'bg-[#059669] text-royal-950' : 'bg-royal-700 text-royal-200'}`}>{idx+1}</span>
                                             {getFlag(p.nationality)} {p.name}
                                         </td>
                                         <td className="p-3 text-center">{s.wins}-{s.losses}</td>
-                                        <td className={`p-3 text-center ${s.tiebreaker > 0 ? 'text-green-400' : s.tiebreaker < 0 ? 'text-red-400' : 'text-slate-400'}`}>{s.tiebreaker > 0 ? `+${s.tiebreaker}` : s.tiebreaker}</td>
+                                        <td className={`p-3 text-center ${s.tiebreaker > 0 ? 'text-[#059669]' : s.tiebreaker < 0 ? 'text-[#be123c]' : 'text-royal-400'}`}>{s.tiebreaker > 0 ? `+${s.tiebreaker}` : s.tiebreaker}</td>
                                     </tr>
                                 );
                             })}
@@ -2253,9 +2345,9 @@
                                 const p = getPlayer(pid);
                                 return (
                                     <tr key={pid}>
-                                        <td className="p-3 flex items-center gap-2"><span className="w-5 h-5 flex items-center justify-center rounded-full text-xs font-bold bg-slate-700 text-slate-300">-</span> {getFlag(p.nationality)} {p.name}</td>
-                                        <td className="p-3 text-center text-slate-500">0-0</td>
-                                        <td className="p-3 text-center text-slate-500">0</td>
+                                        <td className="p-3 flex items-center gap-2"><span className="w-5 h-5 flex items-center justify-center rounded-full text-xs font-bold bg-royal-700 text-royal-200">-</span> {getFlag(p.nationality)} {p.name}</td>
+                                        <td className="p-3 text-center text-royal-400">0-0</td>
+                                        <td className="p-3 text-center text-royal-400">0</td>
                                     </tr>
                                 );
                             })}
@@ -2264,18 +2356,48 @@
                 </div>
             );
 
+            const renderRecentForm = (playerId) => {
+                const pObj = players.find(p => p.id === playerId);
+                if (!pObj || !pObj.recentMatches || pObj.recentMatches.length === 0) return null;
+                const recent3 = pObj.recentMatches.slice(0, 3);
+                return (
+                    <div className="flex gap-1.5 justify-center mb-6">
+                        {recent3.map((m, i) => (
+                            <div key={i} title={m.isWin ? 'Win' : 'Loss'} className={`w-6 h-6 flex items-center justify-center rounded-sm text-[11px] font-bold ${
+                                m.isWin 
+                                    ? (m.type === 'lopsided' ? 'bg-[#059669] text-royal-950' : 'bg-[#059669]/20 text-[#059669] border border-[#059669]/50') 
+                                    : (m.type === 'lopsided' ? 'bg-[#be123c] text-white' : 'bg-[#be123c]/20 text-[#e11d48] border border-[#be123c]/50')
+                            }`}>
+                                {m.isWin ? 'W' : 'L'}
+                            </div>
+                        ))}
+                    </div>
+                );
+            };
+
             return (
                 <div className="h-full flex flex-col pb-20 max-w-6xl mx-auto space-y-8">
                     <div className="flex justify-between items-center shrink-0">
                         <div>
-                            <button onClick={onBack} className="flex items-center gap-2 text-slate-400 hover:text-white transition-colors mb-2">
+                            <button onClick={onBack} className="flex items-center gap-2 text-royal-300 hover:text-white transition-colors mb-2">
                                 <ArrowLeft className="w-4 h-4" /> Back to Tournaments
                             </button>
                             <h1 className="text-3xl font-bold text-white flex items-center gap-3">
-                                <span className="text-cyan-400 text-sm uppercase tracking-widest border border-cyan-500/50 px-2 py-1 rounded bg-cyan-500/20">ATP Finals</span>
+                                <span className="text-emerald-500 text-sm uppercase tracking-widest border border-emerald-500/50 px-2 py-1 rounded bg-emerald-500/20">SNB Internationals</span>
                                 {tournament.name}
-                                {tournament.status === 'completed' && <span className="bg-green-500/20 text-green-400 text-sm px-2 py-1 rounded font-bold uppercase">Completed</span>}
+                                {tournament.status === 'completed' && <span className="bg-[#059669]/20 text-[#059669] text-sm px-2 py-1 rounded font-bold uppercase">Completed</span>}
                             </h1>
+                        </div>
+                        <div>
+                            {showDelete ? (
+                                <div className="flex items-center gap-2 bg-[#be123c]/10 border border-[#be123c]/30 p-2 rounded-lg">
+                                    <span className="text-[#e11d48] text-sm font-bold">Delete Tournament?</span>
+                                    <button onClick={handleDelete} className="bg-[#be123c] hover:bg-[#9f1239] text-white px-3 py-1 rounded text-sm font-bold transition-colors">Yes</button>
+                                    <button onClick={() => setShowDelete(false)} className="text-royal-300 hover:text-white text-sm px-2">Cancel</button>
+                                </div>
+                            ) : (
+                                <button onClick={() => setShowDelete(true)} className="flex items-center gap-2 text-[#e11d48] hover:text-[#fb7185] text-sm font-bold bg-royal-900 px-3 py-2 rounded-lg border border-royal-800 transition-colors"><Trash2 size={16}/> Delete</button>
+                            )}
                         </div>
                     </div>
 
@@ -2293,10 +2415,10 @@
                                 const p1 = getPlayer(match.p1), p2 = getPlayer(match.p2);
                                 const isReady = !match.winner;
                                 return (
-                                    <div key={match.id} onClick={() => handleMatchClick('group', mIdx, match)} className={`bg-slate-800 border-2 rounded-xl p-3 shadow-md transition-all ${isReady ? 'border-blue-500 hover:scale-105 cursor-pointer shadow-blue-500/20' : 'border-slate-700/50 opacity-70'}`}>
-                                        <div className="text-xs font-bold text-slate-500 mb-2 uppercase tracking-wider">Group {match.group}</div>
-                                        <div className={`flex justify-between items-center mb-2 ${match.winner === match.p1 ? 'bg-slate-700/50 rounded px-1' : ''}`}><span className={`text-sm font-medium flex items-center gap-2 ${match.winner && match.winner !== match.p1 ? 'text-slate-500 line-through' : 'text-white'}`}>{getFlag(p1.nationality)} {p1.name}</span>{match.winner === match.p1 && <CheckCircle className="w-4 h-4 text-green-500" />}</div>
-                                        <div className={`flex justify-between items-center ${match.winner === match.p2 ? 'bg-slate-700/50 rounded px-1' : ''}`}><span className={`text-sm font-medium flex items-center gap-2 ${match.winner && match.winner !== match.p2 ? 'text-slate-500 line-through' : 'text-white'}`}>{getFlag(p2.nationality)} {p2.name}</span>{match.winner === match.p2 && <CheckCircle className="w-4 h-4 text-green-500" />}</div>
+                                    <div key={match.id} onClick={() => handleMatchClick('group', mIdx, match)} className={`bg-royal-900 border-2 rounded-xl p-3 shadow-md transition-all ${isReady ? 'border-gold-500 hover:scale-105 cursor-pointer shadow-gold-500/20' : 'border-royal-800/50 opacity-70'}`}>
+                                        <div className="text-xs font-bold text-royal-400 mb-2 uppercase tracking-wider">Group {match.group}</div>
+                                        <div className={`flex justify-between items-center mb-2 ${match.winner === match.p1 ? 'bg-royal-800/50 rounded px-1' : ''}`}><span className={`text-sm font-medium flex items-center gap-2 ${match.winner && match.winner !== match.p1 ? 'text-royal-400 line-through' : 'text-white'}`}>{getFlag(p1.nationality)} {p1.name}</span>{match.winner === match.p1 && <CheckCircle className="w-4 h-4 text-[#059669]" />}</div>
+                                        <div className={`flex justify-between items-center ${match.winner === match.p2 ? 'bg-royal-800/50 rounded px-1' : ''}`}><span className={`text-sm font-medium flex items-center gap-2 ${match.winner && match.winner !== match.p2 ? 'text-royal-400 line-through' : 'text-white'}`}>{getFlag(p2.nationality)} {p2.name}</span>{match.winner === match.p2 && <CheckCircle className="w-4 h-4 text-[#059669]" />}</div>
                                     </div>
                                 );
                             })}
@@ -2304,38 +2426,38 @@
                     </div>
 
                     {/* Knockout Stage */}
-                    <div className="border-t border-slate-700 pt-8">
+                    <div className="border-t border-royal-800 pt-8">
                         <h2 className="text-xl font-bold text-white mb-6">Knockout Stage</h2>
                         <div className="flex flex-col md:flex-row gap-8 items-center justify-center">
                             {/* Semifinals */}
                             <div className="flex flex-col gap-6 w-full md:w-72">
-                                <div className="text-center text-slate-500 font-bold text-sm tracking-wider uppercase mb-2">Semifinals</div>
+                                <div className="text-center text-royal-400 font-bold text-sm tracking-wider uppercase mb-2">Semifinals</div>
                                 {knockout[0]?.map((match, mIdx) => {
                                     if (!match) return null;
                                     const p1 = getPlayer(match.p1), p2 = getPlayer(match.p2);
                                     const isReady = match.p1 && match.p2 && !match.winner && tournament.status !== 'completed';
                                     return (
-                                        <div key={match.id} onClick={() => handleMatchClick('sf', mIdx, match)} className={`bg-slate-800 border-2 rounded-xl p-3 shadow-md transition-all ${isReady ? 'border-blue-500 hover:scale-105 cursor-pointer shadow-blue-500/20' : match.winner ? 'border-slate-600' : 'border-slate-700/50 border-dashed opacity-50'}`}>
-                                            <div className={`flex justify-between items-center mb-2 ${match.winner === match.p1 ? 'bg-slate-700/50 rounded px-1' : ''}`}><span className={`text-sm font-medium flex items-center gap-2 ${match.winner && match.winner !== match.p1 ? 'text-slate-500 line-through' : 'text-white'}`}>{match.p1 ? <>{getFlag(p1.nationality)} {p1.name}</> : 'TBD'}</span>{match.winner === match.p1 && <CheckCircle className="w-4 h-4 text-green-500" />}</div>
-                                            <div className={`flex justify-between items-center ${match.winner === match.p2 ? 'bg-slate-700/50 rounded px-1' : ''}`}><span className={`text-sm font-medium flex items-center gap-2 ${match.winner && match.winner !== match.p2 ? 'text-slate-500 line-through' : 'text-white'}`}>{match.p2 ? <>{getFlag(p2.nationality)} {p2.name}</> : 'TBD'}</span>{match.winner === match.p2 && <CheckCircle className="w-4 h-4 text-green-500" />}</div>
+                                        <div key={match.id} onClick={() => handleMatchClick('sf', mIdx, match)} className={`bg-royal-900 border-2 rounded-xl p-3 shadow-md transition-all ${isReady ? 'border-gold-500 hover:scale-105 cursor-pointer shadow-gold-500/20' : match.winner ? 'border-royal-700 bg-royal-900/50' : 'border-royal-800/50 border-dashed opacity-50'}`}>
+                                            <div className={`flex justify-between items-center mb-2 ${match.winner === match.p1 ? 'bg-royal-800/50 rounded px-1' : ''}`}><span className={`text-sm font-medium flex items-center gap-2 ${match.winner && match.winner !== match.p1 ? 'text-royal-400 line-through' : 'text-white'}`}>{match.p1 ? <>{getFlag(p1.nationality)} {p1.name}</> : 'TBD'}</span>{match.winner === match.p1 && <CheckCircle className="w-4 h-4 text-[#059669]" />}</div>
+                                            <div className={`flex justify-between items-center ${match.winner === match.p2 ? 'bg-royal-800/50 rounded px-1' : ''}`}><span className={`text-sm font-medium flex items-center gap-2 ${match.winner && match.winner !== match.p2 ? 'text-royal-400 line-through' : 'text-white'}`}>{match.p2 ? <>{getFlag(p2.nationality)} {p2.name}</> : 'TBD'}</span>{match.winner === match.p2 && <CheckCircle className="w-4 h-4 text-[#059669]" />}</div>
                                         </div>
                                     );
                                 })}
                             </div>
                             
-                            <div className="hidden md:block w-8 border-t-2 border-slate-600"></div>
+                            <div className="hidden md:block w-8 border-t-2 border-royal-700"></div>
 
                             {/* Final */}
                             <div className="flex flex-col gap-6 w-full md:w-80 relative">
-                                <div className="text-center text-yellow-500 font-bold text-sm tracking-wider uppercase mb-2 flex items-center justify-center gap-2"><Trophy className="w-4 h-4"/> Championship</div>
+                                <div className="text-center text-gold-500 font-bold text-sm tracking-wider uppercase mb-2 flex items-center justify-center gap-2"><Trophy className="w-4 h-4"/> Championship</div>
                                 {knockout[1]?.map((match, mIdx) => {
                                     if (!match) return null;
                                     const p1 = getPlayer(match.p1), p2 = getPlayer(match.p2);
                                     const isReady = match.p1 && match.p2 && !match.winner && tournament.status !== 'completed';
                                     return (
-                                        <div key={match.id} onClick={() => handleMatchClick('f', mIdx, match)} className={`bg-slate-800 border-2 rounded-xl p-4 shadow-2xl transition-all ${isReady ? 'border-yellow-500 hover:scale-105 cursor-pointer shadow-yellow-500/20' : match.winner ? 'border-yellow-600/50' : 'border-slate-700/50 border-dashed opacity-50'}`}>
-                                            <div className={`flex justify-between items-center mb-3 ${match.winner === match.p1 ? 'bg-yellow-500/10 rounded px-2 py-1' : ''}`}><span className={`text-base font-bold flex items-center gap-2 ${match.winner && match.winner !== match.p1 ? 'text-slate-500 line-through' : match.winner === match.p1 ? 'text-yellow-400' : 'text-white'}`}>{match.p1 ? <>{getFlag(p1.nationality)} {p1.name}</> : 'TBD'}</span>{match.winner === match.p1 && <Trophy className="w-5 h-5 text-yellow-500" />}</div>
-                                            <div className={`flex justify-between items-center ${match.winner === match.p2 ? 'bg-yellow-500/10 rounded px-2 py-1' : ''}`}><span className={`text-base font-bold flex items-center gap-2 ${match.winner && match.winner !== match.p2 ? 'text-slate-500 line-through' : match.winner === match.p2 ? 'text-yellow-400' : 'text-white'}`}>{match.p2 ? <>{getFlag(p2.nationality)} {p2.name}</> : 'TBD'}</span>{match.winner === match.p2 && <Trophy className="w-5 h-5 text-yellow-500" />}</div>
+                                        <div key={match.id} onClick={() => handleMatchClick('f', mIdx, match)} className={`bg-royal-900 border-2 rounded-xl p-4 shadow-2xl transition-all ${isReady ? 'border-gold-500 hover:scale-105 cursor-pointer shadow-gold-500/20' : match.winner ? 'border-gold-600/50 bg-royal-900/50' : 'border-royal-800/50 border-dashed opacity-50'}`}>
+                                            <div className={`flex justify-between items-center mb-3 ${match.winner === match.p1 ? 'bg-gold-500/10 rounded px-2 py-1' : ''}`}><span className={`text-base font-bold flex items-center gap-2 ${match.winner && match.winner !== match.p1 ? 'text-royal-400 line-through' : match.winner === match.p1 ? 'text-gold-500' : 'text-white'}`}>{match.p1 ? <>{getFlag(p1.nationality)} {p1.name}</> : 'TBD'}</span>{match.winner === match.p1 && <Trophy className="w-5 h-5 text-gold-500" />}</div>
+                                            <div className={`flex justify-between items-center ${match.winner === match.p2 ? 'bg-gold-500/10 rounded px-2 py-1' : ''}`}><span className={`text-base font-bold flex items-center gap-2 ${match.winner && match.winner !== match.p2 ? 'text-royal-400 line-through' : match.winner === match.p2 ? 'text-gold-500' : 'text-white'}`}>{match.p2 ? <>{getFlag(p2.nationality)} {p2.name}</> : 'TBD'}</span>{match.winner === match.p2 && <Trophy className="w-5 h-5 text-gold-500" />}</div>
                                         </div>
                                     );
                                 })}
@@ -2345,55 +2467,56 @@
 
                     {resolvingMatch && (
                         <div className="fixed inset-0 bg-black/90 backdrop-blur-sm z-50 flex items-center justify-center p-4 z-[100]">
-                            <div className="bg-slate-800 rounded-2xl p-6 w-full max-w-4xl border border-slate-700 overflow-y-auto max-h-[95vh] shadow-2xl">
+                            <div className="bg-royal-900 rounded-2xl p-6 w-full max-w-4xl border border-royal-800 overflow-y-auto max-h-[95vh] shadow-2xl">
                                 <h2 className="text-2xl font-bold mb-4 text-center text-white uppercase tracking-widest">Resolve Match</h2>
                                 
                                 {matchH2H.total > 0 ? (
                                     <div className="text-center mb-8">
-                                        <div className="inline-block bg-slate-900 border border-slate-700 rounded-full px-6 py-2 text-sm font-medium text-slate-300">
-                                            Head-to-Head: <span className="text-white font-bold ml-2">{getPlayer(resolvingMatch.p1).name} <span className="text-blue-400 mx-1">{matchH2H.p1Wins} - {matchH2H.p2Wins}</span> {getPlayer(resolvingMatch.p2).name}</span>
+                                        <div className="inline-block bg-royal-950 border border-royal-800 rounded-full px-6 py-2 text-sm font-medium text-royal-200">
+                                            Head-to-Head: <span className="text-white font-bold ml-2">{getPlayer(resolvingMatch.p1).name} <span className="text-gold-500 mx-1">{matchH2H.p1Wins} - {matchH2H.p2Wins}</span> {getPlayer(resolvingMatch.p2).name}</span>
                                         </div>
                                     </div>
                                 ) : (
                                     <div className="text-center mb-8">
-                                        <div className="inline-block bg-slate-900 border border-slate-700 rounded-full px-6 py-2 text-sm font-medium text-slate-400 italic">
+                                        <div className="inline-block bg-royal-950 border border-royal-800 rounded-full px-6 py-2 text-sm font-medium text-royal-400 italic">
                                             First Career Meeting
                                         </div>
                                     </div>
                                 )}
 
                                 <div className="flex flex-col md:flex-row gap-8 relative items-stretch">
-                                    <div className="hidden md:flex absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-slate-900 border-2 border-slate-700 w-12 h-12 rounded-full items-center justify-center font-black text-slate-400 z-10">VS</div>
+                                    <div className="hidden md:flex absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-royal-950 border-2 border-royal-800 w-12 h-12 rounded-full items-center justify-center font-black text-royal-400 z-10">VS</div>
                                     {[resolvingMatch.p1, resolvingMatch.p2].map((pid, idx) => {
                                         const p = getPlayer(pid), imgs = getImages(p);
                                         const iIdx = idx === 0 ? p1ImgIdx : p2ImgIdx, setIIdx = idx === 0 ? setP1ImgIdx : setP2ImgIdx;
                                         return (
-                                            <div key={idx} className="flex-1 bg-slate-700/30 border border-slate-700 rounded-xl p-6 flex flex-col items-center shadow-inner">
+                                            <div key={idx} className="flex-1 bg-royal-950/30 border border-royal-800 rounded-xl p-6 flex flex-col items-center shadow-inner">
                                                 <div className="relative group w-full max-w-[280px] mb-6">
                                                     {imgs[iIdx] ? (
-                                                        <img src={imgs[iIdx]} className="w-full aspect-[3/4] rounded-xl object-cover border-4 border-slate-600 shadow-2xl transition-all duration-300" />
+                                                        <img src={imgs[iIdx]} className="w-full aspect-[3/4] rounded-xl object-cover border-4 border-royal-700 shadow-2xl transition-all duration-300" />
                                                     ) : (
-                                                        <div className="w-full aspect-[3/4] bg-slate-800 rounded-xl border-4 border-slate-600 flex items-center justify-center"><UserCircle size={64} className="text-slate-600"/></div>
+                                                        <div className="w-full aspect-[3/4] bg-royal-800 rounded-xl border-4 border-royal-700 flex items-center justify-center"><UserCircle size={64} className="text-royal-400"/></div>
                                                     )}
                                                     {imgs.length > 1 && (
                                                         <><button onClick={() => setIIdx(prev => (prev === 0 ? imgs.length-1 : prev-1))} className="absolute left-2 top-1/2 -translate-y-1/2 bg-black/60 hover:bg-black p-2 rounded-full text-white opacity-0 group-hover:opacity-100 transition-opacity"><ChevronLeft size={20}/></button>
                                                         <button onClick={() => setIIdx(prev => (prev === imgs.length-1 ? 0 : prev+1))} className="absolute right-2 top-1/2 -translate-y-1/2 bg-black/60 hover:bg-black p-2 rounded-full text-white opacity-0 group-hover:opacity-100 transition-opacity"><ChevronRight size={20}/></button>
-                                                        <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5 bg-black/40 px-2 py-1 rounded-full">{imgs.map((_, i) => <div key={i} className={`w-2 h-2 rounded-full ${i === iIdx ? 'bg-blue-500' : 'bg-white/40'}`} />)}</div></>
+                                                        <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5 bg-black/40 px-2 py-1 rounded-full">{imgs.map((_, i) => <div key={i} className={`w-2 h-2 rounded-full ${i === iIdx ? 'bg-gold-500' : 'bg-white/40'}`} />)}</div></>
                                                     )}
                                                 </div>
                                                 <h3 className="text-3xl font-black text-white uppercase text-center mb-1">{p.name}</h3>
-                                                <div className="text-blue-400 font-medium mb-8 flex items-center gap-2"><span className="text-2xl">{getFlag(p.nationality)}</span> {getCountryName(p.nationality)}</div>
+                                                <div className="text-gold-500 font-medium mb-3 flex items-center justify-center gap-2"><span className="text-2xl">{getFlag(p.nationality)}</span> {getCountryName(p.nationality)}</div>
+                                                {renderRecentForm(pid)}
                                                 <div className="w-full space-y-3 mt-auto">
-                                                    <button onClick={() => submitResult(pid, 'close')} className="w-full bg-orange-500/20 hover:bg-orange-500/30 text-orange-400 border border-orange-500/50 p-4 rounded-xl font-bold transition-colors">Win (Close Match)</button>
-                                                    <button onClick={() => submitResult(pid, 'lopsided')} className="w-full bg-purple-500/20 hover:bg-purple-500/30 text-purple-400 border border-purple-500/50 p-4 rounded-xl font-bold transition-colors">Win (Lopsided)</button>
+                                                    <button onClick={() => submitResult(pid, 'close')} className="w-full bg-[#d4af37]/10 hover:bg-[#d4af37]/20 text-[#d4af37] border border-[#d4af37]/50 p-4 rounded-xl font-bold transition-colors">Win (Close Match)</button>
+                                                    <button onClick={() => submitResult(pid, 'lopsided')} className="w-full bg-[#059669]/10 hover:bg-[#059669]/20 text-[#059669] border border-[#059669]/50 p-4 rounded-xl font-bold transition-colors">Win (Lopsided)</button>
                                                 </div>
                                             </div>
                                         );
                                     })}
                                 </div>
-                                <div className="mt-8 flex flex-col md:flex-row gap-4 pt-6 border-t border-slate-700">
-                                    <button onClick={handleRandomize} className="flex-1 bg-indigo-600/20 hover:bg-indigo-600/30 border border-indigo-500/50 text-indigo-400 py-3.5 rounded-xl font-bold transition-colors flex items-center justify-center gap-2">🎲 Randomize (Coin Toss)</button>
-                                    <button onClick={() => setResolvingMatch(null)} className="flex-1 bg-slate-800 hover:bg-slate-700 border border-slate-600 text-slate-300 hover:text-white py-3.5 rounded-xl font-bold transition-colors">Cancel</button>
+                                <div className="mt-8 flex flex-col md:flex-row gap-4 pt-6 border-t border-royal-800">
+                                    <button onClick={handleRandomize} className="flex-1 bg-royal-800 hover:bg-royal-700 border border-royal-600 text-royal-100 py-3.5 rounded-xl font-bold transition-colors flex items-center justify-center gap-2">🎲 Randomize (Coin Toss)</button>
+                                    <button onClick={() => setResolvingMatch(null)} className="flex-1 bg-royal-950 hover:bg-royal-900 border border-royal-800 text-royal-300 hover:text-white py-3.5 rounded-xl font-bold transition-colors">Cancel</button>
                                 </div>
                             </div>
                         </div>
@@ -2433,8 +2556,6 @@
                     setTournaments(snap.docs.map(d => { 
                         const dt = d.data(); 
                         let b = []; 
-                        // Only try to parse the default bracket if it's not the new ATP finals format, 
-                        // as the finals format handles its own string parsing in its specific components.
                         if (dt.format !== 'atp_finals') {
                             try { 
                                 b = typeof dt.bracket === 'string' ? JSON.parse(dt.bracket) : dt.bracket; 
@@ -2477,27 +2598,27 @@
             const navigateTo = (tab) => navigate(tab);
             const handlePlayerSelect = (id) => navigate('players', id);
 
-            if (!user || loading) return <div className="min-screen flex items-center justify-center bg-slate-900 text-slate-100 h-screen w-full"><div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div></div>;
+            if (!user || loading) return <div className="min-screen flex items-center justify-center bg-royal-950 text-royal-50 h-screen w-full"><div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-gold-500"></div></div>;
 
             return (
-                <div className="min-h-screen bg-slate-900 text-slate-100 flex font-sans overflow-hidden">
-                    <nav className="w-64 bg-slate-800 border-r border-slate-700 flex flex-col hidden md:flex shrink-0">
-                        <div className="p-6 border-b border-slate-700 flex items-center gap-2 text-xl font-bold text-blue-400"><Trophy size={24}/><span>ProRank ATP</span></div>
+                <div className="min-h-screen bg-royal-950 text-royal-50 flex font-sans overflow-hidden">
+                    <nav className="w-64 bg-royal-900 border-r border-royal-800 flex flex-col hidden md:flex shrink-0">
+                        <div className="p-6 border-b border-royal-800 flex items-center gap-2 text-xl font-bold text-white"><Trophy size={24} className="text-gold-500"/><span>SNB Tour</span></div>
                         <div className="flex-1 py-4 space-y-1">
-                            <button onClick={() => navigateTo('dashboard')} className={`w-full flex items-center gap-3 px-6 py-3 font-medium transition-colors ${activeTab === 'dashboard' ? 'bg-blue-600/20 text-blue-400 border-r-4 border-blue-500' : 'text-slate-300 hover:bg-slate-700/50'}`}><Activity size={20}/>Dashboard</button>
-                            <button onClick={() => navigateTo('analytics')} className={`w-full flex items-center gap-3 px-6 py-3 font-medium transition-colors ${activeTab === 'analytics' ? 'bg-blue-600/20 text-blue-400 border-r-4 border-blue-500' : 'text-slate-300 hover:bg-slate-700/50'}`}><TrendingUp size={20}/>Analytics</button>
-                            <button onClick={() => navigateTo('players')} className={`w-full flex items-center gap-3 px-6 py-3 font-medium transition-colors ${activeTab === 'players' ? 'bg-blue-600/20 text-blue-400 border-r-4 border-blue-500' : 'text-slate-300 hover:bg-slate-700/50'}`}><Users size={20}/>Players</button>
-                            <button onClick={() => navigateTo('tournaments')} className={`w-full flex items-center gap-3 px-6 py-3 font-medium transition-colors ${activeTab === 'tournaments' ? 'bg-blue-600/20 text-blue-400 border-r-4 border-blue-500' : 'text-slate-300 hover:bg-slate-700/50'}`}><Swords size={20}/>Tournaments</button>
+                            <button onClick={() => navigateTo('dashboard')} className={`w-full flex items-center gap-3 px-6 py-3 font-medium transition-colors ${activeTab === 'dashboard' ? 'bg-gold-500/10 text-gold-500 border-r-4 border-gold-500' : 'text-royal-300 hover:bg-royal-800 hover:text-royal-100'}`}><Activity size={20}/>Dashboard</button>
+                            <button onClick={() => navigateTo('analytics')} className={`w-full flex items-center gap-3 px-6 py-3 font-medium transition-colors ${activeTab === 'analytics' ? 'bg-gold-500/10 text-gold-500 border-r-4 border-gold-500' : 'text-royal-300 hover:bg-royal-800 hover:text-royal-100'}`}><TrendingUp size={20}/>Analytics</button>
+                            <button onClick={() => navigateTo('players')} className={`w-full flex items-center gap-3 px-6 py-3 font-medium transition-colors ${activeTab === 'players' ? 'bg-gold-500/10 text-gold-500 border-r-4 border-gold-500' : 'text-royal-300 hover:bg-royal-800 hover:text-royal-100'}`}><Users size={20}/>Players</button>
+                            <button onClick={() => navigateTo('tournaments')} className={`w-full flex items-center gap-3 px-6 py-3 font-medium transition-colors ${activeTab === 'tournaments' ? 'bg-gold-500/10 text-gold-500 border-r-4 border-gold-500' : 'text-royal-300 hover:bg-royal-800 hover:text-royal-100'}`}><Swords size={20}/>Tournaments</button>
                         </div>
                     </nav>
                     <main className="flex-1 flex flex-col overflow-hidden">
-                        <div className="md:hidden bg-slate-800 p-4 flex justify-between items-center border-b border-slate-700 overflow-x-auto">
-                            <div className="flex items-center gap-2 font-bold text-blue-400 mr-4"><Trophy size={20}/><span>ProRank</span></div>
+                        <div className="md:hidden bg-royal-900 p-4 flex justify-between items-center border-b border-royal-800 overflow-x-auto">
+                            <div className="flex items-center gap-2 font-bold text-gold-500 mr-4"><Trophy size={20} className="text-gold-500"/><span>SNB Tour</span></div>
                             <div className="flex gap-4">
-                                <button onClick={() => navigateTo('dashboard')} className={activeTab === 'dashboard' ? 'text-blue-400' : 'text-slate-400'}><Activity/></button>
-                                <button onClick={() => navigateTo('analytics')} className={activeTab === 'analytics' ? 'text-blue-400' : 'text-slate-400'}><TrendingUp/></button>
-                                <button onClick={() => navigateTo('players')} className={activeTab === 'players' ? 'text-blue-400' : 'text-slate-400'}><Users/></button>
-                                <button onClick={() => navigateTo('tournaments')} className={activeTab === 'tournaments' ? 'text-blue-400' : 'text-slate-400'}><Swords/></button>
+                                <button onClick={() => navigateTo('dashboard')} className={activeTab === 'dashboard' ? 'text-gold-500' : 'text-royal-400'}><Activity/></button>
+                                <button onClick={() => navigateTo('analytics')} className={activeTab === 'analytics' ? 'text-gold-500' : 'text-royal-400'}><TrendingUp/></button>
+                                <button onClick={() => navigateTo('players')} className={activeTab === 'players' ? 'text-gold-500' : 'text-royal-400'}><Users/></button>
+                                <button onClick={() => navigateTo('tournaments')} className={activeTab === 'tournaments' ? 'text-gold-500' : 'text-royal-400'}><Swords/></button>
                             </div>
                         </div>
                         <div className="flex-1 overflow-auto p-4 md:p-8">
@@ -2506,11 +2627,13 @@
                             {activeTab === 'players' && !selectedPlayerId && <PlayersView players={players} onSelectPlayer={handlePlayerSelect} db={db} appId={appId} />}
                             {activeTab === 'players' && selectedPlayerId && <PlayerProfile player={players.find(p => p.id === selectedPlayerId)} players={players} onBack={() => navigateTo('players')} tournaments={tournaments} db={db} appId={appId} />}
                             {activeTab === 'tournaments' && !selectedTournamentId && <TournamentsView tournaments={tournaments} onSelect={(id) => navigate('tournaments', null, id)} onCreate={() => navigateTo('create_tournament')} />}
-                            {activeTab === 'tournaments' && selectedTournamentId && (
-                                tournaments.find(t => t.id === selectedTournamentId)?.format === 'atp_finals' ? 
-                                    <ATPFinalsBracket tournament={tournaments.find(t => t.id === selectedTournamentId)} players={players} onBack={() => navigateTo('tournaments')} db={db} appId={appId} allTournaments={tournaments} /> :
-                                    <TournamentBracket tournament={tournaments.find(t => t.id === selectedTournamentId)} allTournaments={tournaments} players={players} onBack={() => navigateTo('tournaments')} db={db} appId={appId} />
-                            )}
+                            {activeTab === 'tournaments' && selectedTournamentId && (() => {
+                                const t = tournaments.find(t => t.id === selectedTournamentId);
+                                if (!t) return null;
+                                return t.format === 'atp_finals' ? 
+                                    <SNBInternationalsBracket tournament={t} players={players} onBack={() => navigateTo('tournaments')} db={db} appId={appId} allTournaments={tournaments} /> :
+                                    <TournamentBracket tournament={t} allTournaments={tournaments} players={players} onBack={() => navigateTo('tournaments')} db={db} appId={appId} />
+                            })()}
                             {activeTab === 'create_tournament' && <CreateTournamentView players={players} onBack={() => navigateTo('tournaments')} onSuccess={id => navigate('tournaments', null, id)} db={db} appId={appId} />}
                         </div>
                     </main>
