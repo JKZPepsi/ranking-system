@@ -354,23 +354,29 @@
         };
 
         const getGlobalHistory = (playersRaw, tournaments) => {
-            const completed = tournaments.filter(t => t.status === 'completed').sort((a, b) => (a.completedAt || 0) - (b.completedAt || 0));
+            // Sort chronologically (oldest first) to simulate time moving forward
+            const completedAsc = tournaments
+                .filter(t => t.status === 'completed')
+                .sort((a, b) => (a.completedAt || 0) - (b.completedAt || 0));
+            
             const history = [];
 
-            completed.forEach((currentT, index) => {
-                const relevantTournaments = completed.slice(Math.max(0, index - 23), index + 1);
+            completedAsc.forEach((currentT, index) => {
+                // Take all tournaments that had been completed UP TO this specific point in time
+                const relevantTournaments = completedAsc.slice(0, index + 1);
                 
-                const playerPoints = playersRaw.map(p => {
-                    let pts = 0;
-                    relevantTournaments.forEach(t => {
-                        const res = getTournamentPointsAndResult(p.id, t);
-                        pts += res.pts;
-                    });
-                    return { id: p.id, name: p.name, pts, imageUrl: p.imageUrl, nationality: p.nationality || 'UNK' };
-                });
-
-                playerPoints.sort((a, b) => b.pts - a.pts || (a.name || '').localeCompare(b.name || ''));
-                playerPoints.forEach((p, idx) => p.rank = idx + 1);
+                // Run the exact same leaderboard calculation engine for this snapshot in time.
+                // This completely eliminates any discrepancy between the charts and the live leaderboard!
+                const snapshotRankings = calculatePlayerRankings(playersRaw, relevantTournaments);
+                
+                const playerPoints = snapshotRankings.map(p => ({
+                    id: p.id, 
+                    name: p.name, 
+                    pts: p.points, 
+                    imageUrl: p.imageUrl, 
+                    nationality: p.nationality || 'UNK',
+                    rank: p.rank
+                }));
 
                 history.push({
                     tournamentId: currentT.id,
