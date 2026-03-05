@@ -89,6 +89,7 @@
         const Shuffle = (props) => <Icon d="M2 18h1.4c1.3 0 2.5-.6 3.3-1.7l6.1-8.6c.7-1.1 2-1.7 3.3-1.7H22M18 2l4 4-4 4M2 6h1.9c1.5 0 2.8.8 3.6 2l3.5 5c.8 1.2 2.1 2 3.6 2H22M18 14l4 4-4 4" {...props} />;
         const TrendingUp = (props) => <Icon d="M23 6l-9.5 9.5-5-5L1 18M23 6h-6M23 6v6" {...props} />;
         const BarChart2 = (props) => <Icon d="M18 20V10M12 20V4M6 20v-6" {...props} />;
+        const Download = (props) => <Icon d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3" {...props} />;
 
         // --- Configuration & Constants ---
         
@@ -1303,8 +1304,8 @@
                                                             title={`${m.isWin ? 'Win' : 'Loss'} (${m.type === 'lopsided' ? 'Lopsided' : 'Close'})`} 
                                                             className={`w-5 h-5 flex items-center justify-center rounded-sm text-[10px] font-bold ${
                                                                 m.isWin 
-                                                                    ? (m.type === 'lopsided' ? 'bg-[#059669] text-[#022c22]' : 'bg-[#059669]/20 text-[#059669] border border-[#059669]/50') 
-                                                                    : (m.type === 'lopsided' ? 'bg-[#be123c] text-[#4c0519]' : 'bg-orange-900/40 text-orange-400 border border-orange-500/50')
+                                                                    ? (m.type === 'lopsided' ? 'bg-[#059669] text-[#020b08]' : 'bg-[#059669]/20 text-[#059669] border border-[#059669]/50') 
+                                                                    : (m.type === 'lopsided' ? 'bg-[#be123c] text-white' : 'bg-[#be123c]/20 text-[#fb7185] border border-[#be123c]/50')
                                                             }`}
                                                         >
                                                             {m.isWin ? 'W' : 'L'}
@@ -1351,17 +1352,25 @@
                 setIsAdding(false);
             };
 
-            const generateDummyPlayers = async () => {
-                setIsAdding(true);
-                const dummyNames = [{n: "Roger F.", c: "SUI"}, {n: "Rafa N.", c: "ESP"}, {n: "Novak D.", c: "SRB"}, {n: "Andy M.", c: "GBR"}, {n: "Pete S.", c: "USA"}, {n: "Andre A.", c: "USA"}, {n: "Bjorn B.", c: "SWE"}, {n: "John M.", c: "USA"}, {n: "Carlos A.", c: "ESP"}, {n: "Jannik S.", c: "ITA"}, {n: "Daniil M.", c: "RUS"}, {n: "Alex Z.", c: "GER"}];
-                const playersRef = window.fb.collection(db, 'artifacts', appId, 'public', 'data', 'players');
-                try {
-                    for (const p of dummyNames) {
-                        const url = `https://ui-avatars.com/api/?name=${p.n.replace(' ', '+')}&background=random&color=fff&size=500`;
-                        await window.fb.addDoc(playersRef, { name: p.n, nationality: p.c, imageUrl: url, images: [url], createdAt: Date.now() });
-                    }
-                } catch(err) { console.error(err); }
-                setIsAdding(false);
+            const exportToCSV = () => {
+                const headers = ['Rank', 'Name', 'Nationality', 'Points', 'Wins', 'Losses'];
+                const rows = players.map(p => [
+                    p.rank,
+                    `"${p.name}"`,
+                    p.nationality || 'UNK',
+                    p.points,
+                    p.stats?.wins || 0,
+                    p.stats?.losses || 0
+                ]);
+                const csvContent = [headers.join(','), ...rows.map(e => e.join(','))].join('\n');
+                const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+                const url = URL.createObjectURL(blob);
+                const link = document.createElement("a");
+                link.setAttribute("href", url);
+                link.setAttribute("download", "snb_tour_players_export.csv");
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
             };
 
             return (
@@ -1377,7 +1386,7 @@
                                 onChange={e => setSearchQuery(e.target.value)}
                             />
                             <div className="flex gap-2 w-full md:w-auto">
-                                {players.length < 64 && <button onClick={generateDummyPlayers} className="flex-1 md:flex-none bg-royal-800 px-4 py-2 rounded-lg flex items-center justify-center gap-2 whitespace-nowrap hover:bg-royal-700 transition-colors text-white"><Activity size={16}/> Add Dummies</button>}
+                                <button onClick={exportToCSV} className="flex-1 md:flex-none bg-royal-800 px-4 py-2 rounded-lg flex items-center justify-center gap-2 whitespace-nowrap hover:bg-royal-700 transition-colors text-royal-200 hover:text-white"><Download size={16}/> Export CSV</button>
                                 <button onClick={() => setShowAddForm(!showAddForm)} className="flex-1 md:flex-none bg-gold-500 px-4 py-2 rounded-lg flex items-center justify-center gap-2 whitespace-nowrap hover:bg-gold-600 text-royal-950 font-bold transition-colors">{showAddForm ? <X size={20}/> : <Plus size={20}/>} {showAddForm ? 'Cancel' : 'Add Player'}</button>
                             </div>
                         </div>
@@ -1692,27 +1701,84 @@
         }
 
         function TournamentsView({ tournaments, onSelect, onCreate }) {
+            const [searchQuery, setSearchQuery] = useState('');
+            const [tierFilter, setTierFilter] = useState('all');
+            const [sizeFilter, setSizeFilter] = useState('all');
+
+            const filteredTournaments = useMemo(() => {
+                return tournaments.filter(t => {
+                    const matchesSearch = t.name.toLowerCase().includes(searchQuery.toLowerCase());
+                    const matchesTier = tierFilter === 'all' || getTournamentTier(t) === tierFilter;
+                    const matchesSize = sizeFilter === 'all' || getDrawSize(t).toString() === sizeFilter;
+                    return matchesSearch && matchesTier && matchesSize;
+                }).sort((a,b) => b.createdAt - a.createdAt);
+            }, [tournaments, searchQuery, tierFilter, sizeFilter]);
+
             return (
                 <div className="max-w-5xl mx-auto space-y-6">
-                    <div className="flex justify-between items-center"><h1 className="text-3xl font-bold text-white">Tournaments</h1><button onClick={onCreate} className="bg-gold-500 px-6 py-2 rounded-lg flex items-center gap-2 font-bold text-royal-950 hover:bg-gold-600 transition-colors"><Plus size={20}/> New</button></div>
-                    <div className="grid md:grid-cols-3 gap-6">{[...tournaments].sort((a,b) => b.createdAt - a.createdAt).map(t => {
-                        const tierKey = getTournamentTier(t);
-                        const tierConf = TOURNAMENT_TIERS[tierKey];
-                        const drawSize = getDrawSize(t);
+                    <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                        <h1 className="text-3xl font-bold text-white">Tournaments</h1>
+                        <button onClick={onCreate} className="bg-gold-500 px-6 py-2 rounded-lg flex items-center gap-2 font-bold text-royal-950 hover:bg-gold-600 transition-colors"><Plus size={20}/> New</button>
+                    </div>
 
-                        return (
-                            <div key={t.id} onClick={() => onSelect(t.id)} className={`bg-royal-900 p-6 rounded-xl border-2 transition-all cursor-pointer flex flex-col h-full hover:scale-105 ${t.status === 'completed' ? 'border-royal-800 hover:border-gold-500' : tierConf?.border + ' shadow-lg shadow-black/20'}`}>
-                                <div className="flex justify-between items-start mb-2">
-                                    <h3 className="font-bold text-xl text-white truncate pr-2">{t.name}</h3>
+                    <div className="flex flex-col md:flex-row gap-4 bg-royal-900 p-4 rounded-xl border border-royal-800 shadow-md">
+                        <div className="flex-1">
+                            <input 
+                                type="text" 
+                                placeholder="Search tournaments..." 
+                                className="w-full bg-royal-950 border border-royal-800 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-gold-500"
+                                value={searchQuery}
+                                onChange={e => setSearchQuery(e.target.value)}
+                            />
+                        </div>
+                        <select 
+                            className="bg-royal-950 border border-royal-800 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-gold-500 cursor-pointer"
+                            value={tierFilter}
+                            onChange={e => setTierFilter(e.target.value)}
+                        >
+                            <option value="all">All Tiers</option>
+                            <option value="grand_slam">Grand Slam</option>
+                            <option value="finals">SNB Internationals</option>
+                            <option value="major">Major</option>
+                            <option value="pro">Pro Series</option>
+                            <option value="challenger">Challenger</option>
+                        </select>
+                        <select 
+                            className="bg-royal-950 border border-royal-800 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-gold-500 cursor-pointer"
+                            value={sizeFilter}
+                            onChange={e => setSizeFilter(e.target.value)}
+                        >
+                            <option value="all">All Sizes</option>
+                            <option value="64">64 Participants</option>
+                            <option value="32">32 Participants</option>
+                            <option value="16">16 Participants</option>
+                            <option value="8">8 Participants</option>
+                        </select>
+                    </div>
+
+                    <div className="grid md:grid-cols-3 gap-6">
+                        {filteredTournaments.map(t => {
+                            const tierKey = getTournamentTier(t);
+                            const tierConf = TOURNAMENT_TIERS[tierKey];
+                            const drawSize = getDrawSize(t);
+
+                            return (
+                                <div key={t.id} onClick={() => onSelect(t.id)} className={`bg-royal-900 p-6 rounded-xl border-2 transition-all cursor-pointer flex flex-col h-full hover:scale-105 ${t.status === 'completed' ? 'border-royal-800 hover:border-gold-500' : tierConf?.border + ' shadow-lg shadow-black/20'}`}>
+                                    <div className="flex justify-between items-start mb-2">
+                                        <h3 className="font-bold text-xl text-white truncate pr-2">{t.name}</h3>
+                                    </div>
+                                    <div className="flex gap-2 mb-4">
+                                        <span className={`text-xs font-bold uppercase tracking-wider px-2 py-1 rounded ${tierConf?.bg || 'bg-royal-800'} ${tierConf?.color || 'text-royal-200'}`}>{tierConf?.name || 'Tournament'}</span>
+                                        <span className={`text-xs font-bold uppercase tracking-wider px-2 py-1 rounded ${t.status === 'completed' ? 'bg-[#059669]/20 text-[#059669]' : 'bg-royal-800 text-royal-200'}`}>{t.status}</span>
+                                    </div>
+                                    <div className="text-royal-300 text-sm mt-auto">{drawSize} Participants • {new Date(t.createdAt).toLocaleDateString()}</div>
                                 </div>
-                                <div className="flex gap-2 mb-4">
-                                    <span className={`text-xs font-bold uppercase tracking-wider px-2 py-1 rounded ${tierConf?.bg || 'bg-royal-800'} ${tierConf?.color || 'text-royal-200'}`}>{tierConf?.name || 'Tournament'}</span>
-                                    <span className={`text-xs font-bold uppercase tracking-wider px-2 py-1 rounded ${t.status === 'completed' ? 'bg-[#059669]/20 text-[#059669]' : 'bg-royal-800 text-royal-200'}`}>{t.status}</span>
-                                </div>
-                                <div className="text-royal-300 text-sm mt-auto">{drawSize} Participants • {new Date(t.createdAt).toLocaleDateString()}</div>
-                            </div>
-                        );
-                    })}</div>
+                            );
+                        })}
+                        {filteredTournaments.length === 0 && (
+                            <div className="col-span-3 text-center py-12 text-royal-400 border-2 border-dashed border-royal-800 rounded-xl">No tournaments found matching your filters.</div>
+                        )}
+                    </div>
                 </div>
             );
         }
@@ -2053,21 +2119,64 @@
                 return { p1Wins, p2Wins, total };
             }, [resolvingMatch, allTournaments]);
 
+            const getTournamentMatches = (playerId) => {
+                let tMatches = [];
+                parsedBracket.forEach(round => {
+                    if (!Array.isArray(round)) return;
+                    round.forEach(m => {
+                        if (m && m.winner && (m.p1 === playerId || m.p2 === playerId) && m.type !== 'bye') {
+                            tMatches.push({
+                                isWin: m.winner === playerId,
+                                type: m.type || 'close'
+                            });
+                        }
+                    });
+                });
+                return tMatches;
+            };
+
             const renderRecentForm = (playerId) => {
                 const pObj = players.find(p => p.id === playerId);
-                if (!pObj || !pObj.recentMatches || pObj.recentMatches.length === 0) return null;
-                const recent3 = pObj.recentMatches.slice(0, 3);
+                if (!pObj) return null;
+                
+                const preTourney = pObj.recentMatches ? [...pObj.recentMatches].slice(0, 3).reverse() : [];
+                const inTourney = getTournamentMatches(playerId);
+                
+                if (preTourney.length === 0 && inTourney.length === 0) return null;
+
                 return (
-                    <div className="flex gap-1.5 justify-center mb-6">
-                        {recent3.map((m, i) => (
-                            <div key={i} title={m.isWin ? 'Win' : 'Loss'} className={`w-6 h-6 flex items-center justify-center rounded-sm text-[11px] font-bold ${
-                                m.isWin 
-                                    ? (m.type === 'lopsided' ? 'bg-[#059669] text-royal-950' : 'bg-[#059669]/20 text-[#059669] border border-[#059669]/50') 
-                                    : (m.type === 'lopsided' ? 'bg-[#be123c] text-white' : 'bg-[#be123c]/20 text-[#e11d48] border border-[#be123c]/50')
-                            }`}>
-                                {m.isWin ? 'W' : 'L'}
+                    <div className="flex items-center justify-center gap-2 mb-6">
+                        {preTourney.length > 0 && (
+                            <div className="flex gap-1.5">
+                                {preTourney.map((m, i) => (
+                                    <div key={`pre-${i}`} title={m.isWin ? 'Win (Prior)' : 'Loss (Prior)'} className={`w-6 h-6 flex items-center justify-center rounded-sm text-[11px] font-bold ${
+                                        m.isWin 
+                                            ? (m.type === 'lopsided' ? 'bg-[#059669] text-royal-950' : 'bg-[#059669]/20 text-[#059669] border border-[#059669]/50') 
+                                            : (m.type === 'lopsided' ? 'bg-[#be123c] text-white' : 'bg-[#be123c]/20 text-[#fb7185] border border-[#be123c]/50')
+                                    }`}>
+                                        {m.isWin ? 'W' : 'L'}
+                                    </div>
+                                ))}
                             </div>
-                        ))}
+                        )}
+                        
+                        {preTourney.length > 0 && inTourney.length > 0 && (
+                            <div className="w-px h-6 bg-royal-700 mx-1"></div>
+                        )}
+
+                        {inTourney.length > 0 && (
+                            <div className="flex gap-1.5 relative">
+                                {inTourney.map((m, i) => (
+                                    <div key={`in-${i}`} title={m.isWin ? 'Win (Current)' : 'Loss (Current)'} className={`relative w-6 h-6 flex items-center justify-center rounded-sm text-[11px] font-bold ring-1 ring-offset-1 ring-offset-royal-950 ring-gold-500/70 shadow-[0_0_8px_rgba(212,175,55,0.4)] ${
+                                        m.isWin 
+                                            ? (m.type === 'lopsided' ? 'bg-[#059669] text-royal-950' : 'bg-[#059669]/20 text-[#059669] border border-[#059669]/50') 
+                                            : (m.type === 'lopsided' ? 'bg-[#be123c] text-white' : 'bg-[#be123c]/20 text-[#fb7185] border border-[#be123c]/50')
+                                    }`}>
+                                        {m.isWin ? 'W' : 'L'}
+                                    </div>
+                                ))}
+                            </div>
+                        )}
                     </div>
                 );
             };
@@ -2317,6 +2426,24 @@
                 return { p1Wins, p2Wins, total };
             }, [resolvingMatch, allTournaments]);
 
+            const getTournamentMatches = (playerId) => {
+                let tMatches = [];
+                groupMatches.forEach(m => {
+                    if (m && m.winner && (m.p1 === playerId || m.p2 === playerId)) {
+                        tMatches.push({ isWin: m.winner === playerId, type: m.type || 'close' });
+                    }
+                });
+                knockout.forEach(round => {
+                    if (!Array.isArray(round)) return;
+                    round.forEach(m => {
+                        if (m && m.winner && (m.p1 === playerId || m.p2 === playerId)) {
+                            tMatches.push({ isWin: m.winner === playerId, type: m.type || 'close' });
+                        }
+                    });
+                });
+                return tMatches;
+            };
+
             const renderStandingsTable = (groupName, standings) => (
                 <div className="bg-royal-800 rounded-xl border border-royal-700 overflow-hidden shadow-lg w-full">
                     <div className="bg-royal-950/80 p-3 border-b border-royal-700 font-bold text-white flex justify-between">
@@ -2358,19 +2485,46 @@
 
             const renderRecentForm = (playerId) => {
                 const pObj = players.find(p => p.id === playerId);
-                if (!pObj || !pObj.recentMatches || pObj.recentMatches.length === 0) return null;
-                const recent3 = pObj.recentMatches.slice(0, 3);
+                if (!pObj) return null;
+                
+                const preTourney = pObj.recentMatches ? [...pObj.recentMatches].slice(0, 3).reverse() : [];
+                const inTourney = getTournamentMatches(playerId);
+                
+                if (preTourney.length === 0 && inTourney.length === 0) return null;
+
                 return (
-                    <div className="flex gap-1.5 justify-center mb-6">
-                        {recent3.map((m, i) => (
-                            <div key={i} title={m.isWin ? 'Win' : 'Loss'} className={`w-6 h-6 flex items-center justify-center rounded-sm text-[11px] font-bold ${
-                                m.isWin 
-                                    ? (m.type === 'lopsided' ? 'bg-[#059669] text-royal-950' : 'bg-[#059669]/20 text-[#059669] border border-[#059669]/50') 
-                                    : (m.type === 'lopsided' ? 'bg-[#be123c] text-white' : 'bg-[#be123c]/20 text-[#e11d48] border border-[#be123c]/50')
-                            }`}>
-                                {m.isWin ? 'W' : 'L'}
+                    <div className="flex items-center justify-center gap-2 mb-6">
+                        {preTourney.length > 0 && (
+                            <div className="flex gap-1.5">
+                                {preTourney.map((m, i) => (
+                                    <div key={`pre-${i}`} title={m.isWin ? 'Win (Prior)' : 'Loss (Prior)'} className={`w-6 h-6 flex items-center justify-center rounded-sm text-[11px] font-bold ${
+                                        m.isWin 
+                                            ? (m.type === 'lopsided' ? 'bg-[#059669] text-royal-950' : 'bg-[#059669]/20 text-[#059669] border border-[#059669]/50') 
+                                            : (m.type === 'lopsided' ? 'bg-[#be123c] text-white' : 'bg-[#be123c]/20 text-[#fb7185] border border-[#be123c]/50')
+                                    }`}>
+                                        {m.isWin ? 'W' : 'L'}
+                                    </div>
+                                ))}
                             </div>
-                        ))}
+                        )}
+                        
+                        {preTourney.length > 0 && inTourney.length > 0 && (
+                            <div className="w-px h-6 bg-royal-700 mx-1"></div>
+                        )}
+
+                        {inTourney.length > 0 && (
+                            <div className="flex gap-1.5 relative">
+                                {inTourney.map((m, i) => (
+                                    <div key={`in-${i}`} title={m.isWin ? 'Win (Current)' : 'Loss (Current)'} className={`relative w-6 h-6 flex items-center justify-center rounded-sm text-[11px] font-bold ring-1 ring-offset-1 ring-offset-royal-950 ring-gold-500/70 shadow-[0_0_8px_rgba(212,175,55,0.4)] ${
+                                        m.isWin 
+                                            ? (m.type === 'lopsided' ? 'bg-[#059669] text-royal-950' : 'bg-[#059669]/20 text-[#059669] border border-[#059669]/50') 
+                                            : (m.type === 'lopsided' ? 'bg-[#be123c] text-white' : 'bg-[#be123c]/20 text-[#fb7185] border border-[#be123c]/50')
+                                    }`}>
+                                        {m.isWin ? 'W' : 'L'}
+                                    </div>
+                                ))}
+                            </div>
+                        )}
                     </div>
                 );
             };
@@ -2606,9 +2760,9 @@
                         <div className="p-6 border-b border-royal-800 flex items-center gap-2 text-xl font-bold text-white"><Trophy size={24} className="text-gold-500"/><span>SNB Tour</span></div>
                         <div className="flex-1 py-4 space-y-1">
                             <button onClick={() => navigateTo('dashboard')} className={`w-full flex items-center gap-3 px-6 py-3 font-medium transition-colors ${activeTab === 'dashboard' ? 'bg-gold-500/10 text-gold-500 border-r-4 border-gold-500' : 'text-royal-300 hover:bg-royal-800 hover:text-royal-100'}`}><Activity size={20}/>Dashboard</button>
-                            <button onClick={() => navigateTo('analytics')} className={`w-full flex items-center gap-3 px-6 py-3 font-medium transition-colors ${activeTab === 'analytics' ? 'bg-gold-500/10 text-gold-500 border-r-4 border-gold-500' : 'text-royal-300 hover:bg-royal-800 hover:text-royal-100'}`}><TrendingUp size={20}/>Analytics</button>
                             <button onClick={() => navigateTo('players')} className={`w-full flex items-center gap-3 px-6 py-3 font-medium transition-colors ${activeTab === 'players' ? 'bg-gold-500/10 text-gold-500 border-r-4 border-gold-500' : 'text-royal-300 hover:bg-royal-800 hover:text-royal-100'}`}><Users size={20}/>Players</button>
                             <button onClick={() => navigateTo('tournaments')} className={`w-full flex items-center gap-3 px-6 py-3 font-medium transition-colors ${activeTab === 'tournaments' ? 'bg-gold-500/10 text-gold-500 border-r-4 border-gold-500' : 'text-royal-300 hover:bg-royal-800 hover:text-royal-100'}`}><Swords size={20}/>Tournaments</button>
+                            <button onClick={() => navigateTo('analytics')} className={`w-full flex items-center gap-3 px-6 py-3 font-medium transition-colors ${activeTab === 'analytics' ? 'bg-gold-500/10 text-gold-500 border-r-4 border-gold-500' : 'text-royal-300 hover:bg-royal-800 hover:text-royal-100'}`}><TrendingUp size={20}/>Analytics</button>
                         </div>
                     </nav>
                     <main className="flex-1 flex flex-col overflow-hidden">
@@ -2616,9 +2770,9 @@
                             <div className="flex items-center gap-2 font-bold text-gold-500 mr-4"><Trophy size={20} className="text-gold-500"/><span>SNB Tour</span></div>
                             <div className="flex gap-4">
                                 <button onClick={() => navigateTo('dashboard')} className={activeTab === 'dashboard' ? 'text-gold-500' : 'text-royal-400'}><Activity/></button>
-                                <button onClick={() => navigateTo('analytics')} className={activeTab === 'analytics' ? 'text-gold-500' : 'text-royal-400'}><TrendingUp/></button>
                                 <button onClick={() => navigateTo('players')} className={activeTab === 'players' ? 'text-gold-500' : 'text-royal-400'}><Users/></button>
                                 <button onClick={() => navigateTo('tournaments')} className={activeTab === 'tournaments' ? 'text-gold-500' : 'text-royal-400'}><Swords/></button>
+                                <button onClick={() => navigateTo('analytics')} className={activeTab === 'analytics' ? 'text-gold-500' : 'text-royal-400'}><TrendingUp/></button>
                             </div>
                         </div>
                         <div className="flex-1 overflow-auto p-4 md:p-8">
