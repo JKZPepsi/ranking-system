@@ -297,6 +297,67 @@
         };
 
         var calculatePlayerRankings = (players, tournaments) => {
+            const completedTournaments = tournaments
+                .filter(t => t.status === 'completed')
+                .sort((a, b) => (b.completedAt || 0) - (a.completedAt || 0));
+
+            return players.map(player => {
+                let recentTournaments = [];
+                let recentMatches = [];
+                let totalPoints = 0;
+                let careerPoints = 0; 
+                let totalW = 0, totalL = 0;
+
+                for (const t of completedTournaments) {
+                    
+                    // Match Form Extraction (Up to 7 matches)
+                    if (t.format === 'atp_finals') {
+                        let knockout = [];
+                        let groupMatches = [];
+                        try { knockout = typeof t.bracket === 'string' ? JSON.parse(t.bracket) : (t.bracket || []); } catch(e){}
+                        try { groupMatches = typeof t.groupMatches === 'string' ? JSON.parse(t.groupMatches) : (t.groupMatches || []); } catch(e){}
+                        if (!Array.isArray(knockout)) knockout = [];
+                        if (!Array.isArray(groupMatches)) groupMatches = [];
+                        
+                        [...knockout].reverse().forEach(round => {
+                            if (!Array.isArray(round)) return;
+                            round.forEach(m => {
+                                if (m && (m.p1 === player.id || m.p2 === player.id) && m.winner && recentMatches.length < 7) {
+                                    recentMatches.push({ isWin: m.winner === player.id, type: m.type || 'close' });
+                                }
+                            });
+                        });
+                        [...groupMatches].reverse().forEach(m => {
+                            if (m && (m.p1 === player.id || m.p2 === player.id) && m.winner && recentMatches.length < 7) {
+                                    recentMatches.push({ isWin: m.winner === player.id, type: m.type || 'close' });
+                            }
+                        });
+                    } else {
+                        let parsedBracket = [];
+                        try { parsedBracket = typeof t.bracket === 'string' ? JSON.parse(t.bracket) : t.bracket; } catch(e){}
+                        if (parsedBracket && Array.isArray(parsedBracket)) {
+                            for (let rIdx = parsedBracket.length - 1; rIdx >= 0; rIdx--) {
+                                if (!Array.isArray(parsedBracket[rIdx])) continue;
+                                parsedBracket[rIdx].forEach(match => {
+                                    if (match && (match.p1 === player.id || match.p2 === player.id) && match.winner && match.type !== 'bye') {
+                                        if (recentMatches.length < 7) {
+                                            recentMatches.push({ isWin: match.winner === player.id, type: match.type || 'close' });
+                                        }
+                                    }
+                                });
+                            }
+                        }
+                    }
+
+                    // Tournament Points Extraction
+                    const res = getTournamentPointsAndResult(player.id, t);
+                    if (res.played) {
+                        careerPoints += res.pts; // ALWAYS ACCUMULATES (Lifetime)
+                        totalW += res.w;
+                        totalL += res.l;
+                        
+                        if (recentTournaments.length < 20) {
+                            totalPoints += res.pts; // ONLY ACCUMULATES LAST 20
                             
                             let totalRounds = 0;
                             if (t.format === 'atp_finals') {
@@ -474,7 +535,7 @@
                 ];
             };
 
-        var calcGroupStandings = (groupId, matches) => {
+            return {
                 format: 'atp_finals',
                 groups: { A: groupA.map(p=>p.id), B: groupB.map(p=>p.id) },
                 groupMatches: JSON.stringify([...makeMatches(groupA, 'A'), ...makeMatches(groupB, 'B')]),
@@ -485,7 +546,7 @@
             };
         };
 
-        const calcGroupStandings = (groupId, matches) => {
+        var calcGroupStandings = (groupId, matches) => {
             const scores = {};
             if (!Array.isArray(matches)) return [];
             matches.filter(m => m && m.group === groupId).forEach(m => {
@@ -2555,7 +2616,7 @@
                                 <ArrowLeft className="w-4 h-4" /> Back to Tournaments
                             </button>
                             <h1 className="text-3xl font-bold text-white flex items-center gap-3">
-                                <span className={`${tierConf.color} text-sm uppercase tracking-widest border border-royal-800 px-2 py-1 rounded bg-royal-900`}>SNB Internationals</span>
+                                <span className="text-emerald-500 text-sm uppercase tracking-widest border border-emerald-500/50 px-2 py-1 rounded bg-emerald-500/20">SNB Internationals</span>
                                 {tournament.name}
                                 {tournament.status === 'completed' && <span className="bg-[#059669]/20 text-[#059669] text-sm px-2 py-1 rounded font-bold uppercase">Completed</span>}
                             </h1>
