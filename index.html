@@ -307,6 +307,7 @@
                 let totalPoints = 0;
                 let careerPoints = 0; 
                 let totalW = 0, totalL = 0;
+                let hasPlayedAny = false;
 
                 for (const t of completedTournaments) {
                     
@@ -352,6 +353,7 @@
                     // Tournament Points Extraction
                     const res = getTournamentPointsAndResult(player.id, t);
                     if (res.played) {
+                        hasPlayedAny = true;
                         careerPoints += res.pts; // ALWAYS ACCUMULATES (Lifetime)
                         totalW += res.w;
                         totalL += res.l;
@@ -381,7 +383,7 @@
                         }
                     }
                 }
-                return { ...player, points: totalPoints, careerPoints, recentTournaments, recentMatches, stats: { wins: totalW, losses: totalL } };
+                return { ...player, points: totalPoints, careerPoints, recentTournaments, recentMatches, stats: { wins: totalW, losses: totalL }, hasPlayedAny };
             })
             .sort((a, b) => b.points - a.points || (a.name || '').localeCompare(b.name || ''))
             .map((p, index) => ({ ...p, rank: index + 1 }));
@@ -400,10 +402,16 @@
                 const relevantTournaments = completedAsc.slice(0, index + 1);
                 
                 // Run the exact same leaderboard calculation engine for this snapshot in time.
-                // This completely eliminates any discrepancy between the charts and the live leaderboard!
                 const snapshotRankings = calculatePlayerRankings(playersRaw, relevantTournaments);
                 
-                const playerPoints = snapshotRankings.map(p => ({
+                // Filter to only those who have debuted by this snapshot
+                const activeRankings = snapshotRankings.filter(p => p.hasPlayedAny);
+                
+                // Re-rank the active players to prevent empty gaps in the ladder
+                activeRankings.sort((a, b) => b.points - a.points || (a.name || '').localeCompare(b.name || ''));
+                activeRankings.forEach((p, idx) => p.rank = idx + 1);
+                
+                const playerPoints = activeRankings.map(p => ({
                     id: p.id, 
                     name: p.name, 
                     pts: p.points, 
@@ -566,11 +574,12 @@
 
         // --- Custom Views ---
 
-        function IndividualPlayerChart({ history, type }) {
+        function IndividualPlayerChart({ history, type, filterPlayed = false }) {
             const [range, setRange] = useState(10);
             const [hoveredPointData, setHoveredPointData] = useState(null);
 
-            const data = history.slice(range === 'all' ? 0 : -range);
+            const rawData = filterPlayed ? history.filter(d => d.played) : history;
+            const data = rawData.slice(range === 'all' ? 0 : -range);
             if (data.length < 1) return <p className="text-royal-300 text-sm mt-4">Not enough tournament history.</p>;
 
             const width = 1000;
@@ -600,6 +609,11 @@
                 const val = type === 'rank' ? d.rank : (type === 'careerPoints' ? d.careerPoints : d.points);
                 return `${i === 0 ? 'M' : 'L'} ${getX(i)} ${getY(val)}`;
             }).join(' ');
+
+            let pathD2 = "";
+            if (type === 'points') {
+                pathD2 = data.map((d, i) => `${i === 0 ? 'M' : 'L'} ${getX(i)} ${getY(d.tournamentPoints)}`).join(' ');
+            }
 
             const labelStep = Math.max(1, Math.ceil(data.length / 15));
 
@@ -644,8 +658,25 @@
                                 })()
                             )}
                             
+                            {type === 'points' && data.length > 1 && <path d={pathD2} fill="none" stroke="#38bdf8" strokeWidth="2" strokeDasharray="5 5" strokeLinejoin="round" />}
                             {data.length > 1 && <path d={pathD} fill="none" stroke="#d4af37" strokeWidth="3" strokeLinejoin="round" />}
                             
+                            {type === 'points' && data.map((d, i) => {
+                                const ptX = getX(i);
+                                const ptY2 = getY(d.tournamentPoints);
+                                const showLabel = i % labelStep === 0 || i === data.length - 1;
+                                return (
+                                    <g key={`tpt-${i}`}>
+                                        <circle cx={ptX} cy={ptY2} r={hoveredPointData && hoveredPointData.date === d.date ? "6" : "4"} fill="#051611" stroke="#38bdf8" strokeWidth="2" style={{ transition: 'r 0.2s ease' }} />
+                                        {showLabel && (
+                                            <text x={ptX} y={ptY2 - 10} fill="#38bdf8" fontSize="11" fontWeight="700" textAnchor="middle" stroke="#051611" strokeWidth="3" paintOrder="stroke">
+                                                +{d.tournamentPoints}
+                                            </text>
+                                        )}
+                                    </g>
+                                )
+                            })}
+
                             {data.map((d, i) => {
                                 const ptX = getX(i);
                                 const ptY = getY(type === 'rank' ? d.rank : (type === 'careerPoints' ? d.careerPoints : d.points));
@@ -686,6 +717,7 @@
                                 <span className={type === 'rank' ? "text-emerald-400 font-normal ml-2" : "text-gold-500 font-normal ml-2"}>
                                     | {type === 'rank' ? `Rank #${hoveredPointData.rank}` : `${(type === 'careerPoints' ? hoveredPointData.careerPoints : hoveredPointData.points).toLocaleString()} pts`}
                                 </span>
+                                {type === 'points' && <span className="text-sky-400 font-normal ml-2">(+{hoveredPointData.tournamentPoints} this event)</span>}
                             </span>
                         ) : (
                             <span className="text-royal-300 text-sm font-medium">Hover over a point for tournament details</span>
@@ -1619,6 +1651,10 @@
                 return globalHist.map(h => {
                     const pStanding = h.standings.find(s => s.id === player.id);
                     const ach = achievements.find(a => a.tournamentId === h.tournamentId);
+                    
+                    const t = tournaments.find(tourn => tourn.id === h.tournamentId);
+                    const res = t ? getTournamentPointsAndResult(player.id, t) : { played: false, pts: 0 };
+                    
                     return {
                         tournamentId: h.tournamentId,
                         tournamentName: h.tournamentName,
@@ -1626,6 +1662,8 @@
                         rank: pStanding ? pStanding.rank : 0,
                         points: pStanding ? pStanding.pts : 0,
                         careerPoints: pStanding ? pStanding.careerPoints : 0,
+                        tournamentPoints: res.played ? res.pts : 0,
+                        played: res.played,
                         achievement: ach || null
                     };
                 }).filter(h => h.rank > 0);
@@ -1746,15 +1784,16 @@
                                 </div>
                                 <div className="md:col-span-2 lg:col-span-3 bg-royal-900 p-6 rounded-xl border border-royal-800 shadow-md">
                                     <h2 className="text-2xl font-bold text-white flex items-center gap-2 mb-6"><TrendingUp className="text-gold-500"/> Career Ranking Trajectory</h2>
-                                    <IndividualPlayerChart history={rankingHistory} type="rank" />
+                                    <IndividualPlayerChart history={rankingHistory} type="rank" filterPlayed={false} />
                                 </div>
                                 <div className="md:col-span-2 lg:col-span-3 bg-royal-900 p-6 rounded-xl border border-royal-800 shadow-md">
                                     <h2 className="text-2xl font-bold text-white flex items-center gap-2 mb-6"><BarChart2 className="text-gold-500"/> Rolling 20-Tournament Points</h2>
-                                    <IndividualPlayerChart history={rankingHistory} type="points" />
+                                    <p className="text-royal-300 text-sm mb-4">The solid line shows total rolling points for events attended. The blue dotted line shows the exact points earned at each specific event.</p>
+                                    <IndividualPlayerChart history={rankingHistory} type="points" filterPlayed={true} />
                                 </div>
                                 <div className="md:col-span-2 lg:col-span-3 bg-royal-900 p-6 rounded-xl border border-royal-800 shadow-md">
                                     <h2 className="text-2xl font-bold text-white flex items-center gap-2 mb-6"><BarChart2 className="text-gold-500"/> Career Points Accumulation</h2>
-                                    <IndividualPlayerChart history={rankingHistory} type="careerPoints" />
+                                    <IndividualPlayerChart history={rankingHistory} type="careerPoints" filterPlayed={true} />
                                 </div>
                             </div>
                         </>
