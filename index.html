@@ -93,41 +93,54 @@
 
         // --- Configuration & Constants ---
         
+        let firebaseConfig = {
+            apiKey: "AIzaSyDHfnWgaeNG2-lZBSmPpa8JdZgUHNPMh4w",
+            authDomain: "prorank-7b6b3.firebaseapp.com",
+            projectId: "prorank-7b6b3",
+            storageBucket: "prorank-7b6b3.firebasestorage.app",
+            messagingSenderId: "991950932964",
+            appId: "1:991950932964:web:db0346d0aa7d23b5ac55f1"
+        };
+        if (typeof __firebase_config !== 'undefined') {
+            try { firebaseConfig = JSON.parse(__firebase_config); } catch (e) { console.error(e); }
+        }
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'snb-tour-global';
+
         const TOURNAMENT_TIERS = {
             'grand_slam': {
                 name: 'Grand Slam',
                 points: { WINNER: 2000, FINALIST: 1200, SF: 720, QF: 360, R16: 180, R32: 90, R64: 45 },
                 excludeTop: 0, wcCount: { 64: 16 },
                 color: 'text-purple-400', bg: 'bg-purple-500/20', border: 'border-purple-500/50',
-                hex: '#c084fc', borderHover: 'hover:border-purple-500', shadowHover: 'hover:shadow-purple-500/20'
+                hex: '#c084fc', shadowHover: 'hover:shadow-purple-500/20'
             },
             'finals': {
                 name: 'SNB Internationals',
                 points: { WINNER: 1500, FINALIST: 1000, SF: 400, RR_WIN: 200 },
                 excludeTop: 0, wcCount: { 8: 0 },
                 color: 'text-cyan-400', bg: 'bg-cyan-500/20', border: 'border-cyan-500/50',
-                hex: '#22d3ee', borderHover: 'hover:border-cyan-500', shadowHover: 'hover:shadow-cyan-500/20'
+                hex: '#22d3ee', shadowHover: 'hover:shadow-cyan-500/20'
             },
             'major': {
                 name: 'Major',
                 points: { WINNER: 1000, FINALIST: 600, SF: 360, QF: 180, R16: 90, R32: 45, R64: 20 },
                 excludeTop: 0, wcCount: { 64: 16, 32: 8 },
                 color: 'text-yellow-400', bg: 'bg-yellow-500/20', border: 'border-yellow-500/50',
-                hex: '#facc15', borderHover: 'hover:border-yellow-500', shadowHover: 'hover:shadow-yellow-500/20'
+                hex: '#facc15', shadowHover: 'hover:shadow-yellow-500/20'
             },
             'pro': {
                 name: 'Pro Series',
                 points: { WINNER: 500, FINALIST: 300, SF: 180, QF: 90, R16: 45, R32: 20, R64: 10 },
                 excludeTop: 4, wcCount: { 64: 16, 32: 8, 16: 4 },
-                color: 'text-orange-400', bg: 'bg-orange-500/10', border: 'border-orange-500/30',
-                hex: '#fb923c', borderHover: 'hover:border-orange-500', shadowHover: 'hover:shadow-orange-500/20'
+                color: 'text-sky-400', bg: 'bg-sky-500/20', border: 'border-sky-500/50',
+                hex: '#38bdf8', shadowHover: 'hover:shadow-sky-500/20'
             },
             'challenger': {
                 name: 'Challenger',
                 points: { WINNER: 250, FINALIST: 150, SF: 90, QF: 45, R16: 20, R32: 10, R64: 5 },
                 excludeTop: 8, wcCount: { 64: 16, 32: 8, 16: 4, 8: 2 },
-                color: 'text-royal-300', bg: 'bg-royal-700', border: 'border-royal-600',
-                hex: '#789e90', borderHover: 'hover:border-royal-400', shadowHover: 'hover:shadow-royal-400/20'
+                color: 'text-green-400', bg: 'bg-green-500/20', border: 'border-green-500/50',
+                hex: '#4ade80', shadowHover: 'hover:shadow-green-500/20'
             }
         };
 
@@ -154,16 +167,18 @@
             return CHART_COLORS[Math.abs(hash) % CHART_COLORS.length];
         };
 
-        const firebaseConfig = {
-            apiKey: "AIzaSyDHfnWgaeNG2-lZBSmPpa8JdZgUHNPMh4w",
-            authDomain: "prorank-7b6b3.firebaseapp.com",
-            projectId: "prorank-7b6b3",
-            storageBucket: "prorank-7b6b3.firebasestorage.app",
-            messagingSenderId: "991950932964",
-            appId: "1:991950932964:web:db0346d0aa7d23b5ac55f1"
+        let firebaseConfig = {
+            apiKey: "",
+            authDomain: "",
+            projectId: "",
+            storageBucket: "",
+            messagingSenderId: "",
+            appId: ""
         };
-
-        const appId = 'pro-rank-global';
+        if (typeof __firebase_config !== 'undefined') {
+            try { firebaseConfig = JSON.parse(__firebase_config); } catch (e) { console.error(e); }
+        }
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'snb-tour-global';
 
         // --- Core Utility Functions ---
 
@@ -2247,7 +2262,7 @@
                             )}
                         </div>
                     </div>
-                    <div className={`flex-1 overflow-auto bg-royal-950/50 border ${tierConf.border} rounded-xl p-8 min-h-[800px] bracket-container`}>
+                    <div className={`flex-1 overflow-auto bg-royal-950/50 border border-royal-800 rounded-xl p-8 min-h-[800px] bracket-container`}>
                         <div className="flex min-w-max h-full">
                             {parsedBracket.map((round, rIdx) => {
                                 if (!Array.isArray(round)) return null;
@@ -2263,13 +2278,15 @@
                                             
                                             return (
                                                 <div key={match.id} className="flex-1 flex flex-col justify-center relative py-2">
-                                                    <div onClick={() => handleMatchClick(rIdx, mIdx, match)} className={`relative z-10 bg-royal-900 border-2 rounded-lg transition-all shadow-md ${isReady ? `${tierConf.borderHover} cursor-pointer hover:scale-105 ${tierConf.shadowHover}` : match.winner ? 'border-royal-600' : 'border-royal-800 opacity-60'}`} style={{ borderColor: isReady ? undefined : (match.winner ? tierConf.hex : undefined) }}>
-                                                        <div className={`p-2.5 flex justify-between items-center border-b border-royal-800 ${match.winner === match.p1 && !isBye ? 'bg-royal-800/50' : ''}`}><span className={`text-sm font-medium flex items-center gap-2 ${match.winner && match.winner !== match.p1 && !isBye ? 'text-royal-400 line-through' : 'text-royal-100'}`}>{match.p1 ? <>{getFlag(p1.nationality)} {p1.name}</> : 'TBD'}</span>{match.winner === match.p1 && !isBye && <CheckCircle size={16} className="text-[#059669]"/>}</div>
-                                                        <div className={`p-2.5 flex justify-between items-center ${match.winner === match.p2 && !isBye ? 'bg-royal-800/50' : ''}`}><span className={`text-sm font-medium flex items-center gap-2 ${match.winner && match.winner !== match.p2 && !isBye ? 'text-royal-400 line-through' : 'text-royal-100'}`}>{match.p2 ? <>{getFlag(p2.nationality)} {p2.name}</> : (isBye ? <span className="text-royal-400 italic font-bold tracking-widest">BYE</span> : 'TBD')}</span>{match.winner === match.p2 && !isBye && <CheckCircle size={16} className="text-[#059669]"/>}</div>
+                                                    <div onClick={() => handleMatchClick(rIdx, mIdx, match)} 
+                                                         className={`relative z-10 border border-royal-700 rounded-lg transition-all shadow-md overflow-hidden ${isReady ? `cursor-pointer hover:scale-105 ${tierConf.shadowHover}` : match.winner ? '' : 'opacity-60'}`} 
+                                                         style={{ backgroundColor: (match.winner || isReady) && !isBye ? `${tierConf.hex}1A` : '#051611' }}>
+                                                        <div className={`p-2.5 flex justify-between items-center border-b border-royal-800/50 ${match.winner === match.p1 && !isBye ? 'bg-black/20' : ''}`}><span className={`text-sm font-medium flex items-center gap-2 ${match.winner && match.winner !== match.p1 && !isBye ? 'text-royal-500 line-through' : 'text-white'}`}>{match.p1 ? <>{getFlag(p1.nationality)} {p1.name}</> : 'TBD'}</span>{match.winner === match.p1 && !isBye && <CheckCircle size={16} className="text-[#059669]"/>}</div>
+                                                        <div className={`p-2.5 flex justify-between items-center ${match.winner === match.p2 && !isBye ? 'bg-black/20' : ''}`}><span className={`text-sm font-medium flex items-center gap-2 ${match.winner && match.winner !== match.p2 && !isBye ? 'text-royal-500 line-through' : 'text-white'}`}>{match.p2 ? <>{getFlag(p2.nationality)} {p2.name}</> : (isBye ? <span className="text-royal-400 italic font-bold tracking-widest">BYE</span> : 'TBD')}</span>{match.winner === match.p2 && !isBye && <CheckCircle size={16} className="text-[#059669]"/>}</div>
                                                     </div>
-                                                    {rIdx > 0 && <div className="absolute -left-6 top-1/2 w-6 border-t-2 z-0" style={{ borderColor: tierConf.hex }}></div>}
-                                                    {rIdx < totalRounds - 1 && <div className="absolute -right-6 top-1/2 w-6 border-t-2 z-0" style={{ borderColor: tierConf.hex }}></div>}
-                                                    {rIdx < totalRounds - 1 && mIdx % 2 === 0 && <div className="absolute -right-6 top-1/2 w-[2px] z-0" style={{ height: '100%', backgroundColor: tierConf.hex }}></div>}
+                                                    {rIdx > 0 && <div className="absolute -left-6 top-1/2 w-6 border-t-2 border-royal-700 z-0"></div>}
+                                                    {rIdx < totalRounds - 1 && <div className="absolute -right-6 top-1/2 w-6 border-t-2 border-royal-700 z-0"></div>}
+                                                    {rIdx < totalRounds - 1 && mIdx % 2 === 0 && <div className="absolute -right-6 top-1/2 w-[2px] bg-royal-700 z-0" style={{ height: '100%' }}></div>}
                                                 </div>
                                             );
                                         })}
@@ -2280,13 +2297,13 @@
                     </div>
                     {resolvingMatch && (
                         <div className="fixed inset-0 bg-black/90 backdrop-blur-sm z-50 flex items-center justify-center p-4 z-[100]">
-                            <div className="bg-royal-900 rounded-2xl p-6 w-full max-w-4xl border overflow-y-auto max-h-[95vh] shadow-2xl" style={{ borderColor: tierConf.hex }}>
-                                <h2 className="text-2xl font-bold mb-4 text-center uppercase tracking-widest" style={{ color: tierConf.hex }}>Resolve Match</h2>
+                            <div className="bg-royal-900 rounded-2xl p-6 w-full max-w-4xl border border-royal-800 overflow-y-auto max-h-[95vh] shadow-2xl">
+                                <h2 className="text-2xl font-bold mb-4 text-center text-white uppercase tracking-widest">Resolve Match</h2>
                                 
                                 {matchH2H.total > 0 ? (
                                     <div className="text-center mb-8">
                                         <div className="inline-block bg-royal-950 border border-royal-800 rounded-full px-6 py-2 text-sm font-medium text-royal-200">
-                                            Head-to-Head: <span className="text-white font-bold ml-2">{getPlayer(resolvingMatch.p1).name} <span className="mx-1" style={{ color: tierConf.hex }}>{matchH2H.p1Wins} - {matchH2H.p2Wins}</span> {getPlayer(resolvingMatch.p2).name}</span>
+                                            Head-to-Head: <span className="text-white font-bold ml-2">{getPlayer(resolvingMatch.p1).name} <span className="text-gold-500 mx-1">{matchH2H.p1Wins} - {matchH2H.p2Wins}</span> {getPlayer(resolvingMatch.p2).name}</span>
                                         </div>
                                     </div>
                                 ) : (
@@ -2306,18 +2323,18 @@
                                             <div key={idx} className="flex-1 bg-royal-950/30 border border-royal-800 rounded-xl p-6 flex flex-col items-center shadow-inner">
                                                 <div className="relative group w-full max-w-[280px] mb-6">
                                                     {imgs[iIdx] ? (
-                                                        <img src={imgs[iIdx]} className="w-full aspect-[3/4] rounded-xl object-cover border-4 shadow-2xl transition-all duration-300" style={{ borderColor: tierConf.hex }} />
+                                                        <img src={imgs[iIdx]} className="w-full aspect-[3/4] rounded-xl object-cover border-4 border-royal-700 shadow-2xl transition-all duration-300" />
                                                     ) : (
-                                                        <div className="w-full aspect-[3/4] bg-royal-800 rounded-xl border-4 flex items-center justify-center" style={{ borderColor: tierConf.hex }}><UserCircle size={64} className="text-royal-400"/></div>
+                                                        <div className="w-full aspect-[3/4] bg-royal-800 rounded-xl border-4 border-royal-700 flex items-center justify-center"><UserCircle size={64} className="text-royal-400"/></div>
                                                     )}
                                                     {imgs.length > 1 && (
                                                         <><button onClick={() => setIIdx(prev => (prev === 0 ? imgs.length-1 : prev-1))} className="absolute left-2 top-1/2 -translate-y-1/2 bg-black/60 hover:bg-black p-2 rounded-full text-white opacity-0 group-hover:opacity-100 transition-opacity"><ChevronLeft size={20}/></button>
                                                         <button onClick={() => setIIdx(prev => (prev === imgs.length-1 ? 0 : prev+1))} className="absolute right-2 top-1/2 -translate-y-1/2 bg-black/60 hover:bg-black p-2 rounded-full text-white opacity-0 group-hover:opacity-100 transition-opacity"><ChevronRight size={20}/></button>
-                                                        <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5 bg-black/40 px-2 py-1 rounded-full">{imgs.map((_, i) => <div key={i} className={`w-2 h-2 rounded-full ${i === iIdx ? '' : 'bg-white/40'}`} style={{ backgroundColor: i === iIdx ? tierConf.hex : undefined }} />)}</div></>
+                                                        <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5 bg-black/40 px-2 py-1 rounded-full">{imgs.map((_, i) => <div key={i} className={`w-2 h-2 rounded-full ${i === iIdx ? 'bg-gold-500' : 'bg-white/40'}`} />)}</div></>
                                                     )}
                                                 </div>
                                                 <h3 className="text-3xl font-black text-white uppercase text-center mb-1">{p.name}</h3>
-                                                <div className="font-medium mb-3 flex items-center justify-center gap-2" style={{ color: tierConf.hex }}><span className="text-2xl">{getFlag(p.nationality)}</span> {getCountryName(p.nationality)}</div>
+                                                <div className="text-gold-500 font-medium mb-3 flex items-center justify-center gap-2"><span className="text-2xl">{getFlag(p.nationality)}</span> {getCountryName(p.nationality)}</div>
                                                 {renderRecentForm(pid)}
                                                 <div className="w-full space-y-3 mt-auto">
                                                     <button onClick={() => submitResult(pid, 'close')} className="w-full bg-[#d4af37]/10 hover:bg-[#d4af37]/20 text-[#d4af37] border border-[#d4af37]/50 p-4 rounded-xl font-bold transition-colors">Win (Close Match)</button>
@@ -2529,46 +2546,19 @@
 
             const renderRecentForm = (playerId) => {
                 const pObj = players.find(p => p.id === playerId);
-                if (!pObj) return null;
-                
-                const preTourney = pObj.recentMatches ? [...pObj.recentMatches].slice(0, 3).reverse() : [];
-                const inTourney = getTournamentMatches(playerId);
-                
-                if (preTourney.length === 0 && inTourney.length === 0) return null;
-
+                if (!pObj || !pObj.recentMatches || pObj.recentMatches.length === 0) return null;
+                const recent3 = pObj.recentMatches.slice(0, 3);
                 return (
-                    <div className="flex items-center justify-center gap-2 mb-6">
-                        {preTourney.length > 0 && (
-                            <div className="flex gap-1.5">
-                                {preTourney.map((m, i) => (
-                                    <div key={`pre-${i}`} title={m.isWin ? 'Win (Prior)' : 'Loss (Prior)'} className={`w-6 h-6 flex items-center justify-center rounded-sm text-[11px] font-bold ${
-                                        m.isWin 
-                                            ? (m.type === 'lopsided' ? 'bg-[#059669] text-royal-950' : 'bg-[#059669]/20 text-[#059669] border border-[#059669]/50') 
-                                            : (m.type === 'lopsided' ? 'bg-[#be123c] text-white' : 'bg-[#be123c]/20 text-[#fb7185] border border-[#be123c]/50')
-                                    }`}>
-                                        {m.isWin ? 'W' : 'L'}
-                                    </div>
-                                ))}
+                    <div className="flex gap-1.5 justify-center mb-6">
+                        {recent3.map((m, i) => (
+                            <div key={i} title={m.isWin ? 'Win' : 'Loss'} className={`w-6 h-6 flex items-center justify-center rounded-sm text-[11px] font-bold ${
+                                m.isWin 
+                                    ? (m.type === 'lopsided' ? 'bg-[#059669] text-royal-950' : 'bg-[#059669]/20 text-[#059669] border border-[#059669]/50') 
+                                    : (m.type === 'lopsided' ? 'bg-[#be123c] text-white' : 'bg-[#be123c]/20 text-[#e11d48] border border-[#be123c]/50')
+                            }`}>
+                                {m.isWin ? 'W' : 'L'}
                             </div>
-                        )}
-                        
-                        {preTourney.length > 0 && inTourney.length > 0 && (
-                            <div className="w-px h-6 bg-royal-700 mx-1"></div>
-                        )}
-
-                        {inTourney.length > 0 && (
-                            <div className="flex gap-1.5 relative">
-                                {inTourney.map((m, i) => (
-                                    <div key={`in-${i}`} title={m.isWin ? 'Win (Current)' : 'Loss (Current)'} className={`relative w-6 h-6 flex items-center justify-center rounded-sm text-[11px] font-bold ring-1 ring-offset-1 ring-offset-royal-950 ring-gold-500/70 shadow-[0_0_8px_rgba(212,175,55,0.4)] ${
-                                        m.isWin 
-                                            ? (m.type === 'lopsided' ? 'bg-[#059669] text-royal-950' : 'bg-[#059669]/20 text-[#059669] border border-[#059669]/50') 
-                                            : (m.type === 'lopsided' ? 'bg-[#be123c] text-white' : 'bg-[#be123c]/20 text-[#fb7185] border border-[#be123c]/50')
-                                    }`}>
-                                        {m.isWin ? 'W' : 'L'}
-                                    </div>
-                                ))}
-                            </div>
-                        )}
+                        ))}
                     </div>
                 );
             };
@@ -2581,7 +2571,7 @@
                                 <ArrowLeft className="w-4 h-4" /> Back to Tournaments
                             </button>
                             <h1 className="text-3xl font-bold text-white flex items-center gap-3">
-                                <span className={`${tierConf.color} text-sm uppercase tracking-widest border ${tierConf.border} px-2 py-1 rounded ${tierConf.bg}`}>SNB Internationals</span>
+                                <span className="text-emerald-500 text-sm uppercase tracking-widest border border-emerald-500/50 px-2 py-1 rounded bg-emerald-500/20">SNB Internationals</span>
                                 {tournament.name}
                                 {tournament.status === 'completed' && <span className="bg-[#059669]/20 text-[#059669] text-sm px-2 py-1 rounded font-bold uppercase">Completed</span>}
                             </h1>
@@ -2613,7 +2603,7 @@
                                 const p1 = getPlayer(match.p1), p2 = getPlayer(match.p2);
                                 const isReady = !match.winner;
                                 return (
-                                    <div key={match.id} onClick={() => handleMatchClick('group', mIdx, match)} className={`bg-royal-900 border-2 rounded-xl p-3 shadow-md transition-all ${isReady ? `${tierConf.borderHover} hover:scale-105 cursor-pointer ${tierConf.shadowHover}` : 'border-royal-800/50 opacity-70'}`} style={{ borderColor: isReady ? undefined : (match.winner ? tierConf.hex : undefined) }}>
+                                    <div key={match.id} onClick={() => handleMatchClick('group', mIdx, match)} className={`bg-royal-900 border-2 rounded-xl p-3 shadow-md transition-all ${isReady ? 'border-gold-500 hover:scale-105 cursor-pointer shadow-gold-500/20' : 'border-royal-800/50 opacity-70'}`}>
                                         <div className="text-xs font-bold text-royal-400 mb-2 uppercase tracking-wider">Group {match.group}</div>
                                         <div className={`flex justify-between items-center mb-2 ${match.winner === match.p1 ? 'bg-royal-800/50 rounded px-1' : ''}`}><span className={`text-sm font-medium flex items-center gap-2 ${match.winner && match.winner !== match.p1 ? 'text-royal-400 line-through' : 'text-white'}`}>{getFlag(p1.nationality)} {p1.name}</span>{match.winner === match.p1 && <CheckCircle className="w-4 h-4 text-[#059669]" />}</div>
                                         <div className={`flex justify-between items-center ${match.winner === match.p2 ? 'bg-royal-800/50 rounded px-1' : ''}`}><span className={`text-sm font-medium flex items-center gap-2 ${match.winner && match.winner !== match.p2 ? 'text-royal-400 line-through' : 'text-white'}`}>{getFlag(p2.nationality)} {p2.name}</span>{match.winner === match.p2 && <CheckCircle className="w-4 h-4 text-[#059669]" />}</div>
@@ -2635,7 +2625,7 @@
                                     const p1 = getPlayer(match.p1), p2 = getPlayer(match.p2);
                                     const isReady = match.p1 && match.p2 && !match.winner && tournament.status !== 'completed';
                                     return (
-                                        <div key={match.id} onClick={() => handleMatchClick('sf', mIdx, match)} className={`bg-royal-900 border-2 rounded-xl p-3 shadow-md transition-all ${isReady ? `${tierConf.borderHover} hover:scale-105 cursor-pointer ${tierConf.shadowHover}` : match.winner ? 'border-royal-700 bg-royal-900/50' : 'border-royal-800/50 border-dashed opacity-50'}`} style={{ borderColor: isReady ? undefined : (match.winner ? tierConf.hex : undefined) }}>
+                                        <div key={match.id} onClick={() => handleMatchClick('sf', mIdx, match)} className={`bg-royal-900 border-2 rounded-xl p-3 shadow-md transition-all ${isReady ? 'border-gold-500 hover:scale-105 cursor-pointer shadow-gold-500/20' : match.winner ? 'border-royal-700 bg-royal-900/50' : 'border-royal-800/50 border-dashed opacity-50'}`}>
                                             <div className={`flex justify-between items-center mb-2 ${match.winner === match.p1 ? 'bg-royal-800/50 rounded px-1' : ''}`}><span className={`text-sm font-medium flex items-center gap-2 ${match.winner && match.winner !== match.p1 ? 'text-royal-400 line-through' : 'text-white'}`}>{match.p1 ? <>{getFlag(p1.nationality)} {p1.name}</> : 'TBD'}</span>{match.winner === match.p1 && <CheckCircle className="w-4 h-4 text-[#059669]" />}</div>
                                             <div className={`flex justify-between items-center ${match.winner === match.p2 ? 'bg-royal-800/50 rounded px-1' : ''}`}><span className={`text-sm font-medium flex items-center gap-2 ${match.winner && match.winner !== match.p2 ? 'text-royal-400 line-through' : 'text-white'}`}>{match.p2 ? <>{getFlag(p2.nationality)} {p2.name}</> : 'TBD'}</span>{match.winner === match.p2 && <CheckCircle className="w-4 h-4 text-[#059669]" />}</div>
                                         </div>
@@ -2643,19 +2633,19 @@
                                 })}
                             </div>
                             
-                            <div className="hidden md:block w-8 border-t-2 border-royal-700" style={{ borderColor: tierConf.hex }}></div>
+                            <div className="hidden md:block w-8 border-t-2 border-royal-700"></div>
 
                             {/* Final */}
                             <div className="flex flex-col gap-6 w-full md:w-80 relative">
-                                <div className="text-center font-bold text-sm tracking-wider uppercase mb-2 flex items-center justify-center gap-2" style={{ color: tierConf.hex }}><Trophy className="w-4 h-4"/> Championship</div>
+                                <div className="text-center text-gold-500 font-bold text-sm tracking-wider uppercase mb-2 flex items-center justify-center gap-2"><Trophy className="w-4 h-4"/> Championship</div>
                                 {knockout[1]?.map((match, mIdx) => {
                                     if (!match) return null;
                                     const p1 = getPlayer(match.p1), p2 = getPlayer(match.p2);
                                     const isReady = match.p1 && match.p2 && !match.winner && tournament.status !== 'completed';
                                     return (
-                                        <div key={match.id} onClick={() => handleMatchClick('f', mIdx, match)} className={`bg-royal-900 border-2 rounded-xl p-4 shadow-2xl transition-all ${isReady ? `${tierConf.borderHover} hover:scale-105 cursor-pointer ${tierConf.shadowHover}` : match.winner ? 'bg-royal-900/50' : 'border-royal-800/50 border-dashed opacity-50'}`} style={{ borderColor: isReady ? undefined : (match.winner ? tierConf.hex : undefined) }}>
-                                            <div className={`flex justify-between items-center mb-3 ${match.winner === match.p1 ? 'rounded px-2 py-1' : ''}`} style={{ backgroundColor: match.winner === match.p1 ? `${tierConf.hex}20` : undefined }}><span className={`text-base font-bold flex items-center gap-2 ${match.winner && match.winner !== match.p1 ? 'text-royal-400 line-through' : match.winner === match.p1 ? '' : 'text-white'}`} style={{ color: match.winner === match.p1 ? tierConf.hex : undefined }}>{match.p1 ? <>{getFlag(p1.nationality)} {p1.name}</> : 'TBD'}</span>{match.winner === match.p1 && <Trophy className="w-5 h-5" style={{ color: tierConf.hex }} />}</div>
-                                            <div className={`flex justify-between items-center ${match.winner === match.p2 ? 'rounded px-2 py-1' : ''}`} style={{ backgroundColor: match.winner === match.p2 ? `${tierConf.hex}20` : undefined }}><span className={`text-base font-bold flex items-center gap-2 ${match.winner && match.winner !== match.p2 ? 'text-royal-400 line-through' : match.winner === match.p2 ? '' : 'text-white'}`}>{match.p2 ? <>{getFlag(p2.nationality)} {p2.name}</> : 'TBD'}</span>{match.winner === match.p2 && <Trophy className="w-5 h-5" style={{ color: tierConf.hex }} />}</div>
+                                        <div key={match.id} onClick={() => handleMatchClick('f', mIdx, match)} className={`bg-royal-900 border-2 rounded-xl p-4 shadow-2xl transition-all ${isReady ? 'border-gold-500 hover:scale-105 cursor-pointer shadow-gold-500/20' : match.winner ? 'border-gold-600/50 bg-royal-900/50' : 'border-royal-800/50 border-dashed opacity-50'}`}>
+                                            <div className={`flex justify-between items-center mb-3 ${match.winner === match.p1 ? 'bg-gold-500/10 rounded px-2 py-1' : ''}`}><span className={`text-base font-bold flex items-center gap-2 ${match.winner && match.winner !== match.p1 ? 'text-royal-400 line-through' : match.winner === match.p1 ? 'text-gold-500' : 'text-white'}`}>{match.p1 ? <>{getFlag(p1.nationality)} {p1.name}</> : 'TBD'}</span>{match.winner === match.p1 && <Trophy className="w-5 h-5 text-gold-500" />}</div>
+                                            <div className={`flex justify-between items-center ${match.winner === match.p2 ? 'bg-gold-500/10 rounded px-2 py-1' : ''}`}><span className={`text-base font-bold flex items-center gap-2 ${match.winner && match.winner !== match.p2 ? 'text-royal-400 line-through' : match.winner === match.p2 ? 'text-gold-500' : 'text-white'}`}>{match.p2 ? <>{getFlag(p2.nationality)} {p2.name}</> : 'TBD'}</span>{match.winner === match.p2 && <Trophy className="w-5 h-5 text-gold-500" />}</div>
                                         </div>
                                     );
                                 })}
@@ -2665,13 +2655,13 @@
 
                     {resolvingMatch && (
                         <div className="fixed inset-0 bg-black/90 backdrop-blur-sm z-50 flex items-center justify-center p-4 z-[100]">
-                            <div className="bg-royal-900 rounded-2xl p-6 w-full max-w-4xl border overflow-y-auto max-h-[95vh] shadow-2xl" style={{ borderColor: tierConf.hex }}>
-                                <h2 className="text-2xl font-bold mb-4 text-center uppercase tracking-widest" style={{ color: tierConf.hex }}>Resolve Match</h2>
+                            <div className="bg-royal-900 rounded-2xl p-6 w-full max-w-4xl border border-royal-800 overflow-y-auto max-h-[95vh] shadow-2xl">
+                                <h2 className="text-2xl font-bold mb-4 text-center text-white uppercase tracking-widest">Resolve Match</h2>
                                 
                                 {matchH2H.total > 0 ? (
                                     <div className="text-center mb-8">
                                         <div className="inline-block bg-royal-950 border border-royal-800 rounded-full px-6 py-2 text-sm font-medium text-royal-200">
-                                            Head-to-Head: <span className="text-white font-bold ml-2">{getPlayer(resolvingMatch.p1).name} <span className="mx-1" style={{ color: tierConf.hex }}>{matchH2H.p1Wins} - {matchH2H.p2Wins}</span> {getPlayer(resolvingMatch.p2).name}</span>
+                                            Head-to-Head: <span className="text-white font-bold ml-2">{getPlayer(resolvingMatch.p1).name} <span className="text-gold-500 mx-1">{matchH2H.p1Wins} - {matchH2H.p2Wins}</span> {getPlayer(resolvingMatch.p2).name}</span>
                                         </div>
                                     </div>
                                 ) : (
@@ -2691,18 +2681,18 @@
                                             <div key={idx} className="flex-1 bg-royal-950/30 border border-royal-800 rounded-xl p-6 flex flex-col items-center shadow-inner">
                                                 <div className="relative group w-full max-w-[280px] mb-6">
                                                     {imgs[iIdx] ? (
-                                                        <img src={imgs[iIdx]} className="w-full aspect-[3/4] rounded-xl object-cover border-4 shadow-2xl transition-all duration-300" style={{ borderColor: tierConf.hex }} />
+                                                        <img src={imgs[iIdx]} className="w-full aspect-[3/4] rounded-xl object-cover border-4 border-royal-700 shadow-2xl transition-all duration-300" />
                                                     ) : (
-                                                        <div className="w-full aspect-[3/4] bg-royal-800 rounded-xl border-4 flex items-center justify-center" style={{ borderColor: tierConf.hex }}><UserCircle size={64} className="text-royal-400"/></div>
+                                                        <div className="w-full aspect-[3/4] bg-royal-800 rounded-xl border-4 border-royal-700 flex items-center justify-center"><UserCircle size={64} className="text-royal-400"/></div>
                                                     )}
                                                     {imgs.length > 1 && (
                                                         <><button onClick={() => setIIdx(prev => (prev === 0 ? imgs.length-1 : prev-1))} className="absolute left-2 top-1/2 -translate-y-1/2 bg-black/60 hover:bg-black p-2 rounded-full text-white opacity-0 group-hover:opacity-100 transition-opacity"><ChevronLeft size={20}/></button>
                                                         <button onClick={() => setIIdx(prev => (prev === imgs.length-1 ? 0 : prev+1))} className="absolute right-2 top-1/2 -translate-y-1/2 bg-black/60 hover:bg-black p-2 rounded-full text-white opacity-0 group-hover:opacity-100 transition-opacity"><ChevronRight size={20}/></button>
-                                                        <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5 bg-black/40 px-2 py-1 rounded-full">{imgs.map((_, i) => <div key={i} className={`w-2 h-2 rounded-full ${i === iIdx ? '' : 'bg-white/40'}`} style={{ backgroundColor: i === iIdx ? tierConf.hex : undefined }} />)}</div></>
+                                                        <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5 bg-black/40 px-2 py-1 rounded-full">{imgs.map((_, i) => <div key={i} className={`w-2 h-2 rounded-full ${i === iIdx ? 'bg-gold-500' : 'bg-white/40'}`} />)}</div></>
                                                     )}
                                                 </div>
                                                 <h3 className="text-3xl font-black text-white uppercase text-center mb-1">{p.name}</h3>
-                                                <div className="font-medium mb-3 flex items-center justify-center gap-2" style={{ color: tierConf.hex }}><span className="text-2xl">{getFlag(p.nationality)}</span> {getCountryName(p.nationality)}</div>
+                                                <div className="text-gold-500 font-medium mb-3 flex items-center justify-center gap-2"><span className="text-2xl">{getFlag(p.nationality)}</span> {getCountryName(p.nationality)}</div>
                                                 {renderRecentForm(pid)}
                                                 <div className="w-full space-y-3 mt-auto">
                                                     <button onClick={() => submitResult(pid, 'close')} className="w-full bg-[#d4af37]/10 hover:bg-[#d4af37]/20 text-[#d4af37] border border-[#d4af37]/50 p-4 rounded-xl font-bold transition-colors">Win (Close Match)</button>
@@ -2900,4 +2890,3 @@
     </script>
 </body>
 </html>
-
