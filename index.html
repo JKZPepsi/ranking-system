@@ -11,23 +11,11 @@
                 extend: {
                     colors: {
                         royal: {
-                            950: '#020b08',
-                            900: '#051611',
-                            800: '#0a241c',
-                            700: '#13382d',
-                            600: '#1a4538',
-                            500: '#245a4a',
-                            400: '#517568',
-                            300: '#789e90',
-                            200: '#a0bdb2',
-                            100: '#cde0d9',
-                            50:  '#e2ede9',
+                            950: '#020b08', 900: '#051611', 800: '#0a241c', 700: '#13382d',
+                            600: '#1a4538', 500: '#245a4a', 400: '#517568', 300: '#789e90',
+                            200: '#a0bdb2', 100: '#cde0d9', 50:  '#e2ede9',
                         },
-                        gold: {
-                            400: '#e8cd7d',
-                            500: '#d4af37',
-                            600: '#c29d2c',
-                        }
+                        gold: { 400: '#e8cd7d', 500: '#d4af37', 600: '#c29d2c' }
                     }
                 }
             }
@@ -42,8 +30,6 @@
         .bracket-container::-webkit-scrollbar-track { background: #051611; }
         .bracket-container::-webkit-scrollbar-thumb { background: #13382d; border-radius: 4px; }
         .aspect-3-4 { aspect-ratio: 3 / 4; }
-        
-        /* Smooth scrolling for charts */
         .chart-scroll::-webkit-scrollbar { height: 10px; }
         .chart-scroll::-webkit-scrollbar-track { background: #020b08; border-radius: 8px; }
         .chart-scroll::-webkit-scrollbar-thumb { background: #d4af37; border-radius: 8px; }
@@ -57,20 +43,87 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, collection, onSnapshot, doc, addDoc, updateDoc, deleteDoc, query, orderBy } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-
         window.fb = { initializeApp, getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged, getFirestore, collection, onSnapshot, doc, addDoc, updateDoc, deleteDoc, query, orderBy };
     </script>
 
     <script type="text/babel">
         const { useState, useEffect, useMemo, useRef } = React;
 
-        // --- ICON COMPONENTS (SVG) ---
-        var Icon = ({ d, size = 24, className = "" }) => (
-            <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d={d} /></svg>
+        // --- Custom Picasso-Style Crest Logo ---
+        var SnbLogo = ({ size = 24, className = "" }) => (
+            <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 100 100" className={className}>
+                <path d="M 15 65 C 5 25 40 5 75 15 L 50 50 Z" fill="#00E68A" />
+                <path d="M 75 15 C 95 45 80 90 40 95 L 50 50 Z" fill="#059669" />
+                <polygon points="30,85 70,75 80,30 20,40" fill="#FBBF24" />
+                <polygon points="50,50 80,30 70,75" fill="#FDE047" />
+                <path d="M 30 20 L 70 80 L 55 90 L 15 30 Z" fill="#ffffff" opacity="0.95" />
+            </svg>
         );
+
+        // --- Custom Picasso-Style Sidebar Icons ---
+        var DashboardIcon = ({ size = 24, className = "" }) => (
+            <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 100 100" className={className}>
+                {/* Smooth fluid background wave */}
+                <path d="M 5 70 C 30 20, 70 20, 95 70 C 65 95, 35 95, 5 70 Z" fill="currentColor" opacity="0.3" />
+                {/* Sharp contrasting pulse/mountain */}
+                <polygon points="15,80 35,40 55,60 85,15 95,25 60,85 40,60" fill="currentColor" opacity="0.9" />
+                {/* Accent dot */}
+                <circle cx="85" cy="15" r="8" fill="currentColor" />
+            </svg>
+        );
+
+        var PlayersIcon = ({ size = 24, className = "" }) => (
+            <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 100 100" className={className}>
+                {/* Smooth abstract head */}
+                <path d="M 50 50 C 20 50, 20 10, 50 10 C 70 10, 75 30, 50 50 Z" fill="currentColor" opacity="0.4" />
+                {/* Sharp cubist facial fracture */}
+                <polygon points="50,10 75,35 45,55 35,30" fill="currentColor" opacity="0.8" />
+                {/* Smooth flowing shoulder/cape */}
+                <path d="M 10 95 C 15 65, 35 55, 60 60 C 85 65, 95 80, 95 95 Z" fill="currentColor" opacity="0.3" />
+                {/* Sharp geometric body intersection */}
+                <polygon points="35,60 70,95 20,95" fill="currentColor" opacity="0.9" />
+            </svg>
+        );
+
+        var NationsIcon = ({ size = 24, className = "" }) => (
+            <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 100 100" className={className}>
+                {/* Smooth globe outer sphere */}
+                <circle cx="50" cy="50" r="45" fill="currentColor" opacity="0.2" />
+                {/* Sweeping dimensional curve (latitude) */}
+                <path d="M 5 50 C 30 15, 70 15, 95 50 C 70 85, 30 85, 5 50 Z" fill="currentColor" opacity="0.45" />
+                {/* Sharp intersecting shards (longitude/abstract continents) */}
+                <polygon points="50,5 70,50 50,95 35,50" fill="currentColor" opacity="0.9" />
+                <polygon points="20,35 45,65 15,75" fill="currentColor" opacity="0.7" />
+            </svg>
+        );
+
+        var TournamentsIcon = ({ size = 24, className = "" }) => (
+            <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 100 100" className={className}>
+                {/* Smooth elegant bowl */}
+                <path d="M 15 20 C 15 70, 40 85, 50 85 C 60 85, 85 70, 85 20 Z" fill="currentColor" opacity="0.3" />
+                {/* Sharp dynamic pedestal */}
+                <polygon points="35,85 65,85 80,95 20,95" fill="currentColor" opacity="0.7" />
+                {/* Sharp explosive fracture inside the bowl */}
+                <polygon points="25,20 50,60 70,10 60,35 40,25" fill="currentColor" opacity="0.9" />
+            </svg>
+        );
+
+        var AnalyticsIcon = ({ size = 24, className = "" }) => (
+            <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 100 100" className={className}>
+                {/* Smooth sweeping exponential area */}
+                <path d="M 10 90 C 25 50, 60 20, 95 15 L 95 90 Z" fill="currentColor" opacity="0.25" />
+                {/* Sharp angular trend line */}
+                <polygon points="10,80 35,55 55,70 85,25 95,35 60,85 40,65 15,90" fill="currentColor" opacity="0.9" />
+                {/* Accent sharp shapes (data blocks) */}
+                <polygon points="70,15 95,15 95,40 85,30" fill="currentColor" opacity="1" />
+                <polygon points="40,90 55,90 55,75 40,65" fill="currentColor" opacity="0.6" />
+            </svg>
+        );
+
+        // --- Standard UI Icons ---
+        var Icon = ({ d, size = 24, className = "" }) => <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d={d} /></svg>;
         var Trophy = (props) => <Icon d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6M18 9h1.5a2.5 2.5 0 0 0 0-5H18M4 22h16M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22M18 2H6v7a6 6 0 0 0 12 0V2Z" {...props} />;
         var Users = (props) => <Icon d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M9 7a4 4 0 1 0 0-8 4 4 0 0 0 0 8ZM22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" {...props} />;
-        var Swords = (props) => <Icon d="M14.5 17.5 3 6V3h3l11.5 11.5M13 19l6-6M16 16l4 4M19 21l2-2M14.5 6.5 18 3h3v3l-3.5 3.5" {...props} />;
         var History = (props) => <Icon d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8M3 3v5h5M12 7v5l4 2" {...props} />;
         var Plus = (props) => <Icon d="M12 5v14M5 12h14" {...props} />;
         var ChevronRight = (props) => <Icon d="m9 18 6-6-6-6" {...props} />;
@@ -93,7 +146,6 @@
         var Search = (props) => <Icon d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" {...props} />;
 
         // --- Configuration & Constants ---
-        
         var firebaseConfig = {
             apiKey: "AIzaSyDHfnWgaeNG2-lZBSmPpa8JdZgUHNPMh4w",
             authDomain: "prorank-7b6b3.firebaseapp.com",
@@ -103,7 +155,6 @@
             appId: "1:991950932964:web:db0346d0aa7d23b5ac55f1"
         };
         
-        // Fallback to seamlessly inject Canvas environment keys if placeholders are left unchanged
         if (typeof __firebase_config !== 'undefined') {
             try { Object.assign(firebaseConfig, JSON.parse(__firebase_config)); } catch (e) { console.error(e); }
         }
@@ -111,63 +162,23 @@
         var appId = typeof __app_id !== 'undefined' ? __app_id : 'pro-rank-global';
 
         var TOURNAMENT_TIERS = {
-            'grand_slam': {
-                name: 'Grand Slam',
-                points: { WINNER: 2000, FINALIST: 1200, SF: 720, QF: 360, R16: 180, R32: 90, R64: 45 },
-                excludeTop: 0, wcCount: { 64: 16 },
-                color: 'text-purple-400', bg: 'bg-purple-500/20', border: 'border-purple-500/50',
-                hex: '#c084fc', shadowHover: 'hover:shadow-purple-500/20'
-            },
-            'finals': {
-                name: 'SNB Internationals',
-                points: { WINNER: 1500, FINALIST: 1000, SF: 400, RR_WIN: 200 },
-                excludeTop: 0, wcCount: { 8: 0 },
-                color: 'text-cyan-400', bg: 'bg-cyan-500/20', border: 'border-cyan-500/50',
-                hex: '#22d3ee', shadowHover: 'hover:shadow-cyan-500/20'
-            },
-            'major': {
-                name: 'Major',
-                points: { WINNER: 1000, FINALIST: 600, SF: 360, QF: 180, R16: 90, R32: 45, R64: 20 },
-                excludeTop: 0, wcCount: { 64: 16, 32: 8 },
-                color: 'text-yellow-400', bg: 'bg-yellow-500/20', border: 'border-yellow-500/50',
-                hex: '#facc15', shadowHover: 'hover:shadow-yellow-500/20'
-            },
-            'pro': {
-                name: 'Pro Series',
-                points: { WINNER: 500, FINALIST: 300, SF: 180, QF: 90, R16: 45, R32: 20, R64: 10 },
-                excludeTop: 8, wcCount: { 64: 16, 32: 8, 16: 4 },
-                color: 'text-sky-400', bg: 'bg-sky-500/20', border: 'border-sky-500/50',
-                hex: '#38bdf8', shadowHover: 'hover:shadow-sky-500/20'
-            },
-            'challenger': {
-                name: 'Challenger',
-                points: { WINNER: 250, FINALIST: 150, SF: 90, QF: 45, R16: 20, R32: 10, R64: 5 },
-                excludeTop: 16, wcCount: { 64: 64, 32: 32, 16: 16, 8: 8 }, // 100% Wildcards
-                color: 'text-green-400', bg: 'bg-green-500/20', border: 'border-green-500/50',
-                hex: '#4ade80', shadowHover: 'hover:shadow-green-500/20'
-            }
+            'grand_slam': { name: 'Grand Slam', points: { WINNER: 2000, FINALIST: 1200, SF: 720, QF: 360, R16: 180, R32: 90, R64: 45 }, excludeTop: 0, wcCount: { 64: 16 }, color: 'text-purple-400', bg: 'bg-purple-500/20', border: 'border-purple-500/50', hex: '#c084fc', shadowHover: 'hover:shadow-purple-500/20' },
+            'finals': { name: 'SNB Internationals', points: { WINNER: 1500, FINALIST: 1000, SF: 400, RR_WIN: 200 }, excludeTop: 0, wcCount: { 8: 0 }, color: 'text-cyan-400', bg: 'bg-cyan-500/20', border: 'border-cyan-500/50', hex: '#22d3ee', shadowHover: 'hover:shadow-cyan-500/20' },
+            'major': { name: 'Major', points: { WINNER: 1000, FINALIST: 600, SF: 360, QF: 180, R16: 90, R32: 45, R64: 20 }, excludeTop: 0, wcCount: { 64: 16, 32: 8 }, color: 'text-yellow-400', bg: 'bg-yellow-500/20', border: 'border-yellow-500/50', hex: '#facc15', shadowHover: 'hover:shadow-yellow-500/20' },
+            'pro': { name: 'Pro Series', points: { WINNER: 500, FINALIST: 300, SF: 180, QF: 90, R16: 45, R32: 20, R64: 10 }, excludeTop: 8, wcCount: { 64: 16, 32: 8, 16: 4 }, color: 'text-sky-400', bg: 'bg-sky-500/20', border: 'border-sky-500/50', hex: '#38bdf8', shadowHover: 'hover:shadow-sky-500/20' },
+            'challenger': { name: 'Challenger', points: { WINNER: 250, FINALIST: 150, SF: 90, QF: 45, R16: 20, R32: 10, R64: 5 }, excludeTop: 16, wcCount: { 64: 64, 32: 32, 16: 16, 8: 8 }, color: 'text-green-400', bg: 'bg-green-500/20', border: 'border-green-500/50', hex: '#4ade80', shadowHover: 'hover:shadow-green-500/20' }
         };
 
         var ROUND_NAMES = ['Round of 64', 'Round of 32', 'Round of 16', 'Quarterfinals', 'Semifinals', 'Final'];
-        var COUNTRIES = [
-            { code: 'ATG', name: 'Antigua and Barbuda', flag: '🇦🇬' }, { code: 'BHS', name: 'Bahamas', flag: '🇧🇸' }, { code: 'BRB', name: 'Barbados', flag: '🇧🇧' }, { code: 'CAN', name: 'Canada', flag: '🇨🇦' }, { code: 'CUB', name: 'Cuba', flag: '🇨🇺' }, { code: 'DOM', name: 'Dominican Republic', flag: '🇩🇴' }, { code: 'GTM', name: 'Guatemala', flag: '🇬🇹' }, { code: 'HTI', name: 'Haiti', flag: '🇭🇹' }, { code: 'JAM', name: 'Jamaica', flag: '🇯🇲' }, { code: 'MEX', name: 'Mexico', flag: '🇲🇽' }, { code: 'PAN', name: 'Panama', flag: '🇵🇦' }, { code: 'PUR', name: 'Puerto Rico', flag: '🇵🇷' }, { code: 'USA', name: 'United States', flag: '🇺🇸' },
-            { code: 'ARG', name: 'Argentina', flag: '🇦🇷' }, { code: 'BOL', name: 'Bolivia', flag: '🇧🇴' }, { code: 'BRA', name: 'Brazil', flag: '🇧🇷' }, { code: 'CHI', name: 'Chile', flag: '🇨🇱' }, { code: 'COL', name: 'Colombia', flag: '🇨🇴' }, { code: 'ECU', name: 'Ecuador', flag: '🇪🇨' }, { code: 'PAR', name: 'Paraguay', flag: '🇵🇾' }, { code: 'PER', name: 'Peru', flag: '🇵🇪' }, { code: 'URU', name: 'Uruguay', flag: '🇺🇾' }, { code: 'VEN', name: 'Venezuela', flag: '🇻🇪' },
-            { code: 'ALB', name: 'Albania', flag: '🇦🇱' }, { code: 'AUT', name: 'Austria', flag: '🇦🇹' }, { code: 'BEL', name: 'Belgium', flag: '🇧🇪' }, { code: 'BUL', name: 'Bulgaria', flag: '🇧🇬' }, { code: 'CRO', name: 'Croatia', flag: '🇭🇷' }, { code: 'CZE', name: 'Czechia', flag: '🇨🇿' }, { code: 'DEN', name: 'Denmark', flag: '🇩🇰' }, { code: 'EST', name: 'Estonia', flag: '🇪🇪' }, { code: 'FIN', name: 'Finland', flag: '🇫🇮' }, { code: 'FRA', name: 'France', flag: '🇫🇷' }, { code: 'GBR', name: 'Great Britain', flag: '🇬🇧' }, { code: 'GER', name: 'Germany', flag: '🇩🇪' }, { code: 'GRE', name: 'Greece', flag: '🇬🇷' }, { code: 'HUN', name: 'Hungary', flag: '🇭🇺' }, { code: 'IRL', name: 'Ireland', flag: '🇮🇪' }, { code: 'ISL', name: 'Iceland', flag: '🇮🇸' }, { code: 'ITA', name: 'Italy', flag: '🇮🇹' }, { code: 'LAT', name: 'Latvia', flag: '🇱🇻' }, { code: 'LTU', name: 'Lithuania', flag: '🇱🇹' }, { code: 'NED', name: 'Netherlands', flag: '🇳🇱' }, { code: 'NOR', name: 'Norway', flag: '🇳🇴' }, { code: 'POL', name: 'Poland', flag: '🇵🇱' }, { code: 'POR', name: 'Portugal', flag: '🇵🇹' }, { code: 'ROU', name: 'Romania', flag: '🇷🇴' }, { code: 'RUS', name: 'Russia', flag: '🇷🇺' }, { code: 'SRB', name: 'Serbia', flag: '🇷🇸' }, { code: 'SVK', name: 'Slovakia', flag: '🇸🇰' }, { code: 'SLO', name: 'Slovenia', flag: '🇸🇮' }, { code: 'ESP', name: 'Spain', flag: '🇪🇸' }, { code: 'SWE', name: 'Sweden', flag: '🇸🇪' }, { code: 'SUI', name: 'Switzerland', flag: '🇨🇭' }, { code: 'UKR', name: 'Ukraine', flag: '🇺🇦' },
-            { code: 'AFG', name: 'Afghanistan', flag: '🇦🇫' }, { code: 'CHN', name: 'China', flag: '🇨🇳' }, { code: 'IND', name: 'India', flag: '🇮🇳' }, { code: 'IDN', name: 'Indonesia', flag: '🇮🇩' }, { code: 'IRI', name: 'Iran', flag: '🇮🇷' }, { code: 'IRQ', name: 'Iraq', flag: '🇮🇶' }, { code: 'ISR', name: 'Israel', flag: '🇮🇱' }, { code: 'JPN', name: 'Japan', flag: '🇯🇵' }, { code: 'KAZ', name: 'Kazakhstan', flag: '🇰🇿' }, { code: 'KOR', name: 'South Korea', flag: '🇰🇷' }, { code: 'MAS', name: 'Malaysia', flag: '🇲🇾' }, { code: 'PAK', name: 'Pakistan', flag: '🇵🇰' }, { code: 'PHI', name: 'Philippines', flag: '🇵🇭' }, { code: 'QAT', name: 'Qatar', flag: '🇶🇦' }, { code: 'KSA', name: 'Saudi Arabia', flag: '🇸🇦' }, { code: 'SGP', name: 'Singapore', flag: '🇸🇬' }, { code: 'THA', name: 'Thailand', flag: '🇹🇭' }, { code: 'TUR', name: 'Turkey', flag: '🇹🇷' }, { code: 'UAE', name: 'United Arab Emirates', flag: '🇦🇪' }, { code: 'VIE', name: 'Vietnam', flag: '🇻🇳' },
-            { code: 'ALG', name: 'Algeria', flag: '🇩🇿' }, { code: 'ANG', name: 'Angola', flag: '🇦🇴' }, { code: 'EGY', name: 'Egypt', flag: '🇪🇬' }, { code: 'ETH', name: 'Ethiopia', flag: '🇪🇹' }, { code: 'GHA', name: 'Ghana', flag: '🇬🇭' }, { code: 'KEN', name: 'Kenya', flag: '🇰🇪' }, { code: 'MAR', name: 'Morocco', flag: '🇲🇦' }, { code: 'NGR', name: 'Nigeria', flag: '🇳🇬' }, { code: 'SEN', name: 'Senegal', flag: '🇸🇳' }, { code: 'RSA', name: 'South Africa', flag: '🇿🇦' }, { code: 'TUN', name: 'Tunisia', flag: '🇹🇳' },
-            { code: 'AUS', name: 'Australia', flag: '🇦🇺' }, { code: 'FIJ', name: 'Fiji', flag: '🇫🇯' }, { code: 'NZL', name: 'New Zealand', flag: '🇳🇿' }, { code: 'PNG', name: 'Papua New Guinea', flag: '🇵🇬' },
-            { code: 'UNK', name: 'Unknown', flag: '🏳️' }
-        ];
+        
+        // Highly compressed country dict to save tokens
+        var countryDataStr = "ATG,Antigua and Barbuda,🇦🇬|BHS,Bahamas,🇧🇸|BRB,Barbados,🇧🇧|CAN,Canada,🇨🇦|CUB,Cuba,🇨🇺|DOM,Dominican Republic,🇩🇴|GTM,Guatemala,🇬🇹|HTI,Haiti,🇭🇹|JAM,Jamaica,🇯🇲|MEX,Mexico,🇲🇽|PAN,Panama,🇵🇦|PUR,Puerto Rico,🇵🇷|USA,United States,🇺🇸|ARG,Argentina,🇦🇷|BOL,Bolivia,🇧🇴|BRA,Brazil,🇧🇷|CHI,Chile,🇨🇱|COL,Colombia,🇨🇴|ECU,Ecuador,🇪🇨|PAR,Paraguay,🇵🇾|PER,Peru,🇵🇪|URU,Uruguay,🇺🇾|VEN,Venezuela,🇻🇪|ALB,Albania,🇦🇱|AUT,Austria,🇦🇹|BEL,Belgium,🇧🇪|BUL,Bulgaria,🇧🇬|CRO,Croatia,🇭🇷|CZE,Czechia,🇨🇿|DEN,Denmark,🇩🇰|EST,Estonia,🇪🇪|FIN,Finland,🇫🇮|FRA,France,🇫🇷|GBR,Great Britain,🇬🇧|GER,Germany,🇩🇪|GRE,Greece,🇬🇷|HUN,Hungary,🇭🇺|IRL,Ireland,🇮🇪|ISL,Iceland,🇮🇸|ITA,Italy,🇮🇹|LAT,Latvia,🇱🇻|LTU,Lithuania,🇱🇹|NED,Netherlands,🇳🇱|NOR,Norway,🇳🇴|POL,Poland,🇵🇱|POR,Portugal,🇵🇹|ROU,Romania,🇷🇴|RUS,Russia,🇷🇺|SRB,Serbia,🇷🇸|SVK,Slovakia,🇸🇰|SLO,Slovenia,🇸🇮|ESP,Spain,🇪🇸|SWE,Sweden,🇸🇪|SUI,Switzerland,🇨🇭|UKR,Ukraine,🇺🇦|AFG,Afghanistan,🇦🇫|CHN,China,🇨🇳|IND,India,🇮🇳|IDN,Indonesia,🇮🇩|IRI,Iran,🇮🇷|IRQ,Iraq,🇮🇶|ISR,Israel,🇮🇱|JPN,Japan,🇯🇵|KAZ,Kazakhstan,🇰🇿|KOR,South Korea,🇰🇷|MAS,Malaysia,🇲🇾|PAK,Pakistan,🇵🇰|PHI,Philippines,🇵🇭|QAT,Qatar,🇶🇦|KSA,Saudi Arabia,🇸🇦|SGP,Singapore,🇸🇬|THA,Thailand,🇹🇭|TUR,Turkey,🇹🇷|UAE,United Arab Emirates,🇦🇪|VIE,Vietnam,🇻🇳|ALG,Algeria,🇩🇿|ANG,Angola,🇦🇴|EGY,Egypt,🇪🇬|ETH,Ethiopia,🇪🇹|GHA,Ghana,🇬🇭|KEN,Kenya,🇰🇪|MAR,Morocco,🇲🇦|NGR,Nigeria,🇳🇬|SEN,Senegal,🇸🇳|RSA,South Africa,🇿🇦|TUN,Tunisia,🇹🇳|AUS,Australia,🇦🇺|FIJ,Fiji,🇫🇯|NZL,New Zealand,🇳🇿|PNG,Papua New Guinea,🇵🇬|UNK,Unknown,🏳️";
+        var COUNTRIES = countryDataStr.split('|').map(c => { const [code, name, flag] = c.split(','); return {code, name, flag}; });
 
         var getFlag = (code) => COUNTRIES.find(c => c.code === code)?.flag || '🏳️';
         var getCountryName = (code) => COUNTRIES.find(c => c.code === code)?.name || code || 'Unknown';
-        
-        const getOrdinalSuffix = (n) => {
-            const s = ["th", "st", "nd", "rd"], v = n % 100;
-            return n + (s[(v - 20) % 10] || s[v] || s[0]);
-        };
+        var getOrdinalSuffix = (n) => n + (["th", "st", "nd", "rd"][(n % 100 - 20) % 10] || ["th", "st", "nd", "rd"][n % 100] || "th");
 
-        // Consistent hash-based color generator for charts
         var CHART_COLORS = ['#d4af37', '#10b981', '#0ea5e9', '#f43f5e', '#8b5cf6', '#eab308', '#f97316', '#84cc16', '#3b82f6'];
         var getPlayerColor = (id) => {
             if (!id) return CHART_COLORS[0];
@@ -181,9 +192,7 @@
         var getTournamentTier = (t) => {
             if (t.format === 'atp_finals') return 'finals';
             let parsed = t.bracket;
-            if (typeof parsed === 'string') {
-                try { parsed = JSON.parse(parsed); } catch(e) { return t.tier || 'major'; }
-            }
+            if (typeof parsed === 'string') { try { parsed = JSON.parse(parsed); } catch(e) { return t.tier || 'major'; } }
             if (!parsed || !Array.isArray(parsed)) return t.tier || 'major';
             if (t.tier === 'grand_slam' && parsed.length < 6) return 'major';
             return t.tier || 'major';
@@ -192,9 +201,7 @@
         var getDrawSize = (t) => {
             if (t.format === 'atp_finals') return 8;
             let bracket = t.bracket;
-            if (typeof bracket === 'string') {
-                try { bracket = JSON.parse(bracket); } catch(e) {}
-            }
+            if (typeof bracket === 'string') { try { bracket = JSON.parse(bracket); } catch(e) {} }
             if (!bracket || !Array.isArray(bracket) || !bracket.length) return 32;
             if (bracket.length === 6) return 64;
             if (bracket.length === 5) return 32;
@@ -207,42 +214,29 @@
             if (!t || !t.selectedPlayers || !pid) return '';
             const idx = t.selectedPlayers.indexOf(pid);
             if (idx === -1) return '';
-            const size = getDrawSize(t);
-            let numSeeds = 0;
-            if (t.format === 'atp_finals') numSeeds = 8;
-            else if (size === 64) numSeeds = 16;
-            else if (size === 32) numSeeds = 8;
-            else if (size === 16) numSeeds = 4;
-            else if (size === 8) numSeeds = 2;
-
-            if (idx < numSeeds) return `[${idx + 1}]`;
-            return '';
+            const sz = getDrawSize(t);
+            let ns = sz === 64 ? 16 : sz === 32 ? 8 : sz === 16 ? 4 : 2;
+            if (t.format === 'atp_finals') ns = 8;
+            return idx < ns ? `[${idx + 1}]` : '';
         };
 
         var getTournamentPointsAndResult = (playerId, t) => {
-            let pts = 0, w = 0, l = 0, played = false;
-            let resultStr = '';
-            let wonFinal = false;
+            let pts = 0, w = 0, l = 0, played = false, resultStr = '', wonFinal = false;
 
             if (t.format === 'atp_finals') {
-                let groupMatches = [];
-                let knockout = [[],[]];
-                try { groupMatches = typeof t.groupMatches === 'string' ? JSON.parse(t.groupMatches) : (t.groupMatches || []); } catch(e){}
-                try { knockout = typeof t.bracket === 'string' ? JSON.parse(t.bracket) : (t.bracket || []); } catch(e){}
-                if (!Array.isArray(groupMatches)) groupMatches = [];
-                if (!Array.isArray(knockout)) knockout = [[],[]];
+                let gm = []; let ko = [[],[]];
+                try { gm = typeof t.groupMatches === 'string' ? JSON.parse(t.groupMatches) : (t.groupMatches || []); } catch(e){}
+                try { ko = typeof t.bracket === 'string' ? JSON.parse(t.bracket) : (t.bracket || []); } catch(e){}
                 
-                groupMatches.forEach(m => {
+                gm.forEach(m => {
                     if (m && (m.p1 === playerId || m.p2 === playerId)) {
-                        played = true;
-                        resultStr = 'Round Robin';
-                        if (m.winner === playerId) { pts += 200; w++; }
-                        else if (m.winner) { l++; }
+                        played = true; resultStr = 'Round Robin';
+                        if (m.winner === playerId) { pts += 200; w++; } else if (m.winner) { l++; }
                     }
                 });
 
                 if (played) {
-                    knockout.forEach((round, rIdx) => {
+                    ko.forEach((round, rIdx) => {
                         if (!Array.isArray(round)) return;
                         round.forEach(m => {
                             if (m && (m.p1 === playerId || m.p2 === playerId)) {
@@ -250,370 +244,189 @@
                                 if (rIdx === 1) resultStr = 'Finalist';
                                 if (m.winner === playerId) {
                                     w++;
-                                    if (rIdx === 0) pts += 400; // SF Win
-                                    if (rIdx === 1) { pts += 500; wonFinal = true; resultStr = 'Winner'; } // Final Win
+                                    if (rIdx === 0) pts += 400; 
+                                    if (rIdx === 1) { pts += 500; wonFinal = true; resultStr = 'Winner'; }
                                 } else if (m.winner) { l++; }
                             }
                         });
                     });
                 }
             } else {
-                let parsedBracket = [];
-                try { parsedBracket = typeof t.bracket === 'string' ? JSON.parse(t.bracket) : (t.bracket || []); } catch(e){}
-                if (!Array.isArray(parsedBracket)) parsedBracket = [];
+                let pb = [];
+                try { pb = typeof t.bracket === 'string' ? JSON.parse(t.bracket) : (t.bracket || []); } catch(e){}
                 
-                const totalRounds = parsedBracket.length;
-                let highestRound = -1;
+                const tr = pb.length;
+                let hr = -1;
 
-                parsedBracket.forEach((round, rIdx) => {
+                pb.forEach((round, rIdx) => {
                     if (!Array.isArray(round)) return;
                     round.forEach(m => {
                         if (m && (m.p1 === playerId || m.p2 === playerId)) {
                             played = true;
-                            if (rIdx > highestRound) highestRound = rIdx;
+                            if (rIdx > hr) hr = rIdx;
                             if (m.winner === playerId && m.type !== 'bye') w++;
                             else if (m.winner && m.winner !== playerId) l++;
-                            if (m.winner === playerId && rIdx === totalRounds - 1) wonFinal = true;
+                            if (m.winner === playerId && rIdx === tr - 1) wonFinal = true;
                         }
                     });
                 });
                 
-                if (played && highestRound > -1) {
-                    const tierKey = getTournamentTier(t);
-                    const tierConf = TOURNAMENT_TIERS[tierKey];
-                    const drawSize = getDrawSize(t);
-                    let sizeMultiplier = 1;
-                    if (tierKey !== 'grand_slam') {
-                        if (drawSize === 16) sizeMultiplier = 0.75;
-                        if (drawSize === 8) sizeMultiplier = 0.5;
-                    }
-                    if (wonFinal) pts = Math.round(tierConf.points.WINNER * sizeMultiplier);
-                    else if (highestRound === totalRounds - 1) pts = Math.round(tierConf.points.FINALIST * sizeMultiplier);
-                    else if (highestRound === totalRounds - 2) pts = Math.round(tierConf.points.SF * sizeMultiplier);
-                    else if (highestRound === totalRounds - 3) pts = Math.round(tierConf.points.QF * sizeMultiplier);
-                    else if (highestRound === totalRounds - 4) pts = Math.round(tierConf.points.R16 * sizeMultiplier);
-                    else if (highestRound === totalRounds - 5) pts = Math.round(tierConf.points.R32 * sizeMultiplier);
-                    else if (highestRound === totalRounds - 6) pts = Math.round(tierConf.points.R64 * sizeMultiplier);
+                if (played && hr > -1) {
+                    const tk = getTournamentTier(t);
+                    const tc = TOURNAMENT_TIERS[tk];
+                    const ds = getDrawSize(t);
+                    let sm = tk !== 'grand_slam' ? (ds === 16 ? 0.75 : ds === 8 ? 0.5 : 1) : 1;
+                    
+                    if (wonFinal) pts = Math.round(tc.points.WINNER * sm);
+                    else if (hr === tr - 1) pts = Math.round(tc.points.FINALIST * sm);
+                    else if (hr === tr - 2) pts = Math.round(tc.points.SF * sm);
+                    else if (hr === tr - 3) pts = Math.round(tc.points.QF * sm);
+                    else if (hr === tr - 4) pts = Math.round(tc.points.R16 * sm);
+                    else if (hr === tr - 5) pts = Math.round(tc.points.R32 * sm);
+                    else if (hr === tr - 6) pts = Math.round(tc.points.R64 * sm);
 
-                    const rOffset = 6 - totalRounds; 
-                    resultStr = wonFinal ? 'Winner' : ROUND_NAMES[highestRound + rOffset];
+                    resultStr = wonFinal ? 'Winner' : ROUND_NAMES[hr + (6 - tr)];
                 }
             }
             return { pts, w, l, played, resultStr, wonFinal };
         };
 
         var calculatePlayerRankings = (players, tournaments) => {
-            const completedTournaments = tournaments
-                .filter(t => t.status === 'completed')
-                .sort((a, b) => (a.completedAt || 0) - (b.completedAt || 0)); // Oldest to Newest
-
-            // Identify exactly when the last global Major+ occurred
+            const completed = tournaments.filter(t => t.status === 'completed').sort((a, b) => (a.completedAt || 0) - (b.completedAt || 0));
             const majorTiers = ['grand_slam', 'major', 'finals'];
-            let globalLastMajorTime = 0;
-            for (let i = completedTournaments.length - 1; i >= 0; i--) {
-                if (majorTiers.includes(getTournamentTier(completedTournaments[i]))) {
-                    globalLastMajorTime = completedTournaments[i].completedAt || completedTournaments[i].createdAt;
-                    break;
-                }
+            let gLMT = 0;
+            for (let i = completed.length - 1; i >= 0; i--) {
+                if (majorTiers.includes(getTournamentTier(completed[i]))) { gLMT = completed[i].completedAt || completed[i].createdAt; break; }
             }
 
             return players.map(player => {
-                let allPlayed = [];
-                let recentMatches = [];
-                let careerPoints = 0; 
-                let totalW = 0, totalL = 0;
-                let hasPlayedAny = false;
+                let allPlayed = [], recentMatches = [], cPts = 0, tw = 0, tl = 0, playedAny = false;
 
-                // 1. Traverse Oldest to Newest to capture true chronology
-                for (const t of completedTournaments) {
-                    
-                    // Match Form Extraction (In Chronological Order)
-                    let tMatches = [];
+                for (const t of completed) {
+                    let tm = [];
                     if (t.format === 'atp_finals') {
-                        let knockout = [];
-                        let groupMatches = [];
-                        try { knockout = typeof t.bracket === 'string' ? JSON.parse(t.bracket) : (t.bracket || []); } catch(e){}
-                        try { groupMatches = typeof t.groupMatches === 'string' ? JSON.parse(t.groupMatches) : (t.groupMatches || []); } catch(e){}
-                        if (!Array.isArray(knockout)) knockout = [];
-                        if (!Array.isArray(groupMatches)) groupMatches = [];
-                        
-                        groupMatches.forEach(m => {
-                            if (m && (m.p1 === player.id || m.p2 === player.id) && m.winner) {
-                                tMatches.push({ isWin: m.winner === player.id, type: m.type || 'close' });
-                            }
-                        });
-                        knockout.forEach(round => {
-                            if (!Array.isArray(round)) return;
-                            round.forEach(m => {
-                                if (m && (m.p1 === player.id || m.p2 === player.id) && m.winner) {
-                                    tMatches.push({ isWin: m.winner === player.id, type: m.type || 'close' });
-                                }
-                            });
-                        });
+                        let ko = []; let gm = [];
+                        try { ko = typeof t.bracket === 'string' ? JSON.parse(t.bracket) : (t.bracket || []); } catch(e){}
+                        try { gm = typeof t.groupMatches === 'string' ? JSON.parse(t.groupMatches) : (t.groupMatches || []); } catch(e){}
+                        gm.forEach(m => { if (m && (m.p1 === player.id || m.p2 === player.id) && m.winner) tm.push({ isWin: m.winner === player.id, type: m.type || 'close' }); });
+                        ko.forEach(rd => { if (!Array.isArray(rd)) return; rd.forEach(m => { if (m && (m.p1 === player.id || m.p2 === player.id) && m.winner) tm.push({ isWin: m.winner === player.id, type: m.type || 'close' }); }); });
                     } else {
-                        let parsedBracket = [];
-                        try { parsedBracket = typeof t.bracket === 'string' ? JSON.parse(t.bracket) : (t.bracket || []); } catch(e){}
-                        if (parsedBracket && Array.isArray(parsedBracket)) {
-                            parsedBracket.forEach(round => {
-                                if (!Array.isArray(round)) return;
-                                round.forEach(match => {
-                                    if (match && (match.p1 === player.id || match.p2 === player.id) && match.winner && match.type !== 'bye') {
-                                        tMatches.push({ isWin: match.winner === player.id, type: match.type || 'close' });
-                                    }
-                                });
-                            });
+                        let pb = [];
+                        try { pb = typeof t.bracket === 'string' ? JSON.parse(t.bracket) : t.bracket; } catch(e){}
+                        if (pb && Array.isArray(pb)) {
+                            pb.forEach(rd => { if (!Array.isArray(rd)) return; rd.forEach(m => { if (m && (m.p1 === player.id || m.p2 === player.id) && m.winner && m.type !== 'bye') { tm.push({ isWin: m.winner === player.id, type: m.type || 'close' }); } }); });
                         }
                     }
-                    tMatches.forEach(m => recentMatches.push(m));
+                    tm.forEach(m => recentMatches.push(m));
 
-                    // Tournament Points Extraction
                     const res = getTournamentPointsAndResult(player.id, t);
                     if (res.played) {
-                        hasPlayedAny = true;
-                        careerPoints += res.pts;
-                        totalW += res.w;
-                        totalL += res.l;
-                        
-                        let totalRounds = 0;
-                        if (t.format === 'atp_finals') {
-                            totalRounds = 5;
-                        } else if (t.bracket) {
-                            let parsedBracket = [];
-                            try { parsedBracket = typeof t.bracket === 'string' ? JSON.parse(t.bracket) : t.bracket; } catch(e){}
-                            if (Array.isArray(parsedBracket)) {
-                                totalRounds = parsedBracket.length;
-                            }
-                        }
-
-                        allPlayed.push({ 
-                            tournamentId: t.id, 
-                            tournamentName: t.name, 
-                            tier: getTournamentTier(t),
-                            points: res.pts, 
-                            result: res.resultStr,
-                            totalRounds: totalRounds,
-                            date: t.completedAt || t.createdAt
-                        });
+                        playedAny = true; cPts += res.pts; tw += res.w; tl += res.l;
+                        let tr = t.format === 'atp_finals' ? 5 : 0;
+                        if (t.format !== 'atp_finals' && t.bracket) { try { const pb = typeof t.bracket === 'string' ? JSON.parse(t.bracket) : t.bracket; tr = pb.length; } catch(e){} }
+                        allPlayed.push({ tournamentId: t.id, tournamentName: t.name, tier: getTournamentTier(t), points: res.pts, result: res.resultStr, totalRounds: tr, date: t.completedAt || t.createdAt });
                     }
                 }
 
-                // Apply Play Order Number
-                allPlayed.forEach((pt, idx) => {
-                    pt.playedNumber = idx + 1;
-                });
+                allPlayed.forEach((pt, idx) => pt.playedNumber = idx + 1);
+                let revPlayed = [...allPlayed].reverse(), recT = [], oPts = 0, bPts = 0, mCount = 0;
 
-                // 2. Calculate Rolling Points (Only Majors/Finals consume the 20 limit)
-                let reversedPlayed = [...allPlayed].reverse(); // Traverse newest first
-                let recentTournaments = [];
-                let officialPoints = 0;
-                let bonusPoints = 0;
-                let majorCount = 0;
-
-                for (let pt of reversedPlayed) {
-                    const isMajorPlus = majorTiers.includes(pt.tier);
-                    if (isMajorPlus) {
-                        if (majorCount < 20) {
-                            majorCount++;
-                            if (pt.date <= globalLastMajorTime) officialPoints += pt.points;
-                            else bonusPoints += pt.points;
-                            recentTournaments.push(pt);
+                for (let pt of revPlayed) {
+                    if (majorTiers.includes(pt.tier)) {
+                        if (mCount < 20) {
+                            mCount++;
+                            if (pt.date <= gLMT) oPts += pt.points; else bPts += pt.points;
+                            recT.push(pt);
                         }
                     } else {
-                        // Pro and Challenger don't increment majorCount, but are added if we haven't hit 20 majors yet!
-                        if (majorCount < 20) {
-                            if (pt.date <= globalLastMajorTime) officialPoints += pt.points;
-                            else bonusPoints += pt.points;
-                            recentTournaments.push(pt);
+                        if (mCount < 20) {
+                            if (pt.date <= gLMT) oPts += pt.points; else bPts += pt.points;
+                            recT.push(pt);
                         }
                     }
                 }
 
-                let finalRecentMatches = recentMatches.slice(-7).reverse();
-
                 return { 
-                    ...player, 
-                    points: officialPoints, // ONLY official points used for global ranking
-                    bonusPoints: bonusPoints,
-                    totalPoints: officialPoints + bonusPoints, 
-                    careerPoints, 
-                    recentTournaments, 
-                    recentMatches: finalRecentMatches, 
-                    stats: { wins: totalW, losses: totalL, totalPlayed: allPlayed.length }, 
-                    hasPlayedAny 
+                    ...player, points: oPts, bonusPoints: bPts, totalPoints: oPts + bPts, careerPoints: cPts, 
+                    recentTournaments: recT, recentMatches: recentMatches.slice(-7).reverse(), 
+                    stats: { wins: tw, losses: tl, totalPlayed: allPlayed.length }, hasPlayedAny: playedAny 
                 };
-            })
-            // Sort explicitly by Official Points first, then break ties with Total Points (Bonus)
-            .sort((a, b) => b.points - a.points || b.totalPoints - a.totalPoints || (a.name || '').localeCompare(b.name || ''))
-            .map((p, index) => ({ ...p, rank: index + 1 }));
+            }).sort((a, b) => b.points - a.points || b.totalPoints - a.totalPoints || (a.name || '').localeCompare(b.name || '')).map((p, index) => ({ ...p, rank: index + 1 }));
         };
 
         var getGlobalHistory = (playersRaw, tournaments) => {
-            // Sort chronologically (oldest first) to simulate time moving forward
-            const completedAsc = tournaments
-                .filter(t => t.status === 'completed')
-                .sort((a, b) => (a.completedAt || 0) - (b.completedAt || 0));
-            
+            const completedAsc = tournaments.filter(t => t.status === 'completed').sort((a, b) => (a.completedAt || 0) - (b.completedAt || 0));
             const history = [];
 
             completedAsc.forEach((currentT, index) => {
                 const relevantTournaments = completedAsc.slice(0, index + 1);
-                
-                // Run the exact same leaderboard calculation engine for this snapshot in time.
                 const snapshotRankings = calculatePlayerRankings(playersRaw, relevantTournaments);
-                
-                // Filter to only those who have debuted by this snapshot
                 const activeRankings = snapshotRankings.filter(p => p.hasPlayedAny);
                 
-                // Re-rank the active players to prevent empty gaps in the ladder
                 activeRankings.sort((a, b) => b.points - a.points || b.totalPoints - a.totalPoints || (a.name || '').localeCompare(b.name || ''));
                 activeRankings.forEach((p, idx) => p.rank = idx + 1);
                 
                 const playerPoints = activeRankings.map(p => ({
-                    id: p.id, 
-                    name: p.name, 
-                    pts: p.points,          // Official points (flats out on minor events)
-                    totalPts: p.totalPoints, // Official + Bonus (spikes on minor events)
-                    careerPoints: p.careerPoints,
-                    imageUrl: p.imageUrl, 
-                    nationality: p.nationality || 'UNK',
-                    rank: p.rank
+                    id: p.id, name: p.name, pts: p.points, totalPts: p.totalPoints, 
+                    careerPoints: p.careerPoints, wins: p.stats.wins, matchesPlayed: p.stats.wins + p.stats.losses,
+                    imageUrl: p.imageUrl, nationality: p.nationality || 'UNK', rank: p.rank
                 }));
 
                 const tier = getTournamentTier(currentT);
-                const isMajorPlus = ['grand_slam', 'major', 'finals'].includes(tier);
-
-                history.push({
-                    tournamentId: currentT.id,
-                    tournamentName: currentT.name,
-                    tier: tier,
-                    isMajorPlus: isMajorPlus,
-                    date: currentT.completedAt,
-                    standings: playerPoints
-                });
+                history.push({ tournamentId: currentT.id, tournamentName: currentT.name, tier: tier, isMajorPlus: ['grand_slam', 'major', 'finals'].includes(tier), date: currentT.completedAt, standings: playerPoints });
             });
-
             return history;
         };
 
         // --- Draw Generators ---
-
-        var generate64Draw = (selectedPlayers) => {
-            const draw = new Array(64).fill(null);
-            const seeds = selectedPlayers.slice(0, 16);
-            const others = selectedPlayers.slice(16).sort(() => Math.random() - 0.5);
-            const seedSlots = [0, 63, 31, 32, 15, 48, 16, 47, 7, 56, 24, 39, 8, 55, 23, 40];
-            seeds.forEach((seed, i) => { if (seedSlots[i] !== undefined) draw[seedSlots[i]] = seed; });
-            let otherIndex = 0;
-            for (let i = 0; i < 64; i++) { if (!draw[i]) draw[i] = others[otherIndex++]; }
-            const bracket = [];
-            const r64 = [];
-            for (let i = 0; i < 32; i++) r64.push({ id: `r0-m${i}`, p1: draw[i * 2]?.id || null, p2: draw[i * 2 + 1]?.id || null, winner: null, type: null });
-            bracket.push(r64);
-            let matchesInRound = 16;
-            for (let r = 1; r < 6; r++) {
-                const roundMatches = [];
-                for (let i = 0; i < matchesInRound; i++) roundMatches.push({ id: `r${r}-m${i}`, p1: null, p2: null, winner: null, type: null });
-                bracket.push(roundMatches);
-                matchesInRound /= 2;
+        var buildBracket = (size, selectedPlayers) => {
+            const draw = new Array(size).fill(null);
+            let numSeeds = size === 64 ? 16 : size === 32 ? 8 : size === 16 ? 4 : 2;
+            const seeds = selectedPlayers.slice(0, numSeeds);
+            const others = selectedPlayers.slice(numSeeds).sort(() => Math.random() - 0.5);
+            let seedSlots = [];
+            if(size===64) seedSlots = [0,63,31,32,15,48,16,47,7,56,24,39,8,55,23,40];
+            if(size===32) seedSlots = [0,31,15,16,7,24,8,23];
+            if(size===16) seedSlots = [0,15,7,8];
+            if(size===8) seedSlots = [0,7];
+            
+            seeds.forEach((s,i)=> { if(seedSlots[i]!==undefined) draw[seedSlots[i]] = s; });
+            let oIdx=0; for(let i=0;i<size;i++) if(!draw[i]) draw[i] = others[oIdx++];
+            
+            const bracket = []; const r1 = [];
+            for(let i=0;i<size/2;i++) r1.push({id:`r0-m${i}`, p1: draw[i*2]?.id||null, p2: draw[i*2+1]?.id||null, winner:null, type:null});
+            bracket.push(r1);
+            
+            let matches = size/4;
+            for(let r=1; matches>=1; r++) {
+                const rd = [];
+                for(let i=0; i<matches; i++) rd.push({id:`r${r}-m${i}`, p1:null, p2:null, winner:null, type:null});
+                bracket.push(rd);
+                matches /= 2;
             }
             return bracket;
-        };
-
-        var generate32Draw = (selectedPlayers) => {
-            const draw = new Array(32).fill(null);
-            const seeds = selectedPlayers.slice(0, 8);
-            const others = selectedPlayers.slice(8).sort(() => Math.random() - 0.5);
-            const seedSlots = [0, 31, 15, 16, 7, 24, 8, 23];
-            seeds.forEach((seed, i) => { if (seedSlots[i] !== undefined) draw[seedSlots[i]] = seed; });
-            let otherIndex = 0;
-            for (let i = 0; i < 32; i++) { if (!draw[i]) draw[i] = others[otherIndex++]; }
-            const bracket = [];
-            const r32 = [];
-            for (let i = 0; i < 16; i++) r32.push({ id: `r0-m${i}`, p1: draw[i * 2]?.id || null, p2: draw[i * 2 + 1]?.id || null, winner: null, type: null });
-            bracket.push(r32);
-            let matchesInRound = 8;
-            for (let r = 1; r < 5; r++) {
-                const roundMatches = [];
-                for (let i = 0; i < matchesInRound; i++) roundMatches.push({ id: `r${r}-m${i}`, p1: null, p2: null, winner: null, type: null });
-                bracket.push(roundMatches);
-                matchesInRound /= 2;
-            }
-            return bracket;
-        };
-
-        var generate16Draw = (selectedPlayers) => {
-            const draw = new Array(16).fill(null);
-            const seeds = selectedPlayers.slice(0, 4);
-            const others = selectedPlayers.slice(4).sort(() => Math.random() - 0.5);
-            const seedSlots = [0, 15, 7, 8]; 
-            seeds.forEach((seed, i) => { if (seedSlots[i] !== undefined) draw[seedSlots[i]] = seed; });
-            let otherIndex = 0;
-            for (let i = 0; i < 16; i++) { if (!draw[i]) draw[i] = others[otherIndex++]; }
-            const bracket = [];
-            const r16 = [];
-            for (let i = 0; i < 8; i++) r16.push({ id: `r0-m${i}`, p1: draw[i * 2]?.id || null, p2: draw[i * 2 + 1]?.id || null, winner: null, type: null });
-            bracket.push(r16);
-            let matchesInRound = 4;
-            for (let r = 1; r < 4; r++) {
-                const roundMatches = [];
-                for (let i = 0; i < matchesInRound; i++) roundMatches.push({ id: `r${r}-m${i}`, p1: null, p2: null, winner: null, type: null });
-                bracket.push(roundMatches);
-                matchesInRound /= 2;
-            }
-            return bracket;
-        };
-
-        var generate8Draw = (selectedPlayers) => {
-            const draw = new Array(8).fill(null);
-            const seeds = selectedPlayers.slice(0, 2);
-            const others = selectedPlayers.slice(2).sort(() => Math.random() - 0.5);
-            const seedSlots = [0, 7]; 
-            seeds.forEach((seed, i) => { if (seedSlots[i] !== undefined) draw[seedSlots[i]] = seed; });
-            let otherIndex = 0;
-            for (let i = 0; i < 8; i++) { if (!draw[i]) draw[i] = others[otherIndex++]; }
-            const bracket = [];
-            const r8 = [];
-            for (let i = 0; i < 4; i++) r8.push({ id: `r0-m${i}`, p1: draw[i * 2]?.id || null, p2: draw[i * 2 + 1]?.id || null, winner: null, type: null });
-            bracket.push(r8);
-            let matchesInRound = 2;
-            for (let r = 1; r < 3; r++) {
-                const roundMatches = [];
-                for (let i = 0; i < matchesInRound; i++) roundMatches.push({ id: `r${r}-m${i}`, p1: null, p2: null, winner: null, type: null });
-                bracket.push(roundMatches);
-                matchesInRound /= 2;
-            }
-            return bracket;
-        };
+        }
 
         var generateATPFinalsDraw = (selectedPlayers) => {
-            // Strictly Top 8 Players
             const seeds = selectedPlayers.slice(0, 8);
-            const groupA = [seeds[0]];
-            const groupB = [seeds[1]];
-            
-            Math.random() > 0.5 ? (groupA.push(seeds[2]), groupB.push(seeds[3])) : (groupA.push(seeds[3]), groupB.push(seeds[2]));
-            Math.random() > 0.5 ? (groupA.push(seeds[4]), groupB.push(seeds[5])) : (groupA.push(seeds[5]), groupB.push(seeds[4]));
-            Math.random() > 0.5 ? (groupA.push(seeds[6]), groupB.push(seeds[7])) : (groupA.push(seeds[7]), groupB.push(seeds[6]));
+            const gA = [seeds[0]]; const gB = [seeds[1]];
+            Math.random() > 0.5 ? (gA.push(seeds[2]), gB.push(seeds[3])) : (gA.push(seeds[3]), gB.push(seeds[2]));
+            Math.random() > 0.5 ? (gA.push(seeds[4]), gB.push(seeds[5])) : (gA.push(seeds[5]), gB.push(seeds[4]));
+            Math.random() > 0.5 ? (gA.push(seeds[6]), gB.push(seeds[7])) : (gA.push(seeds[7]), gB.push(seeds[6]));
 
-            const makeMatches = (group, name) => {
-                return [
-                    { id: `${name}-1`, p1: group[0].id, p2: group[1].id, winner: null, type: null, group: name },
-                    { id: `${name}-2`, p1: group[2].id, p2: group[3].id, winner: null, type: null, group: name },
-                    { id: `${name}-3`, p1: group[0].id, p2: group[2].id, winner: null, type: null, group: name },
-                    { id: `${name}-4`, p1: group[1].id, p2: group[3].id, winner: null, type: null, group: name },
-                    { id: `${name}-5`, p1: group[0].id, p2: group[3].id, winner: null, type: null, group: name },
-                    { id: `${name}-6`, p1: group[1].id, p2: group[2].id, winner: null, type: null, group: name },
-                ];
-            };
+            const makeMatches = (g, n) => [
+                { id: `${n}-1`, p1: g[0].id, p2: g[1].id, winner: null, type: null, group: n },
+                { id: `${n}-2`, p1: g[2].id, p2: g[3].id, winner: null, type: null, group: n },
+                { id: `${n}-3`, p1: g[0].id, p2: g[2].id, winner: null, type: null, group: n },
+                { id: `${n}-4`, p1: g[1].id, p2: g[3].id, winner: null, type: null, group: n },
+                { id: `${n}-5`, p1: g[0].id, p2: g[3].id, winner: null, type: null, group: n },
+                { id: `${n}-6`, p1: g[1].id, p2: g[2].id, winner: null, type: null, group: n },
+            ];
 
             return {
-                format: 'atp_finals',
-                groups: { A: groupA.map(p=>p.id), B: groupB.map(p=>p.id) },
-                groupMatches: JSON.stringify([...makeMatches(groupA, 'A'), ...makeMatches(groupB, 'B')]),
-                knockout: JSON.stringify([
-                    [{ id: 'sf-1', p1: null, p2: null, winner: null, type: null }, { id: 'sf-2', p1: null, p2: null, winner: null, type: null }],
-                    [{ id: 'f-1', p1: null, p2: null, winner: null, type: null }]
-                ])
+                format: 'atp_finals', groups: { A: gA.map(p=>p.id), B: gB.map(p=>p.id) },
+                groupMatches: JSON.stringify([...makeMatches(gA, 'A'), ...makeMatches(gB, 'B')]),
+                knockout: JSON.stringify([[{ id: 'sf-1', p1: null, p2: null, winner: null, type: null }, { id: 'sf-2', p1: null, p2: null, winner: null, type: null }], [{ id: 'f-1', p1: null, p2: null, winner: null, type: null }]])
             };
         };
 
@@ -625,8 +438,7 @@
                 if (!scores[m.p2]) scores[m.p2] = { id: m.p2, wins: 0, losses: 0, tiebreaker: 0 };
                 if (m.winner) {
                     const loser = m.winner === m.p1 ? m.p2 : m.p1;
-                    scores[m.winner].wins += 1;
-                    scores[loser].losses += 1;
+                    scores[m.winner].wins += 1; scores[loser].losses += 1;
                     scores[m.winner].tiebreaker += (m.type === 'lopsided' ? 2 : 1);
                     scores[loser].tiebreaker -= (m.type === 'lopsided' ? 2 : 1);
                 }
@@ -637,7 +449,7 @@
 
         // --- Custom Views ---
 
-        function IndividualPlayerChart({ history, type, filterPlayed = false }) {
+        function IndividualPlayerChart({ history, type, filterPlayed = false, totalPlayersCount = 10 }) {
             const [range, setRange] = useState(10);
             const [hoveredPointData, setHoveredPointData] = useState(null);
 
@@ -646,21 +458,19 @@
             if (data.length < 1) return <p className="text-royal-300 text-sm mt-4">Not enough tournament history.</p>;
 
             const width = 1000;
+            const height = 350; 
+            const pad = { top: 50, right: 60, bottom: 40, left: 60 };
             
             let minVal = type === 'rank' ? 1 : 0;
             let maxVal;
+            
             if (type === 'rank') {
-                maxVal = Math.max(10, ...data.map(d => d.rank)) + 2;
+                maxVal = Math.ceil(Math.max(10, totalPlayersCount) / 10) * 10;
             } else if (type === 'careerPoints') {
                 maxVal = Math.max(100, ...data.map(d => d.careerPoints)) * 1.1;
             } else {
                 maxVal = Math.max(100, ...data.map(d => d.totalPoints)) * 1.1;
             }
-
-            const pad = { top: 50, right: 60, bottom: 40, left: 60 };
-            const pixelsPerRank = 35;
-            const dynamicHeight = type === 'rank' ? Math.max(350, (maxVal - minVal) * pixelsPerRank + pad.top + pad.bottom) : 350;
-            const height = dynamicHeight;
 
             const getX = (i) => data.length === 1 ? (width / 2) : pad.left + (i * ((width - pad.left - pad.right) / (data.length - 1)));
             const getY = (val) => {
@@ -698,15 +508,17 @@
                         <svg viewBox={`0 0 ${width} ${height}`} className="w-full h-auto overflow-visible">
                             {/* Grid lines */}
                             {type === 'rank' ? (
-                                [...Array(Math.floor(maxVal))].map((_, i) => {
-                                    const r = i + 1;
-                                    return (
-                                        <g key={`grid-${i}`}>
+                                (() => {
+                                    const lines = [1];
+                                    const step = maxVal > 50 ? 10 : 5;
+                                    for (let i = step; i <= maxVal; i += step) lines.push(i);
+                                    return lines.map((r, i) => (
+                                        <g key={`grid-rank-${i}`}>
                                             <line x1={pad.left} y1={getY(r)} x2={width - pad.right} y2={getY(r)} stroke="#13382d" strokeWidth="1" strokeDasharray="4 4" />
                                             <text x={pad.left - 10} y={getY(r)} fill="#789e90" fontSize="12" fontWeight="bold" textAnchor="end" alignmentBaseline="middle">#{r}</text>
                                         </g>
-                                    );
-                                })
+                                    ));
+                                })()
                             ) : (
                                 (() => {
                                     const step = Math.max(10, Math.ceil(maxVal / 8)); 
@@ -757,13 +569,13 @@
                                     <g key={i}>
                                         <circle cx={ptX} cy={ptY} r={dotRadius} fill="#051611" stroke={dotStroke} strokeWidth={isMinor ? "1.5" : "2"} opacity={dotOpacity} style={{ transition: 'all 0.2s ease' }} />
                                         
-                                        {showLabel && !isMinor && (
-                                            <text x={ptX} y={ptY - 18} fill="#d4af37" fontSize="16" fontWeight="900" textAnchor="middle" stroke="#051611" strokeWidth="4" paintOrder="stroke">
+                                        {(showLabel || isMinor) && (
+                                            <text x={ptX} y={ptY - (isMinor ? 12 : 18)} fill={isMinor ? "#a0bdb2" : "#d4af37"} fontSize={isMinor ? "11" : "16"} fontWeight="900" textAnchor="middle" stroke="#051611" strokeWidth={isMinor ? "2" : "4"} paintOrder="stroke" opacity={isMinor && !isHovered ? 0 : 1} className={isMinor ? "group-hover:opacity-100 transition-opacity" : ""}>
                                                 {type === 'rank' ? `#${d.rank}` : val.toLocaleString()}
                                             </text>
                                         )}
 
-                                        {(type === 'points' || type === 'careerPoints') && d.achievement && (
+                                        {(type === 'points' || type === 'careerPoints') && d.achievement && !isMinor && (
                                             <g transform={`translate(${ptX - 10}, ${ptY - 60})`}>
                                                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={getAchColor(d.achievement)} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                                                     <path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6M18 9h1.5a2.5 2.5 0 0 0 0-5H18M4 22h16M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22M18 2H6v7a6 6 0 0 0 12 0V2Z"/>
@@ -804,12 +616,27 @@
             const historyData = filteredHistory.slice(range === 'all' ? 0 : -range);
             if (historyData.length < 1) return <p className="text-royal-300 text-sm mt-4">Not enough Major+ tournament history to generate a graph.</p>;
 
+            const getVal = (s) => {
+                if (type === 'rank') return s.rank;
+                if (type === 'wins') return s.wins || 0;
+                if (type === 'matches') return s.matchesPlayed || 0;
+                return s.pts;
+            };
+
             const includedPlayerIds = new Set();
-            historyData.forEach(h => {
-                h.standings.forEach(s => {
-                    if (s.rank <= 12) includedPlayerIds.add(s.id);
+            if (type === 'rank' || type === 'points') {
+                historyData.forEach(h => {
+                    h.standings.forEach(s => {
+                        if (s.rank <= 12) includedPlayerIds.add(s.id);
+                    });
                 });
-            });
+            } else {
+                const lastSnapshot = historyData[historyData.length - 1];
+                if (lastSnapshot) {
+                    const sorted = [...lastSnapshot.standings].sort((a,b) => getVal(b) - getVal(a));
+                    sorted.slice(0, 12).forEach(s => includedPlayerIds.add(s.id));
+                }
+            }
 
             const lines = [];
             Array.from(includedPlayerIds).forEach(pid => {
@@ -824,9 +651,9 @@
                     const prevS = k > 0 ? historyData[k-1].standings.find(st => st.id === pid) : null;
                     const nextS = k < historyData.length - 1 ? historyData[k+1].standings.find(st => st.id === pid) : null;
 
-                    const isTop12 = s.rank <= 12;
-                    const prevTop12 = prevS && prevS.rank <= 12;
-                    const nextTop12 = nextS && nextS.rank <= 12;
+                    const isTop12 = includedPlayerIds.has(s.id);
+                    const prevTop12 = prevS && includedPlayerIds.has(s.id);
+                    const nextTop12 = nextS && includedPlayerIds.has(s.id);
 
                     if (isTop12 || prevTop12 || nextTop12) {
                         visiblePoints.push({ k, s, h: historyData[k] });
@@ -858,9 +685,11 @@
             const height = type === 'rank' ? 900 : 650; 
             const pad = { top: 40, right: 260, bottom: 80, left: type === 'rank' ? 60 : 80 }; 
 
-            let maxPointsVal = 100;
-            historyData.forEach(h => { h.standings.forEach(s => { if (includedPlayerIds.has(s.id) && s.pts > maxPointsVal) maxPointsVal = s.pts; }) });
-            maxPointsVal = Math.ceil(maxPointsVal * 1.05);
+            let maxPointsVal = 10;
+            historyData.forEach(h => { h.standings.forEach(s => { if (includedPlayerIds.has(s.id) && getVal(s) > maxPointsVal) maxPointsVal = getVal(s); }) });
+            if (type !== 'rank') {
+                maxPointsVal = Math.ceil(maxPointsVal * 1.05);
+            }
 
             const maxRankDisplay = 17; 
 
@@ -877,14 +706,14 @@
 
             lines.forEach(line => {
                 line.paths = line.segments.map(seg => {
-                    return seg.map((pt, i) => `${i === 0 ? 'M' : 'L'} ${getX(pt.k)} ${getY(type === 'rank' ? pt.s.rank : pt.s.pts)}`).join(' ');
+                    return seg.map((pt, i) => `${i === 0 ? 'M' : 'L'} ${getX(pt.k)} ${getY(getVal(pt.s))}`).join(' ');
                 });
             });
 
             const endLabels = lines.map(line => {
                 const lastSeg = line.segments[line.segments.length - 1];
                 const endPt = lastSeg[lastSeg.length - 1];
-                const rawY = getY(type === 'rank' ? endPt.s.rank : endPt.s.pts);
+                const rawY = getY(getVal(endPt.s));
                 return { id: line.player.id, targetY: rawY, currentY: rawY };
             }).sort((a, b) => a.targetY - b.targetY);
 
@@ -907,6 +736,10 @@
                 if (b.player.id === selectedLineId || b.player.id === hoveredLineId) return -1;
                 return 0;
             });
+
+            let metricLabel = 'Points';
+            if (type === 'wins') metricLabel = 'Wins';
+            if (type === 'matches') metricLabel = 'Matches Played';
 
             return (
                 <div className="w-full">
@@ -991,7 +824,7 @@
                                 const lastSeg = line.segments[line.segments.length - 1];
                                 const endPt = lastSeg[lastSeg.length - 1];
                                 const endX = getX(endPt.k);
-                                const endY = getY(type === 'rank' ? endPt.s.rank : endPt.s.pts);
+                                const endY = getY(getVal(endPt.s));
                                 const adjY = labelPositions[line.player.id];
 
                                 return (
@@ -999,15 +832,15 @@
                                         {/* Plotted points */}
                                         {line.segments.map((seg, sIdx) => seg.map((pt, i) => {
                                             const ptX = getX(pt.k);
-                                            const ptY = getY(type === 'rank' ? pt.s.rank : pt.s.pts);
+                                            const ptY = getY(getVal(pt.s));
                                             
                                             return (
                                                 <g key={`pt-${line.player.id}-${sIdx}-${i}`} className="group cursor-crosshair">
                                                     <circle cx={ptX} cy={ptY} r={isHighlighted ? "6" : "5"} fill="#051611" stroke={line.color} strokeWidth={isHighlighted ? 4 : 2} style={{ transition: 'r 0.2s ease, stroke-width 0.2s ease' }} />
                                                     
-                                                    {type === 'points' && (
+                                                    {type !== 'rank' && (
                                                         <text x={ptX} y={ptY - 12} fill={line.color} fontSize="12" fontWeight="900" textAnchor="middle" stroke="#051611" strokeWidth="4" paintOrder="stroke" className="opacity-0 group-hover:opacity-100" style={{ transition: 'opacity 0.2s ease' }}>
-                                                            {pt.s.pts.toLocaleString()}
+                                                            {getVal(pt.s).toLocaleString()}
                                                         </text>
                                                     )}
                                                     {type === 'rank' && pt.s.rank > maxRankDisplay && (
@@ -1017,7 +850,7 @@
                                                     )}
 
                                                     <circle cx={ptX} cy={ptY} r="20" fill="transparent" />
-                                                    <title>{`${pt.h.tournamentName}\n${line.player.name}\nRank: #${pt.s.rank}\nPoints: ${pt.s.pts.toLocaleString()}`}</title>
+                                                    <title>{`${pt.h.tournamentName}\n${line.player.name}\nRank: #${pt.s.rank}\n${metricLabel}: ${getVal(pt.s).toLocaleString()}`}</title>
                                                 </g>
                                             );
                                         }))}
@@ -1027,7 +860,7 @@
                                             <path d={`M ${endX} ${endY} C ${endX + 10} ${endY}, ${endX + 10} ${adjY}, ${endX + 20} ${adjY}`} fill="none" stroke={line.color} strokeWidth="2" opacity="0.6" strokeDasharray="3 3" />
                                         )}
 
-                                        {/* Interactive Inline Profile Label anchored perfectly without CSS transform scales (prevents flying bug) */}
+                                        {/* Interactive Inline Profile Label */}
                                         <g 
                                             transform={`translate(${endX + 20}, ${adjY - 14})`} 
                                             className="cursor-pointer"
@@ -1248,7 +1081,7 @@
             const globalHistory = useMemo(() => getGlobalHistory(playersRaw, tournaments), [playersRaw, tournaments]);
 
             return (
-                <div className="max-w-[1400px] mx-auto space-y-16 pb-20">
+                <div className="max-w-[1400px] mx-auto space-y-8 pb-20">
                     <header className="mb-4">
                         <h1 className="text-3xl font-bold text-white flex items-center gap-3"><TrendingUp className="text-gold-500 w-8 h-8"/> Global Analytics</h1>
                         <p className="text-royal-300 mt-2">Click or hover on any line or profile picture to isolate their trajectory. Official Rankings only update after Major+ events.</p>
@@ -1263,14 +1096,20 @@
                         <TopPlayersChart globalHistory={globalHistory} playersRaw={playersRaw} type="points" onNavigate={onNavigate} />
                     </div>
                     <div className="bg-royal-900 p-6 rounded-2xl border border-royal-800 shadow-xl">
-                        <h2 className="text-2xl font-bold text-white flex items-center gap-3 mb-6"><Globe className="text-gold-500 w-7 h-7"/> Global Nations Trajectory</h2>
-                        <TopNationsChart globalHistory={globalHistory} onNavigate={onNavigate} />
+                        <h2 className="text-2xl font-bold text-white flex items-center gap-3 mb-6"><Activity className="text-gold-500 w-7 h-7"/> Top 12 Matches Played</h2>
+                        <TopPlayersChart globalHistory={globalHistory} playersRaw={playersRaw} type="matches" onNavigate={onNavigate} />
+                    </div>
+                    <div className="bg-royal-900 p-6 rounded-2xl border border-royal-800 shadow-xl">
+                        <h2 className="text-2xl font-bold text-white flex items-center gap-3 mb-6"><Trophy className="text-gold-500 w-7 h-7"/> Top 12 Match Wins</h2>
+                        <TopPlayersChart globalHistory={globalHistory} playersRaw={playersRaw} type="wins" onNavigate={onNavigate} />
                     </div>
                 </div>
             );
         }
 
-        function NationsView({ players, onNavigate }) {
+        function NationsView({ players, playersRaw, tournaments, onNavigate }) {
+            const globalHistory = useMemo(() => getGlobalHistory(playersRaw, tournaments), [playersRaw, tournaments]);
+
             const nationStats = useMemo(() => {
                 const stats = {};
                 players.forEach(p => {
@@ -1287,14 +1126,18 @@
             }, [players]);
 
             return (
-                <div className="max-w-5xl mx-auto space-y-6 pb-20">
-                    <header className="mb-8 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-                        <div>
-                            <h1 className="text-3xl font-bold text-white flex items-center gap-3"><Globe className="text-gold-500 w-8 h-8"/> Nations Leaderboard</h1>
-                            <p className="text-royal-300 mt-2">Aggregate performance of all active players by country.</p>
-                        </div>
+                <div className="max-w-[1400px] mx-auto space-y-8 pb-20">
+                    <header className="mb-4">
+                        <h1 className="text-3xl font-bold text-white flex items-center gap-3"><Globe className="text-gold-500 w-8 h-8"/> Nations Analytics</h1>
+                        <p className="text-royal-300 mt-2">Aggregate performance and historical trajectory of all active players by country.</p>
                     </header>
-                    <div className="bg-royal-950/50 rounded-xl border border-royal-800 overflow-hidden shadow-xl">
+
+                    <div className="bg-royal-900 p-6 rounded-2xl border border-royal-800 shadow-xl">
+                        <h2 className="text-2xl font-bold text-white flex items-center gap-3 mb-6"><TrendingUp className="text-gold-500 w-7 h-7"/> Global Nations Trajectory</h2>
+                        <TopNationsChart globalHistory={globalHistory} onNavigate={onNavigate} />
+                    </div>
+
+                    <div className="bg-royal-950/50 rounded-xl border border-royal-800 overflow-hidden shadow-xl max-w-5xl mx-auto mt-8">
                         <div className="overflow-x-auto">
                             <table className="w-full text-left border-collapse">
                                 <thead><tr className="bg-royal-900/80 text-royal-200 text-sm uppercase">
@@ -1892,9 +1735,9 @@
                                 </div>
                             </div>
                             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-                                <div className="bg-royal-900 p-6 rounded-xl border border-royal-800 shadow-md">
-                                    <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2"><Star className="text-gold-500"/> Scoring Tournaments</h2>
-                                    <div className="space-y-2 max-h-96 overflow-y-auto pr-2">{player.recentTournaments.map((t, i) => {
+                                <div className="bg-royal-900 p-6 rounded-xl border border-royal-800 shadow-md h-[400px] flex flex-col">
+                                    <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2 shrink-0"><Star className="text-gold-500"/> Scoring Tournaments</h2>
+                                    <div className="space-y-2 overflow-y-auto pr-2 flex-1">{player.recentTournaments.map((t, i) => {
                                         const tierConf = TOURNAMENT_TIERS[t.tier || 'major'];
                                         return (
                                             <div key={i} onClick={() => onNavigate('tournaments', null, t.tournamentId)} className="flex justify-between p-3 bg-royal-950/50 rounded-lg border border-royal-800 hover:border-gold-500/50 cursor-pointer hover:shadow-md transition-all group">
@@ -1908,9 +1751,9 @@
                                         )
                                     })}</div>
                                 </div>
-                                <div className="bg-royal-900 p-6 rounded-xl border border-royal-800 shadow-md">
-                                    <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2"><History className="text-emerald-500"/> Match History</h2>
-                                    <div className="space-y-2 max-h-96 overflow-y-auto pr-2">{matchHistory.map((m, i) => {
+                                <div className="bg-royal-900 p-6 rounded-xl border border-royal-800 shadow-md h-[400px] flex flex-col">
+                                    <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2 shrink-0"><History className="text-emerald-500"/> Match History</h2>
+                                    <div className="space-y-2 overflow-y-auto pr-2 flex-1">{matchHistory.map((m, i) => {
                                         const tierConf = TOURNAMENT_TIERS[m.tier];
                                         return (
                                             <div key={i} onClick={() => onNavigate('tournaments', null, m.tournamentId)} className={`p-3 rounded-lg border cursor-pointer hover:-translate-y-0.5 hover:shadow-md transition-all group ${m.isWin ? 'bg-[#059669]/10 border-[#059669]/30 hover:border-[#059669]/60' : 'bg-[#be123c]/10 border-[#be123c]/30 hover:border-[#be123c]/60'}`}>
@@ -1923,14 +1766,14 @@
                                         );
                                     })}</div>
                                 </div>
-                                <div className="bg-royal-900 p-6 rounded-xl border border-royal-800 shadow-md flex flex-col">
-                                    <div className="mb-4">
+                                <div className="bg-royal-900 p-6 rounded-xl border border-royal-800 shadow-md h-[400px] flex flex-col">
+                                    <div className="mb-4 border-b border-royal-800 pb-3 shrink-0">
                                         <h2 className="text-xl font-bold text-white flex items-center gap-2 mb-1"><Users className="text-purple-400"/> Head-to-Head</h2>
                                         <div className="text-sm text-royal-300 font-medium tracking-wide">
                                             Overall: <span className="text-[#059669] font-bold">{winningCount}</span> - <span className="text-[#be123c] font-bold">{losingCount}</span> - <span className="text-royal-400 font-bold">{tiedCount}</span>
                                         </div>
                                     </div>
-                                    <div className="space-y-2 flex-1 overflow-y-auto pr-2 border-t border-royal-800 pt-4">
+                                    <div className="space-y-2 flex-1 overflow-y-auto pr-2">
                                         {h2hStats.length === 0 ? (
                                             <p className="text-royal-300 text-sm">No match records yet.</p>
                                         ) : (
@@ -1978,16 +1821,21 @@
                                 </div>
                                 <div className="md:col-span-2 lg:col-span-3 bg-royal-900 p-6 rounded-xl border border-royal-800 shadow-md">
                                     <h2 className="text-2xl font-bold text-white flex items-center gap-2 mb-6"><TrendingUp className="text-gold-500"/> Career Ranking Trajectory</h2>
-                                    <IndividualPlayerChart history={rankingHistory} type="rank" filterPlayed={false} />
+                                    <IndividualPlayerChart history={rankingHistory} type="rank" filterPlayed={false} totalPlayersCount={players.length} />
                                 </div>
                                 <div className="md:col-span-2 lg:col-span-3 bg-royal-900 p-6 rounded-xl border border-royal-800 shadow-md">
                                     <h2 className="text-2xl font-bold text-white flex items-center gap-2 mb-6"><BarChart2 className="text-gold-500"/> Rolling 20-Tournament Points</h2>
-                                    <p className="text-royal-300 text-sm mb-4">The solid line shows total rolling points for events attended. The blue dotted line shows the exact points earned at each specific event. <span className="text-royal-200 bg-royal-950 px-2 py-1 rounded">Note: Minor events (Pro/Challenger) do not consume the 20-tournament limit and are marked with smaller silver dots.</span></p>
-                                    <IndividualPlayerChart history={rankingHistory} type="points" filterPlayed={true} />
+                                    <p className="text-royal-300 text-sm mb-4 leading-relaxed">
+                                        The solid line shows total rolling points for events attended. The blue dotted line shows the exact points earned at each specific event. 
+                                        <span className="block mt-3 text-royal-200 bg-royal-950/80 px-4 py-2.5 rounded-lg border border-royal-800 shadow-inner inline-block w-fit">
+                                            <strong>Note:</strong> Minor events (Pro/Challenger) do not consume the 20-tournament limit and are marked with smaller silver dots.
+                                        </span>
+                                    </p>
+                                    <IndividualPlayerChart history={rankingHistory} type="points" filterPlayed={true} totalPlayersCount={players.length} />
                                 </div>
                                 <div className="md:col-span-2 lg:col-span-3 bg-royal-900 p-6 rounded-xl border border-royal-800 shadow-md">
                                     <h2 className="text-2xl font-bold text-white flex items-center gap-2 mb-6"><BarChart2 className="text-gold-500"/> Career Points Accumulation</h2>
-                                    <IndividualPlayerChart history={rankingHistory} type="careerPoints" filterPlayed={true} />
+                                    <IndividualPlayerChart history={rankingHistory} type="careerPoints" filterPlayed={true} totalPlayersCount={players.length} />
                                 </div>
                             </div>
                         </>
@@ -2061,13 +1909,16 @@
                             return (
                                 <div key={t.id} onClick={() => onSelect(t.id)} className={`bg-royal-900 p-6 rounded-xl border-2 transition-all cursor-pointer flex flex-col h-full hover:scale-105 ${t.status === 'completed' ? 'border-royal-800 hover:border-gold-500' : tierConf?.border + ' shadow-lg shadow-black/20'}`}>
                                     <div className="flex justify-between items-start mb-2">
-                                        <h3 className="font-bold text-xl text-white truncate pr-2">{t.name}</h3>
+                                        <h3 className="font-bold text-xl text-white truncate pr-2 flex items-center gap-2">
+                                            <span className="text-2xl">{getFlag(t.hostCountry || 'USA')}</span>
+                                            <span className="truncate">{t.name}</span>
+                                        </h3>
                                     </div>
                                     <div className="flex gap-2 mb-4">
                                         <span className={`text-xs font-bold uppercase tracking-wider px-2 py-1 rounded ${tierConf?.bg || 'bg-royal-800'} ${tierConf?.color || 'text-royal-200'}`}>{tierConf?.name || 'Tournament'}</span>
                                         <span className={`text-xs font-bold uppercase tracking-wider px-2 py-1 rounded ${t.status === 'completed' ? 'bg-[#059669]/20 text-[#059669]' : 'bg-royal-800 text-royal-200'}`}>{t.status}</span>
                                     </div>
-                                    {t.description && <div className="text-royal-200 text-sm mb-4 line-clamp-2 italic">"{t.description}"</div>}
+                                    {t.description && <div className="text-royal-200 text-sm mb-4 line-clamp-1 italic text-ellipsis overflow-hidden">"{t.description}"</div>}
                                     <div className="text-royal-300 text-sm mt-auto">{drawSize} Participants • {new Date(t.createdAt).toLocaleDateString()}</div>
                                 </div>
                             );
@@ -2083,12 +1934,14 @@
         function CreateTournamentView({ players, onBack, onSuccess, db, appId }) {
             const [name, setName] = useState('');
             const [description, setDescription] = useState('');
+            const [hostCountry, setHostCountry] = useState('USA');
             const [tier, setTier] = useState('major');
             const [size, setSize] = useState(32);
             const [selectedWildcards, setSelectedWildcards] = useState([]);
             const [withdrawnIds, setWithdrawnIds] = useState([]);
             const [isGenerating, setIsGenerating] = useState(false);
             const [wcSearch, setWcSearch] = useState('');
+            const [autoSearch, setAutoSearch] = useState('');
             
             const tierConf = TOURNAMENT_TIERS[tier];
             
@@ -2169,6 +2022,11 @@
                 (p.nationality || '').toLowerCase().includes(wcSearch.toLowerCase())
             );
 
+            const filteredAuto = autoQualifiers.filter(p => 
+                p.name.toLowerCase().includes(autoSearch.toLowerCase()) || 
+                (p.nationality || '').toLowerCase().includes(autoSearch.toLowerCase())
+            );
+
             const handleCreate = async () => {
                 if (!name.trim() || autoQualifiers.length + selectedWildcards.length !== size) return;
                 setIsGenerating(true);
@@ -2197,7 +2055,7 @@
                     }
 
                     const docRef = await window.fb.addDoc(window.fb.collection(db, 'artifacts', appId, 'public', 'data', 'tournaments'), { 
-                        name, description: description.trim(), tier, status: 'active', createdAt: Date.now(), selectedPlayers: selected.map(p => p.id), 
+                        name, description: description.trim(), hostCountry, tier, status: 'active', createdAt: Date.now(), selectedPlayers: selected.map(p => p.id), 
                         format, bracket,
                         ...(groupMatches ? { groupMatches, groups } : {})
                     });
@@ -2223,9 +2081,15 @@
                             </div>
                         </div>
 
-                        <div className="mb-6">
-                            <label className="block text-sm font-medium text-royal-300 mb-2">Tournament Name</label>
-                            <input type="text" className="w-full bg-royal-950 border border-royal-800 text-white px-4 py-3 rounded-lg focus:outline-none focus:border-gold-500" placeholder="e.g. World Championship 2026..." value={name} onChange={e => setName(e.target.value)} />
+                        <div className="grid md:grid-cols-2 gap-6 mb-6">
+                            <div>
+                                <label className="block text-sm font-medium text-royal-300 mb-2">Tournament Name</label>
+                                <input type="text" className="w-full bg-royal-950 border border-royal-800 text-white px-4 py-3 rounded-lg focus:outline-none focus:border-gold-500" placeholder="e.g. World Championship 2026..." value={name} onChange={e => setName(e.target.value)} />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-royal-300 mb-2">Host Country</label>
+                                <CountrySelect value={hostCountry} onChange={setHostCountry} />
+                            </div>
                         </div>
                         
                         <div className="mb-6">
@@ -2270,17 +2134,30 @@
                                                     )}
                                                 </div>
                                             </div>
-                                            <div className="bg-royal-950 rounded-lg p-2 max-h-[320px] overflow-y-auto border border-royal-800 space-y-1">
-                                                {autoQualifiers.map(p => (
-                                                    <div key={p.id} onClick={() => toggleWithdraw(p.id)} className="p-2 opacity-90 hover:opacity-100 text-sm flex items-center justify-between text-white cursor-pointer hover:bg-red-500/20 rounded transition-colors group">
-                                                        <span className="flex items-center">
-                                                            <span className="font-mono text-royal-400 mr-2 w-6">#{p.rank}</span> 
-                                                            <span className="mr-2">{getFlag(p.nationality)}</span> {p.name}
-                                                            <span className="text-xs text-royal-300 ml-2 group-hover:text-red-300">({p.points.toLocaleString()} pts)</span>
-                                                        </span>
-                                                        <X size={14} className="text-red-500 opacity-0 group-hover:opacity-100 transition-opacity" />
-                                                    </div>
-                                                ))}
+                                            <div className="bg-royal-950 rounded-lg p-2 h-96 border border-royal-800 flex flex-col">
+                                                <div className="relative mb-2 shrink-0">
+                                                    <input 
+                                                        type="text" 
+                                                        placeholder="Search qualifiers..." 
+                                                        className="w-full bg-royal-900 border border-royal-700 text-white px-3 py-2 pl-9 rounded-lg text-sm focus:outline-none focus:border-gold-500" 
+                                                        value={autoSearch} 
+                                                        onChange={e => setAutoSearch(e.target.value)} 
+                                                    />
+                                                    <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-royal-400" />
+                                                </div>
+                                                <div className="flex-1 overflow-y-auto space-y-1 pr-1">
+                                                    {filteredAuto.map(p => (
+                                                        <div key={p.id} onClick={() => toggleWithdraw(p.id)} className="p-2 opacity-90 hover:opacity-100 text-sm flex items-center justify-between text-white cursor-pointer hover:bg-red-500/20 rounded transition-colors group">
+                                                            <span className="flex items-center">
+                                                                <span className="font-mono text-royal-400 mr-2 w-6">#{p.rank}</span> 
+                                                                <span className="mr-2">{getFlag(p.nationality)}</span> {p.name}
+                                                                <span className="text-xs text-royal-300 ml-2 group-hover:text-red-300">({p.points.toLocaleString()} pts)</span>
+                                                            </span>
+                                                            <X size={14} className="text-red-500 opacity-0 group-hover:opacity-100 transition-opacity" />
+                                                        </div>
+                                                    ))}
+                                                    {filteredAuto.length === 0 && <div className="text-center py-4 text-royal-400 text-sm">No players found.</div>}
+                                                </div>
                                             </div>
                                             
                                             {withdrawnPlayers.length > 0 && (
@@ -2517,6 +2394,7 @@
                             </button>
                             <h1 className="text-2xl font-bold text-white flex items-center gap-3">
                                 <span className={`${tierConf?.color || 'text-royal-300'} text-sm uppercase tracking-widest border border-current px-2 py-1 rounded`}>{tierConf?.name || 'Tournament'}</span>
+                                <span className="text-3xl" title={getCountryName(tournament.hostCountry || 'USA')}>{getFlag(tournament.hostCountry || 'USA')}</span>
                                 {tournament.name}
                                 {tournament.status === 'completed' && <span className="bg-[#059669]/20 text-[#059669] text-xs px-2 py-1 rounded ml-2">COMPLETED</span>}
                             </h1>
@@ -2873,6 +2751,7 @@
                             </button>
                             <h1 className="text-3xl font-bold text-white flex items-center gap-3">
                                 <span className="text-emerald-500 text-sm uppercase tracking-widest border border-emerald-500/50 px-2 py-1 rounded bg-emerald-500/20">SNB Internationals</span>
+                                <span className="text-4xl" title={getCountryName(tournament.hostCountry || 'USA')}>{getFlag(tournament.hostCountry || 'USA')}</span>
                                 {tournament.name}
                                 {tournament.status === 'completed' && <span className="bg-[#059669]/20 text-[#059669] text-sm px-2 py-1 rounded font-bold uppercase">Completed</span>}
                             </h1>
@@ -3114,7 +2993,7 @@
                 if (!window.fb) return;
                 
                 if (!firebaseConfig.apiKey) {
-                    console.warn("Firebase configuration is missing! The app requires a valid Firebase configuration object to function.");
+                    console.warn("Firebase configuration is missing!");
                     setFirebaseError(true);
                     setLoading(false);
                     return; 
@@ -3128,28 +3007,12 @@
                     
                     const initAuth = async () => {
                         if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-                            try {
-                                await window.fb.signInWithCustomToken(auth, __initial_auth_token);
-                            } catch(err) {
-                                await window.fb.signInAnonymously(auth);
-                            }
-                        } else {
-                            await window.fb.signInAnonymously(auth);
-                        }
+                            try { await window.fb.signInWithCustomToken(auth, __initial_auth_token); } catch(err) { await window.fb.signInAnonymously(auth); }
+                        } else { await window.fb.signInAnonymously(auth); }
                     };
-                    
-                    initAuth().catch(err => {
-                        console.error("Auth failed:", err);
-                        setFirebaseError(true);
-                        setLoading(false);
-                    });
-                    
+                    initAuth().catch(err => { setFirebaseError(true); setLoading(false); });
                     window.fb.onAuthStateChanged(auth, setUser);
-                } catch (e) {
-                    console.error("Firebase initialization error:", e);
-                    setFirebaseError(true);
-                    setLoading(false);
-                }
+                } catch (e) { setFirebaseError(true); setLoading(false); }
             }, []);
 
             useEffect(() => {
@@ -3157,30 +3020,21 @@
                 const pRef = window.fb.collection(db, 'artifacts', appId, 'public', 'data', 'players');
                 const tRef = window.fb.collection(db, 'artifacts', appId, 'public', 'data', 'tournaments');
                 
-                const unsubP = window.fb.onSnapshot(pRef, snap => setPlayersRaw(snap.docs.map(d => ({ id: d.id, ...d.data() }))), err => { console.error(err); setFirebaseError(true); });
+                const unsubP = window.fb.onSnapshot(pRef, snap => setPlayersRaw(snap.docs.map(d => ({ id: d.id, ...d.data() }))), err => { setFirebaseError(true); });
                 const unsubT = window.fb.onSnapshot(tRef, snap => { 
                     setTournaments(snap.docs.map(d => { 
-                        const dt = d.data(); 
-                        let b = []; 
-                        if (dt.format !== 'atp_finals') {
-                            try { 
-                                b = typeof dt.bracket === 'string' ? JSON.parse(dt.bracket) : dt.bracket; 
-                            } catch(e){
-                                console.error("Error parsing traditional bracket", e);
-                            } 
-                        }
+                        const dt = d.data(); let b = []; 
+                        if (dt.format !== 'atp_finals') { try { b = typeof dt.bracket === 'string' ? JSON.parse(dt.bracket) : dt.bracket; } catch(e){} }
                         return { id: d.id, ...dt, bracket: dt.format === 'atp_finals' ? dt.bracket : b }; 
                     })); 
                     setLoading(false); 
-                }, err => { console.error(err); setFirebaseError(true); });
+                }, err => { setFirebaseError(true); });
                 
                 return () => { unsubP(); unsubT(); };
             }, [user, db]);
 
-            // Sync app state with Browser History for Back/Forward button support
             useEffect(() => {
-                window.history.replaceState({ tab: 'dashboard', playerId: null, tournamentId: null, nationCode: null }, '');
-                
+                try { window.history.replaceState({ tab: 'dashboard', playerId: null, tournamentId: null, nationCode: null }, ''); } catch(e){}
                 const handlePopState = (event) => {
                     if (event.state) {
                         setActiveTab(event.state.tab);
@@ -3189,7 +3043,6 @@
                         setSelectedNationCode(event.state.nationCode);
                     }
                 };
-                
                 window.addEventListener('popstate', handlePopState);
                 return () => window.removeEventListener('popstate', handlePopState);
             }, []);
@@ -3197,35 +3050,20 @@
             const players = useMemo(() => calculatePlayerRankings(playersRaw, tournaments), [playersRaw, tournaments]);
             
             const navigate = (tab, playerId = null, tournamentId = null, nationCode = null) => {
-                setActiveTab(tab);
-                setSelectedPlayerId(playerId);
-                setSelectedTournamentId(tournamentId);
-                setSelectedNationCode(nationCode);
-                window.history.pushState({ tab, playerId, tournamentId, nationCode }, '');
+                setActiveTab(tab); setSelectedPlayerId(playerId); setSelectedTournamentId(tournamentId); setSelectedNationCode(nationCode);
+                try { window.history.pushState({ tab, playerId, tournamentId, nationCode }, ''); } catch(e){}
             };
 
             const navigateTo = (tab) => navigate(tab);
             const handlePlayerSelect = (id) => navigate('players', id);
 
-            if (loading) return (
-                <div className="min-h-screen flex items-center justify-center bg-royal-950 text-royal-50 w-full">
-                    <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-gold-500"></div>
-                </div>
-            );
-
+            if (loading) return <div className="min-h-screen flex items-center justify-center bg-royal-950 text-royal-50 w-full"><div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-gold-500"></div></div>;
             if (firebaseError || (!user && !loading)) return (
                 <div className="min-h-screen flex flex-col items-center justify-center bg-royal-950 text-royal-50 w-full p-4">
                     <div className="text-center p-8 bg-royal-900 rounded-xl border border-red-500/30 max-w-md shadow-2xl">
                         <Shield size={48} className="mx-auto mb-4 text-red-500" />
                         <h2 className="text-xl font-bold text-white mb-2">Firebase Configuration Required</h2>
-                        <p className="text-royal-200 text-sm mb-4">To run this app outside of the Canvas preview environment, you must provide your own Firebase configuration.</p>
-                        <p className="text-royal-300 text-xs text-left bg-royal-950 p-4 rounded border border-royal-800">
-                            1. Create a free Firebase project.<br/>
-                            2. Add a Web App to the project.<br/>
-                            3. Enable Anonymous Authentication.<br/>
-                            4. Enable Firestore Database.<br/>
-                            5. Copy the <code>firebaseConfig</code> object and paste it into the <code>index.html</code> code.
-                        </p>
+                        <p className="text-royal-300 text-xs text-left bg-royal-950 p-4 rounded border border-royal-800">Please provide valid Firebase credentials in index.html.</p>
                     </div>
                 </div>
             );
@@ -3233,39 +3071,39 @@
             return (
                 <div className="min-h-screen bg-royal-950 text-royal-50 flex font-sans overflow-hidden">
                     <nav className="w-64 bg-royal-900 border-r border-royal-800 flex flex-col hidden md:flex shrink-0">
-                        <div onClick={() => navigateTo('dashboard')} className="p-6 border-b border-royal-800 flex items-center gap-2 text-xl font-bold text-white cursor-pointer hover:text-gold-400 transition-colors">
-                            <Trophy size={24} className="text-gold-500"/><span>SNB Tour</span>
+                        <div onClick={() => navigateTo('dashboard')} className="p-5 border-b border-royal-800 flex items-center gap-1.5 text-xl font-bold text-white cursor-pointer hover:text-gold-400 transition-colors">
+                            <SnbLogo size={28} className="text-gold-500 mr-1"/><span>SNB Tour</span>
                         </div>
-                        <div className="p-4">
-                            <button onClick={() => navigateTo('tournaments')} className={`w-full flex items-center justify-center gap-2 px-6 py-3 font-bold rounded-xl transition-all shadow-lg ${activeTab === 'tournaments' ? 'bg-gold-400 text-royal-950 shadow-gold-500/20' : 'bg-gold-500 text-royal-950 hover:bg-gold-400 shadow-gold-500/10 hover:shadow-gold-500/20'}`}>
-                                <Swords size={20}/> Tournaments
+                        <div className="px-3 py-3">
+                            <button onClick={() => navigateTo('tournaments')} className={`w-full flex items-center justify-center gap-2 px-4 py-2 text-base font-bold rounded-lg transition-all shadow-md ${activeTab === 'tournaments' ? 'bg-gold-400 text-royal-950 shadow-gold-500/20' : 'bg-gold-500 text-royal-950 hover:bg-gold-400 shadow-gold-500/10 hover:shadow-gold-500/20'}`}>
+                                <TournamentsIcon size={18}/> Tournaments
                             </button>
                         </div>
-                        <div className="flex-1 py-2 space-y-1">
-                            <button onClick={() => navigateTo('dashboard')} className={`w-full flex items-center gap-3 px-6 py-3 font-medium transition-colors ${activeTab === 'dashboard' ? 'bg-royal-800/50 text-gold-500 border-r-4 border-gold-500' : 'text-royal-300 hover:bg-royal-800 hover:text-royal-100'}`}><Activity size={20}/>Global Rankings</button>
-                            <button onClick={() => navigateTo('players')} className={`w-full flex items-center gap-3 px-6 py-3 font-medium transition-colors ${activeTab === 'players' ? 'bg-royal-800/50 text-gold-500 border-r-4 border-gold-500' : 'text-royal-300 hover:bg-royal-800 hover:text-royal-100'}`}><Users size={20}/>Players</button>
-                            <button onClick={() => navigateTo('nations')} className={`w-full flex items-center gap-3 px-6 py-3 font-medium transition-colors ${activeTab === 'nations' ? 'bg-royal-800/50 text-gold-500 border-r-4 border-gold-500' : 'text-royal-300 hover:bg-royal-800 hover:text-royal-100'}`}><Globe size={20}/>Nations</button>
-                            <button onClick={() => navigateTo('analytics')} className={`w-full flex items-center gap-3 px-6 py-3 font-medium transition-colors ${activeTab === 'analytics' ? 'bg-royal-800/50 text-gold-500 border-r-4 border-gold-500' : 'text-royal-300 hover:bg-royal-800 hover:text-royal-100'}`}><TrendingUp size={20}/>Analytics</button>
+                        <div className="flex-1 pb-2 space-y-0.5">
+                            <button onClick={() => navigateTo('dashboard')} className={`w-full flex items-center gap-3 px-6 py-3 font-medium transition-colors ${activeTab === 'dashboard' ? 'bg-royal-800/50 text-gold-500 border-r-4 border-gold-500' : 'text-royal-300 hover:bg-royal-800 hover:text-royal-100'}`}><DashboardIcon size={20}/>Global Rankings</button>
+                            <button onClick={() => navigateTo('players')} className={`w-full flex items-center gap-3 px-6 py-3 font-medium transition-colors ${activeTab === 'players' ? 'bg-royal-800/50 text-gold-500 border-r-4 border-gold-500' : 'text-royal-300 hover:bg-royal-800 hover:text-royal-100'}`}><PlayersIcon size={20}/>Players</button>
+                            <button onClick={() => navigateTo('nations')} className={`w-full flex items-center gap-3 px-6 py-3 font-medium transition-colors ${activeTab === 'nations' ? 'bg-royal-800/50 text-gold-500 border-r-4 border-gold-500' : 'text-royal-300 hover:bg-royal-800 hover:text-royal-100'}`}><NationsIcon size={20}/>Nations</button>
+                            <button onClick={() => navigateTo('analytics')} className={`w-full flex items-center gap-3 px-6 py-3 font-medium transition-colors ${activeTab === 'analytics' ? 'bg-royal-800/50 text-gold-500 border-r-4 border-gold-500' : 'text-royal-300 hover:bg-royal-800 hover:text-royal-100'}`}><AnalyticsIcon size={20}/>Analytics</button>
                         </div>
                     </nav>
                     <main className="flex-1 flex flex-col overflow-hidden">
                         <div className="md:hidden bg-royal-900 p-4 flex justify-between items-center border-b border-royal-800 overflow-x-auto">
-                            <div onClick={() => navigateTo('dashboard')} className="flex items-center gap-2 font-bold text-gold-500 mr-4 cursor-pointer hover:text-gold-400">
-                                <Trophy size={20} className="text-gold-500"/><span>SNB Tour</span>
+                            <div onClick={() => navigateTo('dashboard')} className="flex items-center gap-1.5 font-bold text-gold-500 mr-4 cursor-pointer hover:text-gold-400">
+                                <SnbLogo size={24} className="text-gold-500"/><span>SNB Tour</span>
                             </div>
                             <div className="flex gap-3 items-center">
-                                <button onClick={() => navigateTo('tournaments')} className={`p-2 rounded-lg transition-colors ${activeTab === 'tournaments' ? 'bg-gold-400 text-royal-950' : 'bg-gold-500 text-royal-950 hover:bg-gold-400'}`}><Swords size={20}/></button>
+                                <button onClick={() => navigateTo('tournaments')} className={`p-2 rounded-lg transition-colors ${activeTab === 'tournaments' ? 'bg-gold-400 text-royal-950' : 'bg-gold-500 text-royal-950 hover:bg-gold-400'}`}><TournamentsIcon size={20}/></button>
                                 <div className="w-px h-6 bg-royal-700 mx-1"></div>
-                                <button onClick={() => navigateTo('dashboard')} className={activeTab === 'dashboard' ? 'text-gold-500' : 'text-royal-400'}><Activity size={20}/></button>
-                                <button onClick={() => navigateTo('players')} className={activeTab === 'players' ? 'text-gold-500' : 'text-royal-400'}><Users size={20}/></button>
-                                <button onClick={() => navigateTo('nations')} className={activeTab === 'nations' ? 'text-gold-500' : 'text-royal-400'}><Globe size={20}/></button>
-                                <button onClick={() => navigateTo('analytics')} className={activeTab === 'analytics' ? 'text-gold-500' : 'text-royal-400'}><TrendingUp size={20}/></button>
+                                <button onClick={() => navigateTo('dashboard')} className={activeTab === 'dashboard' ? 'text-gold-500' : 'text-royal-400'}><DashboardIcon size={20}/></button>
+                                <button onClick={() => navigateTo('players')} className={activeTab === 'players' ? 'text-gold-500' : 'text-royal-400'}><PlayersIcon size={20}/></button>
+                                <button onClick={() => navigateTo('nations')} className={activeTab === 'nations' ? 'text-gold-500' : 'text-royal-400'}><NationsIcon size={20}/></button>
+                                <button onClick={() => navigateTo('analytics')} className={activeTab === 'analytics' ? 'text-gold-500' : 'text-royal-400'}><AnalyticsIcon size={20}/></button>
                             </div>
                         </div>
                         <div className="flex-1 overflow-auto p-4 md:p-8">
                             {activeTab === 'dashboard' && <DashboardView playersRaw={playersRaw} tournaments={tournaments} onSelectPlayer={handlePlayerSelect} players={players} />}
                             {activeTab === 'analytics' && <AnalyticsView playersRaw={playersRaw} tournaments={tournaments} players={players} onNavigate={navigate} />}
-                            {activeTab === 'nations' && !selectedNationCode && <NationsView players={players} onNavigate={navigate} />}
+                            {activeTab === 'nations' && !selectedNationCode && <NationsView players={players} playersRaw={playersRaw} tournaments={tournaments} onNavigate={navigate} />}
                             {activeTab === 'nations' && selectedNationCode && <NationProfile code={selectedNationCode} players={players} onBack={() => navigate('nations')} onNavigate={navigate} />}
                             {activeTab === 'players' && !selectedPlayerId && <PlayersView players={players} onSelectPlayer={handlePlayerSelect} db={db} appId={appId} />}
                             {activeTab === 'players' && selectedPlayerId && <PlayerProfile player={players.find(p => p.id === selectedPlayerId)} players={players} onBack={() => navigateTo('players')} tournaments={tournaments} db={db} appId={appId} onNavigate={navigate} />}
@@ -3289,4 +3127,3 @@
     </script>
 </body>
 </html>
-
