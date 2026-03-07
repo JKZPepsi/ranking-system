@@ -38,7 +38,6 @@
 <body>
     <div id="root"></div>
 
-    <!-- Firebase SDKs -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
@@ -49,7 +48,7 @@
     <script type="text/babel">
         const { useState, useEffect, useMemo, useRef } = React;
 
-        // --- Custom Picasso-Style Crest Logo ---
+        // --- Custom Picasso-Style Abstract Icons ---
         var SnbLogo = ({ size = 24, className = "" }) => (
             <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 100 100" className={className}>
                 <path d="M 15 65 C 5 25 40 5 75 15 L 50 50 Z" fill="#00E68A" />
@@ -60,38 +59,27 @@
             </svg>
         );
 
-        // --- Custom Picasso-Style Sidebar Icons ---
         var DashboardIcon = ({ size = 24, className = "" }) => (
             <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 100 100" className={className}>
-                {/* Smooth fluid background wave */}
                 <path d="M 5 70 C 30 20, 70 20, 95 70 C 65 95, 35 95, 5 70 Z" fill="currentColor" opacity="0.3" />
-                {/* Sharp contrasting pulse/mountain */}
                 <polygon points="15,80 35,40 55,60 85,15 95,25 60,85 40,60" fill="currentColor" opacity="0.9" />
-                {/* Accent dot */}
                 <circle cx="85" cy="15" r="8" fill="currentColor" />
             </svg>
         );
 
         var PlayersIcon = ({ size = 24, className = "" }) => (
             <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 100 100" className={className}>
-                {/* Smooth abstract head */}
                 <path d="M 50 50 C 20 50, 20 10, 50 10 C 70 10, 75 30, 50 50 Z" fill="currentColor" opacity="0.4" />
-                {/* Sharp cubist facial fracture */}
                 <polygon points="50,10 75,35 45,55 35,30" fill="currentColor" opacity="0.8" />
-                {/* Smooth flowing shoulder/cape */}
                 <path d="M 10 95 C 15 65, 35 55, 60 60 C 85 65, 95 80, 95 95 Z" fill="currentColor" opacity="0.3" />
-                {/* Sharp geometric body intersection */}
                 <polygon points="35,60 70,95 20,95" fill="currentColor" opacity="0.9" />
             </svg>
         );
 
         var NationsIcon = ({ size = 24, className = "" }) => (
             <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 100 100" className={className}>
-                {/* Smooth globe outer sphere */}
                 <circle cx="50" cy="50" r="45" fill="currentColor" opacity="0.2" />
-                {/* Sweeping dimensional curve (latitude) */}
                 <path d="M 5 50 C 30 15, 70 15, 95 50 C 70 85, 30 85, 5 50 Z" fill="currentColor" opacity="0.45" />
-                {/* Sharp intersecting shards (longitude/abstract continents) */}
                 <polygon points="50,5 70,50 50,95 35,50" fill="currentColor" opacity="0.9" />
                 <polygon points="20,35 45,65 15,75" fill="currentColor" opacity="0.7" />
             </svg>
@@ -99,22 +87,16 @@
 
         var TournamentsIcon = ({ size = 24, className = "" }) => (
             <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 100 100" className={className}>
-                {/* Smooth elegant bowl */}
                 <path d="M 15 20 C 15 70, 40 85, 50 85 C 60 85, 85 70, 85 20 Z" fill="currentColor" opacity="0.3" />
-                {/* Sharp dynamic pedestal */}
                 <polygon points="35,85 65,85 80,95 20,95" fill="currentColor" opacity="0.7" />
-                {/* Sharp explosive fracture inside the bowl */}
                 <polygon points="25,20 50,60 70,10 60,35 40,25" fill="currentColor" opacity="0.9" />
             </svg>
         );
 
         var AnalyticsIcon = ({ size = 24, className = "" }) => (
             <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 100 100" className={className}>
-                {/* Smooth sweeping exponential area */}
                 <path d="M 10 90 C 25 50, 60 20, 95 15 L 95 90 Z" fill="currentColor" opacity="0.25" />
-                {/* Sharp angular trend line */}
                 <polygon points="10,80 35,55 55,70 85,25 95,35 60,85 40,65 15,90" fill="currentColor" opacity="0.9" />
-                {/* Accent sharp shapes (data blocks) */}
                 <polygon points="70,15 95,15 95,40 85,30" fill="currentColor" opacity="1" />
                 <polygon points="40,90 55,90 55,75 40,65" fill="currentColor" opacity="0.6" />
             </svg>
@@ -302,7 +284,7 @@
         var calculatePlayerRankings = (players, tournaments) => {
             const completedTournaments = tournaments
                 .filter(t => t.status === 'completed')
-                .sort((a, b) => (a.completedAt || 0) - (b.completedAt || 0)); // Oldest to Newest
+                .sort((a, b) => (a.completedAt || 0) - (b.completedAt || 0));
 
             const majorTiers = ['grand_slam', 'major', 'finals'];
             let globalLastMajorTime = 0;
@@ -428,73 +410,35 @@
         };
 
         // --- Draw Generators ---
-        var generate64Draw = (selectedPlayers) => {
-            const draw = new Array(64).fill(null);
-            const seeds = selectedPlayers.slice(0, 16);
-            const others = selectedPlayers.slice(16).sort(() => Math.random() - 0.5);
-            const seedSlots = [0, 63, 31, 32, 15, 48, 16, 47, 7, 56, 24, 39, 8, 55, 23, 40];
-            seeds.forEach((seed, i) => { if (seedSlots[i] !== undefined) draw[seedSlots[i]] = seed; });
-            let otherIndex = 0; for (let i = 0; i < 64; i++) { if (!draw[i]) draw[i] = others[otherIndex++]; }
-            const bracket = []; const r64 = [];
-            for (let i = 0; i < 32; i++) r64.push({ id: `r0-m${i}`, p1: draw[i * 2]?.id || null, p2: draw[i * 2 + 1]?.id || null, winner: null, type: null });
-            bracket.push(r64); let matchesInRound = 16;
-            for (let r = 1; r < 6; r++) {
-                const roundMatches = []; for (let i = 0; i < matchesInRound; i++) roundMatches.push({ id: `r${r}-m${i}`, p1: null, p2: null, winner: null, type: null });
-                bracket.push(roundMatches); matchesInRound /= 2;
+        var generateKnockoutDraw = (selectedPlayers, size) => {
+            const draw = new Array(size).fill(null);
+            let numSeeds = size === 64 ? 16 : size === 32 ? 8 : size === 16 ? 4 : 2;
+            const seeds = selectedPlayers.slice(0, numSeeds);
+            const others = selectedPlayers.slice(numSeeds).sort(() => Math.random() - 0.5);
+            
+            let seedSlots = [];
+            if(size===64) seedSlots = [0,63,31,32,15,48,16,47,7,56,24,39,8,55,23,40];
+            if(size===32) seedSlots = [0,31,15,16,7,24,8,23];
+            if(size===16) seedSlots = [0,15,7,8];
+            if(size===8) seedSlots = [0,7];
+            
+            seeds.forEach((s,i)=> { if(seedSlots[i]!==undefined) draw[seedSlots[i]] = s; });
+            let oIdx=0; for(let i=0;i<size;i++) if(!draw[i]) draw[i] = others[oIdx++];
+            
+            const bracket = [];
+            const r1 = [];
+            for(let i=0;i<size/2;i++) r1.push({id:`r0-m${i}`, p1: draw[i*2]?.id||null, p2: draw[i*2+1]?.id||null, winner:null, type:null});
+            bracket.push(r1);
+            
+            let matches = size/4;
+            for(let r=1; matches>=1; r++) {
+                const rd = [];
+                for(let i=0; i<matches; i++) rd.push({id:`r${r}-m${i}`, p1:null, p2:null, winner:null, type:null});
+                bracket.push(rd);
+                matches /= 2;
             }
             return bracket;
-        };
-
-        var generate32Draw = (selectedPlayers) => {
-            const draw = new Array(32).fill(null);
-            const seeds = selectedPlayers.slice(0, 8);
-            const others = selectedPlayers.slice(8).sort(() => Math.random() - 0.5);
-            const seedSlots = [0, 31, 15, 16, 7, 24, 8, 23];
-            seeds.forEach((seed, i) => { if (seedSlots[i] !== undefined) draw[seedSlots[i]] = seed; });
-            let otherIndex = 0; for (let i = 0; i < 32; i++) { if (!draw[i]) draw[i] = others[otherIndex++]; }
-            const bracket = []; const r32 = [];
-            for (let i = 0; i < 16; i++) r32.push({ id: `r0-m${i}`, p1: draw[i * 2]?.id || null, p2: draw[i * 2 + 1]?.id || null, winner: null, type: null });
-            bracket.push(r32); let matchesInRound = 8;
-            for (let r = 1; r < 5; r++) {
-                const roundMatches = []; for (let i = 0; i < matchesInRound; i++) roundMatches.push({ id: `r${r}-m${i}`, p1: null, p2: null, winner: null, type: null });
-                bracket.push(roundMatches); matchesInRound /= 2;
-            }
-            return bracket;
-        };
-
-        var generate16Draw = (selectedPlayers) => {
-            const draw = new Array(16).fill(null);
-            const seeds = selectedPlayers.slice(0, 4);
-            const others = selectedPlayers.slice(4).sort(() => Math.random() - 0.5);
-            const seedSlots = [0, 15, 7, 8]; 
-            seeds.forEach((seed, i) => { if (seedSlots[i] !== undefined) draw[seedSlots[i]] = seed; });
-            let otherIndex = 0; for (let i = 0; i < 16; i++) { if (!draw[i]) draw[i] = others[otherIndex++]; }
-            const bracket = []; const r16 = [];
-            for (let i = 0; i < 8; i++) r16.push({ id: `r0-m${i}`, p1: draw[i * 2]?.id || null, p2: draw[i * 2 + 1]?.id || null, winner: null, type: null });
-            bracket.push(r16); let matchesInRound = 4;
-            for (let r = 1; r < 4; r++) {
-                const roundMatches = []; for (let i = 0; i < matchesInRound; i++) roundMatches.push({ id: `r${r}-m${i}`, p1: null, p2: null, winner: null, type: null });
-                bracket.push(roundMatches); matchesInRound /= 2;
-            }
-            return bracket;
-        };
-
-        var generate8Draw = (selectedPlayers) => {
-            const draw = new Array(8).fill(null);
-            const seeds = selectedPlayers.slice(0, 2);
-            const others = selectedPlayers.slice(2).sort(() => Math.random() - 0.5);
-            const seedSlots = [0, 7]; 
-            seeds.forEach((seed, i) => { if (seedSlots[i] !== undefined) draw[seedSlots[i]] = seed; });
-            let otherIndex = 0; for (let i = 0; i < 8; i++) { if (!draw[i]) draw[i] = others[otherIndex++]; }
-            const bracket = []; const r8 = [];
-            for (let i = 0; i < 4; i++) r8.push({ id: `r0-m${i}`, p1: draw[i * 2]?.id || null, p2: draw[i * 2 + 1]?.id || null, winner: null, type: null });
-            bracket.push(r8); let matchesInRound = 2;
-            for (let r = 1; r < 3; r++) {
-                const roundMatches = []; for (let i = 0; i < matchesInRound; i++) roundMatches.push({ id: `r${r}-m${i}`, p1: null, p2: null, winner: null, type: null });
-                bracket.push(roundMatches); matchesInRound /= 2;
-            }
-            return bracket;
-        };
+        }
 
         var generateATPFinalsDraw = (selectedPlayers) => {
             const seeds = selectedPlayers.slice(0, 8);
@@ -707,8 +651,6 @@
 
             const getVal = (s) => {
                 if (type === 'rank') return s.rank;
-                if (type === 'wins') return s.wins || 0;
-                if (type === 'matches') return s.matchesPlayed || 0;
                 return s.pts;
             };
 
@@ -719,12 +661,6 @@
                         if (s.rank <= 12) includedPlayerIds.add(s.id);
                     });
                 });
-            } else {
-                const lastSnapshot = historyData[historyData.length - 1];
-                if (lastSnapshot) {
-                    const sorted = [...lastSnapshot.standings].sort((a,b) => getVal(b) - getVal(a));
-                    sorted.slice(0, 12).forEach(s => includedPlayerIds.add(s.id));
-                }
             }
 
             const lines = [];
@@ -786,7 +722,8 @@
             
             const getY = (val) => {
                 if (type === 'rank') {
-                    return pad.top + ((val - 1) / (maxRankVal - 1)) * (height - pad.top - pad.bottom); 
+                    if (val >= 13) return pad.top + ((13 - 1) / (13 - 1)) * (height - pad.top - pad.bottom); 
+                    return pad.top + ((val - 1) / (13 - 1)) * (height - pad.top - pad.bottom);
                 } else {
                     return height - pad.bottom - ((val - 0) / (maxPointsVal - 0)) * (height - pad.top - pad.bottom);
                 }
@@ -831,8 +768,6 @@
             });
 
             let metricLabel = 'Points';
-            if (type === 'wins') metricLabel = 'Wins';
-            if (type === 'matches') metricLabel = 'Matches Played';
 
             return (
                 <div className="w-full">
@@ -859,17 +794,22 @@
 
                             {/* Heavy Gridlines */}
                             {type === 'rank' ? (
-                                (() => {
-                                    const lines = [1];
-                                    const step = maxRankVal > 30 ? 10 : 5;
-                                    for (let i = step; i <= maxRankVal; i += step) lines.push(i);
-                                    return lines.map((r, i) => (
-                                        <g key={`grid-rank-${i}`}>
-                                            <line x1={pad.left} y1={getY(r)} x2={width - pad.right + 20} y2={getY(r)} stroke="#13382d" strokeWidth="1" strokeDasharray="4 4" />
-                                            <text x={pad.left - 15} y={getY(r)} fill="#789e90" fontSize="12" fontWeight="bold" textAnchor="end" alignmentBaseline="middle">#{r}</text>
-                                        </g>
-                                    ));
-                                })()
+                                <>
+                                    {[...Array(12)].map((_, i) => {
+                                        const r = i + 1;
+                                        return (
+                                            <g key={`grid-${i}`}>
+                                                <line x1={pad.left} y1={getY(r)} x2={width - pad.right + 20} y2={getY(r)} stroke="#13382d" strokeWidth="1" strokeDasharray="4 4" />
+                                                <text x={pad.left - 15} y={getY(r)} fill="#789e90" fontSize="12" fontWeight="bold" textAnchor="end" alignmentBaseline="middle">#{r}</text>
+                                            </g>
+                                        );
+                                    })}
+                                    <g>
+                                        <rect x={pad.left} y={getY(12.5)} width={width - pad.left - pad.right + 20} height="40" fill="#051611" opacity="0.6" />
+                                        <line x1={pad.left} y1={getY(13)} x2={width - pad.right + 20} y2={getY(13)} stroke="#ef4444" strokeWidth="1" strokeDasharray="8 4" opacity="0.5" />
+                                        <text x={pad.left - 15} y={getY(13)} fill="#ef4444" fontSize="12" fontWeight="bold" textAnchor="end" alignmentBaseline="middle" opacity="0.8">Drop</text>
+                                    </g>
+                                </>
                             ) : (
                                 (() => {
                                     const step = Math.max(10, Math.ceil(maxPointsVal / 15)); 
@@ -931,12 +871,12 @@
                                                     </text>
 
                                                     <circle cx={ptX} cy={ptY} r="20" fill="transparent" />
-                                                    <title>{`${pt.h.tournamentName}\n${line.player.name}\nRank: #${pt.s.rank}\n${metricLabel}: ${getVal(pt.s).toLocaleString()}`}</title>
+                                                    <title>{`${pt.h.tournamentName}\n${line.player.name}\nRank: #${pt.s.rank}\nPoints: ${pt.s.pts.toLocaleString()}`}</title>
                                                 </g>
                                             );
                                         }))}
 
-                                        {/* Connecting Line if Label was moved to avoid overlap */}
+                                        {/* Connecting Line if Label moved */}
                                         {Math.abs(adjY - endY) > 2 && (
                                             <path d={`M ${endX} ${endY} C ${endX + 10} ${endY}, ${endX + 10} ${adjY}, ${endX + 20} ${adjY}`} fill="none" stroke={line.color} strokeWidth="2" opacity="0.6" strokeDasharray="3 3" />
                                         )}
@@ -1176,14 +1116,6 @@
                         <h2 className="text-2xl font-bold text-white flex items-center gap-3 mb-6"><BarChart2 className="text-gold-500 w-7 h-7"/> Top 12 Points Progression</h2>
                         <TopPlayersChart globalHistory={globalHistory} playersRaw={playersRaw} type="points" onNavigate={onNavigate} />
                     </div>
-                    <div className="bg-royal-900 p-6 rounded-2xl border border-royal-800 shadow-xl">
-                        <h2 className="text-2xl font-bold text-white flex items-center gap-3 mb-6"><Activity className="text-gold-500 w-7 h-7"/> Top 12 Matches Played</h2>
-                        <TopPlayersChart globalHistory={globalHistory} playersRaw={playersRaw} type="matches" onNavigate={onNavigate} />
-                    </div>
-                    <div className="bg-royal-900 p-6 rounded-2xl border border-royal-800 shadow-xl">
-                        <h2 className="text-2xl font-bold text-white flex items-center gap-3 mb-6"><Trophy className="text-gold-500 w-7 h-7"/> Top 12 Match Wins</h2>
-                        <TopPlayersChart globalHistory={globalHistory} playersRaw={playersRaw} type="wins" onNavigate={onNavigate} />
-                    </div>
                 </div>
             );
         }
@@ -1196,10 +1128,10 @@
                 players.forEach(p => {
                     const nat = p.nationality || 'UNK';
                     if (!stats[nat]) stats[nat] = { code: nat, points: 0, bonusPoints: 0, wins: 0, losses: 0, players: 0, titles: 0 };
-                    stats[nat].points += p.points;
+                    stats[nat].points += (p.points || 0);
                     stats[nat].bonusPoints += (p.bonusPoints || 0);
-                    stats[nat].wins += p.stats.wins;
-                    stats[nat].losses += p.stats.losses;
+                    stats[nat].wins += (p.stats?.wins || 0);
+                    stats[nat].losses += (p.stats?.losses || 0);
                     stats[nat].players += 1;
                     stats[nat].titles += p.recentTournaments.filter(t => t.result === 'Winner').length;
                 });
@@ -1252,10 +1184,10 @@
             const stats = useMemo(() => {
                 let points = 0, bonusPoints = 0, wins = 0, losses = 0, titles = 0;
                 nationPlayers.forEach(p => {
-                    points += p.points;
-                    bonusPoints += p.bonusPoints;
-                    wins += p.stats.wins;
-                    losses += p.stats.losses;
+                    points += (p.points || 0);
+                    bonusPoints += (p.bonusPoints || 0);
+                    wins += (p.stats?.wins || 0);
+                    losses += (p.stats?.losses || 0);
                     titles += p.recentTournaments.filter(t => t.result === 'Winner').length;
                 });
                 return { points, bonusPoints, wins, losses, titles, players: nationPlayers.length };
@@ -1606,6 +1538,325 @@
             );
         }
 
+        function PlayerProfile({ player, players, onBack, tournaments, db, appId, onNavigate }) {
+            const [isEditing, setIsEditing] = useState(false);
+            const [editName, setEditName] = useState('');
+            const [editNationality, setEditNationality] = useState('');
+            const [editImages, setEditImages] = useState(['', '', '', '']);
+            const [isSaving, setIsSaving] = useState(false);
+            const [showDelete, setShowDelete] = useState(false);
+
+            useEffect(() => {
+                if (player) {
+                    setEditName(player.name); setEditNationality(player.nationality || 'UNK');
+                    const imgs = player.images || [player.imageUrl];
+                    setEditImages([imgs[0] || '', imgs[1] || '', imgs[2] || '', imgs[3] || '']);
+                }
+            }, [player]);
+
+            if (!player) return null;
+
+            const handleUpdate = async (e) => {
+                e.preventDefault(); setIsSaving(true);
+                try {
+                    const validImages = editImages.map(u => u.trim()).filter(Boolean);
+                    const pRef = window.fb.doc(db, 'artifacts', appId, 'public', 'data', 'players', player.id);
+                    await window.fb.updateDoc(pRef, { name: editName.trim(), nationality: editNationality, imageUrl: validImages[0] || '', images: validImages });
+                    setIsEditing(false);
+                } catch (err) { console.error(err); }
+                setIsSaving(false);
+            };
+
+            const handleDelete = async () => {
+                try { 
+                    onBack();
+                    await window.fb.deleteDoc(window.fb.doc(db, 'artifacts', appId, 'public', 'data', 'players', player.id)); 
+                } 
+                catch (err) { console.error(err); }
+            };
+
+            const matchHistory = useMemo(() => {
+                let matches = [];
+                tournaments.forEach(t => {
+                    if (t.status !== 'completed') return;
+                    
+                    if (t.format === 'atp_finals') {
+                        let groupMatches = [];
+                        let knockout = [];
+                        try { groupMatches = typeof t.groupMatches === 'string' ? JSON.parse(t.groupMatches) : (t.groupMatches || []); } catch(e){}
+                        try { knockout = typeof t.bracket === 'string' ? JSON.parse(t.bracket) : (t.bracket || []); } catch(e){}
+                        if (!Array.isArray(groupMatches)) groupMatches = [];
+                        if (!Array.isArray(knockout)) knockout = [];
+                        
+                        groupMatches.forEach(m => {
+                            if (m && (m.p1 === player.id || m.p2 === player.id) && m.winner) {
+                                const oppId = m.p1 === player.id ? m.p2 : m.p1;
+                                const oppName = players.find(p => p.id === oppId)?.name || 'Unknown';
+                                matches.push({ tournamentId: t.id, tournamentName: t.name, tier: 'finals', roundName: 'Round Robin', roundIndex: 0, opponentId: oppId, opponentName: oppName, isWin: m.winner === player.id, type: m.type, date: t.completedAt || t.createdAt });
+                            }
+                        });
+                        knockout.forEach((round, rIdx) => {
+                            if (!Array.isArray(round)) return;
+                            round.forEach(m => {
+                                if (m && (m.p1 === player.id || m.p2 === player.id) && m.winner) {
+                                    const oppId = m.p1 === player.id ? m.p2 : m.p1;
+                                    const oppName = players.find(p => p.id === oppId)?.name || 'Unknown';
+                                    matches.push({ tournamentId: t.id, tournamentName: t.name, tier: 'finals', roundName: rIdx === 0 ? 'Semifinals' : 'Final', roundIndex: rIdx + 1, opponentId: oppId, opponentName: oppName, isWin: m.winner === player.id, type: m.type, date: t.completedAt || t.createdAt });
+                                }
+                            });
+                        });
+                    } else {
+                        let parsedBracket = [];
+                        try { parsedBracket = typeof t.bracket === 'string' ? JSON.parse(t.bracket) : (t.bracket || []); } catch(e){}
+                        if (!Array.isArray(parsedBracket)) return;
+                        
+                        parsedBracket.forEach((round, rIdx) => {
+                            if (!Array.isArray(round)) return;
+                            round.forEach(m => {
+                                if (m && (m.p1 === player.id || m.p2 === player.id) && m.winner && m.type !== 'bye') {
+                                    const rOffset = 6 - parsedBracket.length;
+                                    const oppId = m.p1 === player.id ? m.p2 : m.p1;
+                                    const oppName = players.find(p => p.id === oppId)?.name || 'Unknown';
+                                    matches.push({ tournamentId: t.id, tournamentName: t.name, tier: getTournamentTier(t), roundName: ROUND_NAMES[rIdx + rOffset], roundIndex: rIdx + rOffset, opponentId: oppId, opponentName: oppName, isWin: m.winner === player.id, type: m.type, date: t.completedAt || t.createdAt });
+                                }
+                            })
+                        });
+                    }
+                });
+                return matches.sort((a,b) => {
+                    if (b.date !== a.date) return (b.date || 0) - (a.date || 0);
+                    return b.roundIndex - a.roundIndex;
+                });
+            }, [player.id, tournaments, players]);
+
+            const h2hStats = useMemo(() => {
+                const stats = {};
+                matchHistory.forEach(m => {
+                    if (!stats[m.opponentId]) {
+                        const opp = players.find(p => p.id === m.opponentId);
+                        stats[m.opponentId] = {
+                            opponentId: m.opponentId,
+                            opponentName: m.opponentName,
+                            opponentFlag: opp ? getFlag(opp.nationality) : '🏳️',
+                            wins: 0,
+                            losses: 0
+                        };
+                    }
+                    if (m.isWin) stats[m.opponentId].wins++;
+                    else stats[m.opponentId].losses++;
+                });
+                return Object.values(stats).sort((a,b) => (b.wins + b.losses) - (a.wins + a.losses) || b.wins - a.wins);
+            }, [matchHistory, players]);
+
+            const achievements = useMemo(() => {
+                const list = [];
+                tournaments.forEach(t => {
+                    if (t.status !== 'completed') return;
+                    const tTier = getTournamentTier(t);
+                    if (tTier !== 'grand_slam' && tTier !== 'major' && tTier !== 'finals') return;
+                    
+                    const res = getTournamentPointsAndResult(player.id, t);
+                    
+                    if (res.played) {
+                        let meets = false;
+                        if (tTier === 'grand_slam' && ['Winner', 'Finalist', 'Final', 'Semifinalist', 'Semifinals'].includes(res.resultStr)) meets = true;
+                        if (tTier === 'major' && ['Winner', 'Finalist', 'Final'].includes(res.resultStr)) meets = true;
+                        if (tTier === 'finals' && ['Winner', 'Finalist', 'Final', 'Semifinalist', 'Semifinals'].includes(res.resultStr)) meets = true;
+                        
+                        if (meets) {
+                            list.push({
+                                tournamentId: t.id,
+                                tournamentName: t.name,
+                                tier: tTier,
+                                result: res.resultStr,
+                                date: t.completedAt || t.createdAt
+                            });
+                        }
+                    }
+                });
+                return list.sort((a,b) => (b.date || 0) - (a.date || 0));
+            }, [player.id, tournaments]);
+
+            const rankingHistory = useMemo(() => {
+                const globalHist = getGlobalHistory(players, tournaments);
+                return globalHist.map(h => {
+                    const pStanding = h.standings.find(s => s.id === player.id);
+                    const ach = achievements.find(a => a.tournamentId === h.tournamentId);
+                    
+                    const t = tournaments.find(tourn => tourn.id === h.tournamentId);
+                    const res = t ? getTournamentPointsAndResult(player.id, t) : { played: false, pts: 0 };
+                    
+                    return {
+                        tournamentId: h.tournamentId,
+                        tournamentName: h.tournamentName,
+                        tier: h.tier,
+                        isMajorPlus: h.isMajorPlus,
+                        date: h.date,
+                        rank: pStanding ? pStanding.rank : 0,
+                        points: pStanding ? pStanding.pts : 0,
+                        totalPoints: pStanding ? pStanding.totalPts : 0,
+                        careerPoints: pStanding ? pStanding.careerPoints : 0,
+                        tournamentPoints: res.played ? res.pts : 0,
+                        played: res.played,
+                        achievement: ach || null
+                    };
+                }).filter(h => h.rank > 0);
+            }, [player.id, players, tournaments, achievements]);
+
+            const winningCount = h2hStats.filter(h => h.wins > h.losses).length;
+            const losingCount = h2hStats.filter(h => h.losses > h.wins).length;
+            const tiedCount = h2hStats.filter(h => h.wins === h.losses).length;
+
+            return (
+                <div className="max-w-4xl mx-auto space-y-6 pb-20">
+                    <button onClick={onBack} className="flex items-center gap-2 text-royal-200 hover:text-white"><ArrowLeft size={16}/> Back</button>
+                    {isEditing ? (
+                        <form onSubmit={handleUpdate} className="bg-royal-900 rounded-2xl p-8 space-y-4">
+                            <div className="grid md:grid-cols-2 gap-4">
+                                <input type="text" className="w-full bg-royal-950 p-3 rounded-lg text-white border border-royal-800" value={editName} onChange={e => setEditName(e.target.value)} />
+                                <CountrySelect value={editNationality} onChange={setEditNationality} />
+                            </div>
+                            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                {editImages.map((u, i) => <input key={i} placeholder={`Img URL ${i+1}`} className="w-full bg-royal-950 p-3 rounded-lg text-white border border-royal-800" value={u} onChange={e => { const ni = [...editImages]; ni[i] = e.target.value; setEditImages(ni); }} />)}
+                            </div>
+                            <div className="flex justify-between pt-4">
+                                <button type="button" onClick={() => setShowDelete(true)} className="text-red-500 font-bold">Delete Player</button>
+                                <button type="submit" className="bg-gold-500 px-6 py-2 rounded-lg text-royal-950 font-bold hover:bg-gold-600 transition-colors">Save Changes</button>
+                            </div>
+                            {showDelete && <div className="mt-4 p-4 border border-red-500 bg-red-500/10 rounded flex justify-between items-center"><span>Are you sure?</span><div className="flex gap-2"><button type="button" onClick={handleDelete} className="bg-red-500 hover:bg-red-600 transition-colors px-4 py-1 rounded font-bold">Yes</button><button type="button" onClick={() => setShowDelete(false)} className="text-royal-200 hover:text-white">No</button></div></div>}
+                        </form>
+                    ) : (
+                        <>
+                            <div className="bg-royal-900 rounded-2xl p-8 border border-royal-800 flex flex-col md:flex-row gap-8 relative shadow-lg">
+                                <button onClick={() => setIsEditing(true)} className="absolute top-4 right-4 bg-royal-950 p-2 rounded-lg border border-royal-800 hover:border-gold-500 transition-colors"><Edit2 size={16} className="text-royal-300 hover:text-gold-500"/></button>
+                                <img src={player.images?.[0] || player.imageUrl} loading="lazy" decoding="async" className="w-32 h-48 md:w-40 md:h-56 rounded-lg object-cover border-4 border-royal-700" />
+                                <div className="flex-1">
+                                    <h1 className="text-4xl font-bold text-white">{player.name}</h1>
+                                    <p className="text-xl text-gold-500 my-4 flex items-center gap-2"><span className="text-2xl">{getFlag(player.nationality)}</span> {getCountryName(player.nationality)}</p>
+                                    <div className="flex flex-wrap gap-4">
+                                        <div className="bg-gold-500/10 border border-gold-500/30 p-4 rounded-lg text-center min-w-[100px]"><div className="text-gold-500 font-bold uppercase text-xs tracking-widest mb-1">Rank</div><div className="text-2xl font-black text-white">#{player.rank}</div></div>
+                                        <div className="bg-royal-950/50 border border-royal-800 p-4 rounded-lg text-center min-w-[100px]">
+                                            <div className="text-royal-200 font-bold uppercase text-xs tracking-widest mb-1">Points</div>
+                                            <div className="text-2xl font-black text-gold-500">
+                                                {player.points.toLocaleString()}
+                                                {player.bonusPoints > 0 && <span className="text-emerald-400 text-sm ml-1 font-bold">+{player.bonusPoints}</span>}
+                                            </div>
+                                        </div>
+                                        <div className="bg-royal-950/50 border border-royal-800 p-4 rounded-lg text-center min-w-[100px]"><div className="text-royal-200 font-bold uppercase text-xs tracking-widest mb-1">W-L</div><div className="text-2xl font-black text-white">{player.stats.wins}-{player.stats.losses}</div></div>
+                                        <div className="bg-royal-950/50 border border-royal-800 p-4 rounded-lg text-center min-w-[100px]"><div className="text-royal-200 font-bold uppercase text-xs tracking-widest mb-1">Played</div><div className="text-2xl font-black text-white">{player.stats.totalPlayed}</div></div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                <div className="bg-royal-900 p-6 rounded-xl border border-royal-800 shadow-md h-[400px] flex flex-col">
+                                    <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2 shrink-0"><Star className="text-gold-500"/> Scoring Tournaments</h2>
+                                    <div className="space-y-2 overflow-y-auto pr-2 flex-1">{player.recentTournaments.map((t, i) => {
+                                        const tierConf = TOURNAMENT_TIERS[t.tier || 'major'];
+                                        return (
+                                            <div key={i} onClick={() => onNavigate('tournaments', null, t.tournamentId)} className="flex justify-between p-3 bg-royal-950/50 rounded-lg border border-royal-800 hover:border-gold-500/50 cursor-pointer hover:shadow-md transition-all group">
+                                                <div>
+                                                    <span className={`${tierConf?.color || 'text-royal-300'} font-bold text-xs uppercase mr-2 tracking-wider`}>[{tierConf?.name || 'Tournament'}]</span>
+                                                    <span className="font-medium text-royal-100 group-hover:text-white transition-colors">{t.tournamentName} <span className="text-royal-400 text-[10px] uppercase ml-1 opacity-70">({getOrdinalSuffix(t.playedNumber)})</span></span>
+                                                    <div className="text-xs text-royal-400 mt-1">{t.result}</div>
+                                                </div>
+                                                <div className="font-bold text-gold-500 group-hover:scale-110 transition-transform">+{t.points}</div>
+                                            </div>
+                                        )
+                                    })}</div>
+                                </div>
+                                <div className="bg-royal-900 p-6 rounded-xl border border-royal-800 shadow-md h-[400px] flex flex-col">
+                                    <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2 shrink-0"><History className="text-emerald-500"/> Match History</h2>
+                                    <div className="space-y-2 overflow-y-auto pr-2 flex-1">{matchHistory.map((m, i) => {
+                                        const tierConf = TOURNAMENT_TIERS[m.tier];
+                                        return (
+                                            <div key={i} onClick={() => onNavigate('tournaments', null, m.tournamentId)} className={`p-3 rounded-lg border cursor-pointer hover:-translate-y-0.5 hover:shadow-md transition-all group ${m.isWin ? 'bg-[#059669]/10 border-[#059669]/30 hover:border-[#059669]/60' : 'bg-[#be123c]/10 border-[#be123c]/30 hover:border-[#be123c]/60'}`}>
+                                                <div className="flex justify-between items-start mb-1">
+                                                    <span className="text-xs text-royal-300 group-hover:text-royal-100 transition-colors"><span className={tierConf?.color || 'text-royal-300'}>[{tierConf?.name || 'Tournament'}]</span> {m.tournamentName} • {m.roundName}</span>
+                                                    <span className={`text-[10px] px-2 py-0.5 rounded uppercase font-bold tracking-widest ${m.type === 'lopsided' ? 'bg-purple-500/20 text-purple-400' : 'bg-orange-500/20 text-orange-400'}`}>{m.type === 'lopsided' ? 'Lopsided' : 'Close'}</span>
+                                                </div>
+                                                <div className="flex items-center gap-2 font-medium"><span className={m.isWin ? 'text-[#059669]' : 'text-[#be123c]'}>{m.isWin ? 'W' : 'L'}</span><span className="text-royal-100">vs {m.opponentName}</span></div>
+                                            </div>
+                                        );
+                                    })}</div>
+                                </div>
+                                <div className="bg-royal-900 p-6 rounded-xl border border-royal-800 shadow-md h-[400px] flex flex-col">
+                                    <div className="mb-4 border-b border-royal-800 pb-3 shrink-0">
+                                        <h2 className="text-xl font-bold text-white flex items-center gap-2 mb-1"><Users className="text-purple-400"/> Head-to-Head</h2>
+                                        <div className="text-sm text-royal-300 font-medium tracking-wide">
+                                            Overall: <span className="text-[#059669] font-bold">{winningCount}</span> - <span className="text-[#be123c] font-bold">{losingCount}</span> - <span className="text-royal-400 font-bold">{tiedCount}</span>
+                                        </div>
+                                    </div>
+                                    <div className="space-y-2 flex-1 overflow-y-auto pr-2">
+                                        {h2hStats.length === 0 ? (
+                                            <p className="text-royal-300 text-sm">No match records yet.</p>
+                                        ) : (
+                                            h2hStats.map(h => {
+                                                const isPos = h.wins > h.losses;
+                                                const isNeg = h.losses > h.wins;
+                                                const color = isPos ? 'text-[#059669]' : (isNeg ? 'text-[#be123c]' : 'text-royal-300');
+                                                return (
+                                                    <div key={h.opponentId} onClick={() => onNavigate('players', h.opponentId)} className={`flex justify-between items-center p-3 bg-royal-950/50 rounded-lg border cursor-pointer hover:-translate-y-0.5 hover:shadow-md transition-all group ${isPos ? 'border-[#059669]/30 hover:border-[#059669]/60' : (isNeg ? 'border-[#be123c]/30 hover:border-[#be123c]/60' : 'border-royal-800 hover:border-royal-500')}`}>
+                                                        <div className="font-medium text-royal-100 group-hover:text-white transition-colors flex items-start gap-2 pr-4 min-w-0">
+                                                            <span className="shrink-0 mt-0.5">{h.opponentFlag}</span> 
+                                                            <span className="break-words">{h.opponentName}</span>
+                                                        </div>
+                                                        <div className={`font-bold ${color} text-lg ml-auto whitespace-nowrap shrink-0 group-hover:scale-110 transition-transform`}>
+                                                            {h.wins} - {h.losses}
+                                                        </div>
+                                                    </div>
+                                                );
+                                            })
+                                        )}
+                                    </div>
+                                </div>
+                                {player.images?.length > 1 && (
+                                    <div className="md:col-span-2 lg:col-span-3 bg-royal-900 p-6 rounded-xl border border-royal-800 shadow-md">
+                                        <h2 className="text-xl font-bold text-white mb-4">Gallery</h2>
+                                        <div className="flex gap-4 overflow-x-auto pb-4">{player.images.map((img, i) => <img key={i} src={img} loading="lazy" decoding="async" className="w-48 h-64 object-cover rounded-lg border-2 border-royal-700" />)}</div>
+                                    </div>
+                                )}
+                                <div className="md:col-span-2 lg:col-span-3 bg-royal-900 p-6 rounded-xl border border-royal-800 shadow-md">
+                                    <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2"><Trophy className="text-gold-500"/> Major Achievements</h2>
+                                    {achievements.length === 0 ? (
+                                        <p className="text-royal-300 text-sm">No major achievements yet. Reaching Semifinals or better in Grand Slams or SNB Internationals, and Final or better in Majors will be recorded here.</p>
+                                    ) : (
+                                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                                            {achievements.map((ach, i) => (
+                                                <div key={i} onClick={() => onNavigate('tournaments', null, ach.tournamentId)} className="bg-royal-950/50 p-4 rounded-xl border border-royal-800 flex flex-col items-center text-center cursor-pointer hover:border-gold-500/50 hover:bg-royal-900 transition-all group hover:-translate-y-1 hover:shadow-lg hover:shadow-gold-500/10">
+                                                    <Trophy size={32} className={`mb-3 transition-transform group-hover:scale-110 ${ach.result === 'Winner' ? 'text-gold-500' : ach.result === 'Finalist' || ach.result === 'Final' ? 'text-royal-200' : 'text-orange-400'}`} />
+                                                    <span className={`text-[10px] uppercase font-bold tracking-widest px-2 py-0.5 rounded mb-2 ${TOURNAMENT_TIERS[ach.tier]?.bg || ''} ${TOURNAMENT_TIERS[ach.tier]?.color || ''}`}>{TOURNAMENT_TIERS[ach.tier].name}</span>
+                                                    <div className="font-bold text-white text-lg group-hover:text-gold-500 transition-colors">{ach.result}</div>
+                                                    <div className="text-sm text-royal-300 mt-1">{ach.tournamentName}</div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
+                                <div className="md:col-span-2 lg:col-span-3 bg-royal-900 p-6 rounded-xl border border-royal-800 shadow-md">
+                                    <h2 className="text-2xl font-bold text-white flex items-center gap-2 mb-6"><TrendingUp className="text-gold-500"/> Career Ranking Trajectory</h2>
+                                    <IndividualPlayerChart history={rankingHistory} type="rank" filterPlayed={false} totalPlayersCount={players.length} />
+                                </div>
+                                <div className="md:col-span-2 lg:col-span-3 bg-royal-900 p-6 rounded-xl border border-royal-800 shadow-md">
+                                    <h2 className="text-2xl font-bold text-white flex items-center gap-2 mb-6"><BarChart2 className="text-gold-500"/> Rolling 20-Tournament Points</h2>
+                                    <p className="text-royal-300 text-sm mb-4 leading-relaxed">
+                                        The solid line shows total rolling points for events attended. The blue dotted line shows the exact points earned at each specific event. 
+                                        <span className="block mt-3 text-royal-200 bg-royal-950/80 px-4 py-2.5 rounded-lg border border-royal-800 shadow-inner inline-block w-fit">
+                                            <strong>Note:</strong> Minor events (Pro/Challenger) do not consume the 20-tournament limit and are marked with smaller silver dots.
+                                        </span>
+                                    </p>
+                                    <IndividualPlayerChart history={rankingHistory} type="points" filterPlayed={true} totalPlayersCount={players.length} />
+                                </div>
+                                <div className="md:col-span-2 lg:col-span-3 bg-royal-900 p-6 rounded-xl border border-royal-800 shadow-md">
+                                    <h2 className="text-2xl font-bold text-white flex items-center gap-2 mb-6"><BarChart2 className="text-gold-500"/> Career Points Accumulation</h2>
+                                    <IndividualPlayerChart history={rankingHistory} type="careerPoints" filterPlayed={true} totalPlayersCount={players.length} />
+                                </div>
+                            </div>
+                        </>
+                    )}
+                </div>
+            );
+        }
+
         function TournamentsView({ tournaments, onSelect, onCreate }) {
             const [searchQuery, setSearchQuery] = useState('');
             const [tierFilter, setTierFilter] = useState('all');
@@ -1697,7 +1948,7 @@
             const [name, setName] = useState('');
             const [description, setDescription] = useState('');
             const [hostCountry, setHostCountry] = useState('USA');
-            const [tier, setTier] = useState('major');
+            const [tier, setTier] = useState('pro');
             const [size, setSize] = useState(32);
             const [selectedWildcards, setSelectedWildcards] = useState([]);
             const [withdrawnIds, setWithdrawnIds] = useState([]);
@@ -1708,13 +1959,12 @@
             
             const tierConf = TOURNAMENT_TIERS[tier];
             
-            // Dynamic Size Availability based on Tier Rules
             const allowedSizes = useMemo(() => {
                 if (tier === 'finals') return [8];
                 if (tier === 'grand_slam') return [64];
                 if (tier === 'major') return [32, 64];
                 if (tier === 'pro') return [16, 32, 64];
-                return [8, 16, 32, 64]; // Challenger
+                return [8, 16, 32, 64]; 
             }, [tier]);
 
             useEffect(() => { 
@@ -1818,14 +2068,8 @@
                         format = finalsData.format;
                         groupMatches = finalsData.groupMatches;
                         groups = finalsData.groups;
-                    } else if (size === 64) {
-                        bracket = JSON.stringify(generate64Draw(selected));
-                    } else if (size === 32) {
-                        bracket = JSON.stringify(generate32Draw(selected));
-                    } else if (size === 16) {
-                        bracket = JSON.stringify(generate16Draw(selected));
                     } else {
-                        bracket = JSON.stringify(generate8Draw(selected));
+                        bracket = JSON.stringify(generateKnockoutDraw(selected, size));
                     }
 
                     const docRef = await window.fb.addDoc(window.fb.collection(db, 'artifacts', appId, 'public', 'data', 'tournaments'), { 
@@ -1837,8 +2081,6 @@
                 } catch (err) { console.error(err); setErrorMsg("Failed to generate the tournament."); }
                 setIsGenerating(false);
             };
-
-            if (!hasEnoughPlayers) return <div className="text-center py-12 border-2 border-dashed border-red-500/30 rounded-xl bg-red-500/5 mt-8 max-w-2xl mx-auto"><Shield size={48} className="mx-auto mb-3 text-red-400"/><h3 className="text-xl font-bold text-white mb-2">Not Enough Eligible Players</h3><p className="text-royal-300">Because this tier excludes the Top {tierConf.excludeTop}, you need at least {size + tierConf.excludeTop} active players to run a {size}-player format. You currently have {players.length}.</p><button onClick={onBack} className="mt-4 bg-royal-800 hover:bg-royal-700 text-white px-4 py-2 rounded transition-colors">Go Back</button></div>;
 
             return (
                 <div className="max-w-4xl mx-auto space-y-8 pb-20">
@@ -1887,154 +2129,140 @@
                             <div>{tierConf.excludeTop > 0 ? `The Top ${tierConf.excludeTop} ranked players in the world are strictly excluded from competing.` : (tier === 'finals' ? 'Exclusive to the Top 8 Players in the World. Uses Round Robin Group Stage format.' : 'Open to all competitors.')} {reqWc > 0 && <span>This {size}-player bracket format requires <strong className="text-white">{reqWc} wildcards</strong>.</span>} {reqAuto > 0 && <span>Click an Auto Qualifier to simulate a withdrawal.</span>}</div>
                         </div>
 
-                        {!hasEnoughPlayers ? (
-                            <div className="text-center py-12 border-2 border-dashed border-red-500/30 rounded-xl bg-red-500/5">
-                                <Shield size={48} className="mx-auto mb-3 text-red-400"/>
-                                <h3 className="text-xl font-bold text-white mb-2">Not Enough Eligible Players</h3>
-                                <p className="text-royal-300 max-w-md mx-auto">Because this tier excludes the Top {tierConf.excludeTop}, you need at least {size + tierConf.excludeTop} total active players in your database to run a {size}-man format here.<br/><br/>You currently have <strong className="text-white">{eligiblePlayers.length}</strong> eligible players, but need <strong className="text-white">{size}</strong>.</p>
+                        {!hasEnoughPlayers && (
+                            <div className="bg-red-500/10 border border-red-500/30 text-red-400 p-4 rounded-lg flex items-center justify-center gap-3 mb-6">
+                                <Shield className="w-6 h-6 shrink-0" />
+                                <span className="font-medium text-sm">Not enough eligible players in your directory to run this tier correctly. You need {size + tierConf.excludeTop}, but only have {players.length}. Add more players first!</span>
                             </div>
-                        ) : (
-                            <>
-                                <div className="grid md:grid-cols-2 gap-8">
-                                    <div className="flex flex-col gap-6">
-                                        {reqAuto > 0 ? (
-                                            <div className="flex flex-col h-[400px]">
-                                                <div className="flex justify-between items-center mb-4 shrink-0">
-                                                    <div className="flex items-center gap-3">
-                                                        <h3 className="font-bold text-lg text-white">Auto Qualifiers (Top {reqAuto})</h3>
-                                                        {autoQualifiers.length > 2 && (
-                                                            <button onClick={withdrawTopSeeds} className="text-[10px] uppercase tracking-wider font-bold bg-red-500/20 text-red-400 hover:bg-red-500/30 px-2 py-1 rounded transition-colors">
-                                                                Drop Top Seeds
-                                                            </button>
-                                                        )}
-                                                    </div>
-                                                </div>
-                                                <div className="bg-royal-950 rounded-lg p-2 flex-1 overflow-y-auto border border-royal-800 space-y-1">
-                                                    <div className="relative mb-2 shrink-0">
-                                                        <input 
-                                                            type="text" 
-                                                            placeholder="Search qualifiers..." 
-                                                            className="w-full bg-royal-900 border border-royal-700 text-white px-3 py-2 pl-9 rounded-lg text-sm focus:outline-none focus:border-gold-500" 
-                                                            value={autoSearch} 
-                                                            onChange={e => setAutoSearch(e.target.value)} 
-                                                        />
-                                                        <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-royal-400" />
-                                                    </div>
-                                                    {filteredAuto.map(p => (
-                                                        <div key={p.id} onClick={() => toggleWithdraw(p.id)} className="p-2 opacity-90 hover:opacity-100 text-sm flex items-center justify-between text-white cursor-pointer hover:bg-red-500/20 rounded transition-colors group">
-                                                            <span className="flex items-center">
-                                                                <span className="font-mono text-royal-400 mr-2 w-6">#{p.rank}</span> 
-                                                                <span className="mr-2">{getFlag(p.nationality)}</span> {p.name}
-                                                                <span className="text-xs text-royal-300 ml-2 group-hover:text-red-300">({p.points.toLocaleString()} pts)</span>
-                                                            </span>
-                                                            <X size={14} className="text-red-500 opacity-0 group-hover:opacity-100 transition-opacity" />
-                                                        </div>
-                                                    ))}
-                                                    {filteredAuto.length === 0 && <div className="text-center py-4 text-royal-400 text-sm">No players found.</div>}
-                                                </div>
-                                            </div>
-                                        ) : (
-                                            <div className="bg-royal-950/50 rounded-xl p-6 border border-royal-800 text-center flex flex-col items-center justify-center h-48 text-royal-500 shrink-0">
-                                                <Shield className="w-12 h-12 mb-3 opacity-50"/>
-                                                <p className="font-bold text-white">No Auto-Qualifiers</p>
-                                                <p className="text-sm mt-1">100% Entry from the list.</p>
-                                            </div>
-                                        )}
+                        )}
 
-                                        {withdrawnPlayers.length > 0 && (
-                                            <div className="flex flex-col flex-1 min-h-[200px]">
-                                                <h3 className="font-bold text-royal-300 mb-2 text-xs uppercase tracking-widest shrink-0">Withdrawn / Skipped</h3>
-                                                <div className="bg-royal-950/50 rounded-lg p-2 flex-1 overflow-y-auto border border-royal-800/50 space-y-1">
-                                                    {withdrawnPlayers.map(p => (
-                                                        <div key={p.id} onClick={() => toggleWithdraw(p.id)} className="p-2 text-sm flex items-center justify-between text-royal-400 cursor-pointer hover:bg-royal-900 rounded transition-colors group">
-                                                            <span className="flex items-center line-through">
-                                                                <span className="font-mono mr-2 w-6">#{p.rank}</span> 
-                                                                <span className="mr-2">{getFlag(p.nationality)}</span> {p.name}
-                                                            </span>
-                                                            <Plus size={14} className="text-[#059669] opacity-0 group-hover:opacity-100 transition-opacity" />
-                                                        </div>
-                                                    ))}
-                                                </div>
-                                            </div>
-                                        )}
-                                    </div>
-
-                                    <div className="flex flex-col h-[624px]">
+                        <div className={`grid ${reqAuto > 0 ? 'md:grid-cols-2' : 'grid-cols-1'} gap-8`}>
+                            {reqAuto > 0 && (
+                                <div className="flex flex-col gap-6">
+                                    <div className="flex flex-col h-[400px]">
                                         <div className="flex justify-between items-center mb-4 shrink-0">
-                                            <h3 className="font-bold text-lg text-white">{reqAuto === 0 ? 'Participants' : 'Select Wildcards'}</h3>
-                                            <div className="flex gap-2 items-center flex-wrap justify-end">
-                                                {reqAuto === 0 && remainingPlayers.length > 0 && (
-                                                    <>
-                                                        <button onClick={() => withdrawTopFraction(2)} className="text-[10px] uppercase tracking-wider font-bold bg-red-500/20 text-red-400 hover:bg-red-500/30 px-2 py-1 rounded transition-colors">Drop 1/2</button>
-                                                        <button onClick={() => withdrawTopFraction(4)} className="text-[10px] uppercase tracking-wider font-bold bg-red-500/20 text-red-400 hover:bg-red-500/30 px-2 py-1 rounded transition-colors">Drop 1/4</button>
-                                                        <button onClick={() => withdrawTopFraction(8)} className="text-[10px] uppercase tracking-wider font-bold bg-red-500/20 text-red-400 hover:bg-red-500/30 px-2 py-1 rounded transition-colors">Drop 1/8</button>
-                                                    </>
-                                                )}
-                                                {selectedWildcards.length < reqWc && reqWc > 0 && (
-                                                    <button onClick={selectRandomWildcards} className="text-xs flex items-center gap-1 bg-royal-800 hover:bg-royal-700 text-royal-100 px-2 py-1 rounded transition-colors">
-                                                        <Shuffle size={12} /> Auto-Fill
+                                            <div className="flex items-center gap-3">
+                                                <h3 className="font-bold text-lg text-white">Auto Qualifiers (Top {reqAuto})</h3>
+                                                {autoQualifiers.length > 2 && (
+                                                    <button onClick={withdrawTopSeeds} className="text-[10px] uppercase tracking-wider font-bold bg-red-500/20 text-red-400 hover:bg-red-500/30 px-2 py-1 rounded transition-colors">
+                                                        Drop Top Seeds
                                                     </button>
                                                 )}
-                                                <span className={`text-sm px-2 py-1 rounded font-bold ${selectedWildcards.length === reqWc ? 'bg-emerald-500/20 text-emerald-400' : 'bg-orange-500/20 text-orange-400'}`}>
-                                                    {selectedWildcards.length} / {reqWc}
-                                                </span>
                                             </div>
                                         </div>
-                                        {reqWc > 0 ? (
-                                            <div className="bg-royal-950 rounded-lg p-2 flex-1 flex flex-col border border-royal-800">
-                                                <div className="relative mb-2 shrink-0">
-                                                    <input 
-                                                        type="text" 
-                                                        placeholder="Search..." 
-                                                        className="w-full bg-royal-900 border border-royal-700 text-white px-3 py-2 pl-9 rounded-lg text-sm focus:outline-none focus:border-gold-500" 
-                                                        value={wcSearch} 
-                                                        onChange={e => setWcSearch(e.target.value)} 
-                                                    />
-                                                    <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-royal-400" />
-                                                </div>
-                                                <div className="flex-1 overflow-y-auto space-y-1 pr-1">
-                                                    {filteredRemaining.map(p => { 
-                                                        const isS = selectedWildcards.includes(p.id); 
-                                                        const isDisabled = !isS && selectedWildcards.length >= reqWc;
-                                                        return (
-                                                            <div key={p.id} onClick={() => !isDisabled && toggleWildcard(p.id)} className={`p-2 rounded cursor-pointer flex justify-between items-center text-sm font-medium transition-colors group ${isS ? 'bg-gold-500/20 border border-gold-500/50 text-white' : isDisabled ? 'opacity-30 cursor-not-allowed' : 'hover:bg-royal-900 text-royal-200 border border-transparent'}`}>
-                                                                <span className="flex items-center">
-                                                                    <span className="font-mono text-royal-400 mr-2 w-6">#{p.rank}</span> 
-                                                                    <span className="mr-2">{getFlag(p.nationality)}</span> {p.name}
-                                                                    <span className={`text-xs ml-2 ${isS ? 'text-gold-400' : 'text-royal-300'}`}>({p.points.toLocaleString()} pts)</span>
-                                                                </span>
-                                                                <div className="flex items-center gap-2">
-                                                                    {isS && <CheckCircle size={16} className="text-gold-500" />}
-                                                                    {!isS && !isDisabled && <X size={16} className="text-red-500 opacity-0 group-hover:opacity-100 transition-opacity hover:scale-110" onClick={(e) => { e.stopPropagation(); toggleWithdraw(p.id); }} title="Withdraw Player" />}
-                                                                </div>
-                                                            </div>
-                                                        ) 
-                                                    })}
-                                                    {filteredRemaining.length === 0 && (
-                                                        <div className="text-center py-4 text-royal-400 text-sm">No players found.</div>
-                                                    )}
-                                                </div>
+                                        <div className="bg-royal-950 rounded-lg p-2 flex-1 overflow-y-auto border border-royal-800 space-y-1">
+                                            <div className="relative mb-2 shrink-0">
+                                                <input 
+                                                    type="text" 
+                                                    placeholder="Search qualifiers..." 
+                                                    className="w-full bg-royal-900 border border-royal-700 text-white px-3 py-2 pl-9 rounded-lg text-sm focus:outline-none focus:border-gold-500" 
+                                                    value={autoSearch} 
+                                                    onChange={e => setAutoSearch(e.target.value)} 
+                                                />
+                                                <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-royal-400" />
                                             </div>
-                                        ) : (
-                                            <div className="bg-royal-950/50 rounded-lg p-6 flex-1 flex flex-col items-center justify-center border border-royal-800/50 text-center">
-                                                <Shield className="text-royal-700 w-12 h-12 mb-2" />
-                                                <p className="text-royal-300">No wildcards allowed in this exclusive format.</p>
+                                            {filteredAuto.map(p => (
+                                                <div key={p.id} onClick={() => toggleWithdraw(p.id)} className="p-2 opacity-90 hover:opacity-100 text-sm flex items-center justify-between text-white cursor-pointer hover:bg-red-500/20 rounded transition-colors group">
+                                                    <span className="flex items-center">
+                                                        <span className="font-mono text-royal-400 mr-2 w-6">#{p.rank}</span> 
+                                                        <span className="mr-2">{getFlag(p.nationality)}</span> {p.name}
+                                                        <span className="text-xs text-royal-300 ml-2 group-hover:text-red-300">({p.points.toLocaleString()} pts)</span>
+                                                    </span>
+                                                    <X size={14} className="text-red-500 opacity-0 group-hover:opacity-100 transition-opacity" />
+                                                </div>
+                                            ))}
+                                            {filteredAuto.length === 0 && <div className="text-center py-4 text-royal-400 text-sm">No players found.</div>}
+                                        </div>
+                                    </div>
+
+                                    {withdrawnPlayers.length > 0 && (
+                                        <div className="flex flex-col flex-1 min-h-[150px]">
+                                            <h3 className="font-bold text-royal-300 mb-2 text-xs uppercase tracking-widest shrink-0">Withdrawn / Skipped</h3>
+                                            <div className="bg-royal-950/50 rounded-lg p-2 flex-1 overflow-y-auto border border-royal-800/50 space-y-1">
+                                                {withdrawnPlayers.map(p => (
+                                                    <div key={p.id} onClick={() => toggleWithdraw(p.id)} className="p-2 text-sm flex items-center justify-between text-royal-400 cursor-pointer hover:bg-royal-900 rounded transition-colors group">
+                                                        <span className="flex items-center line-through">
+                                                            <span className="font-mono mr-2 w-6">#{p.rank}</span> 
+                                                            <span className="mr-2">{getFlag(p.nationality)}</span> {p.name}
+                                                        </span>
+                                                        <Plus size={14} className="text-[#059669] opacity-0 group-hover:opacity-100 transition-opacity" />
+                                                    </div>
+                                                ))}
                                             </div>
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+
+                            <div className="flex flex-col h-[624px]">
+                                <div className="flex justify-between items-center mb-4 shrink-0">
+                                    <h3 className="font-bold text-lg text-white">{reqAuto === 0 ? 'Participants' : (reqWc === 0 ? 'Alternates / Standby' : 'Select Wildcards')}</h3>
+                                    <div className="flex gap-2 items-center flex-wrap justify-end">
+                                        {reqAuto === 0 && remainingPlayers.length > 0 && (
+                                            <>
+                                                <button onClick={() => withdrawTopFraction(2)} className="text-[10px] uppercase tracking-wider font-bold bg-red-500/20 text-red-400 hover:bg-red-500/30 px-2 py-1 rounded transition-colors">Drop 1/2</button>
+                                                <button onClick={() => withdrawTopFraction(4)} className="text-[10px] uppercase tracking-wider font-bold bg-red-500/20 text-red-400 hover:bg-red-500/30 px-2 py-1 rounded transition-colors">Drop 1/4</button>
+                                                <button onClick={() => withdrawTopFraction(8)} className="text-[10px] uppercase tracking-wider font-bold bg-red-500/20 text-red-400 hover:bg-red-500/30 px-2 py-1 rounded transition-colors">Drop 1/8</button>
+                                            </>
+                                        )}
+                                        {selectedWildcards.length < reqWc && reqWc > 0 && (
+                                            <button onClick={selectRandomWildcards} className="text-xs flex items-center gap-1 bg-royal-800 hover:bg-royal-700 text-royal-100 px-2 py-1 rounded transition-colors">
+                                                <Shuffle size={12} /> Auto-Fill
+                                            </button>
+                                        )}
+                                        <span className={`text-sm px-2 py-1 rounded font-bold ${selectedWildcards.length === reqWc ? 'bg-emerald-500/20 text-emerald-400' : 'bg-orange-500/20 text-orange-400'}`}>
+                                            {selectedWildcards.length} / {reqWc}
+                                        </span>
+                                    </div>
+                                </div>
+                                
+                                <div className="bg-royal-950 rounded-lg p-2 flex-1 flex flex-col border border-royal-800">
+                                    <div className="relative mb-2 shrink-0">
+                                        <input 
+                                            type="text" 
+                                            placeholder="Search..." 
+                                            className="w-full bg-royal-900 border border-royal-700 text-white px-3 py-2 pl-9 rounded-lg text-sm focus:outline-none focus:border-gold-500" 
+                                            value={wcSearch} 
+                                            onChange={e => setWcSearch(e.target.value)} 
+                                        />
+                                        <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-royal-400" />
+                                    </div>
+                                    <div className="overflow-y-auto space-y-1 pr-1 flex-1">
+                                        {filteredRemaining.map(p => { 
+                                            const isS = selectedWildcards.includes(p.id); 
+                                            const isDisabled = reqWc === 0 || (!isS && selectedWildcards.length >= reqWc);
+                                            return (
+                                                <div key={p.id} onClick={() => !isDisabled && toggleWildcard(p.id)} className={`p-2 rounded ${reqWc > 0 ? 'cursor-pointer' : 'cursor-default'} flex justify-between items-center text-sm font-medium transition-colors group ${isS ? 'bg-gold-500/20 border border-gold-500/50 text-white' : (isDisabled && reqWc > 0) ? 'opacity-30 cursor-not-allowed' : 'hover:bg-royal-900 text-royal-200 border border-transparent'}`}>
+                                                    <span className="flex items-center">
+                                                        <span className="font-mono text-royal-400 mr-2 w-6">#{p.rank}</span> 
+                                                        <span className="mr-2">{getFlag(p.nationality)}</span> {p.name}
+                                                        <span className={`text-xs ml-2 ${isS ? 'text-gold-400' : 'text-royal-300'}`}>({p.points.toLocaleString()} pts)</span>
+                                                    </span>
+                                                    <div className="flex items-center gap-2">
+                                                        {isS && <CheckCircle size={16} className="text-gold-500" />}
+                                                        {reqWc > 0 && !isS && !isDisabled && <X size={16} className="text-red-500 opacity-0 group-hover:opacity-100 transition-opacity hover:scale-110" onClick={(e) => { e.stopPropagation(); toggleWithdraw(p.id); }} title="Withdraw Player" />}
+                                                    </div>
+                                                </div>
+                                            ) 
+                                        })}
+                                        {filteredRemaining.length === 0 && (
+                                            <div className="text-center py-4 text-royal-400 text-sm">No players found.</div>
                                         )}
                                     </div>
                                 </div>
-                                {errorMsg && <div className="mt-8 text-red-400 text-sm font-bold text-right w-full bg-red-950/50 p-3 rounded-lg border border-red-500/30">{errorMsg}</div>}
-                                <div className="mt-4 pt-6 border-t border-royal-800 flex justify-end">
-                                    <button onClick={handleCreate} disabled={isGenerating || selectedWildcards.length !== reqWc || !name.trim()} className="bg-gold-500 hover:bg-gold-600 text-royal-950 px-8 py-3 rounded-lg font-bold flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-lg shadow-gold-500/20"><Play size={20}/> {isGenerating ? 'Generating...' : 'Start Tournament'}</button>
-                                </div>
-                            </>
-                        )}
+                            </div>
+                        </div>
+
+                        {errorMsg && <div className="mt-8 text-red-400 text-sm font-bold text-right w-full bg-red-950/50 p-3 rounded-lg border border-red-500/30">{errorMsg}</div>}
+                        <div className="mt-4 pt-6 border-t border-royal-800 flex justify-end">
+                            <button onClick={handleCreate} disabled={isGenerating || !hasEnoughPlayers || selectedWildcards.length !== reqWc || !name.trim()} className="bg-gold-500 hover:bg-gold-600 text-royal-950 px-8 py-3 rounded-lg font-bold flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-lg shadow-gold-500/20"><Play size={20}/> {isGenerating ? 'Generating...' : 'Start Tournament'}</button>
+                        </div>
                     </div>
                 </div>
             );
         }
 
-        function TournamentBracket({ tournament, allTournaments, players, onBack, db, appId }) {
+        function TournamentBracket({ tournament, allTournaments, players, onBack, db, appId, onNavigate }) {
             const [resolvingMatch, setResolvingMatch] = useState(null);
             const [p1ImgIdx, setP1ImgIdx] = useState(0);
             const [p2ImgIdx, setP2ImgIdx] = useState(0);
@@ -2183,6 +2411,11 @@
                 );
             };
 
+            const handlePlayerClick = (e, playerId) => {
+                e.stopPropagation();
+                if (playerId) onNavigate('players', playerId);
+            };
+
             return (
                 <div className="h-full flex flex-col pb-20">
                     <div className="flex justify-between items-start md:items-center mb-6">
@@ -2234,7 +2467,7 @@
                                                                 {match.p1 ? (
                                                                     <>
                                                                         <img src={p1.images?.[0] || p1.imageUrl || "https://via.placeholder.com/40"} loading="lazy" decoding="async" className="w-5 h-5 rounded-full object-cover border border-royal-700 shrink-0" />
-                                                                        <span className={`text-sm font-medium flex items-center gap-1 truncate ${match.winner && match.winner !== match.p1 && !isBye ? 'text-royal-500 line-through' : 'text-white'}`}>
+                                                                        <span onClick={(e) => handlePlayerClick(e, match.p1)} className={`text-sm font-medium flex items-center gap-1 truncate ${match.winner && match.winner !== match.p1 && !isBye ? 'text-royal-500 line-through' : 'text-white cursor-pointer hover:text-gold-400 hover:underline'}`}>
                                                                             <span className="text-[10px] text-royal-400 font-mono tracking-tighter mr-0.5">{getSeedText(tournament, match.p1)}</span>
                                                                             {getFlag(p1.nationality)} <span className="truncate">{p1.name}</span>
                                                                         </span>
@@ -2248,7 +2481,7 @@
                                                                 {match.p2 ? (
                                                                     <>
                                                                         <img src={p2.images?.[0] || p2.imageUrl || "https://via.placeholder.com/40"} loading="lazy" decoding="async" className="w-5 h-5 rounded-full object-cover border border-royal-700 shrink-0" />
-                                                                        <span className={`text-sm font-medium flex items-center gap-1 truncate ${match.winner && match.winner !== match.p2 && !isBye ? 'text-royal-500 line-through' : 'text-white'}`}>
+                                                                        <span onClick={(e) => handlePlayerClick(e, match.p2)} className={`text-sm font-medium flex items-center gap-1 truncate ${match.winner && match.winner !== match.p2 && !isBye ? 'text-royal-500 line-through' : 'text-white cursor-pointer hover:text-gold-400 hover:underline'}`}>
                                                                             <span className="text-[10px] text-royal-400 font-mono tracking-tighter mr-0.5">{getSeedText(tournament, match.p2)}</span>
                                                                             {getFlag(p2.nationality)} <span className="truncate">{p2.name}</span>
                                                                         </span>
@@ -2332,7 +2565,7 @@
             );
         }
 
-        function SNBInternationalsBracket({ tournament, players, onBack, db, appId, allTournaments }) {
+        function SNBInternationalsBracket({ tournament, players, onBack, db, appId, allTournaments, onNavigate }) {
             const [resolvingMatch, setResolvingMatch] = useState(null);
             const [p1ImgIdx, setP1ImgIdx] = useState(0);
             const [p2ImgIdx, setP2ImgIdx] = useState(0);
@@ -2482,6 +2715,11 @@
                 return tMatches;
             };
 
+            const handlePlayerClick = (e, playerId) => {
+                e.stopPropagation();
+                if (playerId) onNavigate('players', playerId);
+            };
+
             const renderStandingsTable = (groupName, standings) => (
                 <div className="bg-royal-800 rounded-xl border border-royal-700 overflow-hidden shadow-lg w-full">
                     <div className="bg-royal-950/80 p-3 border-b border-royal-700 font-bold text-white flex justify-between">
@@ -2499,7 +2737,7 @@
                                     <tr key={s.id} className={isGroupStageComplete && idx < 2 ? 'bg-[#059669]/10' : ''}>
                                         <td className="p-3 flex items-center gap-2">
                                             <span className={`w-5 h-5 flex items-center justify-center rounded-full text-xs font-bold ${isGroupStageComplete && idx < 2 ? 'bg-[#059669] text-royal-950' : 'bg-royal-700 text-royal-200'}`}>{idx+1}</span>
-                                            {getFlag(p.nationality)} {p.name}
+                                            <span onClick={(e) => handlePlayerClick(e, s.id)} className="cursor-pointer hover:text-gold-400 hover:underline">{getFlag(p.nationality)} {p.name}</span>
                                         </td>
                                         <td className="p-3 text-center">{s.wins}-{s.losses}</td>
                                         <td className={`p-3 text-center ${s.tiebreaker > 0 ? 'text-[#059669]' : s.tiebreaker < 0 ? 'text-[#be123c]' : 'text-royal-400'}`}>{s.tiebreaker > 0 ? `+${s.tiebreaker}` : s.tiebreaker}</td>
@@ -2510,7 +2748,7 @@
                                 const p = getPlayer(pid);
                                 return (
                                     <tr key={pid}>
-                                        <td className="p-3 flex items-center gap-2"><span className="w-5 h-5 flex items-center justify-center rounded-full text-xs font-bold bg-royal-700 text-royal-200">-</span> {getFlag(p.nationality)} {p.name}</td>
+                                        <td className="p-3 flex items-center gap-2"><span className="w-5 h-5 flex items-center justify-center rounded-full text-xs font-bold bg-royal-700 text-royal-200">-</span> <span onClick={(e) => handlePlayerClick(e, pid)} className="cursor-pointer hover:text-gold-400 hover:underline">{getFlag(p.nationality)} {p.name}</span></td>
                                         <td className="p-3 text-center text-royal-400">0-0</td>
                                         <td className="p-3 text-center text-royal-400">0</td>
                                     </tr>
@@ -2590,7 +2828,7 @@
                                         <div className={`flex justify-between items-center mb-2 ${match.winner === match.p1 ? 'bg-black/20 rounded px-1' : ''}`}>
                                             <div className="flex items-center gap-2 overflow-hidden w-full pr-2">
                                                 <img src={p1.images?.[0] || p1.imageUrl || "https://via.placeholder.com/40"} loading="lazy" decoding="async" className="w-5 h-5 rounded-full object-cover border border-royal-700 shrink-0" />
-                                                <span className={`text-sm font-medium flex items-center gap-1 truncate ${match.winner && match.winner !== match.p1 ? 'text-royal-500 line-through' : 'text-white'}`}>
+                                                <span onClick={(e) => handlePlayerClick(e, match.p1)} className={`text-sm font-medium flex items-center gap-1 truncate ${match.winner && match.winner !== match.p1 ? 'text-royal-500 line-through' : 'text-white cursor-pointer hover:text-gold-400 hover:underline'}`}>
                                                     <span className="text-[10px] text-royal-400 font-mono tracking-tighter mr-0.5">{getSeedText(tournament, match.p1)}</span>
                                                     {getFlag(p1.nationality)} <span className="truncate">{p1.name}</span>
                                                 </span>
@@ -2601,7 +2839,7 @@
                                         <div className={`flex justify-between items-center ${match.winner === match.p2 ? 'bg-black/20 rounded px-1' : ''}`}>
                                             <div className="flex items-center gap-2 overflow-hidden w-full pr-2">
                                                 <img src={p2.images?.[0] || p2.imageUrl || "https://via.placeholder.com/40"} loading="lazy" decoding="async" className="w-5 h-5 rounded-full object-cover border border-royal-700 shrink-0" />
-                                                <span className={`text-sm font-medium flex items-center gap-1 truncate ${match.winner && match.winner !== match.p2 ? 'text-royal-500 line-through' : 'text-white'}`}>
+                                                <span onClick={(e) => handlePlayerClick(e, match.p2)} className={`text-sm font-medium flex items-center gap-1 truncate ${match.winner && match.winner !== match.p2 ? 'text-royal-500 line-through' : 'text-white cursor-pointer hover:text-gold-400 hover:underline'}`}>
                                                     <span className="text-[10px] text-royal-400 font-mono tracking-tighter mr-0.5">{getSeedText(tournament, match.p2)}</span>
                                                     {getFlag(p2.nationality)} <span className="truncate">{p2.name}</span>
                                                 </span>
@@ -2634,7 +2872,7 @@
                                                     {match.p1 ? (
                                                         <>
                                                             <img src={p1.images?.[0] || p1.imageUrl || "https://via.placeholder.com/40"} loading="lazy" decoding="async" className="w-5 h-5 rounded-full object-cover border border-royal-700 shrink-0" />
-                                                            <span className={`text-sm font-medium flex items-center gap-1 truncate ${match.winner && match.winner !== match.p1 ? 'text-royal-500 line-through' : 'text-white'}`}>
+                                                            <span onClick={(e) => handlePlayerClick(e, match.p1)} className={`text-sm font-medium flex items-center gap-1 truncate ${match.winner && match.winner !== match.p1 ? 'text-royal-500 line-through' : 'text-white cursor-pointer hover:text-gold-400 hover:underline'}`}>
                                                                 <span className="text-[10px] text-royal-400 font-mono tracking-tighter mr-0.5">{getSeedText(tournament, match.p1)}</span>
                                                                 {getFlag(p1.nationality)} <span className="truncate">{p1.name}</span>
                                                             </span>
@@ -2648,7 +2886,7 @@
                                                     {match.p2 ? (
                                                         <>
                                                             <img src={p2.images?.[0] || p2.imageUrl || "https://via.placeholder.com/40"} loading="lazy" decoding="async" className="w-5 h-5 rounded-full object-cover border border-royal-700 shrink-0" />
-                                                            <span className={`text-sm font-medium flex items-center gap-1 truncate ${match.winner && match.winner !== match.p2 ? 'text-royal-500 line-through' : 'text-white'}`}>
+                                                            <span onClick={(e) => handlePlayerClick(e, match.p2)} className={`text-sm font-medium flex items-center gap-1 truncate ${match.winner && match.winner !== match.p2 ? 'text-royal-500 line-through' : 'text-white cursor-pointer hover:text-gold-400 hover:underline'}`}>
                                                                 <span className="text-[10px] text-royal-400 font-mono tracking-tighter mr-0.5">{getSeedText(tournament, match.p2)}</span>
                                                                 {getFlag(p2.nationality)} <span className="truncate">{p2.name}</span>
                                                             </span>
@@ -2680,7 +2918,7 @@
                                                     {match.p1 ? (
                                                         <>
                                                             <img src={p1.images?.[0] || p1.imageUrl || "https://via.placeholder.com/40"} loading="lazy" decoding="async" className="w-6 h-6 rounded-full object-cover border border-royal-700 shrink-0" />
-                                                            <span className={`text-base font-bold flex items-center gap-1 truncate ${match.winner && match.winner !== match.p1 ? 'text-royal-500 line-through' : match.winner === match.p1 ? '' : 'text-white'}`} style={{ color: match.winner === match.p1 ? tierConf.hex : undefined }}>
+                                                            <span onClick={(e) => handlePlayerClick(e, match.p1)} className={`text-base font-bold flex items-center gap-1 truncate ${match.winner && match.winner !== match.p1 ? 'text-royal-500 line-through' : match.winner === match.p1 ? '' : 'text-white cursor-pointer hover:text-gold-400 hover:underline'}`} style={{ color: match.winner === match.p1 ? tierConf.hex : undefined }}>
                                                                 <span className="text-[11px] text-royal-400 font-mono tracking-tighter mr-0.5">{getSeedText(tournament, match.p1)}</span>
                                                                 {getFlag(p1.nationality)} <span className="truncate">{p1.name}</span>
                                                             </span>
@@ -2694,7 +2932,7 @@
                                                     {match.p2 ? (
                                                         <>
                                                             <img src={p2.images?.[0] || p2.imageUrl || "https://via.placeholder.com/40"} loading="lazy" decoding="async" className="w-6 h-6 rounded-full object-cover border border-royal-700 shrink-0" />
-                                                            <span className={`text-base font-bold flex items-center gap-1 truncate ${match.winner && match.winner !== match.p2 ? 'text-royal-500 line-through' : match.winner === match.p2 ? '' : 'text-white'}`} style={{ color: match.winner === match.p2 ? tierConf.hex : undefined }}>
+                                                            <span onClick={(e) => handlePlayerClick(e, match.p2)} className={`text-base font-bold flex items-center gap-1 truncate ${match.winner && match.winner !== match.p2 ? 'text-royal-500 line-through' : match.winner === match.p2 ? '' : 'text-white cursor-pointer hover:text-gold-400 hover:underline'}`} style={{ color: match.winner === match.p2 ? tierConf.hex : undefined }}>
                                                                 <span className="text-[11px] text-royal-400 font-mono tracking-tighter mr-0.5">{getSeedText(tournament, match.p2)}</span>
                                                                 {getFlag(p2.nationality)} <span className="truncate">{p2.name}</span>
                                                             </span>
@@ -2835,10 +3073,10 @@
                 try { window.history.replaceState({ tab: 'dashboard', playerId: null, tournamentId: null, nationCode: null }, ''); } catch(e){}
                 const handlePopState = (event) => {
                     if (event && event.state) {
-                        setActiveTab(event.state.tab);
-                        setSelectedPlayerId(event.state.playerId);
-                        setSelectedTournamentId(event.state.tournamentId);
-                        setSelectedNationCode(event.state.nationCode);
+                        setActiveTab(event.state.tab || 'dashboard');
+                        setSelectedPlayerId(event.state.playerId || null);
+                        setSelectedTournamentId(event.state.tournamentId || null);
+                        setSelectedNationCode(event.state.nationCode || null);
                     }
                 };
                 window.addEventListener('popstate', handlePopState);
@@ -2910,8 +3148,8 @@
                                 const t = tournaments.find(t => t.id === selectedTournamentId);
                                 if (!t) return null;
                                 return t.format === 'atp_finals' ? 
-                                    <SNBInternationalsBracket tournament={t} players={players} onBack={() => navigateTo('tournaments')} db={db} appId={appId} allTournaments={tournaments} /> :
-                                    <TournamentBracket tournament={t} allTournaments={tournaments} players={players} onBack={() => navigateTo('tournaments')} db={db} appId={appId} />
+                                    <SNBInternationalsBracket tournament={t} players={players} onBack={() => navigateTo('tournaments')} db={db} appId={appId} allTournaments={tournaments} onNavigate={navigate} /> :
+                                    <TournamentBracket tournament={t} allTournaments={tournaments} players={players} onBack={() => navigateTo('tournaments')} db={db} appId={appId} onNavigate={navigate} />
                             })()}
                             {activeTab === 'create_tournament' && <CreateTournamentView players={players} onBack={() => navigateTo('tournaments')} onSuccess={id => navigate('tournaments', null, id)} db={db} appId={appId} />}
                         </div>
