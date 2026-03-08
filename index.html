@@ -2197,11 +2197,11 @@
                             const drawSize = getDrawSize(t);
                             const isActive = t.status === 'active';
                             return (
-                                <div key={t.id} onClick={() => onSelect(t.id)} className={`bg-royal-900 border ${isActive ? 'border-emerald-500/50 shadow-[0_0_15px_rgba(16,185,129,0.15)] ring-1 ring-emerald-500/50' : 'border-royal-800 hover:border-gold-500/50'} rounded-xl p-5 cursor-pointer hover:shadow-lg hover:-translate-y-1 transition-all group flex flex-col h-full relative overflow-hidden`}>
+                                <div key={t.id} onClick={() => onSelect(t.id)} className={`bg-royal-900 border ${isActive ? 'border-cyan-500/60 shadow-[0_0_15px_rgba(6,182,212,0.2)] ring-1 ring-cyan-500/50' : 'border-royal-800 hover:border-gold-500/50'} rounded-xl p-5 cursor-pointer hover:shadow-lg hover:-translate-y-1 transition-all group flex flex-col h-full relative overflow-hidden`}>
                                     <div className={`absolute top-0 left-0 w-full h-1 opacity-50`} style={{ backgroundColor: tierConf?.hex }}></div>
                                     <div className="flex-1">
                                         <h3 className="font-bold text-lg text-white mb-3 flex items-center gap-2 truncate">
-                                            {!isActive && ['grand_slam', 'finals', 'major'].includes(tierKey) && (
+                                            {!isActive && t.status === 'completed' && (
                                                 <DynamicTrophy tier={tierKey} result="Winner" country={t.hostCountry} size={28} className="shrink-0 drop-shadow-md" />
                                             )}
                                             {getFlag(t.hostCountry)} <span className="truncate">{t.name}</span>
@@ -2209,7 +2209,7 @@
                                         <div className="flex flex-wrap gap-2 mb-4">
                                             <span className={`text-[10px] uppercase font-bold tracking-widest px-2 py-0.5 rounded ${tierConf?.bg || 'bg-royal-800'} ${tierConf?.color || 'text-royal-200'}`}>{tierConf?.name || 'Tournament'}</span>
                                             {isActive ? (
-                                                <span className="text-[10px] uppercase font-bold tracking-widest px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-400 flex items-center gap-1.5"><span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span> ACTIVE</span>
+                                                <span className="text-[10px] uppercase font-bold tracking-widest px-2 py-0.5 rounded bg-cyan-500/20 text-cyan-400 border border-cyan-500/30 flex items-center gap-1.5 shadow-[0_0_8px_rgba(6,182,212,0.3)]"><span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse"></span> ACTIVE</span>
                                             ) : (
                                                 <span className="text-[10px] uppercase font-bold tracking-widest px-2 py-0.5 rounded bg-[#059669]/20 text-[#059669]">COMPLETED</span>
                                             )}
@@ -2761,7 +2761,7 @@
                                 <ArrowLeft className="w-4 h-4" /> Back to Tournaments
                             </button>
                             <h1 className="text-2xl md:text-3xl font-bold text-white flex items-center gap-3">
-                                {tournament.status === 'completed' && ['grand_slam', 'finals', 'major'].includes(tierKey) && (
+                                {tournament.status === 'completed' && (
                                     <DynamicTrophy tier={tierKey} result="Winner" country={tournament.hostCountry} size={48} className="drop-shadow-lg shrink-0" />
                                 )}
                                 <span className={`${tierConf?.color || 'text-royal-300'} text-sm uppercase tracking-widest border border-current px-2 py-1 rounded shrink-0`}>{tierConf?.name || 'Tournament'}</span>
@@ -2788,14 +2788,15 @@
                                 if (!Array.isArray(round)) return null;
                                 const isFinalRound = rIdx === totalRounds - 1;
                                 const finalMatch = isFinalRound ? round[0] : null;
-                                const showHeaderTrophy = isFinalRound && finalMatch && !finalMatch.winner;
+                                // Trophy sits at the top ONLY if both slots are empty!
+                                const showHeaderTrophy = isFinalRound && finalMatch && !finalMatch.p1 && !finalMatch.p2;
                                 
                                 return (
                                 <div key={rIdx} className="flex flex-col w-64 shrink-0 mr-12 h-full">
                                     <div className="text-center text-royal-400 font-bold text-sm uppercase tracking-wider mb-4 flex flex-col items-center justify-end min-h-[60px]">
-                                        {showHeaderTrophy && <DynamicTrophy tier={tierKey} result="Winner" country={tournament.hostCountry} size={48} className="mb-2 drop-shadow-xl" />}
+                                        {showHeaderTrophy && <DynamicTrophy tier={tierKey} result="Winner" country={tournament.hostCountry} size={48} className="mb-2 drop-shadow-xl opacity-80" />}
                                         <div className="flex items-center justify-center gap-2">
-                                            {!showHeaderTrophy && isFinalRound && <Trophy className="w-4 h-4 inline-block mb-0.5" style={{ color: tierConf.hex }} />}
+                                            {isFinalRound && !showHeaderTrophy && <Trophy className="w-4 h-4 inline-block mb-0.5 opacity-50" style={{ color: tierConf.hex }} />}
                                             {ROUND_NAMES[rIdx + rOffset]}
                                         </div>
                                     </div>
@@ -2815,7 +2816,7 @@
                                                              borderColor: isReady ? tierConf.hex : undefined,
                                                              boxShadow: isReady ? `0 0 8px ${tierConf.hex}40` : undefined
                                                          }}>
-                                                        <div className={`p-2 flex justify-between items-center border-b border-royal-800/50 ${match.winner === match.p1 && !isBye ? 'bg-black/20' : ''}`}>
+                                                        <div className={`p-2 flex justify-between items-center border-b border-royal-800/50 ${match.winner && match.winner === match.p1 && !isBye ? 'bg-black/20' : ''}`}>
                                                             <div className="flex items-center gap-2 overflow-hidden w-full pr-2">
                                                                 {match.p1 ? (
                                                                     <>
@@ -2833,7 +2834,7 @@
                                                                 : <CheckCircle size={16} className="text-[#059669] shrink-0"/>
                                                             )}
                                                         </div>
-                                                        <div className={`p-2 flex justify-between items-center ${match.winner === match.p2 && !isBye ? 'bg-black/20' : ''}`}>
+                                                        <div className={`p-2 flex justify-between items-center ${match.winner && match.winner === match.p2 && !isBye ? 'bg-black/20' : ''}`}>
                                                             <div className="flex items-center gap-2 overflow-hidden w-full pr-2">
                                                                 {match.p2 ? (
                                                                     <>
@@ -3009,9 +3010,6 @@
                 </div>
             );
 
-            const finalMatch = knockout[1] ? knockout[1][0] : null;
-            const showHeaderTrophy = finalMatch && !finalMatch.winner;
-
             return (
                 <div className="h-full flex flex-col pb-20 max-w-6xl mx-auto space-y-8">
                     <div className="flex justify-between items-start md:items-center mb-6">
@@ -3020,12 +3018,15 @@
                                 <ArrowLeft className="w-4 h-4" /> Back to Tournaments
                             </button>
                             <h1 className="text-3xl font-bold text-white flex items-center gap-3">
-                                {tournament.status === 'completed' && <DynamicTrophy tier="finals" result="Winner" country={tournament.hostCountry} size={48} className="drop-shadow-lg shrink-0" />}
+                                {tournament.status === 'completed' && (
+                                    <DynamicTrophy tier="finals" result="Winner" country={tournament.hostCountry} size={48} className="drop-shadow-lg shrink-0" />
+                                )}
                                 <span className="text-emerald-500 text-sm uppercase tracking-widest border border-emerald-500/50 px-2 py-1 rounded bg-emerald-500/20 shrink-0">SNB Internationals</span>
                                 <span className="text-4xl shrink-0" title={getCountryName(tournament.hostCountry || 'USA')}>{getFlag(tournament.hostCountry || 'USA')}</span>
                                 <span className="truncate">{tournament.name}</span>
                                 {tournament.status === 'completed' && <span className="bg-[#059669]/20 text-[#059669] text-sm px-2 py-1 rounded font-bold uppercase shrink-0">Completed</span>}
                             </h1>
+                            {tournament.description && <p className="text-royal-300 text-sm mt-2 max-w-2xl">{tournament.description}</p>}
                         </div>
                         <div className="mt-4 md:mt-0 shrink-0">
                             {showDelete ? (
@@ -3097,13 +3098,15 @@
                             {knockout.map((round, rIdx) => {
                                 if (!Array.isArray(round)) return null;
                                 const isFinalRound = rIdx === 1;
+                                const finalMatch = isFinalRound ? round[0] : null;
+                                const showHeaderTrophy = isFinalRound && finalMatch && !finalMatch.p1 && !finalMatch.p2;
                                 
                                 return (
                                 <div key={rIdx} className="flex flex-col w-64 shrink-0 mr-12 h-full">
                                     <div className="text-center text-royal-400 font-bold text-sm uppercase tracking-wider mb-4 flex flex-col items-center justify-end min-h-[60px]">
-                                        {isFinalRound && showHeaderTrophy && <DynamicTrophy tier="finals" result="Winner" country={tournament.hostCountry} size={48} className="mb-2 drop-shadow-xl" />}
+                                        {showHeaderTrophy && <DynamicTrophy tier="finals" result="Winner" country={tournament.hostCountry} size={48} className="mb-2 drop-shadow-xl opacity-80" />}
                                         <div className="flex items-center justify-center gap-2">
-                                            {isFinalRound && !showHeaderTrophy && <Trophy className="w-4 h-4 inline-block mb-0.5" style={{ color: tierConf.hex }} />}
+                                            {isFinalRound && !showHeaderTrophy && <Trophy className="w-4 h-4 inline-block mb-0.5 opacity-50" style={{ color: tierConf.hex }} />}
                                             {isFinalRound ? 'Championship' : 'Semifinals'}
                                         </div>
                                     </div>
@@ -3122,7 +3125,7 @@
                                                              borderColor: isReady ? tierConf.hex : undefined,
                                                              boxShadow: isReady ? `0 0 10px ${tierConf.hex}50` : undefined
                                                          }}>
-                                                        <div className={`p-2 flex justify-between items-center mb-2 ${match.winner === match.p1 ? 'bg-black/20 rounded px-1' : ''}`}>
+                                                        <div className={`p-2 flex justify-between items-center mb-2 ${match.winner && match.winner === match.p1 ? 'bg-black/20 rounded px-1' : ''}`}>
                                                             <div className="flex items-center gap-2 overflow-hidden w-full pr-2">
                                                                 {match.p1 ? (
                                                                     <>
@@ -3140,7 +3143,7 @@
                                                                 : <CheckCircle size={16} className="text-[#059669] shrink-0"/>
                                                             )}
                                                         </div>
-                                                        <div className={`p-2 flex justify-between items-center ${match.winner === match.p2 ? 'bg-black/20 rounded px-1' : ''}`}>
+                                                        <div className={`p-2 flex justify-between items-center ${match.winner && match.winner === match.p2 ? 'bg-black/20 rounded px-1' : ''}`}>
                                                             <div className="flex items-center gap-2 overflow-hidden w-full pr-2">
                                                                 {match.p2 ? (
                                                                     <>
@@ -3326,6 +3329,7 @@
     </script>
 </body>
 </html>
+
 
 
 
