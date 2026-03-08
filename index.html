@@ -737,11 +737,11 @@
             });
 
             const width = 1200;
-            const height = type === 'rank' ? 450 : 600; 
-            const pad = { top: 40, right: 260, bottom: 80, left: type === 'rank' ? 60 : 80 }; 
+            // INCREASED HEIGHT: Now 850px to comfortably fit 12 massive profile tags
+            const height = type === 'rank' ? 850 : 600; 
+            const pad = { top: 60, right: 260, bottom: 80, left: type === 'rank' ? 60 : 80 }; 
 
             let maxPointsVal = 10;
-            const maxRankDisplay = 13; 
             
             historyData.forEach(h => { 
                 if (h.standings) {
@@ -759,8 +759,10 @@
             
             const getY = (val) => {
                 if (type === 'rank') {
-                    const effVal = val > 12 ? 13 : val;
-                    return pad.top + ((effVal - 1) / 12) * ((height - pad.top - pad.bottom) * 0.75);
+                    // Pushes the 'Drop' line to the absolute bottom pad
+                    if (val > 12) return pad.top + (height - pad.top - pad.bottom); 
+                    // Spreads Ranks 1-12 over the top 80% of the chart, leaving a large gap before Drop zone
+                    return pad.top + ((val - 1) / 11) * ((height - pad.top - pad.bottom) * 0.80);
                 } else {
                     return height - pad.bottom - ((val - 0) / (maxPointsVal - 0)) * (height - pad.top - pad.bottom);
                 }
@@ -779,8 +781,9 @@
                 return { id: line.player.id, targetY: rawY, currentY: rawY, endX: getX(endPt.k) };
             });
 
-            const LABEL_HEIGHT = 30; 
-            for (let iter = 0; iter < 40; iter++) {
+            // ENHANCED COLLISION ALGORITHM
+            const LABEL_HEIGHT = 44; // Box size + padding
+            for (let iter = 0; iter < 50; iter++) {
                 let moved = false;
                 for (let i = 0; i < endLabels.length - 1; i++) {
                     for (let j = i + 1; j < endLabels.length; j++) {
@@ -817,8 +820,6 @@
                 return 0;
             });
 
-            let metricLabel = 'Points';
-
             return (
                 <div className="w-full">
                     <div className="flex justify-between items-center mb-6">
@@ -847,7 +848,7 @@
                                 <>
                                     {[...Array(12)].map((_, i) => {
                                         const r = i + 1;
-                                        const yPos = pad.top + (i / 11) * ((height - pad.top - pad.bottom) * 0.75);
+                                        const yPos = pad.top + (i / 11) * ((height - pad.top - pad.bottom) * 0.80);
                                         return (
                                             <g key={`grid-${i}`}>
                                                 <line x1={pad.left} y1={yPos} x2={width - pad.right + 20} y2={yPos} stroke="#13382d" strokeWidth="1" strokeDasharray="4 4" />
@@ -3166,4 +3167,5 @@
     </script>
 </body>
 </html>
+
 
