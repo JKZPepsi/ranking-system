@@ -61,44 +61,59 @@
 
         var DashboardIcon = ({ size = 24, className = "" }) => (
             <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 100 100" className={className}>
-                <path d="M 5 70 C 30 20, 70 20, 95 70 C 65 95, 35 95, 5 70 Z" fill="currentColor" opacity="0.3" />
-                <polygon points="15,80 35,40 55,60 85,15 95,25 60,85 40,60" fill="currentColor" opacity="0.9" />
-                <circle cx="85" cy="15" r="8" fill="currentColor" />
+                {/* Sweeping smooth horizon curve */}
+                <path d="M 5 80 C 30 50, 70 30, 95 60 C 70 95, 30 100, 5 80 Z" fill="currentColor" opacity="0.3" />
+                {/* Sharp rising monoliths */}
+                <polygon points="15,75 35,40 50,55 80,15 90,30 60,85 40,65" fill="currentColor" opacity="0.9" />
+                {/* Sharp dynamic swoosh overlapping */}
+                <polygon points="25,35 45,15 55,25" fill="currentColor" opacity="0.7" />
             </svg>
         );
 
         var PlayersIcon = ({ size = 24, className = "" }) => (
             <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 100 100" className={className}>
+                {/* Smooth abstract head */}
                 <path d="M 50 50 C 20 50, 20 10, 50 10 C 70 10, 75 30, 50 50 Z" fill="currentColor" opacity="0.4" />
+                {/* Sharp cubist facial fracture */}
                 <polygon points="50,10 75,35 45,55 35,30" fill="currentColor" opacity="0.8" />
+                {/* Smooth flowing shoulder/cape */}
                 <path d="M 10 95 C 15 65, 35 55, 60 60 C 85 65, 95 80, 95 95 Z" fill="currentColor" opacity="0.3" />
+                {/* Sharp geometric body intersection */}
                 <polygon points="35,60 70,95 20,95" fill="currentColor" opacity="0.9" />
             </svg>
         );
 
         var NationsIcon = ({ size = 24, className = "" }) => (
             <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 100 100" className={className}>
+                {/* Outer globe circle (smooth) */}
                 <circle cx="45" cy="55" r="40" fill="currentColor" opacity="0.2" />
+                {/* Curved latitude/longitude sweep */}
                 <path d="M 5 55 C 20 10, 80 5, 95 45 C 70 30, 30 40, 5 55 Z" fill="currentColor" opacity="0.4" />
                 <path d="M 45 15 C 85 20, 95 70, 65 95 C 80 60, 60 30, 45 15 Z" fill="currentColor" opacity="0.5" />
+                {/* Sharp geometric continents / fragments */}
                 <polygon points="25,40 65,25 75,70 35,85" fill="currentColor" opacity="0.95" />
             </svg>
         );
 
         var TournamentsIcon = ({ size = 24, className = "" }) => (
             <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 100 100" className={className}>
+                {/* Smooth elegant bowl */}
                 <path d="M 15 20 C 15 70, 40 85, 50 85 C 60 85, 85 70, 85 20 Z" fill="currentColor" opacity="0.3" />
+                {/* Sharp dynamic pedestal */}
                 <polygon points="35,85 65,85 80,95 20,95" fill="currentColor" opacity="0.7" />
+                {/* Sharp explosive fracture inside the bowl */}
                 <polygon points="25,20 50,60 70,10 60,35 40,25" fill="currentColor" opacity="0.9" />
             </svg>
         );
 
         var AnalyticsIcon = ({ size = 24, className = "" }) => (
             <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 100 100" className={className}>
-                <path d="M 10 90 C 30 70, 60 40, 95 15 L 95 90 Z" fill="currentColor" opacity="0.2" />
-                <path d="M 5 75 C 40 85, 60 40, 95 5 C 70 40, 40 60, 5 75 Z" fill="currentColor" opacity="0.5" />
-                <polygon points="65,95 95,25 75,15 45,95" fill="currentColor" opacity="0.95" />
-                <polygon points="20,95 45,55 30,45 5,95" fill="currentColor" opacity="0.7" />
+                {/* Smooth abstract background curve / radar sweep */}
+                <path d="M 10 90 C 20 40, 50 10, 90 20 C 70 60, 50 90, 10 90 Z" fill="currentColor" opacity="0.3" />
+                {/* Sharp geometric data beam / structure */}
+                <polygon points="20,80 40,30 55,45 80,10 95,25 60,75 45,55" fill="currentColor" opacity="0.9" />
+                {/* Intersecting contrasting shard */}
+                <polygon points="50,90 70,40 85,55 60,100" fill="currentColor" opacity="0.6" />
             </svg>
         );
 
@@ -204,14 +219,13 @@
 
         var getTournamentPointsAndResult = (playerId, t) => {
             let pts = 0, w = 0, l = 0, played = false, resultStr = '', wonFinal = false;
-            let pb = [];
-            try { pb = typeof t.bracket === 'string' ? JSON.parse(t.bracket) : (t.bracket || []); } catch(e){}
 
             if (t.format === 'atp_finals') {
-                let gm = [];
-                try { gm = typeof t.groupMatches === 'string' ? JSON.parse(t.groupMatches) : (t.groupMatches || []); } catch(e){}
+                let groupMatches = []; let knockout = [[],[]];
+                try { groupMatches = typeof t.groupMatches === 'string' ? JSON.parse(t.groupMatches) : (t.groupMatches || []); } catch(e){}
+                try { knockout = typeof t.bracket === 'string' ? JSON.parse(t.bracket) : (t.bracket || []); } catch(e){}
                 
-                gm.forEach(m => {
+                groupMatches.forEach(m => {
                     if (m && (m.p1 === playerId || m.p2 === playerId)) {
                         played = true; resultStr = 'Round Robin';
                         if (m.winner === playerId) { pts += 200; w++; } else if (m.winner) { l++; }
@@ -219,41 +233,40 @@
                 });
 
                 if (played) {
-                    if (Array.isArray(pb)) {
-                        pb.forEach((round, rIdx) => {
-                            if (!Array.isArray(round)) return;
-                            round.forEach(m => {
-                                if (m && (m.p1 === playerId || m.p2 === playerId)) {
-                                    if (rIdx === 0) resultStr = 'Semifinalist';
-                                    if (rIdx === 1) resultStr = 'Finalist';
-                                    if (m.winner === playerId) {
-                                        w++;
-                                        if (rIdx === 0) pts += 400; 
-                                        if (rIdx === 1) { pts += 500; wonFinal = true; resultStr = 'Winner'; }
-                                    } else if (m.winner) { l++; }
-                                }
-                            });
-                        });
-                    }
-                }
-            } else {
-                const totalRounds = pb.length;
-                let highestRound = -1;
-
-                if (Array.isArray(pb)) {
-                    pb.forEach((round, rIdx) => {
+                    knockout.forEach((round, rIdx) => {
                         if (!Array.isArray(round)) return;
                         round.forEach(m => {
                             if (m && (m.p1 === playerId || m.p2 === playerId)) {
-                                played = true;
-                                if (rIdx > highestRound) highestRound = rIdx;
-                                if (m.winner === playerId && m.type !== 'bye') w++;
-                                else if (m.winner && m.winner !== playerId) l++;
-                                if (m.winner === playerId && rIdx === totalRounds - 1) wonFinal = true;
+                                if (rIdx === 0) resultStr = 'Semifinalist';
+                                if (rIdx === 1) resultStr = 'Finalist';
+                                if (m.winner === playerId) {
+                                    w++;
+                                    if (rIdx === 0) pts += 400; 
+                                    if (rIdx === 1) { pts += 500; wonFinal = true; resultStr = 'Winner'; }
+                                } else if (m.winner) { l++; }
                             }
                         });
                     });
                 }
+            } else {
+                let parsedBracket = [];
+                try { parsedBracket = typeof t.bracket === 'string' ? JSON.parse(t.bracket) : (t.bracket || []); } catch(e){}
+                
+                const totalRounds = parsedBracket.length;
+                let highestRound = -1;
+
+                parsedBracket.forEach((round, rIdx) => {
+                    if (!Array.isArray(round)) return;
+                    round.forEach(m => {
+                        if (m && (m.p1 === playerId || m.p2 === playerId)) {
+                            played = true;
+                            if (rIdx > highestRound) highestRound = rIdx;
+                            if (m.winner === playerId && m.type !== 'bye') w++;
+                            else if (m.winner && m.winner !== playerId) l++;
+                            if (m.winner === playerId && rIdx === totalRounds - 1) wonFinal = true;
+                        }
+                    });
+                });
                 
                 if (played && highestRound > -1) {
                     const tierKey = getTournamentTier(t);
@@ -302,30 +315,58 @@
 
                 for (const t of completedTournaments) {
                     let tMatches = [];
-                    let pb = []; try { pb = typeof t.bracket === 'string' ? JSON.parse(t.bracket) : (t.bracket || []); } catch(e){}
-                    
                     if (t.format === 'atp_finals') {
-                        let gm = []; try { gm = typeof t.groupMatches === 'string' ? JSON.parse(t.groupMatches) : (t.groupMatches || []); } catch(e){}
-                        gm.forEach(m => { if (m && (m.p1 === player.id || m.p2 === player.id) && m.winner) tMatches.push({ isWin: m.winner === player.id, type: m.type || 'close' }); });
-                        if(Array.isArray(pb)) pb.forEach(round => { if (!Array.isArray(round)) return; round.forEach(m => { if (m && (m.p1 === player.id || m.p2 === player.id) && m.winner) tMatches.push({ isWin: m.winner === player.id, type: m.type || 'close' }); }); });
+                        let knockout = []; let groupMatches = [];
+                        try { knockout = typeof t.bracket === 'string' ? JSON.parse(t.bracket) : (t.bracket || []); } catch(e){}
+                        try { groupMatches = typeof t.groupMatches === 'string' ? JSON.parse(t.groupMatches) : (t.groupMatches || []); } catch(e){}
+                        groupMatches.forEach(m => { if (m && (m.p1 === player.id || m.p2 === player.id) && m.winner) tMatches.push({ isWin: m.winner === player.id, type: m.type || 'close' }); });
+                        knockout.forEach(round => { if (!Array.isArray(round)) return; round.forEach(m => { if (m && (m.p1 === player.id || m.p2 === player.id) && m.winner) tMatches.push({ isWin: m.winner === player.id, type: m.type || 'close' }); }); });
                     } else {
-                        if (Array.isArray(pb)) pb.forEach(round => { if (!Array.isArray(round)) return; round.forEach(m => { if (m && (m.p1 === player.id || m.p2 === player.id) && m.winner && m.type !== 'bye') { tMatches.push({ isWin: match.winner === player.id, type: m.type || 'close' }); } }); });
+                        let parsedBracket = [];
+                        try { parsedBracket = typeof t.bracket === 'string' ? JSON.parse(t.bracket) : t.bracket; } catch(e){}
+                        if (parsedBracket && Array.isArray(parsedBracket)) {
+                            parsedBracket.forEach(round => {
+                                if (!Array.isArray(round)) return;
+                                round.forEach(match => {
+                                    if (match && (match.p1 === player.id || match.p2 === player.id) && match.winner && match.type !== 'bye') {
+                                        tMatches.push({ isWin: match.winner === player.id, type: match.type || 'close' });
+                                    }
+                                });
+                            });
+                        }
                     }
                     tMatches.forEach(m => recentMatches.push(m));
 
                     const res = getTournamentPointsAndResult(player.id, t);
                     if (res.played) {
-                        hasPlayedAny = true; careerPoints += res.pts; totalW += res.w; totalL += res.l;
-                        let totalRounds = t.format === 'atp_finals' ? 5 : (pb ? pb.length : 0);
-                        allPlayed.push({ tournamentId: t.id, tournamentName: t.name, tier: getTournamentTier(t), points: res.pts, result: res.resultStr, totalRounds: totalRounds, date: t.completedAt || t.createdAt });
+                        hasPlayedAny = true;
+                        careerPoints += res.pts;
+                        totalW += res.w;
+                        totalL += res.l;
+                        
+                        let totalRounds = t.format === 'atp_finals' ? 5 : 0;
+                        if (t.format !== 'atp_finals' && t.bracket) {
+                            try { const pb = typeof t.bracket === 'string' ? JSON.parse(t.bracket) : t.bracket; totalRounds = pb.length; } catch(e){}
+                        }
+
+                        allPlayed.push({ 
+                            tournamentId: t.id, tournamentName: t.name, tier: getTournamentTier(t),
+                            points: res.pts, result: res.resultStr, totalRounds: totalRounds, date: t.completedAt || t.createdAt
+                        });
                     }
                 }
 
                 allPlayed.forEach((pt, idx) => { pt.playedNumber = idx + 1; });
-                let reversedPlayed = [...allPlayed].reverse(), recentTournaments = [], officialPoints = 0, bonusPoints = 0, majorCount = 0;
+
+                let reversedPlayed = [...allPlayed].reverse();
+                let recentTournaments = [];
+                let officialPoints = 0;
+                let bonusPoints = 0;
+                let majorCount = 0;
 
                 for (let pt of reversedPlayed) {
-                    if (majorTiers.includes(pt.tier)) {
+                    const isMajorPlus = majorTiers.includes(pt.tier);
+                    if (isMajorPlus) {
                         if (majorCount < 20) {
                             majorCount++;
                             if (pt.date <= globalLastMajorTime) officialPoints += pt.points; else bonusPoints += pt.points;
@@ -340,10 +381,19 @@
                 }
 
                 return { 
-                    ...player, points: officialPoints, bonusPoints: bonusPoints, totalPoints: officialPoints + bonusPoints, careerPoints, 
-                    recentTournaments, recentMatches: recentMatches.slice(-7).reverse(), stats: { wins: totalW, losses: totalL, totalPlayed: allPlayed.length }, hasPlayedAny 
+                    ...player, 
+                    points: officialPoints, 
+                    bonusPoints: bonusPoints,
+                    totalPoints: officialPoints + bonusPoints, 
+                    careerPoints, 
+                    recentTournaments, 
+                    recentMatches: recentMatches.slice(-7).reverse(), 
+                    stats: { wins: totalW, losses: totalL, totalPlayed: allPlayed.length }, 
+                    hasPlayedAny 
                 };
-            }).sort((a, b) => b.points - a.points || b.totalPoints - a.totalPoints || (a.name || '').localeCompare(b.name || '')).map((p, index) => ({ ...p, rank: index + 1 }));
+            })
+            .sort((a, b) => b.points - a.points || b.totalPoints - a.totalPoints || (a.name || '').localeCompare(b.name || ''))
+            .map((p, index) => ({ ...p, rank: index + 1 }));
         };
 
         var getGlobalHistory = (playersRaw, tournaments) => {
@@ -680,6 +730,7 @@
                     const prevTop12 = prevS && prevS.rank <= 12;
                     const nextTop12 = nextS && nextS.rank <= 12;
 
+                    // If they are in top 12, or the tournament just before/after entering top 12
                     if (s && (isTop12 || prevTop12 || nextTop12)) {
                         visiblePoints.push({ k, s, h: historyData[k] });
                     }
@@ -707,11 +758,11 @@
             });
 
             const width = 1200;
-            const height = type === 'rank' ? 450 : 600; 
+            const height = type === 'rank' ? 450 : 600; // MUCH MORE COMPACT FOR RANK
             const pad = { top: 40, right: 260, bottom: 80, left: type === 'rank' ? 60 : 80 }; 
 
             let maxPointsVal = 10;
-            const maxRankDisplay = 13; 
+            const maxRankDisplay = 13; // The "Drop" line
             
             historyData.forEach(h => { 
                 if (h.standings) {
@@ -817,7 +868,7 @@
                                 <>
                                     {[...Array(12)].map((_, i) => {
                                         const r = i + 1;
-                                        const yPos = pad.top + (i / 11) * ((height - pad.top - pad.bottom) * 0.75);
+                                        const yPos = pad.top + (i / 12) * ((height - pad.top - pad.bottom) * 0.75);
                                         return (
                                             <g key={`grid-${i}`}>
                                                 <line x1={pad.left} y1={yPos} x2={width - pad.right + 20} y2={yPos} stroke="#13382d" strokeWidth="1" strokeDasharray="4 4" />
