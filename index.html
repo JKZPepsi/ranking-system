@@ -2535,7 +2535,7 @@
             };
 
             const handlePlayerClick = (e, playerId) => {
-                if (tournament.status !== 'completed') return; // Only allow click-throughs when tournament is finished
+                if (tournament.status !== 'completed') return; 
                 e.stopPropagation();
                 if (playerId) onNavigate('players', playerId);
             };
@@ -2583,9 +2583,14 @@
                                             
                                             return (
                                                 <div key={match.id} className="flex-1 flex flex-col justify-center relative py-2">
+                                                    {/* GLOWING BOX LOGIC HERE */}
                                                     <div onClick={() => handleMatchClick(rIdx, mIdx, match)} 
-                                                         className={`relative z-10 border border-royal-700 rounded-lg transition-all shadow-md overflow-hidden ${isReady ? `cursor-pointer hover:scale-105 ${tierConf.shadowHover}` : match.winner ? '' : 'opacity-60'}`} 
-                                                         style={{ background: (match.winner || isReady) && !isBye ? `linear-gradient(${tierConf.hex}1A, ${tierConf.hex}1A), #051611` : '#051611' }}>
+                                                         className={`relative z-10 border-2 rounded-lg transition-all overflow-hidden ${isReady ? 'cursor-pointer hover:scale-105 z-20' : match.winner ? 'border-royal-800' : 'border-royal-800/30 opacity-40'}`} 
+                                                         style={{ 
+                                                             background: isReady ? `linear-gradient(${tierConf.hex}2A, ${tierConf.hex}2A), #0a241c` : (match.winner && !isBye ? `linear-gradient(${tierConf.hex}1A, ${tierConf.hex}1A), #051611` : '#051611'),
+                                                             borderColor: isReady ? tierConf.hex : undefined,
+                                                             boxShadow: isReady ? `0 0 15px ${tierConf.hex}55` : undefined
+                                                         }}>
                                                         <div className={`p-2 flex justify-between items-center border-b border-royal-800/50 ${match.winner === match.p1 && !isBye ? 'bg-black/20' : ''}`}>
                                                             <div className="flex items-center gap-2 overflow-hidden w-full pr-2">
                                                                 {match.p1 ? (
@@ -2626,7 +2631,6 @@
                             )})}
                         </div>
                     </div>
-                    <ResolveMatchModal resolvingMatch={resolvingMatch} setResolvingMatch={setResolvingMatch} submitResult={submitResult} handleRandomize={handleRandomize} players={players} allTournaments={allTournaments} tournament={tournament} tierConf={tierConf} onNavigate={onNavigate} />
                 </div>
             );
         }
@@ -2729,7 +2733,7 @@
             };
 
             const handlePlayerClick = (e, playerId) => {
-                if (tournament.status !== 'completed') return; // Only allow click-throughs when tournament is finished
+                if (tournament.status !== 'completed') return; 
                 e.stopPropagation();
                 if (playerId) onNavigate('players', playerId);
             };
@@ -2819,8 +2823,12 @@
                                 const isReady = !match.winner;
                                 return (
                                     <div key={match.id} onClick={() => handleMatchClick('group', mIdx, match)} 
-                                         className={`border border-royal-700 rounded-xl p-3 shadow-md transition-all overflow-hidden ${isReady ? `hover:scale-105 cursor-pointer ${tierConf.shadowHover}` : 'opacity-70'}`} 
-                                         style={{ background: match.winner || isReady ? `linear-gradient(${tierConf.hex}1A, ${tierConf.hex}1A), #051611` : '#051611' }}>
+                                         className={`border-2 rounded-xl p-3 transition-all overflow-hidden ${isReady ? 'hover:scale-105 cursor-pointer z-20' : 'border-royal-800 opacity-50'}`} 
+                                         style={{ 
+                                             background: isReady ? `linear-gradient(${tierConf.hex}2A, ${tierConf.hex}2A), #0a241c` : `linear-gradient(${tierConf.hex}1A, ${tierConf.hex}1A), #051611`,
+                                             borderColor: isReady ? tierConf.hex : undefined,
+                                             boxShadow: isReady ? `0 0 15px ${tierConf.hex}55` : undefined
+                                         }}>
                                         <div className="text-xs font-bold text-royal-400 mb-2 uppercase tracking-wider">Group {match.group}</div>
                                         
                                         <div className={`flex justify-between items-center mb-2 ${match.winner === match.p1 ? 'bg-black/20 rounded px-1' : ''}`}>
@@ -2863,8 +2871,12 @@
                                     const isReady = match.p1 && match.p2 && !match.winner && tournament.status !== 'completed';
                                     return (
                                         <div key={match.id} onClick={() => handleMatchClick('sf', mIdx, match)} 
-                                             className={`border border-royal-700 rounded-xl p-3 shadow-md transition-all overflow-hidden ${isReady ? `hover:scale-105 cursor-pointer ${tierConf.shadowHover}` : match.winner ? '' : 'border-dashed opacity-50'}`} 
-                                             style={{ background: match.winner || isReady ? `linear-gradient(${tierConf.hex}1A, ${tierConf.hex}1A), #051611` : '#051611' }}>
+                                             className={`border-2 rounded-xl p-3 transition-all overflow-hidden ${isReady ? 'hover:scale-105 cursor-pointer z-20' : match.winner ? 'border-royal-800' : 'border-dashed border-royal-800/50 opacity-30'}`} 
+                                             style={{ 
+                                                 background: isReady ? `linear-gradient(${tierConf.hex}2A, ${tierConf.hex}2A), #0a241c` : (match.winner ? `linear-gradient(${tierConf.hex}1A, ${tierConf.hex}1A), #051611` : '#051611'),
+                                                 borderColor: isReady ? tierConf.hex : undefined,
+                                                 boxShadow: isReady ? `0 0 15px ${tierConf.hex}55` : undefined
+                                             }}>
                                             <div className={`flex justify-between items-center mb-2 ${match.winner === match.p1 ? 'bg-black/20 rounded px-1' : ''}`}>
                                                 <div className="flex items-center gap-2 overflow-hidden w-full pr-2">
                                                     {match.p1 ? (
@@ -2909,8 +2921,12 @@
                                     const isReady = match.p1 && match.p2 && !match.winner && tournament.status !== 'completed';
                                     return (
                                         <div key={match.id} onClick={() => handleMatchClick('f', mIdx, match)} 
-                                             className={`border border-royal-700 rounded-xl p-4 shadow-2xl transition-all overflow-hidden ${isReady ? `hover:scale-105 cursor-pointer ${tierConf.shadowHover}` : match.winner ? '' : 'border-dashed opacity-50'}`} 
-                                             style={{ background: match.winner || isReady ? `linear-gradient(${tierConf.hex}1A, ${tierConf.hex}1A), #051611` : '#051611' }}>
+                                             className={`border-2 rounded-xl p-4 shadow-2xl transition-all overflow-hidden ${isReady ? 'hover:scale-105 cursor-pointer z-20' : match.winner ? 'border-royal-800' : 'border-dashed border-royal-800/50 opacity-30'}`} 
+                                             style={{ 
+                                                 background: isReady ? `linear-gradient(${tierConf.hex}2A, ${tierConf.hex}2A), #0a241c` : (match.winner ? `linear-gradient(${tierConf.hex}1A, ${tierConf.hex}1A), #051611` : '#051611'),
+                                                 borderColor: isReady ? tierConf.hex : undefined,
+                                                 boxShadow: isReady ? `0 0 15px ${tierConf.hex}80` : undefined
+                                             }}>
                                             <div className={`flex justify-between items-center mb-3 ${match.winner === match.p1 ? 'rounded px-2 py-1' : ''}`} style={{ backgroundColor: match.winner === match.p1 ? `${tierConf.hex}20` : undefined }}>
                                                 <div className="flex items-center gap-2 overflow-hidden w-full pr-2">
                                                     {match.p1 ? (
@@ -2945,7 +2961,6 @@
                             </div>
                         </div>
                     </div>
-                    <ResolveMatchModal resolvingMatch={resolvingMatch} setResolvingMatch={setResolvingMatch} submitResult={submitResult} handleRandomize={handleRandomize} players={players} allTournaments={allTournaments} tournament={tournament} tierConf={tierConf} onNavigate={onNavigate} />
                 </div>
             );
         }
@@ -3101,6 +3116,7 @@
     </script>
 </body>
 </html>
+
 
 
 
