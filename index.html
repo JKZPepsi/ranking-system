@@ -438,10 +438,6 @@
         // --- Core Utility Functions ---
         var getTournamentTier = (t) => {
             if (t.format === 'atp_finals') return 'finals';
-            let parsed = t.bracket;
-            if (typeof parsed === 'string') { try { parsed = JSON.parse(parsed); } catch(e) { return t.tier || 'major'; } }
-            if (!parsed || !Array.isArray(parsed)) return t.tier || 'major';
-            if (t.tier === 'grand_slam' && parsed.length < 6) return 'major';
             return t.tier || 'major';
         };
 
@@ -2199,19 +2195,24 @@
                             const tierKey = getTournamentTier(t);
                             const tierConf = TOURNAMENT_TIERS[tierKey];
                             const drawSize = getDrawSize(t);
+                            const isActive = t.status === 'active';
                             return (
-                                <div key={t.id} onClick={() => onSelect(t.id)} className="bg-royal-900 border border-royal-800 rounded-xl p-5 cursor-pointer hover:border-gold-500/50 hover:shadow-lg hover:shadow-gold-500/5 hover:-translate-y-1 transition-all group flex flex-col h-full relative overflow-hidden">
+                                <div key={t.id} onClick={() => onSelect(t.id)} className={`bg-royal-900 border ${isActive ? 'border-emerald-500/50 shadow-[0_0_15px_rgba(16,185,129,0.15)] ring-1 ring-emerald-500/50' : 'border-royal-800 hover:border-gold-500/50'} rounded-xl p-5 cursor-pointer hover:shadow-lg hover:-translate-y-1 transition-all group flex flex-col h-full relative overflow-hidden`}>
                                     <div className={`absolute top-0 left-0 w-full h-1 opacity-50`} style={{ backgroundColor: tierConf?.hex }}></div>
                                     <div className="flex-1">
-                                        <h3 className="font-bold text-lg text-white mb-2 flex items-center gap-2 truncate">
-                                            {t.status === 'completed' && ['grand_slam', 'finals', 'major'].includes(tierKey) && (
-                                                <DynamicTrophy tier={tierKey} result="Winner" country={t.hostCountry} size={24} className="shrink-0" />
+                                        <h3 className="font-bold text-lg text-white mb-3 flex items-center gap-2 truncate">
+                                            {!isActive && ['grand_slam', 'finals', 'major'].includes(tierKey) && (
+                                                <DynamicTrophy tier={tierKey} result="Winner" country={t.hostCountry} size={28} className="shrink-0 drop-shadow-md" />
                                             )}
                                             {getFlag(t.hostCountry)} <span className="truncate">{t.name}</span>
                                         </h3>
                                         <div className="flex flex-wrap gap-2 mb-4">
                                             <span className={`text-[10px] uppercase font-bold tracking-widest px-2 py-0.5 rounded ${tierConf?.bg || 'bg-royal-800'} ${tierConf?.color || 'text-royal-200'}`}>{tierConf?.name || 'Tournament'}</span>
-                                            <span className={`text-[10px] uppercase font-bold tracking-widest px-2 py-0.5 rounded ${t.status === 'completed' ? 'bg-[#059669]/20 text-[#059669]' : 'bg-orange-500/20 text-orange-400'}`}>{t.status}</span>
+                                            {isActive ? (
+                                                <span className="text-[10px] uppercase font-bold tracking-widest px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-400 flex items-center gap-1.5"><span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span> ACTIVE</span>
+                                            ) : (
+                                                <span className="text-[10px] uppercase font-bold tracking-widest px-2 py-0.5 rounded bg-[#059669]/20 text-[#059669]">COMPLETED</span>
+                                            )}
                                         </div>
                                     </div>
                                     <div className="text-xs text-royal-400 mt-auto pt-4 border-t border-royal-800/50 flex justify-between items-center">
@@ -2230,7 +2231,7 @@
                 </div>
             );
         }
-
+        
         function CreateTournamentView({ players, onBack, onSuccess, db, appId }) {
             const [name, setName] = useState('');
             const [description, setDescription] = useState('');
@@ -2572,7 +2573,7 @@
         }
 
         // Shared match resolution modal component
-        function ResolveMatchModal({ resolvingMatch, setResolvingMatch, submitResult, handleRandomize, players, allTournaments, tournament, tierConf, onNavigate }) {
+        function ResolveMatchModal({ resolvingMatch, setResolvingMatch, submitResult, handleRandomize, players, allTournaments = [], tournament, tierConf, onNavigate }) {
             const [p1ImgIdx, setP1ImgIdx] = useState(0);
             const [p2ImgIdx, setP2ImgIdx] = useState(0);
 
@@ -2702,7 +2703,7 @@
             );
         }
 
-        function TournamentBracket({ tournament, allTournaments, players, onBack, db, appId, onNavigate }) {
+        function TournamentBracket({ tournament, allTournaments = [], players, onBack, db, appId, onNavigate }) {
             const [resolvingMatch, setResolvingMatch] = useState(null);
             const [showDelete, setShowDelete] = useState(false);
             
@@ -2760,7 +2761,7 @@
                                 <ArrowLeft className="w-4 h-4" /> Back to Tournaments
                             </button>
                             <h1 className="text-2xl md:text-3xl font-bold text-white flex items-center gap-3">
-                                {['grand_slam', 'finals', 'major'].includes(tierKey) && (
+                                {tournament.status === 'completed' && ['grand_slam', 'finals', 'major'].includes(tierKey) && (
                                     <DynamicTrophy tier={tierKey} result="Winner" country={tournament.hostCountry} size={48} className="drop-shadow-lg shrink-0" />
                                 )}
                                 <span className={`${tierConf?.color || 'text-royal-300'} text-sm uppercase tracking-widest border border-current px-2 py-1 rounded shrink-0`}>{tierConf?.name || 'Tournament'}</span>
@@ -2768,7 +2769,6 @@
                                 <span className="truncate">{tournament.name}</span>
                                 {tournament.status === 'completed' && <span className="bg-[#059669]/20 text-[#059669] text-xs px-2 py-1 rounded ml-2 shrink-0">COMPLETED</span>}
                             </h1>
-                            {tournament.description && <p className="text-royal-300 text-sm mt-2 max-w-2xl">{tournament.description}</p>}
                         </div>
                         <div className="mt-4 md:mt-0 shrink-0">
                             {showDelete ? (
@@ -2787,12 +2787,17 @@
                             {parsedBracket.map((round, rIdx) => {
                                 if (!Array.isArray(round)) return null;
                                 const isFinalRound = rIdx === totalRounds - 1;
+                                const finalMatch = isFinalRound ? round[0] : null;
+                                const showHeaderTrophy = isFinalRound && finalMatch && !finalMatch.winner;
                                 
                                 return (
                                 <div key={rIdx} className="flex flex-col w-64 shrink-0 mr-12 h-full">
-                                    <div className="text-center text-royal-400 font-bold text-sm uppercase tracking-wider mb-4">
-                                        {isFinalRound && <Trophy className="w-4 h-4 inline-block mr-2 mb-1" style={{ color: tierConf.hex }} />}
-                                        {ROUND_NAMES[rIdx + rOffset]}
+                                    <div className="text-center text-royal-400 font-bold text-sm uppercase tracking-wider mb-4 flex flex-col items-center justify-end min-h-[60px]">
+                                        {showHeaderTrophy && <DynamicTrophy tier={tierKey} result="Winner" country={tournament.hostCountry} size={48} className="mb-2 drop-shadow-xl" />}
+                                        <div className="flex items-center justify-center gap-2">
+                                            {!showHeaderTrophy && isFinalRound && <Trophy className="w-4 h-4 inline-block mb-0.5" style={{ color: tierConf.hex }} />}
+                                            {ROUND_NAMES[rIdx + rOffset]}
+                                        </div>
                                     </div>
                                     <div className="flex-1 flex flex-col">
                                         {round.map((match, mIdx) => {
@@ -2815,16 +2820,16 @@
                                                                 {match.p1 ? (
                                                                     <>
                                                                         <img src={p1.images?.[0] || p1.imageUrl || "https://via.placeholder.com/40"} loading="lazy" decoding="async" className="w-5 h-5 rounded-full object-cover border border-royal-700 shrink-0" />
-                                                                        <span onClick={tournament.status === 'completed' ? (e) => { e.stopPropagation(); onNavigate('players', match.p1); } : undefined} className={`text-sm font-medium flex items-center gap-1 truncate ${match.winner && match.winner !== match.p1 && !isBye ? 'text-royal-500 line-through' : 'text-white'} ${tournament.status === 'completed' ? 'cursor-pointer hover:text-gold-400 hover:underline' : ''}`}>
-                                                                            {getFlag(p1.nationality)} <span className="truncate">{p1.name}</span>
-                                                                            {getSeedText(tournament, match.p1) && <span className="text-[10px] text-royal-400 font-mono tracking-tighter">{getSeedText(tournament, match.p1)}</span>}
+                                                                        <span onClick={tournament.status === 'completed' ? (e) => { e.stopPropagation(); onNavigate('players', match.p1); } : undefined} className={`text-sm font-medium flex items-center truncate ${match.winner && match.winner !== match.p1 && !isBye ? 'text-royal-500 line-through' : 'text-white'} ${tournament.status === 'completed' ? 'cursor-pointer hover:text-gold-400 hover:underline' : ''}`}>
+                                                                            {getFlag(p1.nationality)} <span className="truncate ml-1">{p1.name}</span>
+                                                                            {getSeedText(tournament, match.p1) && <span className="text-[10px] text-royal-400 font-mono tracking-tighter ml-1.5">{getSeedText(tournament, match.p1)}</span>}
                                                                         </span>
                                                                     </>
                                                                 ) : <span className="text-sm font-medium text-royal-500">TBD</span>}
                                                             </div>
-                                                            {match.winner === match.p1 && !isBye && (
+                                                            {match.winner && match.winner === match.p1 && !isBye && (
                                                                 isFinalRound 
-                                                                ? <DynamicTrophy tier={tierKey} result="Winner" country={tournament.hostCountry} size={24} className="shrink-0" /> 
+                                                                ? <DynamicTrophy tier={tierKey} result="Winner" country={tournament.hostCountry} size={28} className="shrink-0" /> 
                                                                 : <CheckCircle size={16} className="text-[#059669] shrink-0"/>
                                                             )}
                                                         </div>
@@ -2833,16 +2838,16 @@
                                                                 {match.p2 ? (
                                                                     <>
                                                                         <img src={p2.images?.[0] || p2.imageUrl || "https://via.placeholder.com/40"} loading="lazy" decoding="async" className="w-5 h-5 rounded-full object-cover border border-royal-700 shrink-0" />
-                                                                        <span onClick={tournament.status === 'completed' ? (e) => { e.stopPropagation(); onNavigate('players', match.p2); } : undefined} className={`text-sm font-medium flex items-center gap-1 truncate ${match.winner && match.winner !== match.p2 && !isBye ? 'text-royal-500 line-through' : 'text-white'} ${tournament.status === 'completed' ? 'cursor-pointer hover:text-gold-400 hover:underline' : ''}`}>
-                                                                            {getFlag(p2.nationality)} <span className="truncate">{p2.name}</span>
-                                                                            {getSeedText(tournament, match.p2) && <span className="text-[10px] text-royal-400 font-mono tracking-tighter">{getSeedText(tournament, match.p2)}</span>}
+                                                                        <span onClick={tournament.status === 'completed' ? (e) => { e.stopPropagation(); onNavigate('players', match.p2); } : undefined} className={`text-sm font-medium flex items-center truncate ${match.winner && match.winner !== match.p2 && !isBye ? 'text-royal-500 line-through' : 'text-white'} ${tournament.status === 'completed' ? 'cursor-pointer hover:text-gold-400 hover:underline' : ''}`}>
+                                                                            {getFlag(p2.nationality)} <span className="truncate ml-1">{p2.name}</span>
+                                                                            {getSeedText(tournament, match.p2) && <span className="text-[10px] text-royal-400 font-mono tracking-tighter ml-1.5">{getSeedText(tournament, match.p2)}</span>}
                                                                         </span>
                                                                     </>
                                                                 ) : (isBye ? <span className="text-sm font-bold text-royal-500 italic tracking-widest">BYE</span> : <span className="text-sm font-medium text-royal-500">TBD</span>)}
                                                             </div>
-                                                            {match.winner === match.p2 && !isBye && (
+                                                            {match.winner && match.winner === match.p2 && !isBye && (
                                                                 isFinalRound 
-                                                                ? <DynamicTrophy tier={tierKey} result="Winner" country={tournament.hostCountry} size={24} className="shrink-0" /> 
+                                                                ? <DynamicTrophy tier={tierKey} result="Winner" country={tournament.hostCountry} size={28} className="shrink-0" /> 
                                                                 : <CheckCircle size={16} className="text-[#059669] shrink-0"/>
                                                             )}
                                                         </div>
@@ -2858,11 +2863,12 @@
                             )})}
                         </div>
                     </div>
+                    <ResolveMatchModal resolvingMatch={resolvingMatch} setResolvingMatch={setResolvingMatch} submitResult={submitResult} handleRandomize={handleRandomize} players={players} allTournaments={allTournaments} tournament={tournament} tierConf={tierConf} onNavigate={onNavigate} />
                 </div>
             );
         }
 
-        function SNBInternationalsBracket({ tournament, players, onBack, db, appId, allTournaments, onNavigate }) {
+        function SNBInternationalsBracket({ tournament, allTournaments = [], players, onBack, db, appId, onNavigate }) {
             const [resolvingMatch, setResolvingMatch] = useState(null);
             const [showDelete, setShowDelete] = useState(false);
 
@@ -2972,9 +2978,9 @@
                                     <tr key={s.id} className={isGroupStageComplete && idx < 2 ? 'bg-[#059669]/10' : ''}>
                                         <td className="p-3 flex items-center gap-2">
                                             <span className={`w-5 h-5 flex items-center justify-center rounded-full text-xs font-bold ${isGroupStageComplete && idx < 2 ? 'bg-[#059669] text-royal-950' : 'bg-royal-700 text-royal-200'}`}>{idx+1}</span>
-                                            <span onClick={tournament.status === 'completed' ? (e) => { e.stopPropagation(); onNavigate('players', s.id); } : undefined} className={`truncate flex items-center gap-1 ${tournament.status === 'completed' ? 'cursor-pointer hover:text-gold-400 hover:underline' : ''}`}>
-                                                {getFlag(p.nationality)} {p.name}
-                                                {getSeedText(tournament, s.id) && <span className="text-[10px] text-royal-400 font-mono tracking-tighter">{getSeedText(tournament, s.id)}</span>}
+                                            <span onClick={tournament.status === 'completed' ? (e) => { e.stopPropagation(); onNavigate('players', s.id); } : undefined} className={`truncate flex items-center ${tournament.status === 'completed' ? 'cursor-pointer hover:text-gold-400 hover:underline' : ''}`}>
+                                                {getFlag(p.nationality)} <span className="ml-1">{p.name}</span>
+                                                {getSeedText(tournament, s.id) && <span className="text-[10px] text-royal-400 font-mono tracking-tighter ml-1.5">{getSeedText(tournament, s.id)}</span>}
                                             </span>
                                         </td>
                                         <td className="p-3 text-center">{s.wins}-{s.losses}</td>
@@ -2988,9 +2994,9 @@
                                     <tr key={pid}>
                                         <td className="p-3 flex items-center gap-2">
                                             <span className="w-5 h-5 flex items-center justify-center rounded-full text-xs font-bold bg-royal-700 text-royal-200">-</span> 
-                                            <span onClick={tournament.status === 'completed' ? (e) => { e.stopPropagation(); onNavigate('players', pid); } : undefined} className={`truncate flex items-center gap-1 ${tournament.status === 'completed' ? 'cursor-pointer hover:text-gold-400 hover:underline' : ''}`}>
-                                                {getFlag(p.nationality)} {p.name}
-                                                {getSeedText(tournament, pid) && <span className="text-[10px] text-royal-400 font-mono tracking-tighter">{getSeedText(tournament, pid)}</span>}
+                                            <span onClick={tournament.status === 'completed' ? (e) => { e.stopPropagation(); onNavigate('players', pid); } : undefined} className={`truncate flex items-center ${tournament.status === 'completed' ? 'cursor-pointer hover:text-gold-400 hover:underline' : ''}`}>
+                                                {getFlag(p.nationality)} <span className="ml-1">{p.name}</span>
+                                                {getSeedText(tournament, pid) && <span className="text-[10px] text-royal-400 font-mono tracking-tighter ml-1.5">{getSeedText(tournament, pid)}</span>}
                                             </span>
                                         </td>
                                         <td className="p-3 text-center text-royal-400">0-0</td>
@@ -3003,6 +3009,9 @@
                 </div>
             );
 
+            const finalMatch = knockout[1] ? knockout[1][0] : null;
+            const showHeaderTrophy = finalMatch && !finalMatch.winner;
+
             return (
                 <div className="h-full flex flex-col pb-20 max-w-6xl mx-auto space-y-8">
                     <div className="flex justify-between items-start md:items-center mb-6">
@@ -3011,13 +3020,12 @@
                                 <ArrowLeft className="w-4 h-4" /> Back to Tournaments
                             </button>
                             <h1 className="text-3xl font-bold text-white flex items-center gap-3">
-                                <DynamicTrophy tier="finals" result="Winner" country={tournament.hostCountry} size={48} className="drop-shadow-lg shrink-0" />
+                                {tournament.status === 'completed' && <DynamicTrophy tier="finals" result="Winner" country={tournament.hostCountry} size={48} className="drop-shadow-lg shrink-0" />}
                                 <span className="text-emerald-500 text-sm uppercase tracking-widest border border-emerald-500/50 px-2 py-1 rounded bg-emerald-500/20 shrink-0">SNB Internationals</span>
                                 <span className="text-4xl shrink-0" title={getCountryName(tournament.hostCountry || 'USA')}>{getFlag(tournament.hostCountry || 'USA')}</span>
                                 <span className="truncate">{tournament.name}</span>
                                 {tournament.status === 'completed' && <span className="bg-[#059669]/20 text-[#059669] text-sm px-2 py-1 rounded font-bold uppercase shrink-0">Completed</span>}
                             </h1>
-                            {tournament.description && <p className="text-royal-300 text-sm mt-2 max-w-2xl">{tournament.description}</p>}
                         </div>
                         <div className="mt-4 md:mt-0 shrink-0">
                             {showDelete ? (
@@ -3058,23 +3066,23 @@
                                         <div className={`flex justify-between items-center mb-2 ${match.winner === match.p1 ? 'bg-black/20 rounded px-1' : ''}`}>
                                             <div className="flex items-center gap-2 overflow-hidden w-full pr-2">
                                                 <img src={p1.images?.[0] || p1.imageUrl || "https://via.placeholder.com/40"} loading="lazy" decoding="async" className="w-5 h-5 rounded-full object-cover border border-royal-700 shrink-0" />
-                                                <span onClick={tournament.status === 'completed' ? (e) => { e.stopPropagation(); onNavigate('players', match.p1); } : undefined} className={`text-sm font-medium flex items-center gap-1 truncate ${match.winner && match.winner !== match.p1 ? 'text-royal-500 line-through' : 'text-white'} ${tournament.status === 'completed' ? 'cursor-pointer hover:text-gold-400 hover:underline' : ''}`}>
-                                                    {getFlag(p1.nationality)} <span className="truncate">{p1.name}</span>
-                                                    {getSeedText(tournament, match.p1) && <span className="text-[10px] text-royal-400 font-mono tracking-tighter">{getSeedText(tournament, match.p1)}</span>}
+                                                <span onClick={tournament.status === 'completed' ? (e) => { e.stopPropagation(); onNavigate('players', match.p1); } : undefined} className={`text-sm font-medium flex items-center truncate ${match.winner && match.winner !== match.p1 ? 'text-royal-500 line-through' : 'text-white'} ${tournament.status === 'completed' ? 'cursor-pointer hover:text-gold-400 hover:underline' : ''}`}>
+                                                    {getFlag(p1.nationality)} <span className="truncate ml-1">{p1.name}</span>
+                                                    {getSeedText(tournament, match.p1) && <span className="text-[10px] text-royal-400 font-mono tracking-tighter ml-1.5">{getSeedText(tournament, match.p1)}</span>}
                                                 </span>
                                             </div>
-                                            {match.winner === match.p1 && <CheckCircle className="w-4 h-4 text-[#059669] shrink-0" />}
+                                            {match.winner && match.winner === match.p1 && <CheckCircle className="w-4 h-4 text-[#059669] shrink-0" />}
                                         </div>
                                         
                                         <div className={`flex justify-between items-center ${match.winner === match.p2 ? 'bg-black/20 rounded px-1' : ''}`}>
                                             <div className="flex items-center gap-2 overflow-hidden w-full pr-2">
                                                 <img src={p2.images?.[0] || p2.imageUrl || "https://via.placeholder.com/40"} loading="lazy" decoding="async" className="w-5 h-5 rounded-full object-cover border border-royal-700 shrink-0" />
-                                                <span onClick={tournament.status === 'completed' ? (e) => { e.stopPropagation(); onNavigate('players', match.p2); } : undefined} className={`text-sm font-medium flex items-center gap-1 truncate ${match.winner && match.winner !== match.p2 ? 'text-royal-500 line-through' : 'text-white'} ${tournament.status === 'completed' ? 'cursor-pointer hover:text-gold-400 hover:underline' : ''}`}>
-                                                    {getFlag(p2.nationality)} <span className="truncate">{p2.name}</span>
-                                                    {getSeedText(tournament, match.p2) && <span className="text-[10px] text-royal-400 font-mono tracking-tighter">{getSeedText(tournament, match.p2)}</span>}
+                                                <span onClick={tournament.status === 'completed' ? (e) => { e.stopPropagation(); onNavigate('players', match.p2); } : undefined} className={`text-sm font-medium flex items-center truncate ${match.winner && match.winner !== match.p2 ? 'text-royal-500 line-through' : 'text-white'} ${tournament.status === 'completed' ? 'cursor-pointer hover:text-gold-400 hover:underline' : ''}`}>
+                                                    {getFlag(p2.nationality)} <span className="truncate ml-1">{p2.name}</span>
+                                                    {getSeedText(tournament, match.p2) && <span className="text-[10px] text-royal-400 font-mono tracking-tighter ml-1.5">{getSeedText(tournament, match.p2)}</span>}
                                                 </span>
                                             </div>
-                                            {match.winner === match.p2 && <CheckCircle className="w-4 h-4 text-[#059669] shrink-0" />}
+                                            {match.winner && match.winner === match.p2 && <CheckCircle className="w-4 h-4 text-[#059669] shrink-0" />}
                                         </div>
                                     </div>
                                 );
@@ -3089,62 +3097,64 @@
                             {knockout.map((round, rIdx) => {
                                 if (!Array.isArray(round)) return null;
                                 const isFinalRound = rIdx === 1;
-                                const roundName = rIdx === 0 ? 'Semifinals' : 'Championship';
                                 
                                 return (
                                 <div key={rIdx} className="flex flex-col w-64 shrink-0 mr-12 h-full">
-                                    <div className="text-center text-royal-400 font-bold text-sm uppercase tracking-wider mb-4">
-                                        {isFinalRound && <Trophy className="w-4 h-4 inline-block mr-2 mb-1" style={{ color: tierConf.hex }} />}
-                                        {roundName}
+                                    <div className="text-center text-royal-400 font-bold text-sm uppercase tracking-wider mb-4 flex flex-col items-center justify-end min-h-[60px]">
+                                        {isFinalRound && showHeaderTrophy && <DynamicTrophy tier="finals" result="Winner" country={tournament.hostCountry} size={48} className="mb-2 drop-shadow-xl" />}
+                                        <div className="flex items-center justify-center gap-2">
+                                            {isFinalRound && !showHeaderTrophy && <Trophy className="w-4 h-4 inline-block mb-0.5" style={{ color: tierConf.hex }} />}
+                                            {isFinalRound ? 'Championship' : 'Semifinals'}
+                                        </div>
                                     </div>
-                                    <div className="flex-1 flex flex-col">
+                                    <div className="flex-1 flex flex-col justify-around">
                                         {round.map((match, mIdx) => {
                                             if (!match) return null;
                                             const p1 = getPlayer(match.p1), p2 = getPlayer(match.p2);
                                             const isReady = match.p1 && match.p2 && !match.winner && tournament.status !== 'completed';
                                             
                                             return (
-                                                <div key={match.id} className="flex-1 flex flex-col justify-center relative py-2">
+                                                <div key={match.id} className="relative py-4">
                                                     <div onClick={() => handleMatchClick(rIdx === 0 ? 'sf' : 'f', mIdx, match)} 
-                                                         className={`relative z-10 border-2 rounded-lg transition-all overflow-hidden ${isReady ? 'cursor-pointer hover:scale-105 z-20' : match.winner ? 'border-royal-800' : 'border-royal-800/30 opacity-40'}`} 
+                                                         className={`relative z-10 border-2 rounded-xl p-3 transition-all overflow-hidden ${isReady ? 'cursor-pointer hover:scale-105 z-20' : match.winner ? 'border-royal-800' : 'border-dashed border-royal-800/50 opacity-30'}`} 
                                                          style={{ 
                                                              background: isReady ? `linear-gradient(${tierConf.hex}15, ${tierConf.hex}15), #0a241c` : (match.winner ? `linear-gradient(${tierConf.hex}0A, ${tierConf.hex}0A), #051611` : '#051611'),
                                                              borderColor: isReady ? tierConf.hex : undefined,
-                                                             boxShadow: isReady ? `0 0 8px ${tierConf.hex}40` : undefined
+                                                             boxShadow: isReady ? `0 0 10px ${tierConf.hex}50` : undefined
                                                          }}>
-                                                        <div className={`p-2 flex justify-between items-center border-b border-royal-800/50 ${match.winner === match.p1 ? 'bg-black/20' : ''}`}>
+                                                        <div className={`p-2 flex justify-between items-center mb-2 ${match.winner === match.p1 ? 'bg-black/20 rounded px-1' : ''}`}>
                                                             <div className="flex items-center gap-2 overflow-hidden w-full pr-2">
                                                                 {match.p1 ? (
                                                                     <>
-                                                                        <img src={p1.images?.[0] || p1.imageUrl || "https://via.placeholder.com/40"} loading="lazy" decoding="async" className="w-5 h-5 rounded-full object-cover border border-royal-700 shrink-0" />
-                                                                        <span onClick={tournament.status === 'completed' ? (e) => { e.stopPropagation(); onNavigate('players', match.p1); } : undefined} className={`text-sm font-medium flex items-center gap-1 truncate ${match.winner && match.winner !== match.p1 ? 'text-royal-500 line-through' : 'text-white'} ${tournament.status === 'completed' ? 'cursor-pointer hover:text-gold-400 hover:underline' : ''}`}>
-                                                                            {getFlag(p1.nationality)} <span className="truncate">{p1.name}</span>
-                                                                            {getSeedText(tournament, match.p1) && <span className="text-[10px] text-royal-400 font-mono tracking-tighter">{getSeedText(tournament, match.p1)}</span>}
+                                                                        <img src={p1.images?.[0] || p1.imageUrl || "https://via.placeholder.com/40"} loading="lazy" decoding="async" className="w-6 h-6 rounded-full object-cover border border-royal-700 shrink-0" />
+                                                                        <span onClick={tournament.status === 'completed' ? (e) => { e.stopPropagation(); onNavigate('players', match.p1); } : undefined} className={`text-base font-bold flex items-center truncate ${match.winner && match.winner !== match.p1 ? 'text-royal-500 line-through' : 'text-white'} ${tournament.status === 'completed' ? 'cursor-pointer hover:text-gold-400 hover:underline' : ''}`}>
+                                                                            {getFlag(p1.nationality)} <span className="truncate ml-1">{p1.name}</span>
+                                                                            {getSeedText(tournament, match.p1) && <span className="text-[10px] text-royal-400 font-mono tracking-tighter ml-1.5">{getSeedText(tournament, match.p1)}</span>}
                                                                         </span>
                                                                     </>
                                                                 ) : <span className="text-sm font-medium text-royal-500">TBD</span>}
                                                             </div>
-                                                            {match.winner === match.p1 && (
+                                                            {match.winner && match.winner === match.p1 && (
                                                                 isFinalRound 
-                                                                ? <DynamicTrophy tier={tierKey} result="Winner" country={tournament.hostCountry} size={24} className="shrink-0" /> 
+                                                                ? <DynamicTrophy tier="finals" result="Winner" country={tournament.hostCountry} size={32} className="shrink-0" /> 
                                                                 : <CheckCircle size={16} className="text-[#059669] shrink-0"/>
                                                             )}
                                                         </div>
-                                                        <div className={`p-2 flex justify-between items-center ${match.winner === match.p2 ? 'bg-black/20' : ''}`}>
+                                                        <div className={`p-2 flex justify-between items-center ${match.winner === match.p2 ? 'bg-black/20 rounded px-1' : ''}`}>
                                                             <div className="flex items-center gap-2 overflow-hidden w-full pr-2">
                                                                 {match.p2 ? (
                                                                     <>
-                                                                        <img src={p2.images?.[0] || p2.imageUrl || "https://via.placeholder.com/40"} loading="lazy" decoding="async" className="w-5 h-5 rounded-full object-cover border border-royal-700 shrink-0" />
-                                                                        <span onClick={tournament.status === 'completed' ? (e) => { e.stopPropagation(); onNavigate('players', match.p2); } : undefined} className={`text-sm font-medium flex items-center gap-1 truncate ${match.winner && match.winner !== match.p2 ? 'text-royal-500 line-through' : 'text-white'} ${tournament.status === 'completed' ? 'cursor-pointer hover:text-gold-400 hover:underline' : ''}`}>
-                                                                            {getFlag(p2.nationality)} <span className="truncate">{p2.name}</span>
-                                                                            {getSeedText(tournament, match.p2) && <span className="text-[10px] text-royal-400 font-mono tracking-tighter">{getSeedText(tournament, match.p2)}</span>}
+                                                                        <img src={p2.images?.[0] || p2.imageUrl || "https://via.placeholder.com/40"} loading="lazy" decoding="async" className="w-6 h-6 rounded-full object-cover border border-royal-700 shrink-0" />
+                                                                        <span onClick={tournament.status === 'completed' ? (e) => { e.stopPropagation(); onNavigate('players', match.p2); } : undefined} className={`text-base font-bold flex items-center truncate ${match.winner && match.winner !== match.p2 ? 'text-royal-500 line-through' : 'text-white'} ${tournament.status === 'completed' ? 'cursor-pointer hover:text-gold-400 hover:underline' : ''}`}>
+                                                                            {getFlag(p2.nationality)} <span className="truncate ml-1">{p2.name}</span>
+                                                                            {getSeedText(tournament, match.p2) && <span className="text-[10px] text-royal-400 font-mono tracking-tighter ml-1.5">{getSeedText(tournament, match.p2)}</span>}
                                                                         </span>
                                                                     </>
                                                                 ) : <span className="text-sm font-medium text-royal-500">TBD</span>}
                                                             </div>
-                                                            {match.winner === match.p2 && (
+                                                            {match.winner && match.winner === match.p2 && (
                                                                 isFinalRound 
-                                                                ? <DynamicTrophy tier={tierKey} result="Winner" country={tournament.hostCountry} size={24} className="shrink-0" /> 
+                                                                ? <DynamicTrophy tier="finals" result="Winner" country={tournament.hostCountry} size={32} className="shrink-0" /> 
                                                                 : <CheckCircle size={16} className="text-[#059669] shrink-0"/>
                                                             )}
                                                         </div>
@@ -3164,7 +3174,7 @@
                 </div>
             );
         }
-
+        
         // --- Main App Logic ---
 
         function App() {
@@ -3316,6 +3326,7 @@
     </script>
 </body>
 </html>
+
 
 
 
