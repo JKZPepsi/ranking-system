@@ -61,72 +61,83 @@
 
         var DashboardIcon = ({ size = 24, className = "" }) => (
             <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 100 100" className={className}>
-                {/* Sweeping smooth horizon curve */}
                 <path d="M 5 80 C 30 50, 70 30, 95 60 C 70 95, 30 100, 5 80 Z" fill="currentColor" opacity="0.3" />
-                {/* Sharp rising monoliths */}
                 <polygon points="15,75 35,40 50,55 80,15 90,30 60,85 40,65" fill="currentColor" opacity="0.9" />
-                {/* Sharp dynamic swoosh overlapping */}
                 <polygon points="25,35 45,15 55,25" fill="currentColor" opacity="0.7" />
             </svg>
         );
 
         var PlayersIcon = ({ size = 24, className = "" }) => (
             <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 100 100" className={className}>
-                {/* Smooth abstract head */}
                 <path d="M 50 50 C 20 50, 20 10, 50 10 C 70 10, 75 30, 50 50 Z" fill="currentColor" opacity="0.4" />
-                {/* Sharp cubist facial fracture */}
                 <polygon points="50,10 75,35 45,55 35,30" fill="currentColor" opacity="0.8" />
-                {/* Smooth flowing shoulder/cape */}
                 <path d="M 10 95 C 15 65, 35 55, 60 60 C 85 65, 95 80, 95 95 Z" fill="currentColor" opacity="0.3" />
-                {/* Sharp geometric body intersection */}
                 <polygon points="35,60 70,95 20,95" fill="currentColor" opacity="0.9" />
             </svg>
         );
 
         var NationsIcon = ({ size = 24, className = "" }) => (
             <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 100 100" className={className}>
-                {/* Outer globe circle (smooth) */}
                 <circle cx="45" cy="55" r="40" fill="currentColor" opacity="0.2" />
-                {/* Curved latitude/longitude sweep */}
                 <path d="M 5 55 C 20 10, 80 5, 95 45 C 70 30, 30 40, 5 55 Z" fill="currentColor" opacity="0.4" />
                 <path d="M 45 15 C 85 20, 95 70, 65 95 C 80 60, 60 30, 45 15 Z" fill="currentColor" opacity="0.5" />
-                {/* Sharp geometric continents / fragments */}
                 <polygon points="25,40 65,25 75,70 35,85" fill="currentColor" opacity="0.95" />
             </svg>
         );
 
         var TournamentsIcon = ({ size = 24, className = "" }) => (
             <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 100 100" className={className}>
-                {/* Smooth elegant bowl */}
                 <path d="M 15 20 C 15 70, 40 85, 50 85 C 60 85, 85 70, 85 20 Z" fill="currentColor" opacity="0.3" />
-                {/* Sharp dynamic pedestal */}
                 <polygon points="35,85 65,85 80,95 20,95" fill="currentColor" opacity="0.7" />
-                {/* Sharp explosive fracture inside the bowl */}
                 <polygon points="25,20 50,60 70,10 60,35 40,25" fill="currentColor" opacity="0.9" />
             </svg>
         );
 
         var AnalyticsIcon = ({ size = 24, className = "" }) => (
             <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 100 100" className={className}>
-                {/* Smooth abstract background curve / radar sweep */}
                 <path d="M 10 90 C 20 40, 50 10, 90 20 C 70 60, 50 90, 10 90 Z" fill="currentColor" opacity="0.3" />
-                {/* Sharp geometric data beam / structure */}
                 <polygon points="20,80 40,30 55,45 80,10 95,25 60,75 45,55" fill="currentColor" opacity="0.9" />
-                {/* Intersecting contrasting shard */}
                 <polygon points="50,90 70,40 85,55 60,100" fill="currentColor" opacity="0.6" />
+            </svg>
+        );
+
+        var Trophy = ({ size = 24, className = "" }) => (
+            <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 100 100" className={className}>
+                <path d="M 15 20 C -10 50 30 80 45 75 L 50 50 Z" fill="currentColor" opacity="0.4" />
+                <polygon points="50,50 85,15 95,40 60,80 45,75" fill="currentColor" />
+                <polygon points="45,75 60,80 75,95 20,90" fill="currentColor" opacity="0.7" />
+                <path d="M 10 15 C 40 30 70 5 95 10 L 85 20 C 60 25 30 35 15 20 Z" fill="currentColor" />
+            </svg>
+        );
+
+        var Star = ({ size = 24, className = "" }) => (
+            <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 100 100" className={className}>
+                <path d="M 50 10 C 60 40, 90 50, 90 50 C 90 50, 60 60, 50 90 C 40 60, 10 50, 10 50 C 10 50, 40 40, 50 10 Z" fill="currentColor" opacity="0.4" />
+                <polygon points="50,5 65,35 95,45 70,65 80,95 50,75 20,95 30,65 5,45 35,35" fill="currentColor" opacity="0.9" />
+            </svg>
+        );
+
+        var History = ({ size = 24, className = "" }) => (
+            <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 100 100" className={className}>
+                <path d="M 90 50 C 90 80, 60 90, 30 85 C 10 80, 5 50, 20 25 C 35 5, 70 5, 85 25" fill="none" stroke="currentColor" strokeWidth="8" opacity="0.4" />
+                <polygon points="50,15 55,55 85,70 75,80 40,60 40,15" fill="currentColor" opacity="0.9" />
+            </svg>
+        );
+
+        var UserCircle = ({ size = 24, className = "" }) => (
+            <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 100 100" className={className}>
+                <circle cx="50" cy="50" r="45" fill="currentColor" opacity="0.2" />
+                <path d="M 25 85 C 30 50, 70 50, 75 85 Z" fill="currentColor" opacity="0.9" />
+                <polygon points="50,20 65,45 35,45" fill="currentColor" opacity="0.7" />
             </svg>
         );
 
         // --- Standard UI Icons ---
         var Icon = ({ d, size = 24, className = "" }) => <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d={d} /></svg>;
-        var Trophy = (props) => <Icon d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6M18 9h1.5a2.5 2.5 0 0 0 0-5H18M4 22h16M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22M18 2H6v7a6 6 0 0 0 12 0V2Z" {...props} />;
-        var History = (props) => <Icon d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8M3 3v5h5M12 7v5l4 2" {...props} />;
         var Plus = (props) => <Icon d="M12 5v14M5 12h14" {...props} />;
         var ChevronRight = (props) => <Icon d="m9 18 6-6-6-6" {...props} />;
         var ChevronLeft = (props) => <Icon d="m15 18-6-6 6-6" {...props} />;
-        var UserCircle = (props) => <Icon d="M12 12a5 5 0 1 0 0-10 5 5 0 0 0 0 10ZM12 14c-4.42 0-8 3.58-8 8h16c0-4.42-3.58-8-8-8Z" {...props} />;
         var Shield = (props) => <Icon d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z" {...props} />;
-        var Star = (props) => <Icon d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" {...props} />;
         var CheckCircle = (props) => <Icon d="M22 11.08V12a10 10 0 1 1-5.93-9.14M22 4 12 14.01l-3-3" {...props} />;
         var ArrowLeft = (props) => <Icon d="m12 19-7-7 7-7M5 12h14" {...props} />;
         var Play = (props) => <Icon d="m5 3 14 9-14 9V3z" {...props} />;
@@ -134,7 +145,6 @@
         var Edit2 = (props) => <Icon d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z" {...props} />;
         var X = (props) => <Icon d="M18 6 6 18M6 6l12 12" {...props} />;
         var Shuffle = (props) => <Icon d="M2 18h1.4c1.3 0 2.5-.6 3.3-1.7l6.1-8.6c.7-1.1 2-1.7 3.3-1.7H22M18 2l4 4-4 4M2 6h1.9c1.5 0 2.8.8 3.6 2l3.5 5c.8 1.2 2.1 2 3.6 2H22M18 14l4 4-4 4" {...props} />;
-        var BarChart2 = (props) => <Icon d="M18 20V10M12 20V4M6 20v-6" {...props} />;
         var Download = (props) => <Icon d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3" {...props} />;
         var Search = (props) => <Icon d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" {...props} />;
 
@@ -493,6 +503,453 @@
 
         // --- Custom Views ---
 
+        function IndividualPlayerChart({ history, type, filterPlayed = false, totalPlayersCount = 10 }) {
+            const [range, setRange] = useState(10);
+            const [hoveredPointData, setHoveredPointData] = useState(null);
+
+            const rawData = filterPlayed ? history.filter(d => d.played) : history.filter(d => d.isMajorPlus);
+            const data = rawData.slice(range === 'all' ? 0 : -range);
+            if (data.length < 1) return <p className="text-royal-300 text-sm mt-4">Not enough tournament history.</p>;
+
+            const width = 1000;
+            const height = 350; 
+            const pad = { top: 50, right: 60, bottom: 40, left: 60 };
+            
+            let minVal = type === 'rank' ? 1 : 0;
+            let maxVal;
+            
+            if (type === 'rank') {
+                maxVal = Math.ceil(Math.max(10, totalPlayersCount) / 10) * 10;
+            } else if (type === 'careerPoints') {
+                maxVal = Math.max(100, ...data.map(d => d.careerPoints)) * 1.1;
+            } else {
+                maxVal = Math.max(100, ...data.map(d => d.totalPoints)) * 1.1;
+            }
+
+            const getX = (i) => data.length === 1 ? (width / 2) : pad.left + (i * ((width - pad.left - pad.right) / (data.length - 1)));
+            const getY = (val) => {
+                if (type === 'rank') return pad.top + ((val - minVal) / (maxVal - minVal)) * (height - pad.top - pad.bottom);
+                return height - pad.bottom - ((val - minVal) / (maxVal - minVal)) * (height - pad.top - pad.bottom);
+            };
+
+            const pathD = data.map((d, i) => {
+                const val = type === 'rank' ? d.rank : (type === 'careerPoints' ? d.careerPoints : d.totalPoints);
+                return `${i === 0 ? 'M' : 'L'} ${getX(i)} ${getY(val)}`;
+            }).join(' ');
+
+            let pathD2 = "";
+            if (type === 'points') {
+                pathD2 = data.map((d, i) => `${i === 0 ? 'M' : 'L'} ${getX(i)} ${getY(d.tournamentPoints)}`).join(' ');
+            }
+
+            const labelStep = Math.max(1, Math.ceil(data.length / 15));
+
+            const getAchColor = (ach) => {
+                if (!ach) return '#789e90';
+                if (ach.result === 'Winner') return '#d4af37'; 
+                if (ach.result === 'Finalist' || ach.result === 'Final') return '#cde0d9'; 
+                return '#f97316'; 
+            };
+
+            return (
+                <div className="mt-4 flex flex-col items-center w-full">
+                    <div className="flex gap-2 mb-6 w-full justify-start">
+                        <button onClick={() => setRange(10)} className={`px-4 py-1.5 rounded-lg text-sm font-bold transition-colors ${range === 10 ? 'bg-gold-500 text-royal-950' : 'bg-royal-800 text-royal-300 hover:text-white'}`}>Last 10</button>
+                        <button onClick={() => setRange(20)} className={`px-4 py-1.5 rounded-lg text-sm font-bold transition-colors ${range === 20 ? 'bg-gold-500 text-royal-950' : 'bg-royal-800 text-royal-300 hover:text-white'}`}>Last 20</button>
+                        <button onClick={() => setRange('all')} className={`px-4 py-1.5 rounded-lg text-sm font-bold transition-colors ${range === 'all' ? 'bg-gold-500 text-royal-950' : 'bg-royal-800 text-royal-300 hover:text-white'}`}>All Time</button>
+                    </div>
+                    <div className="w-full bg-royal-900/50 rounded-xl border border-royal-700 pb-2 relative overflow-hidden">
+                        <svg viewBox={`0 0 ${width} ${height}`} className="w-full h-auto overflow-visible">
+                            {/* Grid lines */}
+                            {type === 'rank' ? (
+                                (() => {
+                                    const lines = [1];
+                                    const step = maxVal > 50 ? 10 : 5;
+                                    for (let i = step; i <= maxVal; i += step) lines.push(i);
+                                    return lines.map((r, i) => (
+                                        <g key={`grid-rank-${i}`}>
+                                            <line x1={pad.left} y1={getY(r)} x2={width - pad.right} y2={getY(r)} stroke="#13382d" strokeWidth="1" strokeDasharray="4 4" />
+                                            <text x={pad.left - 10} y={getY(r)} fill="#789e90" fontSize="12" fontWeight="bold" textAnchor="end" alignmentBaseline="middle">#{r}</text>
+                                        </g>
+                                    ));
+                                })()
+                            ) : (
+                                (() => {
+                                    const step = Math.max(10, Math.ceil(maxVal / 8)); 
+                                    const yLines = [];
+                                    for(let v = 0; v <= maxVal; v += step) yLines.push(v);
+                                    return yLines.map((p, i) => (
+                                        <g key={`grid-${i}`}>
+                                            <line x1={pad.left} y1={getY(p)} x2={width - pad.right} y2={getY(p)} stroke="#13382d" strokeWidth="1" strokeDasharray="4 4" />
+                                            <text x={pad.left - 10} y={getY(p)} fill="#789e90" fontSize="12" fontWeight="bold" textAnchor="end" alignmentBaseline="middle">{p.toLocaleString()}</text>
+                                        </g>
+                                    ));
+                                })()
+                            )}
+                            
+                            {type === 'points' && data.length > 1 && <path d={pathD2} fill="none" stroke="#38bdf8" strokeWidth="2" strokeDasharray="5 5" strokeLinejoin="round" />}
+                            {data.length > 1 && <path d={pathD} fill="none" stroke="#d4af37" strokeWidth="3" strokeLinejoin="round" />}
+                            
+                            {type === 'points' && data.map((d, i) => {
+                                const ptX = getX(i);
+                                const ptY2 = getY(d.tournamentPoints);
+                                const showLabel = i % labelStep === 0 || i === data.length - 1;
+                                return (
+                                    <g key={`tpt-${i}`}>
+                                        <circle cx={ptX} cy={ptY2} r={hoveredPointData && hoveredPointData.date === d.date ? "6" : "4"} fill="#051611" stroke="#38bdf8" strokeWidth="2" style={{ transition: 'r 0.2s ease' }} />
+                                        {showLabel && (
+                                            <text x={ptX} y={ptY2 - 10} fill="#38bdf8" fontSize="11" fontWeight="700" textAnchor="middle" stroke="#051611" strokeWidth="3" paintOrder="stroke">
+                                                +{d.tournamentPoints}
+                                            </text>
+                                        )}
+                                    </g>
+                                )
+                            })}
+
+                            {data.map((d, i) => {
+                                const ptX = getX(i);
+                                const ptY = getY(type === 'rank' ? d.rank : (type === 'careerPoints' ? d.careerPoints : d.totalPoints));
+                                const isHovered = hoveredPointData && hoveredPointData.date === d.date;
+                                const isMinor = d.tier === 'pro' || d.tier === 'challenger';
+                                
+                                const showLabel = i % labelStep === 0 || i === data.length - 1;
+                                const val = type === 'rank' ? d.rank : (type === 'careerPoints' ? d.careerPoints : d.totalPoints);
+
+                                const dotRadius = isHovered ? "8" : (isMinor ? "3.5" : "5");
+                                const dotOpacity = isMinor ? "0.6" : "1";
+                                const dotStroke = isMinor ? "#a0bdb2" : "#d4af37";
+
+                                return (
+                                    <g key={i}>
+                                        <circle cx={ptX} cy={ptY} r={dotRadius} fill="#051611" stroke={dotStroke} strokeWidth={isMinor ? "1.5" : "2"} opacity={dotOpacity} style={{ transition: 'all 0.2s ease' }} />
+                                        
+                                        {(showLabel || isMinor) && (
+                                            <text x={ptX} y={ptY - (isMinor ? 12 : 18)} fill={isMinor ? "#a0bdb2" : "#d4af37"} fontSize={isMinor ? "11" : "16"} fontWeight="900" textAnchor="middle" stroke="#051611" strokeWidth={isMinor ? "2" : "4"} paintOrder="stroke" opacity={isMinor && !isHovered ? 0 : 1} className={isMinor ? "group-hover:opacity-100 transition-opacity" : ""}>
+                                                {type === 'rank' ? `#${d.rank}` : val.toLocaleString()}
+                                            </text>
+                                        )}
+
+                                        {(type === 'points' || type === 'careerPoints') && d.achievement && !isMinor && (
+                                            <g transform={`translate(${ptX - 10}, ${ptY - 60})`}>
+                                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={getAchColor(d.achievement)} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                                    <path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6M18 9h1.5a2.5 2.5 0 0 0 0-5H18M4 22h16M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22M18 2H6v7a6 6 0 0 0 12 0V2Z"/>
+                                                </svg>
+                                            </g>
+                                        )}
+
+                                        <circle cx={ptX} cy={ptY} r="20" fill="transparent" cursor="crosshair" onMouseEnter={() => setHoveredPointData(d)} onMouseLeave={() => setHoveredPointData(null)} />
+                                    </g>
+                                );
+                            })}
+                        </svg>
+                    </div>
+
+                    <div className="h-10 mt-4 flex items-center justify-center bg-royal-900 border border-royal-800 rounded-full px-6 min-w-[300px] shadow-lg transition-all duration-200">
+                        {hoveredPointData ? (
+                            <span className="text-white font-bold tracking-wide">
+                                {hoveredPointData.tournamentName} 
+                                <span className={type === 'rank' ? "text-emerald-400 font-normal ml-2" : "text-gold-500 font-normal ml-2"}>
+                                    | {type === 'rank' ? `Rank #${hoveredPointData.rank}` : `${(type === 'careerPoints' ? hoveredPointData.careerPoints : hoveredPointData.totalPoints).toLocaleString()} pts`}
+                                </span>
+                                {type === 'points' && <span className="text-sky-400 font-normal ml-2">(+{hoveredPointData.tournamentPoints} this event)</span>}
+                            </span>
+                        ) : (
+                            <span className="text-royal-300 text-sm font-medium">Hover over a point for tournament details</span>
+                        )}
+                    </div>
+                </div>
+            );
+        }
+
+        function TopPlayersChart({ globalHistory, playersRaw, type, onNavigate }) {
+            const [range, setRange] = useState(10);
+            const [selectedLineId, setSelectedLineId] = useState(null);
+            const [hoveredLineId, setHoveredLineId] = useState(null);
+            
+            const filteredHistory = globalHistory.filter(h => h.isMajorPlus);
+            const historyData = filteredHistory.slice(range === 'all' ? 0 : -range);
+            if (historyData.length < 1) return <p className="text-royal-300 text-sm mt-4">Not enough Major+ tournament history to generate a graph.</p>;
+
+            const getVal = (s) => {
+                if (type === 'rank') return s.rank;
+                return s.pts;
+            };
+
+            const includedPlayerIds = new Set();
+            if (type === 'rank' || type === 'points') {
+                historyData.forEach(h => {
+                    if (h.standings) {
+                        h.standings.forEach(s => {
+                            if (s.rank <= 12) includedPlayerIds.add(s.id);
+                        });
+                    }
+                });
+            }
+
+            const lines = [];
+            Array.from(includedPlayerIds).forEach(pid => {
+                const player = playersRaw.find(p => p.id === pid);
+                if (!player) return;
+
+                const visiblePoints = [];
+                for (let k = 0; k < historyData.length; k++) {
+                    const s = historyData[k].standings.find(st => st.id === pid);
+                    
+                    const prevS = k > 0 ? historyData[k-1].standings.find(st => st.id === pid) : null;
+                    const nextS = k < historyData.length - 1 ? historyData[k+1].standings.find(st => st.id === pid) : null;
+
+                    const isTop12 = s && s.rank <= 12;
+                    const prevTop12 = prevS && prevS.rank <= 12;
+                    const nextTop12 = nextS && nextS.rank <= 12;
+
+                    if (s && (isTop12 || prevTop12 || nextTop12)) {
+                        visiblePoints.push({ k, s, h: historyData[k] });
+                    }
+                }
+
+                const segments = [];
+                let currentSegment = [];
+                for (let i = 0; i < visiblePoints.length; i++) {
+                    if (currentSegment.length === 0) {
+                        currentSegment.push(visiblePoints[i]);
+                    } else {
+                        if (visiblePoints[i].k === currentSegment[currentSegment.length - 1].k + 1) {
+                            currentSegment.push(visiblePoints[i]);
+                        } else {
+                            segments.push(currentSegment);
+                            currentSegment = [visiblePoints[i]];
+                        }
+                    }
+                }
+                if (currentSegment.length > 0) segments.push(currentSegment);
+
+                if (segments.length > 0) {
+                    lines.push({ player, segments, color: getPlayerColor(player.id) });
+                }
+            });
+
+            const width = 1200;
+            const height = type === 'rank' ? 550 : 600; 
+            const pad = { top: 40, right: 260, bottom: 80, left: type === 'rank' ? 60 : 80 }; 
+
+            let maxPointsVal = 10;
+            const maxRankDisplay = 13; 
+            
+            historyData.forEach(h => { 
+                if (h.standings) {
+                    h.standings.forEach(s => { 
+                        if (includedPlayerIds.has(s.id) && s.rank <= 12) {
+                            if (getVal(s) > maxPointsVal) maxPointsVal = getVal(s);
+                        } 
+                    });
+                }
+            });
+            
+            if (type !== 'rank') maxPointsVal = Math.ceil(maxPointsVal * 1.05);
+
+            const getX = (i) => historyData.length === 1 ? (pad.left + (width - pad.left - pad.right) / 2) : pad.left + (i * ((width - pad.left - pad.right) / (historyData.length - 1)));
+            
+            const getY = (val) => {
+                if (type === 'rank') {
+                    const effVal = val > 12 ? 13 : val;
+                    return pad.top + ((effVal - 1) / 12) * ((height - pad.top - pad.bottom) * 0.85);
+                } else {
+                    return height - pad.bottom - ((val - 0) / (maxPointsVal - 0)) * (height - pad.top - pad.bottom);
+                }
+            };
+
+            lines.forEach(line => {
+                line.paths = line.segments.map(seg => {
+                    return seg.map((pt, i) => `${i === 0 ? 'M' : 'L'} ${getX(pt.k)} ${getY(getVal(pt.s))}`).join(' ');
+                });
+            });
+
+            const endLabels = lines.map(line => {
+                const lastSeg = line.segments[line.segments.length - 1];
+                const endPt = lastSeg[lastSeg.length - 1];
+                const rawY = getY(getVal(endPt.s));
+                return { id: line.player.id, targetY: rawY, currentY: rawY, endX: getX(endPt.k) };
+            });
+
+            const LABEL_HEIGHT = 26; 
+            for (let iter = 0; iter < 50; iter++) {
+                let moved = false;
+                for (let i = 0; i < endLabels.length - 1; i++) {
+                    for (let j = i + 1; j < endLabels.length; j++) {
+                        if (Math.abs(endLabels[i].endX - endLabels[j].endX) < 150) {
+                            const diff = endLabels[j].currentY - endLabels[i].currentY;
+                            if (diff >= 0 && diff < LABEL_HEIGHT) {
+                                const overlap = LABEL_HEIGHT - diff;
+                                endLabels[i].currentY -= overlap / 2;
+                                endLabels[j].currentY += overlap / 2;
+                                moved = true;
+                            } else if (diff < 0 && diff > -LABEL_HEIGHT) {
+                                const overlap = LABEL_HEIGHT + diff;
+                                endLabels[i].currentY += overlap / 2;
+                                endLabels[j].currentY -= overlap / 2;
+                                moved = true;
+                            }
+                        }
+                    }
+                }
+                endLabels.sort((a, b) => a.currentY - b.currentY);
+                if (!moved) break;
+            }
+            
+            const labelPositions = {};
+            endLabels.forEach(el => {
+                if (el.currentY < pad.top - 15) el.currentY = pad.top - 15;
+                if (el.currentY > height - pad.bottom + 40) el.currentY = height - pad.bottom + 40;
+                labelPositions[el.id] = el.currentY;
+            });
+
+            const sortedLines = [...lines].sort((a, b) => {
+                if (a.player.id === selectedLineId || a.player.id === hoveredLineId) return 1;
+                if (b.player.id === selectedLineId || b.player.id === hoveredLineId) return -1;
+                return 0;
+            });
+
+            let metricLabel = 'Points';
+
+            return (
+                <div className="w-full">
+                    <div className="flex justify-between items-center mb-6">
+                        <div className="flex gap-2">
+                            <button onClick={() => setRange(10)} className={`px-4 py-1.5 rounded-lg text-sm font-bold transition-colors ${range === 10 ? 'bg-gold-500 text-royal-950' : 'bg-royal-800 text-royal-300 hover:text-white'}`}>Last 10</button>
+                            <button onClick={() => setRange(20)} className={`px-4 py-1.5 rounded-lg text-sm font-bold transition-colors ${range === 20 ? 'bg-gold-500 text-royal-950' : 'bg-royal-800 text-royal-300 hover:text-white'}`}>Last 20</button>
+                            <button onClick={() => setRange('all')} className={`px-4 py-1.5 rounded-lg text-sm font-bold transition-colors ${range === 'all' ? 'bg-gold-500 text-royal-950' : 'bg-royal-800 text-royal-300 hover:text-white'}`}>All Time</button>
+                        </div>
+                        {selectedLineId && (
+                            <button onClick={() => setSelectedLineId(null)} className="text-sm font-medium text-gold-500 hover:text-white px-3 py-1 bg-royal-800 rounded-md border border-royal-700 transition-colors">Clear Selection</button>
+                        )}
+                    </div>
+                    
+                    <div className="w-full bg-royal-900/50 rounded-xl border border-royal-700 pb-2 relative overflow-hidden">
+                        <svg viewBox={`0 0 ${width} ${height}`} className="w-full h-auto overflow-visible font-sans">
+                            <defs>
+                                {lines.map(line => (
+                                    <clipPath id={`clip-${type}-${line.player.id}`} key={`clip-${line.player.id}`}>
+                                        <circle cx="14" cy="14" r="14" />
+                                    </clipPath>
+                                ))}
+                            </defs>
+
+                            {/* Heavy Gridlines */}
+                            {type === 'rank' ? (
+                                <>
+                                    {[...Array(12)].map((_, i) => {
+                                        const r = i + 1;
+                                        const yPos = pad.top + (i / 12) * ((height - pad.top - pad.bottom) * 0.85);
+                                        return (
+                                            <g key={`grid-${i}`}>
+                                                <line x1={pad.left} y1={yPos} x2={width - pad.right + 20} y2={yPos} stroke="#13382d" strokeWidth="1" strokeDasharray="4 4" />
+                                                <text x={pad.left - 15} y={yPos} fill="#789e90" fontSize="12" fontWeight="bold" textAnchor="end" alignmentBaseline="middle">#{r}</text>
+                                            </g>
+                                        );
+                                    })}
+                                    <g>
+                                        <rect x={pad.left} y={getY(13) - 20} width={width - pad.left - pad.right + 20} height="40" fill="#051611" opacity="0.6" />
+                                        <line x1={pad.left} y1={getY(13)} x2={width - pad.right + 20} y2={getY(13)} stroke="#ef4444" strokeWidth="1" strokeDasharray="8 4" opacity="0.5" />
+                                        <text x={pad.left - 15} y={getY(13)} fill="#ef4444" fontSize="12" fontWeight="bold" textAnchor="end" alignmentBaseline="middle" opacity="0.8">Drop</text>
+                                    </g>
+                                </>
+                            ) : (
+                                (() => {
+                                    const step = Math.max(10, Math.ceil(maxPointsVal / 15)); 
+                                    const yLines = [];
+                                    for(let v = 0; v <= maxPointsVal; v += step) yLines.push(v);
+                                    return yLines.map((p, i) => (
+                                        <g key={`grid-${i}`}>
+                                            <line x1={pad.left} y1={getY(p)} x2={width - pad.right + 20} y2={getY(p)} stroke="#13382d" strokeWidth="1" strokeDasharray="4 4" />
+                                            <text x={pad.left - 15} y={getY(p)} fill="#789e90" fontSize="12" fontWeight="bold" textAnchor="end" alignmentBaseline="middle">{p.toLocaleString()}</text>
+                                        </g>
+                                    ));
+                                })()
+                            )}
+                            
+                            {/* Lines */}
+                            {sortedLines.map((line) => {
+                                const isHighlighted = selectedLineId === line.player.id || hoveredLineId === line.player.id;
+                                const isFaded = (selectedLineId || hoveredLineId) && !isHighlighted;
+                                return line.paths.map((pStr, pIdx) => (
+                                    <path 
+                                        key={`path-${line.player.id}-${pIdx}`} 
+                                        d={pStr} fill="none" stroke={line.color} 
+                                        strokeWidth={isHighlighted ? 6 : 3} 
+                                        opacity={isFaded ? 0.15 : 0.9} 
+                                        strokeLinejoin="round" strokeLinecap="round" 
+                                        style={{ transition: 'stroke-width 0.2s ease, opacity 0.2s ease' }}
+                                        className="cursor-pointer"
+                                        onClick={() => setSelectedLineId(line.player.id === selectedLineId ? null : line.player.id)}
+                                        onMouseEnter={() => setHoveredLineId(line.player.id)}
+                                        onMouseLeave={() => setHoveredLineId(null)}
+                                    />
+                                ));
+                            })}
+                            
+                            {/* Dots and Labels */}
+                            {sortedLines.map((line) => {
+                                const isHighlighted = selectedLineId === line.player.id || hoveredLineId === line.player.id;
+                                const isFaded = (selectedLineId || hoveredLineId) && !isHighlighted;
+                                
+                                const lastSeg = line.segments[line.segments.length - 1];
+                                const endPt = lastSeg[lastSeg.length - 1];
+                                const endX = getX(endPt.k);
+                                const endY = getY(getVal(endPt.s));
+                                const adjY = labelPositions[line.player.id];
+
+                                return (
+                                    <g key={`overlay-${line.player.id}`} style={{ transition: 'opacity 0.2s ease' }} opacity={isFaded ? 0.2 : 1}>
+                                        {/* Plotted points */}
+                                        {line.segments.map((seg, sIdx) => seg.map((pt, i) => {
+                                            const ptX = getX(pt.k);
+                                            const ptY = getY(getVal(pt.s));
+                                            const isDropPoint = type === 'rank' && pt.s.rank > 12;
+                                            
+                                            return (
+                                                <g key={`pt-${line.player.id}-${sIdx}-${i}`} className="group cursor-crosshair">
+                                                    <circle cx={ptX} cy={ptY} r={isHighlighted ? "6" : "5"} fill="#051611" stroke={line.color} strokeWidth={isHighlighted ? 4 : 2} style={{ transition: 'r 0.2s ease, stroke-width 0.2s ease' }} />
+                                                    
+                                                    <text x={ptX} y={ptY - 15} fill={isDropPoint ? "#ef4444" : line.color} fontSize="12" fontWeight="900" textAnchor="middle" stroke="#051611" strokeWidth="4" paintOrder="stroke" className={isDropPoint ? "opacity-90" : "opacity-0 group-hover:opacity-100"} style={{ transition: 'opacity 0.2s ease' }}>
+                                                        {type === 'rank' ? `#${pt.s.rank}` : pt.s.pts.toLocaleString()}
+                                                    </text>
+
+                                                    <circle cx={ptX} cy={ptY} r="20" fill="transparent" />
+                                                    <title>{`${pt.h?.tournamentName || 'Tournament'}\n${line.player.name}\nRank: #${pt.s.rank}\nPoints: ${pt.s.pts.toLocaleString()}`}</title>
+                                                </g>
+                                            );
+                                        }))}
+
+                                        {/* Connecting Line if Label moved */}
+                                        {Math.abs(adjY - endY) > 2 && (
+                                            <path d={`M ${endX} ${endY} C ${endX + 10} ${endY}, ${endX + 10} ${adjY}, ${endX + 20} ${adjY}`} fill="none" stroke={line.color} strokeWidth="2" opacity="0.6" strokeDasharray="3 3" />
+                                        )}
+
+                                        {/* Interactive Inline Profile Label */}
+                                        <g 
+                                            transform={`translate(${endX + 20}, ${adjY - 14})`} 
+                                            className="cursor-pointer"
+                                            onClick={(e) => { e.stopPropagation(); onNavigate('players', line.player.id); }}
+                                            onMouseEnter={() => setHoveredLineId(line.player.id)}
+                                            onMouseLeave={() => setHoveredLineId(null)}
+                                        >
+                                            <rect x="-4" y="-4" width="180" height="36" rx="18" fill="#051611" fillOpacity={isHighlighted ? "1" : "0.85"} stroke={line.color} strokeWidth={isHighlighted ? 2 : 1} style={{ filter: isHighlighted ? 'drop-shadow(0 0 8px rgba(255,255,255,0.3))' : 'drop-shadow(0 4px 6px rgba(0,0,0,0.5))' }} />
+                                            {line.player.imageUrl ? (
+                                                <image href={line.player.imageUrl} x="0" y="0" width="28" height="28" clipPath={`url(#clip-${type}-${line.player.id})`} preserveAspectRatio="xMidYMid slice" />
+                                            ) : (
+                                                <circle cx="14" cy="14" r="14" fill="#0a241c" />
+                                            )}
+                                            <text x="36" y="19" fill="#f8fafc" fontSize="14" fontWeight="bold" style={{ textShadow: "0px 2px 4px black" }}>{line.player.name}</text>
+                                        </g>
+                                    </g>
+                                );
+                            })}
+                        </svg>
+                    </div>
+                </div>
+            );
+        }
+
         function TopNationsChart({ globalHistory, onNavigate }) {
             const [range, setRange] = useState(10);
             const [selectedLineId, setSelectedLineId] = useState(null);
@@ -689,296 +1146,6 @@
             );
         }
 
-        function TopPlayersChart({ globalHistory, playersRaw, type, onNavigate }) {
-            const [range, setRange] = useState(10);
-            const [selectedLineId, setSelectedLineId] = useState(null);
-            const [hoveredLineId, setHoveredLineId] = useState(null);
-            
-            const filteredHistory = globalHistory.filter(h => h.isMajorPlus);
-            const historyData = filteredHistory.slice(range === 'all' ? 0 : -range);
-            if (historyData.length < 1) return <p className="text-royal-300 text-sm mt-4">Not enough Major+ tournament history to generate a graph.</p>;
-
-            const getVal = (s) => {
-                if (type === 'rank') return s.rank;
-                return s.pts;
-            };
-
-            const includedPlayerIds = new Set();
-            if (type === 'rank' || type === 'points') {
-                historyData.forEach(h => {
-                    if (h.standings) {
-                        h.standings.forEach(s => {
-                            if (s.rank <= 12) includedPlayerIds.add(s.id);
-                        });
-                    }
-                });
-            }
-
-            const lines = [];
-            Array.from(includedPlayerIds).forEach(pid => {
-                const player = playersRaw.find(p => p.id === pid);
-                if (!player) return;
-
-                const visiblePoints = [];
-                for (let k = 0; k < historyData.length; k++) {
-                    const s = historyData[k].standings.find(st => st.id === pid);
-                    
-                    const prevS = k > 0 ? historyData[k-1].standings.find(st => st.id === pid) : null;
-                    const nextS = k < historyData.length - 1 ? historyData[k+1].standings.find(st => st.id === pid) : null;
-
-                    const isTop12 = s && s.rank <= 12;
-                    const prevTop12 = prevS && prevS.rank <= 12;
-                    const nextTop12 = nextS && nextS.rank <= 12;
-
-                    // If they are in top 12, or the tournament just before/after entering top 12
-                    if (s && (isTop12 || prevTop12 || nextTop12)) {
-                        visiblePoints.push({ k, s, h: historyData[k] });
-                    }
-                }
-
-                const segments = [];
-                let currentSegment = [];
-                for (let i = 0; i < visiblePoints.length; i++) {
-                    if (currentSegment.length === 0) {
-                        currentSegment.push(visiblePoints[i]);
-                    } else {
-                        if (visiblePoints[i].k === currentSegment[currentSegment.length - 1].k + 1) {
-                            currentSegment.push(visiblePoints[i]);
-                        } else {
-                            segments.push(currentSegment);
-                            currentSegment = [visiblePoints[i]];
-                        }
-                    }
-                }
-                if (currentSegment.length > 0) segments.push(currentSegment);
-
-                if (segments.length > 0) {
-                    lines.push({ player, segments, color: getPlayerColor(player.id) });
-                }
-            });
-
-            const width = 1200;
-            const height = type === 'rank' ? 450 : 600; // MUCH MORE COMPACT FOR RANK
-            const pad = { top: 40, right: 260, bottom: 80, left: type === 'rank' ? 60 : 80 }; 
-
-            let maxPointsVal = 10;
-            const maxRankDisplay = 13; // The "Drop" line
-            
-            historyData.forEach(h => { 
-                if (h.standings) {
-                    h.standings.forEach(s => { 
-                        if (includedPlayerIds.has(s.id) && s.rank <= 12) {
-                            if (getVal(s) > maxPointsVal) maxPointsVal = getVal(s);
-                        } 
-                    });
-                }
-            });
-            
-            if (type !== 'rank') maxPointsVal = Math.ceil(maxPointsVal * 1.05);
-
-            const getX = (i) => historyData.length === 1 ? (pad.left + (width - pad.left - pad.right) / 2) : pad.left + (i * ((width - pad.left - pad.right) / (historyData.length - 1)));
-            
-            const getY = (val) => {
-                if (type === 'rank') {
-                    const effVal = val > 12 ? 13 : val;
-                    return pad.top + ((effVal - 1) / 12) * ((height - pad.top - pad.bottom) * 0.75);
-                } else {
-                    return height - pad.bottom - ((val - 0) / (maxPointsVal - 0)) * (height - pad.top - pad.bottom);
-                }
-            };
-
-            lines.forEach(line => {
-                line.paths = line.segments.map(seg => {
-                    return seg.map((pt, i) => `${i === 0 ? 'M' : 'L'} ${getX(pt.k)} ${getY(getVal(pt.s))}`).join(' ');
-                });
-            });
-
-            const endLabels = lines.map(line => {
-                const lastSeg = line.segments[line.segments.length - 1];
-                const endPt = lastSeg[lastSeg.length - 1];
-                const rawY = getY(getVal(endPt.s));
-                return { id: line.player.id, targetY: rawY, currentY: rawY, endX: getX(endPt.k) };
-            });
-
-            const LABEL_HEIGHT = 30; 
-            for (let iter = 0; iter < 40; iter++) {
-                let moved = false;
-                for (let i = 0; i < endLabels.length - 1; i++) {
-                    for (let j = i + 1; j < endLabels.length; j++) {
-                        if (Math.abs(endLabels[i].endX - endLabels[j].endX) < 180) {
-                            const diff = endLabels[j].currentY - endLabels[i].currentY;
-                            if (diff >= 0 && diff < LABEL_HEIGHT) {
-                                const overlap = LABEL_HEIGHT - diff;
-                                endLabels[i].currentY -= overlap / 2;
-                                endLabels[j].currentY += overlap / 2;
-                                moved = true;
-                            } else if (diff < 0 && diff > -LABEL_HEIGHT) {
-                                const overlap = LABEL_HEIGHT + diff;
-                                endLabels[i].currentY += overlap / 2;
-                                endLabels[j].currentY -= overlap / 2;
-                                moved = true;
-                            }
-                        }
-                    }
-                }
-                endLabels.sort((a, b) => a.currentY - b.currentY);
-                if (!moved) break;
-            }
-            
-            const labelPositions = {};
-            endLabels.forEach(el => {
-                if (el.currentY < pad.top - 15) el.currentY = pad.top - 15;
-                if (el.currentY > height - pad.bottom + 40) el.currentY = height - pad.bottom + 40;
-                labelPositions[el.id] = el.currentY;
-            });
-
-            const sortedLines = [...lines].sort((a, b) => {
-                if (a.player.id === selectedLineId || a.player.id === hoveredLineId) return 1;
-                if (b.player.id === selectedLineId || b.player.id === hoveredLineId) return -1;
-                return 0;
-            });
-
-            let metricLabel = 'Points';
-
-            return (
-                <div className="w-full">
-                    <div className="flex justify-between items-center mb-6">
-                        <div className="flex gap-2">
-                            <button onClick={() => setRange(10)} className={`px-4 py-1.5 rounded-lg text-sm font-bold transition-colors ${range === 10 ? 'bg-gold-500 text-royal-950' : 'bg-royal-800 text-royal-300 hover:text-white'}`}>Last 10</button>
-                            <button onClick={() => setRange(20)} className={`px-4 py-1.5 rounded-lg text-sm font-bold transition-colors ${range === 20 ? 'bg-gold-500 text-royal-950' : 'bg-royal-800 text-royal-300 hover:text-white'}`}>Last 20</button>
-                            <button onClick={() => setRange('all')} className={`px-4 py-1.5 rounded-lg text-sm font-bold transition-colors ${range === 'all' ? 'bg-gold-500 text-royal-950' : 'bg-royal-800 text-royal-300 hover:text-white'}`}>All Time</button>
-                        </div>
-                        {selectedLineId && (
-                            <button onClick={() => setSelectedLineId(null)} className="text-sm font-medium text-gold-500 hover:text-white px-3 py-1 bg-royal-800 rounded-md border border-royal-700 transition-colors">Clear Selection</button>
-                        )}
-                    </div>
-                    
-                    <div className="w-full bg-royal-900/50 rounded-xl border border-royal-700 pb-2 relative overflow-hidden">
-                        <svg viewBox={`0 0 ${width} ${height}`} className="w-full h-auto overflow-visible font-sans">
-                            <defs>
-                                {lines.map(line => (
-                                    <clipPath id={`clip-${type}-${line.player.id}`} key={`clip-${line.player.id}`}>
-                                        <circle cx="14" cy="14" r="14" />
-                                    </clipPath>
-                                ))}
-                            </defs>
-
-                            {/* Heavy Gridlines */}
-                            {type === 'rank' ? (
-                                <>
-                                    {[...Array(12)].map((_, i) => {
-                                        const r = i + 1;
-                                        const yPos = pad.top + (i / 12) * ((height - pad.top - pad.bottom) * 0.75);
-                                        return (
-                                            <g key={`grid-${i}`}>
-                                                <line x1={pad.left} y1={yPos} x2={width - pad.right + 20} y2={yPos} stroke="#13382d" strokeWidth="1" strokeDasharray="4 4" />
-                                                <text x={pad.left - 15} y={yPos} fill="#789e90" fontSize="12" fontWeight="bold" textAnchor="end" alignmentBaseline="middle">#{r}</text>
-                                            </g>
-                                        );
-                                    })}
-                                    <g>
-                                        <rect x={pad.left} y={getY(13) - 20} width={width - pad.left - pad.right + 20} height="40" fill="#051611" opacity="0.6" />
-                                        <line x1={pad.left} y1={getY(13)} x2={width - pad.right + 20} y2={getY(13)} stroke="#ef4444" strokeWidth="1" strokeDasharray="8 4" opacity="0.5" />
-                                        <text x={pad.left - 15} y={getY(13)} fill="#ef4444" fontSize="12" fontWeight="bold" textAnchor="end" alignmentBaseline="middle" opacity="0.8">Drop</text>
-                                    </g>
-                                </>
-                            ) : (
-                                (() => {
-                                    const step = Math.max(10, Math.ceil(maxPointsVal / 15)); 
-                                    const yLines = [];
-                                    for(let v = 0; v <= maxPointsVal; v += step) yLines.push(v);
-                                    return yLines.map((p, i) => (
-                                        <g key={`grid-${i}`}>
-                                            <line x1={pad.left} y1={getY(p)} x2={width - pad.right + 20} y2={getY(p)} stroke="#13382d" strokeWidth="1" strokeDasharray="4 4" />
-                                            <text x={pad.left - 15} y={getY(p)} fill="#789e90" fontSize="12" fontWeight="bold" textAnchor="end" alignmentBaseline="middle">{p.toLocaleString()}</text>
-                                        </g>
-                                    ));
-                                })()
-                            )}
-                            
-                            {/* Lines */}
-                            {sortedLines.map((line) => {
-                                const isHighlighted = selectedLineId === line.player.id || hoveredLineId === line.player.id;
-                                const isFaded = (selectedLineId || hoveredLineId) && !isHighlighted;
-                                return line.paths.map((pStr, pIdx) => (
-                                    <path 
-                                        key={`path-${line.player.id}-${pIdx}`} 
-                                        d={pStr} fill="none" stroke={line.color} 
-                                        strokeWidth={isHighlighted ? 6 : 3} 
-                                        opacity={isFaded ? 0.15 : 0.9} 
-                                        strokeLinejoin="round" strokeLinecap="round" 
-                                        style={{ transition: 'stroke-width 0.2s ease, opacity 0.2s ease' }}
-                                        className="cursor-pointer"
-                                        onClick={() => setSelectedLineId(line.player.id === selectedLineId ? null : line.player.id)}
-                                        onMouseEnter={() => setHoveredLineId(line.player.id)}
-                                        onMouseLeave={() => setHoveredLineId(null)}
-                                    />
-                                ));
-                            })}
-                            
-                            {/* Dots and Labels */}
-                            {sortedLines.map((line) => {
-                                const isHighlighted = selectedLineId === line.player.id || hoveredLineId === line.player.id;
-                                const isFaded = (selectedLineId || hoveredLineId) && !isHighlighted;
-                                
-                                const lastSeg = line.segments[line.segments.length - 1];
-                                const endPt = lastSeg[lastSeg.length - 1];
-                                const endX = getX(endPt.k);
-                                const endY = getY(getVal(endPt.s));
-                                const adjY = labelPositions[line.player.id];
-
-                                return (
-                                    <g key={`overlay-${line.player.id}`} style={{ transition: 'opacity 0.2s ease' }} opacity={isFaded ? 0.2 : 1}>
-                                        {/* Plotted points */}
-                                        {line.segments.map((seg, sIdx) => seg.map((pt, i) => {
-                                            const ptX = getX(pt.k);
-                                            const ptY = getY(getVal(pt.s));
-                                            const isDropPoint = type === 'rank' && pt.s.rank > 12;
-                                            
-                                            return (
-                                                <g key={`pt-${line.player.id}-${sIdx}-${i}`} className="group cursor-crosshair">
-                                                    <circle cx={ptX} cy={ptY} r={isHighlighted ? "6" : "5"} fill="#051611" stroke={line.color} strokeWidth={isHighlighted ? 4 : 2} style={{ transition: 'r 0.2s ease, stroke-width 0.2s ease' }} />
-                                                    
-                                                    <text x={ptX} y={ptY - 15} fill={isDropPoint ? "#ef4444" : line.color} fontSize="12" fontWeight="900" textAnchor="middle" stroke="#051611" strokeWidth="4" paintOrder="stroke" className={isDropPoint ? "opacity-90" : "opacity-0 group-hover:opacity-100"} style={{ transition: 'opacity 0.2s ease' }}>
-                                                        {type === 'rank' ? `#${pt.s.rank}` : pt.s.pts.toLocaleString()}
-                                                    </text>
-
-                                                    <circle cx={ptX} cy={ptY} r="20" fill="transparent" />
-                                                    <title>{`${pt.h?.tournamentName || 'Tournament'}\n${line.player.name}\nRank: #${pt.s.rank}\nPoints: ${pt.s.pts.toLocaleString()}`}</title>
-                                                </g>
-                                            );
-                                        }))}
-
-                                        {/* Connecting Line if Label moved */}
-                                        {Math.abs(adjY - endY) > 2 && (
-                                            <path d={`M ${endX} ${endY} C ${endX + 10} ${endY}, ${endX + 10} ${adjY}, ${endX + 20} ${adjY}`} fill="none" stroke={line.color} strokeWidth="2" opacity="0.6" strokeDasharray="3 3" />
-                                        )}
-
-                                        {/* Interactive Inline Profile Label */}
-                                        <g 
-                                            transform={`translate(${endX + 20}, ${adjY - 14})`} 
-                                            className="cursor-pointer"
-                                            onClick={(e) => { e.stopPropagation(); onNavigate('players', line.player.id); }}
-                                            onMouseEnter={() => setHoveredLineId(line.player.id)}
-                                            onMouseLeave={() => setHoveredLineId(null)}
-                                        >
-                                            <rect x="-4" y="-4" width="180" height="36" rx="18" fill="#051611" fillOpacity={isHighlighted ? "1" : "0.85"} stroke={line.color} strokeWidth={isHighlighted ? 2 : 1} style={{ filter: isHighlighted ? 'drop-shadow(0 0 8px rgba(255,255,255,0.3))' : 'drop-shadow(0 4px 6px rgba(0,0,0,0.5))' }} />
-                                            {line.player.imageUrl ? (
-                                                <image href={line.player.imageUrl} x="0" y="0" width="28" height="28" clipPath={`url(#clip-${type}-${line.player.id})`} preserveAspectRatio="xMidYMid slice" />
-                                            ) : (
-                                                <circle cx="14" cy="14" r="14" fill="#0a241c" />
-                                            )}
-                                            <text x="36" y="19" fill="#f8fafc" fontSize="14" fontWeight="bold" style={{ textShadow: "0px 2px 4px black" }}>{line.player.name}</text>
-                                        </g>
-                                    </g>
-                                );
-                            })}
-                        </svg>
-                    </div>
-                </div>
-            );
-        }
-
         function AnalyticsView({ playersRaw, tournaments, players, onNavigate }) {
             const globalHistory = useMemo(() => getGlobalHistory(playersRaw, tournaments), [playersRaw, tournaments]);
 
@@ -1091,7 +1258,7 @@
                         </div>
                     </div>
 
-                    <h2 className="text-2xl font-bold text-white mb-4 mt-8 flex items-center gap-2"><Users className="text-gold-500"/> National Roster</h2>
+                    <h2 className="text-2xl font-bold text-white mb-4 mt-8 flex items-center gap-2"><PlayersIcon size={24} className="text-gold-500"/> National Roster</h2>
                     <div className="bg-royal-900 rounded-xl border border-royal-800 overflow-hidden shadow-xl">
                         <div className="overflow-x-auto">
                             <table className="w-full text-left border-collapse">
@@ -1419,7 +1586,7 @@
             );
         }
 
-        function PlayerProfile({ player, players, onBack, tournaments, db, appId, onNavigate }) {
+        function PlayerProfile({ player, players, playersRaw, onBack, tournaments, db, appId, onNavigate }) {
             const [isEditing, setIsEditing] = useState(false);
             const [editName, setEditName] = useState('');
             const [editNationality, setEditNationality] = useState('');
@@ -1435,11 +1602,10 @@
                 }
             }, [player]);
 
-            if (!player) return null;
-
             const handleUpdate = async (e) => {
                 e.preventDefault(); setIsSaving(true);
                 try {
+                    if (!player) return;
                     const validImages = editImages.map(u => u.trim()).filter(Boolean);
                     const pRef = window.fb.doc(db, 'artifacts', appId, 'public', 'data', 'players', player.id);
                     await window.fb.updateDoc(pRef, { name: editName.trim(), nationality: editNationality, imageUrl: validImages[0] || '', images: validImages });
@@ -1449,6 +1615,7 @@
             };
 
             const handleDelete = async () => {
+                if (!player) return;
                 try { 
                     onBack();
                     await window.fb.deleteDoc(window.fb.doc(db, 'artifacts', appId, 'public', 'data', 'players', player.id)); 
@@ -1457,6 +1624,7 @@
             };
 
             const matchHistory = useMemo(() => {
+                if (!player) return [];
                 let matches = [];
                 tournaments.forEach(t => {
                     if (t.status !== 'completed') return;
@@ -1508,9 +1676,10 @@
                     if (b.date !== a.date) return (b.date || 0) - (a.date || 0);
                     return b.roundIndex - a.roundIndex;
                 });
-            }, [player.id, tournaments, players]);
+            }, [player?.id, tournaments, players]);
 
             const h2hStats = useMemo(() => {
+                if (!player) return [];
                 const stats = {};
                 matchHistory.forEach(m => {
                     if (!stats[m.opponentId]) {
@@ -1527,9 +1696,10 @@
                     else stats[m.opponentId].losses++;
                 });
                 return Object.values(stats).sort((a,b) => (b.wins + b.losses) - (a.wins + a.losses) || b.wins - a.wins);
-            }, [matchHistory, players]);
+            }, [matchHistory, players, player?.id]);
 
             const achievements = useMemo(() => {
+                if (!player) return [];
                 const list = [];
                 tournaments.forEach(t => {
                     if (t.status !== 'completed') return;
@@ -1556,10 +1726,11 @@
                     }
                 });
                 return list.sort((a,b) => (b.date || 0) - (a.date || 0));
-            }, [player.id, tournaments]);
+            }, [player?.id, tournaments]);
 
             const rankingHistory = useMemo(() => {
-                const globalHist = getGlobalHistory(players, tournaments);
+                if (!player) return [];
+                const globalHist = getGlobalHistory(playersRaw, tournaments);
                 return globalHist.map(h => {
                     const pStanding = h.standings.find(s => s.id === player.id);
                     const ach = achievements.find(a => a.tournamentId === h.tournamentId);
@@ -1582,7 +1753,9 @@
                         achievement: ach || null
                     };
                 }).filter(h => h.rank > 0);
-            }, [player.id, players, tournaments, achievements]);
+            }, [player?.id, playersRaw, tournaments, achievements]);
+
+            if (!player) return null;
 
             const winningCount = h2hStats.filter(h => h.wins > h.losses).length;
             const losingCount = h2hStats.filter(h => h.losses > h.wins).length;
@@ -1630,7 +1803,7 @@
                             </div>
                             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
                                 <div className="bg-royal-900 p-6 rounded-xl border border-royal-800 shadow-md h-[400px] flex flex-col">
-                                    <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2 shrink-0"><Star className="text-gold-500"/> Scoring Tournaments</h2>
+                                    <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2 shrink-0"><Star size={24} className="text-gold-500"/> Scoring Tournaments</h2>
                                     <div className="space-y-2 overflow-y-auto pr-2 flex-1">{player.recentTournaments.map((t, i) => {
                                         const tierConf = TOURNAMENT_TIERS[t.tier || 'major'];
                                         return (
@@ -1646,7 +1819,7 @@
                                     })}</div>
                                 </div>
                                 <div className="bg-royal-900 p-6 rounded-xl border border-royal-800 shadow-md h-[400px] flex flex-col">
-                                    <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2 shrink-0"><History className="text-emerald-500"/> Match History</h2>
+                                    <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2 shrink-0"><History size={24} className="text-emerald-500"/> Match History</h2>
                                     <div className="space-y-2 overflow-y-auto pr-2 flex-1">{matchHistory.map((m, i) => {
                                         const tierConf = TOURNAMENT_TIERS[m.tier];
                                         return (
@@ -1662,7 +1835,7 @@
                                 </div>
                                 <div className="bg-royal-900 p-6 rounded-xl border border-royal-800 shadow-md h-[400px] flex flex-col">
                                     <div className="mb-4 border-b border-royal-800 pb-3 shrink-0">
-                                        <h2 className="text-xl font-bold text-white flex items-center gap-2 mb-1"><Users className="text-purple-400"/> Head-to-Head</h2>
+                                        <h2 className="text-xl font-bold text-white flex items-center gap-2 mb-1"><PlayersIcon size={24} className="text-purple-400"/> Head-to-Head</h2>
                                         <div className="text-sm text-royal-300 font-medium tracking-wide">
                                             Overall: <span className="text-[#059669] font-bold">{winningCount}</span> - <span className="text-[#be123c] font-bold">{losingCount}</span> - <span className="text-royal-400 font-bold">{tiedCount}</span>
                                         </div>
@@ -1697,7 +1870,7 @@
                                     </div>
                                 )}
                                 <div className="md:col-span-2 lg:col-span-3 bg-royal-900 p-6 rounded-xl border border-royal-800 shadow-md">
-                                    <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2"><Trophy className="text-gold-500"/> Major Achievements</h2>
+                                    <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2"><Trophy size={24} className="text-gold-500"/> Major Achievements</h2>
                                     {achievements.length === 0 ? (
                                         <p className="text-royal-300 text-sm">No major achievements yet. Reaching Semifinals or better in Grand Slams or SNB Internationals, and Final or better in Majors will be recorded here.</p>
                                     ) : (
@@ -1714,11 +1887,11 @@
                                     )}
                                 </div>
                                 <div className="md:col-span-2 lg:col-span-3 bg-royal-900 p-6 rounded-xl border border-royal-800 shadow-md">
-                                    <h2 className="text-2xl font-bold text-white flex items-center gap-2 mb-6"><TrendingUp className="text-gold-500"/> Career Ranking Trajectory</h2>
+                                    <h2 className="text-2xl font-bold text-white flex items-center gap-2 mb-6"><AnalyticsIcon size={28} className="text-gold-500"/> Career Ranking Trajectory</h2>
                                     <IndividualPlayerChart history={rankingHistory} type="rank" filterPlayed={false} totalPlayersCount={players.length} />
                                 </div>
                                 <div className="md:col-span-2 lg:col-span-3 bg-royal-900 p-6 rounded-xl border border-royal-800 shadow-md">
-                                    <h2 className="text-2xl font-bold text-white flex items-center gap-2 mb-6"><BarChart2 className="text-gold-500"/> Rolling 20-Tournament Points</h2>
+                                    <h2 className="text-2xl font-bold text-white flex items-center gap-2 mb-6"><AnalyticsIcon size={28} className="text-gold-500"/> Rolling 20-Tournament Points</h2>
                                     <p className="text-royal-300 text-sm mb-4 leading-relaxed">
                                         The solid line shows total rolling points for events attended. The blue dotted line shows the exact points earned at each specific event. 
                                         <span className="block mt-3 text-royal-200 bg-royal-950/80 px-4 py-2.5 rounded-lg border border-royal-800 shadow-inner inline-block w-fit">
@@ -1726,6 +1899,10 @@
                                         </span>
                                     </p>
                                     <IndividualPlayerChart history={rankingHistory} type="points" filterPlayed={true} totalPlayersCount={players.length} />
+                                </div>
+                                <div className="md:col-span-2 lg:col-span-3 bg-royal-900 p-6 rounded-xl border border-royal-800 shadow-md">
+                                    <h2 className="text-2xl font-bold text-white flex items-center gap-2 mb-6"><AnalyticsIcon size={28} className="text-gold-500"/> Career Points Accumulation</h2>
+                                    <IndividualPlayerChart history={rankingHistory} type="careerPoints" filterPlayed={true} totalPlayersCount={players.length} />
                                 </div>
                             </div>
                         </>
@@ -2825,66 +3002,7 @@
                             </div>
                         </div>
                     </div>
-
-                    {resolvingMatch && (
-                        <div className="fixed inset-0 bg-black/90 backdrop-blur-sm z-50 flex items-center justify-center p-4 z-[100]">
-                            <div className="bg-royal-900 rounded-2xl p-6 w-full max-w-4xl border overflow-y-auto max-h-[95vh] shadow-2xl" style={{ borderColor: tierConf.hex }}>
-                                <h2 className="text-2xl font-bold mb-4 text-center uppercase tracking-widest" style={{ color: tierConf.hex }}>Resolve Match</h2>
-                                
-                                {matchH2H.total > 0 ? (
-                                    <div className="text-center mb-8">
-                                        <div className="inline-block bg-royal-950 border border-royal-800 rounded-full px-6 py-2 text-sm font-medium text-royal-200">
-                                            Head-to-Head: <span className="text-white font-bold ml-2 cursor-pointer hover:underline" onClick={() => { setResolvingMatch(null); onNavigate('players', resolvingMatch.p1); }}>{getPlayer(resolvingMatch.p1).name}</span> <span className="mx-1" style={{ color: tierConf.hex }}>{matchH2H.p1Wins} - {matchH2H.p2Wins}</span> <span className="text-white font-bold cursor-pointer hover:underline" onClick={() => { setResolvingMatch(null); onNavigate('players', resolvingMatch.p2); }}>{getPlayer(resolvingMatch.p2).name}</span>
-                                        </div>
-                                    </div>
-                                ) : (
-                                    <div className="text-center mb-8">
-                                        <div className="inline-block bg-royal-950 border border-royal-800 rounded-full px-6 py-2 text-sm font-medium text-royal-400 italic">
-                                            First Career Meeting
-                                        </div>
-                                    </div>
-                                )}
-
-                                <div className="flex flex-col md:flex-row gap-8 relative items-stretch">
-                                    <div className="hidden md:flex absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-royal-950 border-2 border-royal-800 w-12 h-12 rounded-full items-center justify-center font-black text-royal-400 z-10">VS</div>
-                                    {[resolvingMatch.p1, resolvingMatch.p2].map((pid, idx) => {
-                                        const p = getPlayer(pid), imgs = getImages(p);
-                                        const iIdx = idx === 0 ? p1ImgIdx : p2ImgIdx, setIIdx = idx === 0 ? setP1ImgIdx : setP2ImgIdx;
-                                        return (
-                                            <div key={idx} className="flex-1 bg-royal-950/30 border border-royal-800 rounded-xl p-6 flex flex-col items-center shadow-inner" style={{ backgroundColor: `${tierConf.hex}0A` }}>
-                                                <div className="relative group w-full max-w-[280px] mb-6">
-                                                    {imgs[iIdx] ? (
-                                                        <img src={imgs[iIdx]} loading="lazy" decoding="async" className="w-full aspect-[3/4] rounded-xl object-cover border-4 shadow-2xl transition-all duration-300" style={{ borderColor: tierConf.hex }} />
-                                                    ) : (
-                                                        <div className="w-full aspect-[3/4] bg-royal-800 rounded-xl border-4 flex items-center justify-center" style={{ borderColor: tierConf.hex }}><UserCircle size={64} className="text-royal-400"/></div>
-                                                    )}
-                                                    {imgs.length > 1 && (
-                                                        <><button onClick={() => setIIdx(prev => (prev === 0 ? imgs.length-1 : prev-1))} className="absolute left-2 top-1/2 -translate-y-1/2 bg-black/60 hover:bg-black p-2 rounded-full text-white opacity-0 group-hover:opacity-100 transition-opacity"><ChevronLeft size={20}/></button>
-                                                        <button onClick={() => setIIdx(prev => (prev === imgs.length-1 ? 0 : prev+1))} className="absolute right-2 top-1/2 -translate-y-1/2 bg-black/60 hover:bg-black p-2 rounded-full text-white opacity-0 group-hover:opacity-100 transition-opacity"><ChevronRight size={20}/></button>
-                                                        <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5 bg-black/40 px-2 py-1 rounded-full">{imgs.map((_, i) => <div key={i} className={`w-2 h-2 rounded-full ${i === iIdx ? '' : 'bg-white/40'}`} style={{ backgroundColor: i === iIdx ? tierConf.hex : undefined }} />)}</div></>
-                                                    )}
-                                                </div>
-                                                <h3 className="text-3xl font-black text-white uppercase text-center mb-1 flex items-center justify-center gap-2 cursor-pointer hover:text-gold-400" onClick={() => { setResolvingMatch(null); onNavigate('players', pid); }}>
-                                                    {getSeedText(tournament, pid) && <span className="text-xl text-royal-400 font-mono tracking-tighter">{getSeedText(tournament, pid)}</span>}
-                                                    {p.name}
-                                                </h3>
-                                                <div className="font-medium mb-3 flex items-center justify-center gap-2" style={{ color: tierConf.hex }}><span className="text-2xl cursor-pointer hover:scale-110 transition-transform" onClick={() => { setResolvingMatch(null); onNavigate('nations', null, null, p.nationality); }}>{getFlag(p.nationality)}</span> <span className="cursor-pointer hover:underline" onClick={() => { setResolvingMatch(null); onNavigate('nations', null, null, p.nationality); }}>{getCountryName(p.nationality)}</span></div>
-                                                {renderRecentForm(pid)}
-                                                <div className="w-full space-y-3 mt-auto">
-                                                    <button onClick={() => submitResult(pid, 'close')} className="w-full bg-[#d4af37]/10 hover:bg-[#d4af37]/20 text-[#d4af37] border border-[#d4af37]/50 p-4 rounded-xl font-bold transition-colors">Win (Close Match)</button>
-                                                    <button onClick={() => submitResult(pid, 'lopsided')} className="w-full bg-[#059669]/10 hover:bg-[#059669]/20 text-[#059669] border border-[#059669]/50 p-4 rounded-xl font-bold transition-colors">Win (Lopsided)</button>
-                                                </div>
-                                            </div>
-                                        );
-                                    })}
-                                </div>
-                                <div className="mt-8 flex flex-col md:flex-row gap-4 pt-6 border-t border-royal-800">
-                                    <button onClick={handleRandomize} className="flex-1 bg-royal-800 hover:bg-royal-700 border border-royal-600 text-royal-100 py-3.5 rounded-xl font-bold transition-colors flex items-center justify-center gap-2">🎲 Randomize (Coin Toss)</button>
-                                    <button onClick={() => setResolvingMatch(null)} className="flex-1 bg-royal-950 hover:bg-royal-900 border border-royal-800 text-royal-300 hover:text-white py-3.5 rounded-xl font-bold transition-colors">Cancel</button>
-                                </div>
-                            </div>
-                        </div>
-                    )}
+                    <ResolveMatchModal resolvingMatch={resolvingMatch} setResolvingMatch={setResolvingMatch} submitResult={submitResult} handleRandomize={handleRandomize} players={players} allTournaments={allTournaments} tournament={tournament} tierConf={tierConf} onNavigate={onNavigate} />
                 </div>
             );
         }
