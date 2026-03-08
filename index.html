@@ -180,96 +180,88 @@
             if (isWinner) {
                 if (tier === 'grand_slam') {
                     return (
-                        <svg width={size} height={size} viewBox="-5 -15 110 140" className={className} style={{filter: 'drop-shadow(0 15px 20px rgba(0,0,0,0.85))'}}>
-                            {/* Epic Detail Gradients & Patterns */}
+                        <svg width={size} height={size} viewBox="-15 -5 130 150" className={className} style={{filter: 'drop-shadow(0 15px 20px rgba(0,0,0,0.85))'}}>
+                            {/* Pure Sterling Silver & Chrome Gradients */}
                             <defs>
-                                <linearGradient id="silverBright" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stopColor="#ffffff"/><stop offset="40%" stopColor="#cbd5e1"/><stop offset="60%" stopColor="#f8fafc"/><stop offset="100%" stopColor="#64748b"/></linearGradient>
-                                <linearGradient id="silverDark" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stopColor="#1e293b"/><stop offset="30%" stopColor="#64748b"/><stop offset="70%" stopColor="#94a3b8"/><stop offset="100%" stopColor="#0f172a"/></linearGradient>
-                                <linearGradient id="goldOrnate" x1="0" y1="1" x2="1" y2="0"><stop offset="0%" stopColor="#b45309"/><stop offset="30%" stopColor="#fef08a"/><stop offset="70%" stopColor="#d97706"/><stop offset="100%" stopColor="#fef08a"/></linearGradient>
-                                <linearGradient id="obsidianBase" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#334155"/><stop offset="50%" stopColor="#0f172a"/><stop offset="100%" stopColor="#020617"/></linearGradient>
-                                <pattern id="engraving" width="12" height="12" patternUnits="userSpaceOnUse">
-                                    <path d="M 0 12 L 12 0 M -3 3 L 3 -3 M 9 15 L 15 9" stroke="#f1f5f9" strokeWidth="0.5" opacity="0.3"/>
+                                <linearGradient id="gsSilverBright" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stopColor="#e2e8f0"/><stop offset="30%" stopColor="#ffffff"/><stop offset="70%" stopColor="#94a3b8"/><stop offset="100%" stopColor="#475569"/></linearGradient>
+                                <linearGradient id="gsSilverDark" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stopColor="#334155"/><stop offset="40%" stopColor="#94a3b8"/><stop offset="80%" stopColor="#1e293b"/><stop offset="100%" stopColor="#0f172a"/></linearGradient>
+                                <linearGradient id="gsChrome" x1="0" y1="1" x2="1" y2="0"><stop offset="0%" stopColor="#64748b"/><stop offset="50%" stopColor="#f8fafc"/><stop offset="100%" stopColor="#334155"/></linearGradient>
+                                <linearGradient id="gsObsidian" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#1e293b"/><stop offset="100%" stopColor="#020617"/></linearGradient>
+                                <pattern id="gsEngraving" width="8" height="8" patternUnits="userSpaceOnUse">
+                                    <path d="M 0 8 L 8 0 M -2 2 L 2 -2 M 6 10 L 10 6" stroke="#f1f5f9" strokeWidth="0.5" opacity="0.4"/>
                                 </pattern>
                             </defs>
 
                             {/* Deep Background Ribbons */}
-                            <path d="M 22 45 Q 0 80 15 120" fill="none" stroke={c[0]} strokeWidth="4.5" opacity="0.7" strokeLinecap="round" />
-                            <path d="M 78 45 Q 100 80 85 120" fill="none" stroke={c[0]} strokeWidth="4.5" opacity="0.7" strokeLinecap="round" />
+                            <path d="M 22 55 Q -5 90 15 140" fill="none" stroke={c[0]} strokeWidth="5" opacity="0.7" strokeLinecap="round" />
+                            <path d="M 78 55 Q 105 90 85 140" fill="none" stroke={c[0]} strokeWidth="5" opacity="0.7" strokeLinecap="round" />
 
-                            {/* The Plinth / Grand Base */}
-                            <path d="M 18 115 C 18 120, 82 120, 82 115 L 75 95 L 25 95 Z" fill="url(#obsidianBase)" />
-                            <path d="M 25 95 L 75 95 L 70 88 L 30 88 Z" fill="url(#silverDark)" />
-                            <path d="M 30 88 C 40 85, 60 85, 70 88 L 65 82 L 35 82 Z" fill="url(#goldOrnate)" />
-                            <path d="M 35 82 C 45 68, 55 68, 65 82 Z" fill="url(#silverBright)" />
+                            {/* The Obsidian & Silver Base */}
+                            <path d="M 20 135 L 80 135 L 75 125 L 25 125 Z" fill="url(#gsObsidian)" />
+                            <path d="M 25 125 L 75 125 L 68 118 L 32 118 Z" fill="url(#gsSilverDark)" />
+                            <path d="M 32 118 C 40 115, 60 115, 68 118 L 62 112 L 38 112 Z" fill="url(#gsSilverBright)" />
                             
-                            {/* Inscription Plate on Base */}
-                            <rect x="33" y="102" width="34" height="8" rx="1.5" fill="#f8fafc" opacity="0.95" style={{filter: 'drop-shadow(0 2px 3px rgba(0,0,0,0.7))'}}/>
-                            <path d="M 36 106 L 64 106" stroke="#64748b" strokeWidth="0.8" strokeDasharray="3 1.5"/>
+                            {/* Engraving Plaque */}
+                            <rect x="35" y="128" width="30" height="5" rx="1" fill="#e2e8f0" style={{filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.8))'}}/>
 
-                            {/* Ribbed Central Stem */}
-                            <rect x="42" y="60" width="16" height="20" fill="url(#silverDark)" />
-                            <path d="M 44 60 Q 48 70 44 80" fill="none" stroke="url(#silverBright)" strokeWidth="1.5" />
-                            <path d="M 50 60 Q 54 70 50 80" fill="none" stroke="url(#silverBright)" strokeWidth="1.5" />
-                            <path d="M 56 60 Q 60 70 56 80" fill="none" stroke="url(#silverBright)" strokeWidth="1.5" />
-                            <ellipse cx="50" cy="60" rx="14" ry="3.5" fill="url(#goldOrnate)" />
+                            {/* Taller, Fluted Stem */}
+                            <path d="M 40 112 L 44 95 L 56 95 L 60 112 Z" fill="url(#gsSilverDark)" />
+                            <path d="M 44 112 L 47 95 M 50 112 L 50 95 M 56 112 L 53 95" stroke="url(#gsSilverBright)" strokeWidth="1.5" fill="none"/>
+                            <ellipse cx="50" cy="112" rx="14" ry="3" fill="url(#gsChrome)" />
+                            <ellipse cx="50" cy="95" rx="10" ry="2.5" fill="url(#gsChrome)" />
 
-                            {/* Massive Sweeping Handles */}
+                            {/* Elongated, Deep Chalice Body */}
+                            <path d="M 16 35 C 16 90, 36 100, 50 100 C 64 100, 84 90, 84 35 Z" fill="url(#gsSilverBright)" />
+                            <path d="M 16 35 C 16 90, 36 100, 50 100 C 64 100, 84 90, 84 35 Z" fill="url(#gsEngraving)" />
+                            
+                            {/* 3D Shadows for the Bowl */}
+                            <path d="M 16 35 C 16 90, 36 100, 50 100 L 50 35 Z" fill="#ffffff" opacity="0.3" />
+                            <path d="M 84 35 C 84 90, 64 100, 50 100 L 50 35 Z" fill="#000000" opacity="0.3" />
+
+                            {/* Intricate Etched Overlay Patterns */}
+                            <path d="M 22 40 C 22 85, 40 95, 50 95 C 60 95, 78 85, 78 40 Z" fill="none" stroke="url(#gsSilverDark)" strokeWidth="2" opacity="0.7"/>
+                            <path d="M 28 45 C 28 80, 43 88, 50 88 C 57 88, 72 80, 72 45 Z" fill="none" stroke="url(#gsChrome)" strokeWidth="1.5" opacity="0.9"/>
+                            
+                            {/* Highly Detailed Silver Center Crest */}
+                            <path d="M 40 55 Q 50 42, 60 55 Q 60 78, 50 90 Q 40 78, 40 55 Z" fill="url(#gsSilverDark)" stroke="url(#gsChrome)" strokeWidth="2" style={{filter: 'drop-shadow(0 4px 6px rgba(0,0,0,0.6))'}}/>
+                            <path d="M 44 58 Q 50 50, 56 58 Q 56 74, 50 82 Q 44 74, 44 58 Z" fill="url(#gsSilverBright)" />
+                            
+                            {/* Chrome Starburst */}
+                            <polygon points="50,52 52,60 60,62 52,64 50,72 48,64 40,62 48,60" fill="url(#gsChrome)" style={{filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.5))'}}/>
+                            <circle cx="50" cy="62" r="2" fill="#ffffff" />
+
+                            {/* Highly Stylized, Multi-Layered Handles */}
                             {/* Left Handle */}
-                            <path d="M 20 35 C -25 15, -15 100, 35 75" fill="none" stroke="url(#silverDark)" strokeWidth="7" strokeLinecap="round" style={{filter: 'drop-shadow(2px 4px 4px rgba(0,0,0,0.5))'}}/>
-                            <path d="M 20 35 C -25 15, -15 100, 35 75" fill="none" stroke="url(#silverBright)" strokeWidth="3.5" strokeLinecap="round"/>
-                            <path d="M 12 45 C 0 55, 10 75, 25 65" fill="none" stroke="url(#goldOrnate)" strokeWidth="2.5" strokeLinecap="round"/>
+                            <path d="M 18 45 C -20 30, -25 95, 32 85" fill="none" stroke="url(#gsSilverDark)" strokeWidth="5" strokeLinecap="round" style={{filter: 'drop-shadow(2px 4px 4px rgba(0,0,0,0.5))'}}/>
+                            <path d="M 18 45 C -20 30, -25 95, 32 85" fill="none" stroke="url(#gsSilverBright)" strokeWidth="2.5" strokeLinecap="round"/>
+                            <path d="M 16 52 C -5 45, -5 85, 26 78" fill="none" stroke="url(#gsChrome)" strokeWidth="1.5" strokeLinecap="round"/>
+                            <path d="M 32 85 C 20 90, 15 75, 26 70" fill="none" stroke="url(#gsSilverDark)" strokeWidth="2" strokeLinecap="round"/>
                             
                             {/* Right Handle */}
-                            <path d="M 80 35 C 125 15, 115 100, 65 75" fill="none" stroke="url(#silverDark)" strokeWidth="7" strokeLinecap="round" style={{filter: 'drop-shadow(-2px 4px 4px rgba(0,0,0,0.5))'}}/>
-                            <path d="M 80 35 C 125 15, 115 100, 65 75" fill="none" stroke="url(#silverBright)" strokeWidth="3.5" strokeLinecap="round"/>
-                            <path d="M 88 45 C 100 55, 90 75, 75 65" fill="none" stroke="url(#goldOrnate)" strokeWidth="2.5" strokeLinecap="round"/>
-
-                            {/* The Grand Urn / Chalice Body */}
-                            <path d="M 12 35 C 12 80, 38 88, 50 88 C 62 88, 88 80, 88 35 Z" fill="url(#silverBright)" />
-                            {/* Intricate Engraving Overlay */}
-                            <path d="M 12 35 C 12 80, 38 88, 50 88 C 62 88, 88 80, 88 35 Z" fill="url(#engraving)" />
-                            <path d="M 12 35 C 12 80, 38 88, 50 88 C 62 88, 88 80, 88 35 Z" fill="url(#silverDark)" opacity="0.4" />
-
-                            {/* Embossed Gold Laurel Overlays */}
-                            <path d="M 15 40 Q 30 80, 45 85 Q 35 60, 20 35" fill="url(#goldOrnate)" opacity="0.9" style={{filter: 'drop-shadow(1px 2px 2px rgba(0,0,0,0.5))'}}/>
-                            <path d="M 85 40 Q 70 80, 55 85 Q 65 60, 80 35" fill="url(#goldOrnate)" opacity="0.9" style={{filter: 'drop-shadow(-1px 2px 2px rgba(0,0,0,0.5))'}}/>
-
-                            {/* Central Hero Crest */}
-                            <path d="M 38 45 Q 50 32 62 45 Q 62 68 50 80 Q 38 68 38 45 Z" fill="url(#silverDark)" stroke="url(#goldOrnate)" strokeWidth="2" style={{filter: 'drop-shadow(0 4px 6px rgba(0,0,0,0.6))'}}/>
-                            <path d="M 42 48 Q 50 40 58 48 Q 58 64 50 72 Q 42 64 42 48 Z" fill="url(#silverBright)" />
-                            {/* Gold Starburst in Crest */}
-                            <polygon points="50,43 52.5,50 60,52.5 52.5,55 50,62 47.5,55 40,52.5 47.5,50" fill="url(#goldOrnate)" style={{filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.5))'}}/>
+                            <path d="M 82 45 C 120 30, 125 95, 68 85" fill="none" stroke="url(#gsSilverDark)" strokeWidth="5" strokeLinecap="round" style={{filter: 'drop-shadow(-2px 4px 4px rgba(0,0,0,0.5))'}}/>
+                            <path d="M 82 45 C 120 30, 125 95, 68 85" fill="none" stroke="url(#gsSilverBright)" strokeWidth="2.5" strokeLinecap="round"/>
+                            <path d="M 84 52 C 105 45, 105 85, 74 78" fill="none" stroke="url(#gsChrome)" strokeWidth="1.5" strokeLinecap="round"/>
+                            <path d="M 68 85 C 80 90, 85 75, 74 70" fill="none" stroke="url(#gsSilverDark)" strokeWidth="2" strokeLinecap="round"/>
 
                             {/* Majestic Flared Rim */}
-                            <ellipse cx="50" cy="35" rx="42" ry="8" fill="url(#silverDark)" />
-                            <ellipse cx="50" cy="35" rx="38" ry="6" fill="url(#silverBright)" />
-                            <ellipse cx="50" cy="35" rx="34" ry="4" fill="#0f172a" />
+                            <ellipse cx="50" cy="35" rx="38" ry="6" fill="url(#gsSilverDark)" />
+                            <ellipse cx="50" cy="35" rx="35" ry="4" fill="url(#gsChrome)" />
+                            <ellipse cx="50" cy="35" rx="30" ry="2.5" fill="#0f172a" />
 
-                            {/* The Tiered Dome Lid */}
-                            <path d="M 18 33 C 18 12, 82 12, 82 33 Z" fill="url(#silverBright)" />
-                            <path d="M 22 33 C 25 15, 75 15, 78 33 Z" fill="url(#silverDark)" opacity="0.6" />
-                            {/* Lid Engravings */}
-                            <path d="M 30 31 Q 40 18 50 15" fill="none" stroke="#f8fafc" strokeWidth="1.5" opacity="0.7"/>
-                            <path d="M 40 32 Q 45 18 50 15" fill="none" stroke="#f8fafc" strokeWidth="1.5" opacity="0.7"/>
-                            <path d="M 60 32 Q 55 18 50 15" fill="none" stroke="#f8fafc" strokeWidth="1.5" opacity="0.7"/>
-                            <path d="M 70 31 Q 60 18 50 15" fill="none" stroke="#f8fafc" strokeWidth="1.5" opacity="0.7"/>
+                            {/* Smaller, Elegant Lid & Spire */}
+                            <path d="M 22 34 C 25 20, 75 20, 78 34 Z" fill="url(#gsSilverBright)" />
+                            <path d="M 26 33 C 30 22, 70 22, 74 33 Z" fill="url(#gsSilverDark)" opacity="0.6" />
+                            <path d="M 47 22 L 53 22 L 50 10 Z" fill="url(#gsChrome)" />
+                            <circle cx="50" cy="9" r="2.5" fill="url(#gsSilverBright)" />
 
-                            {/* Imperial Crown Finial */}
-                            <path d="M 42 15 L 58 15 L 55 4 L 45 4 Z" fill="url(#goldOrnate)" />
-                            <polygon points="44,4 56,4 60,-5 50,0 40,-5" fill="url(#silverBright)" style={{filter: 'drop-shadow(0 2px 2px rgba(0,0,0,0.4))'}}/>
-                            <circle cx="50" cy="-9" r="4.5" fill="url(#goldOrnate)" />
-                            <circle cx="50" cy="-9" r="2" fill="#ffffff" opacity="0.9"/>
+                            {/* Flowing Foreground Ribbons with detailed 'silk' stitching */}
+                            <path d="M 20 45 C 0 70, 30 105, 12 142" fill="none" stroke={c[1]} strokeWidth="5.5" strokeLinecap="round" style={{filter: 'drop-shadow(3px 4px 4px rgba(0,0,0,0.6))'}}/>
+                            <path d="M 20 45 C 0 70, 30 105, 12 142" fill="none" stroke="#ffffff" strokeWidth="1.5" strokeDasharray="4 2" opacity="0.5"/>
+                            <path d="M 26 46 C 10 70, 40 105, 22 142" fill="none" stroke={c[2]} strokeWidth="4" strokeLinecap="round" style={{filter: 'drop-shadow(3px 4px 4px rgba(0,0,0,0.6))'}}/>
 
-                            {/* Dynamic Layered Silk Ribbons (Country Colors) */}
-                            {/* Left Ribbon Bundle (3 Independent Strands) */}
-                            <path d="M 18 45 C -5 65, 35 95, 5 125" fill="none" stroke={c[0]} strokeWidth="5.5" strokeLinecap="round" style={{filter: 'drop-shadow(2px 4px 4px rgba(0,0,0,0.6))'}}/>
-                            <path d="M 23 46 C 0 65, 40 95, 10 125" fill="none" stroke={c[1]} strokeWidth="5.5" strokeLinecap="round" style={{filter: 'drop-shadow(2px 4px 4px rgba(0,0,0,0.6))'}}/>
-                            <path d="M 28 47 C 5 65, 45 95, 15 125" fill="none" stroke={c[2]} strokeWidth="5.5" strokeLinecap="round" style={{filter: 'drop-shadow(2px 4px 4px rgba(0,0,0,0.6))'}}/>
-
-                            {/* Right Ribbon Bundle (3 Independent Strands) */}
-                            <path d="M 82 45 C 105 65, 65 95, 95 125" fill="none" stroke={c[0]} strokeWidth="5.5" strokeLinecap="round" style={{filter: 'drop-shadow(-2px 4px 4px rgba(0,0,0,0.6))'}}/>
-                            <path d="M 77 46 C 100 65, 60 95, 90 125" fill="none" stroke={c[1]} strokeWidth="5.5" strokeLinecap="round" style={{filter: 'drop-shadow(-2px 4px 4px rgba(0,0,0,0.6))'}}/>
-                            <path d="M 72 47 C 95 65, 55 95, 85 125" fill="none" stroke={c[2]} strokeWidth="5.5" strokeLinecap="round" style={{filter: 'drop-shadow(-2px 4px 4px rgba(0,0,0,0.6))'}}/>
+                            <path d="M 80 45 C 100 70, 70 105, 88 142" fill="none" stroke={c[1]} strokeWidth="5.5" strokeLinecap="round" style={{filter: 'drop-shadow(-3px 4px 4px rgba(0,0,0,0.6))'}}/>
+                            <path d="M 80 45 C 100 70, 70 105, 88 142" fill="none" stroke="#ffffff" strokeWidth="1.5" strokeDasharray="4 2" opacity="0.5"/>
+                            <path d="M 74 46 C 90 70, 60 105, 78 142" fill="none" stroke={c[2]} strokeWidth="4" strokeLinecap="round" style={{filter: 'drop-shadow(-3px 4px 4px rgba(0,0,0,0.6))'}}/>
                         </svg>
                     );
                 }
@@ -3371,6 +3363,7 @@
     </script>
 </body>
 </html>
+
 
 
 
