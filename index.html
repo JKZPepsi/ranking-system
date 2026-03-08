@@ -2018,11 +2018,11 @@
             const [isGenerating, setIsGenerating] = useState(false);
             const [wcSearch, setWcSearch] = useState('');
             const [autoSearch, setAutoSearch] = useState('');
+            const [withdrawnSearch, setWithdrawnSearch] = useState('');
             const [errorMsg, setErrorMsg] = useState('');
             
             const tierConf = TOURNAMENT_TIERS[tier];
             
-            // Dynamic Size Availability based on Tier Rules
             const allowedSizes = useMemo(() => {
                 if (tier === 'finals') return [8];
                 if (tier === 'grand_slam') return [64];
@@ -2110,6 +2110,11 @@
             const filteredAuto = autoQualifiers.filter(p => 
                 p.name.toLowerCase().includes(autoSearch.toLowerCase()) || 
                 (p.nationality || '').toLowerCase().includes(autoSearch.toLowerCase())
+            );
+
+            const filteredWithdrawn = withdrawnPlayers.filter(p => 
+                p.name.toLowerCase().includes(withdrawnSearch.toLowerCase()) || 
+                (p.nationality || '').toLowerCase().includes(withdrawnSearch.toLowerCase())
             );
 
             const handleCreate = async () => {
@@ -2202,63 +2207,44 @@
 
                         <div className={`grid ${reqAuto > 0 ? 'md:grid-cols-2' : 'grid-cols-1'} gap-8`}>
                             {reqAuto > 0 && (
-                                <div className="flex flex-col gap-6">
-                                    <div className="flex flex-col h-[400px]">
-                                        <div className="flex justify-between items-center mb-4 shrink-0">
-                                            <div className="flex items-center gap-3">
-                                                <h3 className="font-bold text-lg text-white">Auto Qualifiers (Top {reqAuto})</h3>
-                                                {autoQualifiers.length > 2 && (
-                                                    <button onClick={withdrawTopSeeds} className="text-[10px] uppercase tracking-wider font-bold bg-red-500/20 text-red-400 hover:bg-red-500/30 px-2 py-1 rounded transition-colors">
-                                                        Drop Top Seeds
-                                                    </button>
-                                                )}
-                                            </div>
-                                        </div>
-                                        <div className="bg-royal-950 rounded-lg p-2 flex-1 overflow-y-auto border border-royal-800 space-y-1">
-                                            <div className="relative mb-2 shrink-0">
-                                                <input 
-                                                    type="text" 
-                                                    placeholder="Search qualifiers..." 
-                                                    className="w-full bg-royal-900 border border-royal-700 text-white px-3 py-2 pl-9 rounded-lg text-sm focus:outline-none focus:border-gold-500" 
-                                                    value={autoSearch} 
-                                                    onChange={e => setAutoSearch(e.target.value)} 
-                                                />
-                                                <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-royal-400" />
-                                            </div>
-                                            {filteredAuto.map(p => (
-                                                <div key={p.id} onClick={() => toggleWithdraw(p.id)} className="p-2 opacity-90 hover:opacity-100 text-sm flex items-center justify-between text-white cursor-pointer hover:bg-red-500/20 rounded transition-colors group">
-                                                    <span className="flex items-center">
-                                                        <span className="font-mono text-royal-400 mr-2 w-6">#{p.rank}</span> 
-                                                        <span className="mr-2">{getFlag(p.nationality)}</span> {p.name}
-                                                        <span className="text-xs text-royal-300 ml-2 group-hover:text-red-300">({p.points.toLocaleString()} pts)</span>
-                                                    </span>
-                                                    <X size={14} className="text-red-500 opacity-0 group-hover:opacity-100 transition-opacity" />
-                                                </div>
-                                            ))}
-                                            {filteredAuto.length === 0 && <div className="text-center py-4 text-royal-400 text-sm">No players found.</div>}
+                                <div className="flex flex-col h-[450px]">
+                                    <div className="flex justify-between items-center mb-4 shrink-0">
+                                        <div className="flex items-center gap-3">
+                                            <h3 className="font-bold text-lg text-white">Auto Qualifiers (Top {reqAuto})</h3>
+                                            {autoQualifiers.length > 2 && (
+                                                <button onClick={withdrawTopSeeds} className="text-[10px] uppercase tracking-wider font-bold bg-red-500/20 text-red-400 hover:bg-red-500/30 px-2 py-1 rounded transition-colors">
+                                                    Drop Top Seeds
+                                                </button>
+                                            )}
                                         </div>
                                     </div>
-
-                                    {withdrawnPlayers.length > 0 && (
-                                        <div className="flex flex-col flex-1 min-h-[150px]">
-                                            <h3 className="font-bold text-royal-300 mb-2 text-xs uppercase tracking-widest shrink-0">Withdrawn / Skipped</h3>
-                                            <div className="bg-royal-950/50 rounded-lg p-2 flex-1 overflow-y-auto border border-royal-800/50 space-y-1">
-                                                {withdrawnPlayers.map(p => (
-                                                    <div key={p.id} onClick={() => toggleWithdraw(p.id)} className="p-2 text-sm flex items-center justify-between text-royal-400 cursor-pointer hover:bg-royal-900 rounded transition-colors group">
-                                                        <span className="flex items-center line-through">
-                                                            <span className="font-mono mr-2 w-6">#{p.rank}</span> 
-                                                            <span className="mr-2">{getFlag(p.nationality)}</span> {p.name}
-                                                        </span>
-                                                        <Plus size={14} className="text-[#059669] opacity-0 group-hover:opacity-100 transition-opacity" />
-                                                    </div>
-                                                ))}
-                                            </div>
+                                    <div className="bg-royal-950 rounded-lg p-2 flex-1 overflow-y-auto border border-royal-800 space-y-1 min-h-0">
+                                        <div className="relative mb-2 shrink-0">
+                                            <input 
+                                                type="text" 
+                                                placeholder="Search qualifiers..." 
+                                                className="w-full bg-royal-900 border border-royal-700 text-white px-3 py-2 pl-9 rounded-lg text-sm focus:outline-none focus:border-gold-500" 
+                                                value={autoSearch} 
+                                                onChange={e => setAutoSearch(e.target.value)} 
+                                            />
+                                            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-royal-400" />
                                         </div>
-                                    )}
+                                        {filteredAuto.map(p => (
+                                            <div key={p.id} onClick={() => toggleWithdraw(p.id)} className="p-2 opacity-90 hover:opacity-100 text-sm flex items-center justify-between text-white cursor-pointer hover:bg-red-500/20 rounded transition-colors group">
+                                                <span className="flex items-center">
+                                                    <span className="font-mono text-royal-400 mr-2 w-6">#{p.rank}</span> 
+                                                    <span className="mr-2">{getFlag(p.nationality)}</span> {p.name}
+                                                    <span className="text-xs text-royal-300 ml-2 group-hover:text-red-300">({p.points.toLocaleString()} pts)</span>
+                                                </span>
+                                                <X size={14} className="text-red-500 opacity-0 group-hover:opacity-100 transition-opacity" />
+                                            </div>
+                                        ))}
+                                        {filteredAuto.length === 0 && <div className="text-center py-4 text-royal-400 text-sm">No players found.</div>}
+                                    </div>
                                 </div>
                             )}
 
-                            <div className="flex flex-col h-[624px]">
+                            <div className="flex flex-col h-[450px]">
                                 <div className="flex justify-between items-center mb-4 shrink-0">
                                     <h3 className="font-bold text-lg text-white">{reqAuto === 0 ? 'Participants' : (reqWc === 0 ? 'Alternates / Standby' : 'Select Wildcards')}</h3>
                                     <div className="flex gap-2 items-center flex-wrap justify-end">
@@ -2280,7 +2266,7 @@
                                     </div>
                                 </div>
                                 
-                                <div className="bg-royal-950 rounded-lg p-2 flex-1 flex flex-col border border-royal-800">
+                                <div className="bg-royal-950 rounded-lg p-2 flex-1 flex flex-col border border-royal-800 min-h-0">
                                     <div className="relative mb-2 shrink-0">
                                         <input 
                                             type="text" 
@@ -2316,6 +2302,41 @@
                                 </div>
                             </div>
                         </div>
+
+                        {withdrawnPlayers.length > 0 && (
+                            <div className="mt-8 flex flex-col h-[250px]">
+                                <div className="flex justify-between items-end mb-2 shrink-0">
+                                    <h3 className="font-bold text-royal-300 text-xs uppercase tracking-widest">Withdrawn / Skipped</h3>
+                                    <span className="text-xs text-royal-400 font-bold">{withdrawnPlayers.length} Players</span>
+                                </div>
+                                <div className="bg-royal-950/50 rounded-lg p-2 flex-1 flex flex-col border border-royal-800/50 min-h-0">
+                                    <div className="relative mb-2 shrink-0">
+                                        <input 
+                                            type="text" 
+                                            placeholder="Search withdrawn players to restore..." 
+                                            className="w-full bg-royal-900 border border-royal-700 text-white px-3 py-2 pl-9 rounded-lg text-sm focus:outline-none focus:border-gold-500" 
+                                            value={withdrawnSearch} 
+                                            onChange={e => setWithdrawnSearch(e.target.value)} 
+                                        />
+                                        <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-royal-400" />
+                                    </div>
+                                    <div className="overflow-y-auto space-y-1 pr-1 flex-1">
+                                        {filteredWithdrawn.map(p => (
+                                            <div key={p.id} onClick={() => toggleWithdraw(p.id)} className="p-2 text-sm flex items-center justify-between text-royal-400 cursor-pointer hover:bg-royal-900 hover:text-white rounded transition-colors group">
+                                                <span className="flex items-center line-through group-hover:no-underline">
+                                                    <span className="font-mono mr-2 w-6">#{p.rank}</span> 
+                                                    <span className="mr-2">{getFlag(p.nationality)}</span> {p.name}
+                                                </span>
+                                                <Plus size={14} className="text-[#059669] opacity-0 group-hover:opacity-100 transition-opacity" />
+                                            </div>
+                                        ))}
+                                        {filteredWithdrawn.length === 0 && (
+                                            <div className="text-center py-4 text-royal-500 text-sm">No withdrawn players match search.</div>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+                        )}
 
                         {errorMsg && <div className="mt-8 text-red-400 text-sm font-bold text-right w-full bg-red-950/50 p-3 rounded-lg border border-red-500/30">{errorMsg}</div>}
                         <div className="mt-4 pt-6 border-t border-royal-800 flex justify-end">
@@ -3167,5 +3188,6 @@
     </script>
 </body>
 </html>
+
 
 
