@@ -155,126 +155,199 @@
             return map[code] || ['#94a3b8', '#cbd5e1', '#94a3b8']; 
         };
 
-        var getCountryColors = (code) => {
-            const map = {
-                'USA': ['#b91c1c', '#ffffff', '#1d4ed8'], 'GBR': ['#032b44', '#ffffff', '#c8102e'],
-                'FRA': ['#002654', '#ffffff', '#ed2939'], 'AUS': ['#012169', '#ffffff', '#e4002b'],
-                'ESP': ['#aa151b', '#f1bf00', '#aa151b'], 'ITA': ['#009246', '#ffffff', '#ce2b37'],
-                'GER': ['#000000', '#dd0000', '#ffcc00'], 'CAN': ['#ff0000', '#ffffff', '#ff0000'],
-                'SUI': ['#ff0000', '#ffffff', '#ff0000'], 'SRB': ['#c6363c', '#0c4076', '#ffffff'],
-                'ARG': ['#75aadb', '#ffffff', '#75aadb'], 'BRA': ['#009c3b', '#ffdf00', '#002776'],
-                'CHN': ['#ee1c25', '#ffff00', '#ee1c25'], 'JPN': ['#ffffff', '#bc002d', '#ffffff'],
-                'MEX': ['#006847', '#ffffff', '#ce1126'], 'CUB': ['#002a8f', '#ffffff', '#cf142b'],
-                'SWE': ['#005293', '#fecb00', '#005293']
-            };
-            return map[code] || ['#94a3b8', '#cbd5e1', '#94a3b8']; 
-        };
-
         var DynamicTrophy = ({ tier, result, country, size = 24, className = "" }) => {
             const c = getCountryColors(country || 'UNK');
             const isWinner = result === 'Winner';
             const isFinalist = result === 'Finalist' || result === 'Final';
             const isSF = result === 'Semifinalist' || result === 'Semifinals';
 
+            // Reusable Gradients for the Digital/Picasso Shading
+            const defs = (
+                <defs>
+                    <linearGradient id="silv1" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stopColor="#ffffff"/><stop offset="100%" stopColor="#94a3b8"/></linearGradient>
+                    <linearGradient id="silv2" x1="1" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#f8fafc"/><stop offset="100%" stopColor="#64748b"/></linearGradient>
+                    <linearGradient id="silvDark" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#64748b"/><stop offset="100%" stopColor="#334155"/></linearGradient>
+                    <linearGradient id="gold1" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stopColor="#fef08a"/><stop offset="100%" stopColor="#b45309"/></linearGradient>
+                    <linearGradient id="gold2" x1="1" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#fde047"/><stop offset="100%" stopColor="#854d0e"/></linearGradient>
+                    
+                    {/* Glass gradients for SF */}
+                    <linearGradient id="glassCyan" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stopColor="#22d3ee" stopOpacity="0.8"/><stop offset="100%" stopColor="#0284c7" stopOpacity="0.9"/></linearGradient>
+                    <linearGradient id="glassMagenta" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stopColor="#e879f9" stopOpacity="0.8"/><stop offset="100%" stopColor="#a21caf" stopOpacity="0.9"/></linearGradient>
+                    <linearGradient id="glassPurple" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stopColor="#a78bfa" stopOpacity="0.8"/><stop offset="100%" stopColor="#5b21b6" stopOpacity="0.9"/></linearGradient>
+                    <linearGradient id="glassGold" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stopColor="#fcd34d" stopOpacity="0.8"/><stop offset="100%" stopColor="#b45309" stopOpacity="0.9"/></linearGradient>
+                </defs>
+            );
+
             if (isWinner) {
                 if (tier === 'grand_slam') {
                     return (
-                        <svg width={size} height={size} viewBox="0 0 100 100" className={className} style={{filter: 'drop-shadow(0 6px 8px rgba(0,0,0,0.6))'}}>
-                            <defs>
-                                <linearGradient id="gs1" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stopColor="#f8fafc"/><stop offset="100%" stopColor="#94a3b8"/></linearGradient>
-                                <linearGradient id="gs2" x1="0" y1="1" x2="1" y2="0"><stop offset="0%" stopColor="#e2e8f0"/><stop offset="100%" stopColor="#475569"/></linearGradient>
-                                <linearGradient id="gsGold" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stopColor="#fef08a"/><stop offset="100%" stopColor="#b45309"/></linearGradient>
-                            </defs>
-                            {/* Abstract Ribbons Background */}
-                            <path d="M 15 20 C -10 50 40 70 30 95" fill="none" stroke={c[0]} strokeWidth="4" opacity="0.8" />
-                            <path d="M 85 25 C 110 55 60 75 70 95" fill="none" stroke={c[1]} strokeWidth="4" opacity="0.8" />
-                            {/* Fractured Cubist Body */}
-                            <polygon points="25,15 70,25 60,60 40,80" fill="url(#gs1)" />
-                            <polygon points="70,25 85,20 65,55 60,60" fill="url(#gs2)" />
-                            <polygon points="25,15 40,80 15,45" fill="url(#gs2)" opacity="0.7" />
-                            <polygon points="40,80 60,60 50,90" fill="url(#gsGold)" />
-                            {/* Base */}
-                            <polygon points="20,90 80,85 70,95 30,100" fill="#1e293b" />
-                            <polygon points="30,100 70,95 60,100 40,100" fill="#334155" />
-                            {/* Abstract Foreground Ribbons */}
-                            <path d="M 40 20 C 20 40 60 60 35 95" fill="none" stroke={c[2]} strokeWidth="4" />
-                            <path d="M 60 15 C 80 45 40 65 65 95" fill="none" stroke={c[0]} strokeWidth="3" opacity="0.9" />
-                            <ellipse cx="50" cy="20" rx="30" ry="10" fill="none" stroke="url(#gsGold)" strokeWidth="3" transform="rotate(-10 50 20)" />
-                        </svg>
-                    );
-                }
-                if (tier === 'finals') {
-                    return (
-                        <svg width={size} height={size} viewBox="0 0 100 100" className={className} style={{filter: 'drop-shadow(0 6px 8px rgba(0,0,0,0.6))'}}>
-                            <defs><linearGradient id="fin" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stopColor="#22d3ee"/><stop offset="100%" stopColor="#0284c7"/></linearGradient></defs>
-                            <polygon points="10,10 90,10 65,45 85,85 15,85 35,45" fill="url(#fin)" />
-                            <polygon points="10,10 35,45 50,20" fill="#ffffff" opacity="0.4" />
-                            <polygon points="90,10 65,45 50,20" fill="#000000" opacity="0.3" />
-                            <polygon points="35,45 65,45 50,85" fill="#fef08a" opacity="0.9" />
-                            <polygon points="15,85 85,85 70,95 30,95" fill="#1e293b" />
+                        <svg width={size} height={size} viewBox="0 0 100 100" className={className} style={{filter: 'drop-shadow(0 8px 12px rgba(0,0,0,0.6))'}}>
+                            {defs}
+                            {/* Flowing Background Ribbons */}
+                            <path d="M 18 35 C -5 50, 10 75, 5 95" fill="none" stroke={c[0]} strokeWidth="3" opacity="0.8" />
+                            <path d="M 82 35 C 105 50, 90 75, 95 95" fill="none" stroke={c[0]} strokeWidth="3" opacity="0.8" />
+                            
+                            {/* Base & Pedestal */}
+                            <polygon points="35,100 65,100 60,85 40,85" fill="#0f172a" />
+                            <polygon points="40,85 60,85 55,70 45,70" fill="url(#silvDark)" />
+                            <polygon points="45,70 55,70 50,65" fill="url(#silv1)" />
+                            
+                            {/* Intricate Faceted Handles */}
+                            <path d="M 25 35 C 0 20, 0 60, 28 55" fill="none" stroke="url(#silv2)" strokeWidth="3.5" strokeLinecap="round" />
+                            <path d="M 25 39 C 10 28, 10 52, 28 49" fill="none" stroke="url(#silv1)" strokeWidth="1.5" strokeLinecap="round" />
+                            <path d="M 75 35 C 100 20, 100 60, 72 55" fill="none" stroke="url(#silv2)" strokeWidth="3.5" strokeLinecap="round" />
+                            <path d="M 75 39 C 90 28, 90 52, 72 49" fill="none" stroke="url(#silv1)" strokeWidth="1.5" strokeLinecap="round" />
+
+                            {/* Ornate Domed Bowl (Cubist Facets) */}
+                            <path d="M 20 25 C 20 60, 35 65, 50 65 C 65 65, 80 60, 80 25 Z" fill="url(#silv1)" />
+                            <path d="M 20 25 C 20 60, 35 65, 50 65 L 50 25 Z" fill="url(#silv2)" opacity="0.7" />
+                            <polygon points="35,25 50,60 65,25" fill="#ffffff" opacity="0.4" />
+                            <polygon points="45,25 50,50 55,25" fill="#ffffff" opacity="0.6" />
+                            
+                            {/* Lid & Finial */}
+                            <path d="M 18 25 C 18 10, 82 10, 82 25 Z" fill="url(#silvDark)" />
+                            <path d="M 30 25 C 30 13, 70 13, 70 25 Z" fill="url(#silv1)" />
+                            <polygon points="47,12 53,12 50,2" fill="url(#gold1)" />
+                            
+                            {/* Flowing Foreground Ribbons (Bezier Curves) */}
+                            <path d="M 22 35 C 5 55, 30 75, 10 95" fill="none" stroke={c[1]} strokeWidth="3.5" />
+                            <path d="M 26 35 C 15 55, 40 75, 15 95" fill="none" stroke={c[2]} strokeWidth="3.5" />
+                            <path d="M 78 35 C 95 55, 70 75, 90 95" fill="none" stroke={c[1]} strokeWidth="3.5" />
+                            <path d="M 74 35 C 85 55, 60 75, 85 95" fill="none" stroke={c[2]} strokeWidth="3.5" />
                         </svg>
                     );
                 }
                 if (tier === 'major') {
                     return (
-                        <svg width={size} height={size} viewBox="0 0 100 100" className={className} style={{filter: 'drop-shadow(0 4px 6px rgba(0,0,0,0.5))'}}>
-                            <defs><linearGradient id="maj1" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stopColor="#f1f5f9"/><stop offset="100%" stopColor="#64748b"/></linearGradient></defs>
-                            <path d="M 20 30 Q 0 50 25 90" fill="none" stroke={c[0]} strokeWidth="3" />
-                            <path d="M 80 30 Q 100 50 75 90" fill="none" stroke={c[1]} strokeWidth="3" />
-                            <polygon points="30,20 70,20 60,65 40,65" fill="url(#maj1)" />
-                            <polygon points="30,20 50,45 20,40" fill="#ffffff" opacity="0.3" />
-                            <polygon points="70,20 50,45 80,40" fill="#000000" opacity="0.2" />
-                            <polygon points="40,65 60,65 55,90 45,90" fill="#cbd5e1" />
-                            <path d="M 50 20 C 30 60 70 60 45 90" fill="none" stroke={c[2]} strokeWidth="3" opacity="0.8" />
-                            <ellipse cx="50" cy="20" rx="20" ry="5" fill="#e2e8f0" />
+                        <svg width={size * 0.9} height={size * 0.9} viewBox="0 0 100 100" className={className} style={{filter: 'drop-shadow(0 6px 8px rgba(0,0,0,0.5))'}}>
+                            {defs}
+                            {/* Ribbons */}
+                            <path d="M 20 30 C 5 50, 25 70, 5 95" fill="none" stroke={c[0]} strokeWidth="3" />
+                            <path d="M 24 30 C 12 50, 32 70, 10 95" fill="none" stroke={c[1]} strokeWidth="3" />
+                            <path d="M 28 30 C 19 50, 39 70, 15 95" fill="none" stroke={c[2]} strokeWidth="3" />
+                            <path d="M 80 30 C 95 50, 75 70, 95 95" fill="none" stroke={c[0]} strokeWidth="3" />
+                            <path d="M 76 30 C 88 50, 68 70, 90 95" fill="none" stroke={c[1]} strokeWidth="3" />
+                            <path d="M 72 30 C 81 50, 61 70, 85 95" fill="none" stroke={c[2]} strokeWidth="3" />
+                            
+                            {/* Base */}
+                            <polygon points="35,95 65,95 60,80 40,80" fill="#1e293b" />
+                            <polygon points="45,80 55,80 50,65" fill="url(#silvDark)" />
+                            
+                            {/* Handles */}
+                            <path d="M 25 30 C 5 25, 15 55, 33 50" fill="none" stroke="url(#silv1)" strokeWidth="3" />
+                            <path d="M 75 30 C 95 25, 85 55, 67 50" fill="none" stroke="url(#silv1)" strokeWidth="3" />
+                            
+                            {/* V-Shaped Chalice */}
+                            <polygon points="20,20 80,20 60,65 40,65" fill="url(#silv2)" />
+                            <polygon points="20,20 50,65 40,65" fill="url(#silv1)" opacity="0.9" />
+                            <polygon points="80,20 50,65 60,65" fill="url(#silvDark)" opacity="0.7" />
+                            <ellipse cx="50" cy="20" rx="30" ry="6" fill="#f8fafc" />
+                            <ellipse cx="50" cy="20" rx="25" ry="3" fill="#cbd5e1" />
+                        </svg>
+                    );
+                }
+                if (tier === 'finals') {
+                    // SNB Internationals Cup - Distinct Monolith
+                    return (
+                        <svg width={size} height={size} viewBox="0 0 100 100" className={className} style={{filter: 'drop-shadow(0 8px 12px rgba(0,0,0,0.7))'}}>
+                            {defs}
+                            <polygon points="25,95 75,95 70,80 30,80" fill="#0f172a" />
+                            <polygon points="30,80 70,80 60,50 40,50" fill="url(#silvDark)" />
+                            <polygon points="15,10 85,10 60,50 40,50" fill="url(#silv1)" />
+                            <polygon points="15,10 50,50 40,50" fill="url(#silv2)" opacity="0.8" />
+                            <polygon points="85,10 50,50 60,50" fill="#334155" opacity="0.8" />
+                            {/* Gold Core */}
+                            <polygon points="35,10 65,10 50,45" fill="url(#gold1)" />
+                            <polygon points="50,10 65,10 50,45" fill="url(#gold2)" opacity="0.9" />
+                            {/* Floating Shards */}
+                            <polygon points="10,40 25,20 20,45" fill="url(#silv1)" />
+                            <polygon points="90,40 75,20 80,45" fill="url(#silvDark)" />
                         </svg>
                     );
                 }
             }
             
             if (isFinalist) {
+                // Shields (Silver for GS, Gold for Major)
                 const isGS = tier === 'grand_slam';
                 const sScale = isGS ? 1 : 0.85;
-                const shieldFill = isGS ? "url(#shGS)" : "url(#shGMaj)";
+                const grad1 = isGS ? "url(#silv1)" : "url(#gold1)";
+                const grad2 = isGS ? "url(#silv2)" : "url(#gold2)";
+                
                 return (
-                    <svg width={size} height={size} viewBox="0 0 100 100" className={className} style={{filter: 'drop-shadow(0 4px 6px rgba(0,0,0,0.5))'}}>
-                        <defs><linearGradient id="shGS" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stopColor="#f8fafc"/><stop offset="100%" stopColor="#64748b"/></linearGradient>
-                        <linearGradient id="shGMaj" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stopColor="#fef08a"/><stop offset="100%" stopColor="#a16207"/></linearGradient></defs>
-                        <circle cx="50" cy="50" r="46" fill="none" stroke={c[0]} strokeWidth="4" opacity="0.9" />
-                        <circle cx="50" cy="50" r="42" fill="none" stroke={c[1]} strokeWidth="4" opacity="0.9" />
-                        <circle cx="50" cy="50" r="38" fill="none" stroke={c[2]} strokeWidth="4" opacity="0.9" />
+                    <svg width={size} height={size} viewBox="0 0 100 100" className={className} style={{filter: 'drop-shadow(0 6px 8px rgba(0,0,0,0.5))'}}>
+                        {defs}
                         <g transform={`translate(50,50) scale(${sScale}) translate(-50,-50)`}>
-                            <path d="M 50 15 A 35 35 0 0 1 85 50 A 35 35 0 0 1 50 85 A 35 35 0 0 1 15 50 A 35 35 0 0 1 50 15 Z" fill={shieldFill} />
-                            <polygon points="50,15 85,50 50,85" fill="#ffffff" opacity="0.25" />
-                            <polygon points="15,50 50,15 60,60" fill="#000000" opacity="0.15" />
-                            <path d="M 50 25 Q 75 50 50 75 Q 25 50 50 25" fill="url(#shGS)" stroke="#fff" strokeWidth="1" opacity="0.9"/>
+                            {/* Country Rim */}
+                            <circle cx="50" cy="50" r="48" fill="none" stroke={c[0]} strokeWidth="4" />
+                            <circle cx="50" cy="50" r="44" fill="none" stroke={c[1]} strokeWidth="4" />
+                            <circle cx="50" cy="50" r="40" fill="none" stroke={c[2]} strokeWidth="4" />
+                            
+                            {/* Shield Body */}
+                            <circle cx="50" cy="50" r="38" fill={grad2} />
+                            
+                            {/* Cubist Inner Rosette/Star */}
+                            <polygon points="50,15 85,50 50,85 15,50" fill={grad1} />
+                            <polygon points="50,15 85,50 50,50" fill="#ffffff" opacity="0.4" />
+                            <polygon points="15,50 50,85 50,50" fill="#000000" opacity="0.2" />
+                            
+                            <polygon points="50,25 75,50 50,75 25,50" fill={isGS ? "url(#silvDark)" : "#854d0e"} opacity="0.8" />
+                            <polygon points="50,25 75,50 50,50" fill="#ffffff" opacity="0.3" />
+                            
+                            <circle cx="50" cy="50" r="10" fill={grad1} />
+                            <circle cx="50" cy="50" r="5" fill={isGS ? "#1e293b" : "#451a03"} />
                         </g>
                     </svg>
                 );
             }
 
             if (isSF) {
+                // Crystal Trophies
                 const sScale = tier === 'grand_slam' ? 1 : 0.85;
+                const isSNB = tier === 'finals';
                 return (
-                    <svg width={size} height={size} viewBox="0 0 100 100" className={className} style={{filter: 'drop-shadow(0 4px 6px rgba(0,0,0,0.5))'}}>
-                        <defs><linearGradient id="crystal" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stopColor="#cffafe" stopOpacity="0.9" /><stop offset="50%" stopColor="#22d3ee" stopOpacity="0.6" /><stop offset="100%" stopColor="#0891b2" stopOpacity="0.9" /></linearGradient></defs>
+                    <svg width={size} height={size} viewBox="0 0 100 100" className={className} style={{filter: 'drop-shadow(0 6px 10px rgba(0,0,0,0.5))'}}>
+                        {defs}
                         <g transform={`translate(50,50) scale(${sScale}) translate(-50,-50)`}>
-                            <polygon points="25,85 75,80 70,100 30,100" fill="#1e293b" />
-                            {tier === 'finals' ? <polygon points="46,82 54,81 52,100 48,100" fill="#cbd5e1" /> : (
+                            {/* Obsidian Base */}
+                            <rect x="25" y="85" width="50" height="15" fill="#0f172a" />
+                            <polygon points="30,85 70,85 75,75 25,75" fill="#1e293b" />
+                            
+                            {/* Base Stripes */}
+                            {isSNB ? (
+                                <rect x="48" y="75" width="4" height="25" fill="url(#silv1)" />
+                            ) : (
                                 <>
-                                    <polygon points="40,83 45,82.5 43,100 38,100" fill={c[0]} />
-                                    <polygon points="47,82 53,81.5 51,100 45,100" fill={c[1]} />
-                                    <polygon points="55,81 60,80.5 58,100 53,100" fill={c[2]} />
+                                    <rect x="41" y="75" width="6" height="25" fill={c[0]} />
+                                    <rect x="47" y="75" width="6" height="25" fill={c[1]} />
+                                    <rect x="53" y="75" width="6" height="25" fill={c[2]} />
                                 </>
                             )}
-                            <polygon points="50,10 70,50 55,81 40,60" fill="url(#crystal)" opacity="0.9" stroke="#a5f3fc" strokeWidth="1"/>
-                            <polygon points="50,10 40,60 35,83 25,45" fill="#0891b2" opacity="0.6"/>
-                            <polygon points="35,83 55,81 65,65 50,30" fill="#22d3ee" opacity="0.5"/>
-                            <polygon points="50,10 55,81 40,60" fill="#ffffff" opacity="0.4"/>
+                            
+                            {/* Crystal Shards (Stained Glass Effect) */}
+                            {/* Back Shards */}
+                            <polygon points="50,80 20,30 40,5" fill="url(#glassPurple)" />
+                            <polygon points="50,80 80,30 60,5" fill="url(#glassCyan)" />
+                            
+                            {/* Mid Shards */}
+                            <polygon points="45,80 15,50 35,20" fill="url(#glassMagenta)" />
+                            <polygon points="55,80 85,50 65,20" fill="url(#glassGold)" />
+                            
+                            {/* Front Core Shard */}
+                            <polygon points="50,80 30,40 50,10 70,40" fill="url(#glassCyan)" opacity="0.9" />
+                            
+                            {/* Crisp White Edge Reflections */}
+                            <polygon points="50,10 30,40 32,42 50,15" fill="#ffffff" opacity="0.8" />
+                            <polygon points="50,10 70,40 68,42 50,15" fill="#ffffff" opacity="0.5" />
+                            <polygon points="30,40 50,80 52,80 32,42" fill="#ffffff" opacity="0.6" />
+                            <polygon points="35,20 15,50 17,52 37,22" fill="#ffffff" opacity="0.7" />
+                            <polygon points="65,20 85,50 83,52 63,22" fill="#ffffff" opacity="0.4" />
                         </g>
                     </svg>
                 );
             }
+            
+            // Fallback for minor tiers or non-major results
             return <Trophy size={size} className={className} />;
         };
 
@@ -3219,6 +3292,7 @@
     </script>
 </body>
 </html>
+
 
 
 
