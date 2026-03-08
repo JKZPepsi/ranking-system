@@ -293,33 +293,86 @@
                 }
                 if (tier === 'major') {
                     return (
-                        <svg width={size} height={size} viewBox="0 0 100 100" className={className} style={{filter: 'drop-shadow(0 8px 12px rgba(0,0,0,0.6))'}}>
-                            {defs}
-                            {/* Smooth Ribbons */}
-                            <path d="M 22 25 C 10 50, 20 70, 8 95" fill="none" stroke={c[0]} strokeWidth="3.5" />
-                            <path d="M 26 25 C 15 50, 25 70, 12 95" fill="none" stroke={c[1]} strokeWidth="3.5" />
-                            <path d="M 30 25 C 20 50, 30 70, 16 95" fill="none" stroke={c[2]} strokeWidth="3.5" />
+                        <svg width={size} height={size} viewBox="-15 -5 130 150" className={className} style={{filter: 'drop-shadow(0 15px 22px rgba(0,0,0,0.85))'}}>
+                            {/* Pure Sterling Silver Gradients for Major Cup */}
+                            <defs>
+                                <linearGradient id="majPlatinum" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stopColor="#e2e8f0"/><stop offset="20%" stopColor="#ffffff"/><stop offset="50%" stopColor="#94a3b8"/><stop offset="80%" stopColor="#f8fafc"/><stop offset="100%" stopColor="#475569"/></linearGradient>
+                                <linearGradient id="majOxidized" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stopColor="#334155"/><stop offset="40%" stopColor="#94a3b8"/><stop offset="80%" stopColor="#1e293b"/><stop offset="100%" stopColor="#0f172a"/></linearGradient>
+                                <linearGradient id="majChrome" x1="0" y1="1" x2="1" y2="0"><stop offset="0%" stopColor="#475569"/><stop offset="50%" stopColor="#ffffff"/><stop offset="100%" stopColor="#1e293b"/></linearGradient>
+                                <linearGradient id="majBase" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#1e293b"/><stop offset="100%" stopColor="#020617"/></linearGradient>
+                                {/* Diagonal hatching pattern for engraving */}
+                                <pattern id="majHatch" width="8" height="8" patternUnits="userSpaceOnUse">
+                                    <path d="M -2 10 L 10 -2 M 2 14 L 14 2" stroke="#f1f5f9" strokeWidth="0.5" opacity="0.3"/>
+                                </pattern>
+                            </defs>
+
+                            {/* Deep Background Ribbons */}
+                            <path d="M 18 65 Q -15 100 10 145" fill="none" stroke={c[0]} strokeWidth="4.5" opacity="0.6" strokeLinecap="round" />
+                            <path d="M 82 65 Q 115 100 90 145" fill="none" stroke={c[0]} strokeWidth="4.5" opacity="0.6" strokeLinecap="round" />
+
+                            {/* Heavy Octagonal Tiered Base */}
+                            <path d="M 22 135 L 78 135 L 72 120 L 28 120 Z" fill="url(#majBase)" />
+                            <path d="M 28 120 L 72 120 L 65 115 L 35 115 Z" fill="url(#majOxidized)" />
+                            <rect x="35" y="112" width="30" height="3" fill="url(#majPlatinum)" />
                             
-                            <path d="M 78 25 C 90 50, 80 70, 92 95" fill="none" stroke={c[0]} strokeWidth="3.5" />
-                            <path d="M 74 25 C 85 50, 75 70, 88 95" fill="none" stroke={c[1]} strokeWidth="3.5" />
-                            <path d="M 70 25 C 80 50, 70 70, 84 95" fill="none" stroke={c[2]} strokeWidth="3.5" />
+                            {/* Detailed Engraving Plaque */}
+                            <rect x="34" y="125" width="32" height="6" rx="1" fill="url(#majPlatinum)" style={{filter: 'drop-shadow(0 2px 3px rgba(0,0,0,0.8))'}}/>
+                            <line x1="38" y1="128" x2="62" y2="128" stroke="#475569" strokeWidth="0.5" strokeDasharray="1.5 1.5"/>
+                            <circle cx="36" cy="128" r="0.8" fill="#1e293b"/>
+                            <circle cx="64" cy="128" r="0.8" fill="#1e293b"/>
 
-                            {/* Sleek Base */}
-                            <path d="M 35 95 L 65 95 L 55 75 L 45 75 Z" fill="url(#chromeDark)" />
-                            <path d="M 45 75 C 45 65, 55 65, 55 75 Z" fill="url(#chrome1)" />
+                            {/* Fluted & Beaded Stem */}
+                            <path d="M 40 112 L 45 95 L 55 95 L 60 112 Z" fill="url(#majOxidized)" />
+                            <path d="M 45 112 L 48 95 M 50 112 L 50 95 M 55 112 L 52 95" stroke="url(#majPlatinum)" strokeWidth="1.5" fill="none"/>
+                            <ellipse cx="50" cy="100" rx="14" ry="3" fill="url(#majChrome)" />
+                            <ellipse cx="50" cy="95" rx="10" ry="2.5" fill="url(#majOxidized)" />
 
-                            {/* Angled Modern Handles */}
-                            <path d="M 25 25 L 10 45 L 35 60" fill="none" stroke="url(#chrome2)" strokeWidth="4" strokeLinejoin="round" />
-                            <path d="M 75 25 L 90 45 L 65 60" fill="none" stroke="url(#chrome2)" strokeWidth="4" strokeLinejoin="round" />
-
-                            {/* V-Shaped Chalice Body */}
-                            <path d="M 15 15 L 85 15 L 60 70 L 40 70 Z" fill="url(#chrome1)" />
-                            <path d="M 15 15 L 50 70 L 40 70 Z" fill="#ffffff" opacity="0.4" />
-                            <path d="M 85 15 L 50 70 L 60 70 Z" fill="#000000" opacity="0.3" />
+                            {/* Classic Wide Loving Cup Body */}
+                            {/* Main Bowl */}
+                            <path d="M 16 35 C 16 85, 35 95, 50 95 C 65 95, 84 85, 84 35 Z" fill="url(#majPlatinum)" />
+                            <path d="M 16 35 C 16 85, 35 95, 50 95 C 65 95, 84 85, 84 35 Z" fill="url(#majHatch)" />
                             
-                            {/* Inner Bowl Depth */}
-                            <ellipse cx="50" cy="15" rx="35" ry="6" fill="url(#chromeDark)" />
-                            <ellipse cx="50" cy="15" rx="30" ry="3" fill="url(#chrome2)" />
+                            {/* 3D Shadows for Depth */}
+                            <path d="M 16 35 C 16 85, 35 95, 50 95 L 50 35 Z" fill="#ffffff" opacity="0.35" />
+                            <path d="M 84 35 C 84 85, 65 95, 50 95 L 50 35 Z" fill="#000000" opacity="0.35" />
+
+                            {/* Intricate Lower Bowl Acanthus Leaf Etching */}
+                            <path d="M 22 65 C 28 85, 40 95, 50 95 C 60 95, 72 85, 78 65 C 60 75, 40 75, 22 65 Z" fill="url(#majOxidized)" opacity="0.85"/>
+                            <path d="M 26 70 Q 38 90, 50 93 M 34 72 Q 42 90, 50 94 M 42 74 Q 47 90, 50 95 M 74 70 Q 62 90, 50 93 M 66 72 Q 58 90, 50 94 M 58 74 Q 53 90, 50 95" stroke="url(#majPlatinum)" strokeWidth="1.5" fill="none" strokeLinecap="round"/>
+
+                            {/* Raised Central Shield / Crest */}
+                            <path d="M 40 50 L 60 50 L 55 70 L 50 76 L 45 70 Z" fill="url(#majOxidized)" stroke="url(#majPlatinum)" strokeWidth="1.5" style={{filter: 'drop-shadow(0 4px 5px rgba(0,0,0,0.5))'}}/>
+                            <path d="M 43 53 L 57 53 L 53 67 L 50 72 L 47 67 Z" fill="url(#majChrome)" />
+                            <circle cx="50" cy="60" r="2.5" fill="url(#majPlatinum)" style={{filter: 'drop-shadow(0 2px 2px rgba(0,0,0,0.6))'}}/>
+
+                            {/* Elegant Sweeping C-Scroll Handles */}
+                            {/* Left Handle */}
+                            <path d="M 18 42 C -5 35, -15 80, 26 80" fill="none" stroke="url(#majOxidized)" strokeWidth="6" strokeLinecap="round" style={{filter: 'drop-shadow(2px 4px 4px rgba(0,0,0,0.5))'}}/>
+                            <path d="M 18 42 C -5 35, -15 80, 26 80" fill="none" stroke="url(#majPlatinum)" strokeWidth="3" strokeLinecap="round"/>
+                            <path d="M 16 52 C 5 50, 5 70, 20 73" fill="none" stroke="url(#majChrome)" strokeWidth="1.5" strokeLinecap="round"/>
+                            <circle cx="26" cy="80" r="2.5" fill="url(#majPlatinum)" />
+                            
+                            {/* Right Handle */}
+                            <path d="M 82 42 C 105 35, 115 80, 74 80" fill="none" stroke="url(#majOxidized)" strokeWidth="6" strokeLinecap="round" style={{filter: 'drop-shadow(-2px 4px 4px rgba(0,0,0,0.5))'}}/>
+                            <path d="M 82 42 C 105 35, 115 80, 74 80" fill="none" stroke="url(#majPlatinum)" strokeWidth="3" strokeLinecap="round"/>
+                            <path d="M 78 52 C 95 50, 95 70, 80 73" fill="none" stroke="url(#majChrome)" strokeWidth="1.5" strokeLinecap="round"/>
+                            <circle cx="74" cy="80" r="2.5" fill="url(#majPlatinum)" />
+
+                            {/* Massive Flared Open Rim */}
+                            <ellipse cx="50" cy="35" rx="36" ry="6" fill="url(#majOxidized)" />
+                            <ellipse cx="50" cy="35" rx="33" ry="4" fill="url(#majChrome)" />
+                            {/* Deep Open Interior */}
+                            <ellipse cx="50" cy="35" rx="30" ry="3" fill="#020617" />
+                            <path d="M 20 35 C 20 42, 80 42, 80 35 C 80 28, 20 28, 20 35 Z" fill="url(#majObsidian)" opacity="0.9" />
+
+                            {/* Foreground Silk Ribbons (Draping elegantly through handles) */}
+                            <path d="M 18 68 C 5 95, 30 120, 8 150" fill="none" stroke={c[1]} strokeWidth="4.5" strokeLinecap="round" style={{filter: 'drop-shadow(3px 4px 5px rgba(0,0,0,0.7))'}}/>
+                            <path d="M 18 68 C 5 95, 30 120, 8 150" fill="none" stroke="#ffffff" strokeWidth="1" strokeDasharray="3 2" opacity="0.6"/>
+                            <path d="M 23 70 C 10 95, 35 120, 18 150" fill="none" stroke={c[2]} strokeWidth="4.5" strokeLinecap="round" style={{filter: 'drop-shadow(3px 4px 5px rgba(0,0,0,0.7))'}}/>
+
+                            <path d="M 82 68 C 95 95, 70 120, 92 150" fill="none" stroke={c[1]} strokeWidth="4.5" strokeLinecap="round" style={{filter: 'drop-shadow(-3px 4px 5px rgba(0,0,0,0.7))'}}/>
+                            <path d="M 82 68 C 95 95, 70 120, 92 150" fill="none" stroke="#ffffff" strokeWidth="1" strokeDasharray="3 2" opacity="0.6"/>
+                            <path d="M 77 70 C 90 95, 65 120, 82 150" fill="none" stroke={c[2]} strokeWidth="4.5" strokeLinecap="round" style={{filter: 'drop-shadow(-3px 4px 5px rgba(0,0,0,0.7))'}}/>
                         </svg>
                     );
                 }
@@ -499,21 +552,39 @@
         };
 
         // --- Core Utility Functions ---
-        var getTournamentTier = (t) => {
-            if (t.format === 'atp_finals') return 'finals';
-            return t.tier || 'major';
-        };
-
         var getDrawSize = (t) => {
             if (t.format === 'atp_finals') return 8;
             let bracket = t.bracket;
-            if (typeof bracket === 'string') { try { bracket = JSON.parse(bracket); } catch(e) {} }
+            if (typeof bracket === 'string') { 
+                try { bracket = JSON.parse(bracket); } catch(e) { return 32; } 
+            }
             if (!bracket || !Array.isArray(bracket) || !bracket.length) return 32;
-            if (bracket.length === 6) return 64;
-            if (bracket.length === 5) return 32;
-            if (bracket.length === 4) return 16;
-            if (bracket.length === 3) return 8;
+            
+            // Determine size strictly by the number of matches in the first round
+            const firstRoundSize = bracket[0].length;
+            if (firstRoundSize === 32) return 64;
+            if (firstRoundSize === 16) return 32;
+            if (firstRoundSize === 8) return 16;
+            if (firstRoundSize === 4) return 8;
+            
             return 32;
+        };
+
+        var getTournamentTier = (t) => {
+            if (!t) return 'pro';
+            if (t.format === 'atp_finals') return 'finals';
+            
+            const rawTier = t.tier || 'pro';
+            
+            // Retroactive Fix:
+            // Grand Slams must have 64 players.
+            // If we find an existing one with less, we treat it as a Major.
+            if (rawTier === 'grand_slam') {
+                const size = getDrawSize(t);
+                if (size < 64) return 'major';
+            }
+            
+            return rawTier;
         };
 
         var getSeedText = (t, pid) => {
@@ -3389,6 +3460,7 @@
     </script>
 </body>
 </html>
+
 
 
 
