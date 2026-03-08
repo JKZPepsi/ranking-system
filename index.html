@@ -149,6 +149,7 @@
 
         var ROUND_NAMES = ['Round of 64', 'Round of 32', 'Round of 16', 'Quarterfinals', 'Semifinals', 'Final'];
         
+        // Highly compressed country dict to save tokens
         var countryDataStr = "ATG,Antigua and Barbuda,🇦🇬|BHS,Bahamas,🇧🇸|BRB,Barbados,🇧🇧|CAN,Canada,🇨🇦|CUB,Cuba,🇨🇺|DOM,Dominican Republic,🇩🇴|GTM,Guatemala,🇬🇹|HTI,Haiti,🇭🇹|JAM,Jamaica,🇯🇲|MEX,Mexico,🇲🇽|PAN,Panama,🇵🇦|PUR,Puerto Rico,🇵🇷|USA,United States,🇺🇸|ARG,Argentina,🇦🇷|BOL,Bolivia,🇧🇴|BRA,Brazil,🇧🇷|CHI,Chile,🇨🇱|COL,Colombia,🇨🇴|ECU,Ecuador,🇪🇨|PAR,Paraguay,🇵🇾|PER,Peru,🇵🇪|URU,Uruguay,🇺🇾|VEN,Venezuela,🇻🇪|ALB,Albania,🇦🇱|AUT,Austria,🇦🇹|BEL,Belgium,🇧🇪|BUL,Bulgaria,🇧🇬|CRO,Croatia,🇭🇷|CZE,Czechia,🇨🇿|DEN,Denmark,🇩🇰|EST,Estonia,🇪🇪|FIN,Finland,🇫🇮|FRA,France,🇫🇷|GBR,Great Britain,🇬🇧|GER,Germany,🇩🇪|GRE,Greece,🇬🇷|HUN,Hungary,🇭🇺|IRL,Ireland,🇮🇪|ISL,Iceland,🇮🇸|ITA,Italy,🇮🇹|LAT,Latvia,🇱🇻|LTU,Lithuania,🇱🇹|NED,Netherlands,🇳🇱|NOR,Norway,🇳🇴|POL,Poland,🇵🇱|POR,Portugal,🇵🇹|ROU,Romania,🇷🇴|RUS,Russia,🇷🇺|SRB,Serbia,🇷🇸|SVK,Slovakia,🇸🇰|SLO,Slovenia,🇸🇮|ESP,Spain,🇪🇸|SWE,Sweden,🇸🇪|SUI,Switzerland,🇨🇭|UKR,Ukraine,🇺🇦|AFG,Afghanistan,🇦🇫|CHN,China,🇨🇳|IND,India,🇮🇳|IDN,Indonesia,🇮🇩|IRI,Iran,🇮🇷|IRQ,Iraq,🇮🇶|ISR,Israel,🇮🇱|JPN,Japan,🇯🇵|KAZ,Kazakhstan,🇰🇿|KOR,South Korea,🇰🇷|MAS,Malaysia,🇲🇾|PAK,Pakistan,🇵🇰|PHI,Philippines,🇵🇭|QAT,Qatar,🇶🇦|KSA,Saudi Arabia,🇸🇦|SGP,Singapore,🇸🇬|THA,Thailand,🇹🇭|TUR,Turkey,🇹🇷|UAE,United Arab Emirates,🇦🇪|VIE,Vietnam,🇻🇳|ALG,Algeria,🇩🇿|ANG,Angola,🇦🇴|EGY,Egypt,🇪🇬|ETH,Ethiopia,🇪🇹|GHA,Ghana,🇬🇭|KEN,Kenya,🇰🇪|MAR,Morocco,🇲🇦|NGR,Nigeria,🇳🇬|SEN,Senegal,🇸🇳|RSA,South Africa,🇿🇦|TUN,Tunisia,🇹🇳|AUS,Australia,🇦🇺|FIJ,Fiji,🇫🇯|NZL,New Zealand,🇳🇿|PNG,Papua New Guinea,🇵🇬|UNK,Unknown,🏳️";
         var COUNTRIES = countryDataStr.split('|').map(c => { const [code, name, flag] = c.split(','); return {code, name, flag}; });
 
@@ -203,13 +204,14 @@
 
         var getTournamentPointsAndResult = (playerId, t) => {
             let pts = 0, w = 0, l = 0, played = false, resultStr = '', wonFinal = false;
+            let pb = [];
+            try { pb = typeof t.bracket === 'string' ? JSON.parse(t.bracket) : (t.bracket || []); } catch(e){}
 
             if (t.format === 'atp_finals') {
-                let groupMatches = []; let knockout = [[],[]];
-                try { groupMatches = typeof t.groupMatches === 'string' ? JSON.parse(t.groupMatches) : (t.groupMatches || []); } catch(e){}
-                try { knockout = typeof t.bracket === 'string' ? JSON.parse(t.bracket) : (t.bracket || []); } catch(e){}
+                let gm = [];
+                try { gm = typeof t.groupMatches === 'string' ? JSON.parse(t.groupMatches) : (t.groupMatches || []); } catch(e){}
                 
-                groupMatches.forEach(m => {
+                gm.forEach(m => {
                     if (m && (m.p1 === playerId || m.p2 === playerId)) {
                         played = true; resultStr = 'Round Robin';
                         if (m.winner === playerId) { pts += 200; w++; } else if (m.winner) { l++; }
@@ -217,40 +219,41 @@
                 });
 
                 if (played) {
-                    knockout.forEach((round, rIdx) => {
+                    if (Array.isArray(pb)) {
+                        pb.forEach((round, rIdx) => {
+                            if (!Array.isArray(round)) return;
+                            round.forEach(m => {
+                                if (m && (m.p1 === playerId || m.p2 === playerId)) {
+                                    if (rIdx === 0) resultStr = 'Semifinalist';
+                                    if (rIdx === 1) resultStr = 'Finalist';
+                                    if (m.winner === playerId) {
+                                        w++;
+                                        if (rIdx === 0) pts += 400; 
+                                        if (rIdx === 1) { pts += 500; wonFinal = true; resultStr = 'Winner'; }
+                                    } else if (m.winner) { l++; }
+                                }
+                            });
+                        });
+                    }
+                }
+            } else {
+                const totalRounds = pb.length;
+                let highestRound = -1;
+
+                if (Array.isArray(pb)) {
+                    pb.forEach((round, rIdx) => {
                         if (!Array.isArray(round)) return;
                         round.forEach(m => {
                             if (m && (m.p1 === playerId || m.p2 === playerId)) {
-                                if (rIdx === 0) resultStr = 'Semifinalist';
-                                if (rIdx === 1) resultStr = 'Finalist';
-                                if (m.winner === playerId) {
-                                    w++;
-                                    if (rIdx === 0) pts += 400; 
-                                    if (rIdx === 1) { pts += 500; wonFinal = true; resultStr = 'Winner'; }
-                                } else if (m.winner) { l++; }
+                                played = true;
+                                if (rIdx > highestRound) highestRound = rIdx;
+                                if (m.winner === playerId && m.type !== 'bye') w++;
+                                else if (m.winner && m.winner !== playerId) l++;
+                                if (m.winner === playerId && rIdx === totalRounds - 1) wonFinal = true;
                             }
                         });
                     });
                 }
-            } else {
-                let parsedBracket = [];
-                try { parsedBracket = typeof t.bracket === 'string' ? JSON.parse(t.bracket) : (t.bracket || []); } catch(e){}
-                
-                const totalRounds = parsedBracket.length;
-                let highestRound = -1;
-
-                parsedBracket.forEach((round, rIdx) => {
-                    if (!Array.isArray(round)) return;
-                    round.forEach(m => {
-                        if (m && (m.p1 === playerId || m.p2 === playerId)) {
-                            played = true;
-                            if (rIdx > highestRound) highestRound = rIdx;
-                            if (m.winner === playerId && m.type !== 'bye') w++;
-                            else if (m.winner && m.winner !== playerId) l++;
-                            if (m.winner === playerId && rIdx === totalRounds - 1) wonFinal = true;
-                        }
-                    });
-                });
                 
                 if (played && highestRound > -1) {
                     const tierKey = getTournamentTier(t);
@@ -299,58 +302,30 @@
 
                 for (const t of completedTournaments) {
                     let tMatches = [];
+                    let pb = []; try { pb = typeof t.bracket === 'string' ? JSON.parse(t.bracket) : (t.bracket || []); } catch(e){}
+                    
                     if (t.format === 'atp_finals') {
-                        let knockout = []; let groupMatches = [];
-                        try { knockout = typeof t.bracket === 'string' ? JSON.parse(t.bracket) : (t.bracket || []); } catch(e){}
-                        try { groupMatches = typeof t.groupMatches === 'string' ? JSON.parse(t.groupMatches) : (t.groupMatches || []); } catch(e){}
-                        groupMatches.forEach(m => { if (m && (m.p1 === player.id || m.p2 === player.id) && m.winner) tMatches.push({ isWin: m.winner === player.id, type: m.type || 'close' }); });
-                        knockout.forEach(round => { if (!Array.isArray(round)) return; round.forEach(m => { if (m && (m.p1 === player.id || m.p2 === player.id) && m.winner) tMatches.push({ isWin: m.winner === player.id, type: m.type || 'close' }); }); });
+                        let gm = []; try { gm = typeof t.groupMatches === 'string' ? JSON.parse(t.groupMatches) : (t.groupMatches || []); } catch(e){}
+                        gm.forEach(m => { if (m && (m.p1 === player.id || m.p2 === player.id) && m.winner) tMatches.push({ isWin: m.winner === player.id, type: m.type || 'close' }); });
+                        if(Array.isArray(pb)) pb.forEach(round => { if (!Array.isArray(round)) return; round.forEach(m => { if (m && (m.p1 === player.id || m.p2 === player.id) && m.winner) tMatches.push({ isWin: m.winner === player.id, type: m.type || 'close' }); }); });
                     } else {
-                        let parsedBracket = [];
-                        try { parsedBracket = typeof t.bracket === 'string' ? JSON.parse(t.bracket) : t.bracket; } catch(e){}
-                        if (parsedBracket && Array.isArray(parsedBracket)) {
-                            parsedBracket.forEach(round => {
-                                if (!Array.isArray(round)) return;
-                                round.forEach(match => {
-                                    if (match && (match.p1 === player.id || match.p2 === player.id) && match.winner && match.type !== 'bye') {
-                                        tMatches.push({ isWin: match.winner === player.id, type: match.type || 'close' });
-                                    }
-                                });
-                            });
-                        }
+                        if (Array.isArray(pb)) pb.forEach(round => { if (!Array.isArray(round)) return; round.forEach(m => { if (m && (m.p1 === player.id || m.p2 === player.id) && m.winner && m.type !== 'bye') { tMatches.push({ isWin: match.winner === player.id, type: m.type || 'close' }); } }); });
                     }
                     tMatches.forEach(m => recentMatches.push(m));
 
                     const res = getTournamentPointsAndResult(player.id, t);
                     if (res.played) {
-                        hasPlayedAny = true;
-                        careerPoints += res.pts;
-                        totalW += res.w;
-                        totalL += res.l;
-                        
-                        let totalRounds = t.format === 'atp_finals' ? 5 : 0;
-                        if (t.format !== 'atp_finals' && t.bracket) {
-                            try { const pb = typeof t.bracket === 'string' ? JSON.parse(t.bracket) : t.bracket; totalRounds = pb.length; } catch(e){}
-                        }
-
-                        allPlayed.push({ 
-                            tournamentId: t.id, tournamentName: t.name, tier: getTournamentTier(t),
-                            points: res.pts, result: res.resultStr, totalRounds: totalRounds, date: t.completedAt || t.createdAt
-                        });
+                        hasPlayedAny = true; careerPoints += res.pts; totalW += res.w; totalL += res.l;
+                        let totalRounds = t.format === 'atp_finals' ? 5 : (pb ? pb.length : 0);
+                        allPlayed.push({ tournamentId: t.id, tournamentName: t.name, tier: getTournamentTier(t), points: res.pts, result: res.resultStr, totalRounds: totalRounds, date: t.completedAt || t.createdAt });
                     }
                 }
 
                 allPlayed.forEach((pt, idx) => { pt.playedNumber = idx + 1; });
-
-                let reversedPlayed = [...allPlayed].reverse();
-                let recentTournaments = [];
-                let officialPoints = 0;
-                let bonusPoints = 0;
-                let majorCount = 0;
+                let reversedPlayed = [...allPlayed].reverse(), recentTournaments = [], officialPoints = 0, bonusPoints = 0, majorCount = 0;
 
                 for (let pt of reversedPlayed) {
-                    const isMajorPlus = majorTiers.includes(pt.tier);
-                    if (isMajorPlus) {
+                    if (majorTiers.includes(pt.tier)) {
                         if (majorCount < 20) {
                             majorCount++;
                             if (pt.date <= globalLastMajorTime) officialPoints += pt.points; else bonusPoints += pt.points;
@@ -365,19 +340,10 @@
                 }
 
                 return { 
-                    ...player, 
-                    points: officialPoints, 
-                    bonusPoints: bonusPoints,
-                    totalPoints: officialPoints + bonusPoints, 
-                    careerPoints, 
-                    recentTournaments, 
-                    recentMatches: recentMatches.slice(-7).reverse(), 
-                    stats: { wins: totalW, losses: totalL, totalPlayed: allPlayed.length }, 
-                    hasPlayedAny 
+                    ...player, points: officialPoints, bonusPoints: bonusPoints, totalPoints: officialPoints + bonusPoints, careerPoints, 
+                    recentTournaments, recentMatches: recentMatches.slice(-7).reverse(), stats: { wins: totalW, losses: totalL, totalPlayed: allPlayed.length }, hasPlayedAny 
                 };
-            })
-            .sort((a, b) => b.points - a.points || b.totalPoints - a.totalPoints || (a.name || '').localeCompare(b.name || ''))
-            .map((p, index) => ({ ...p, rank: index + 1 }));
+            }).sort((a, b) => b.points - a.points || b.totalPoints - a.totalPoints || (a.name || '').localeCompare(b.name || '')).map((p, index) => ({ ...p, rank: index + 1 }));
         };
 
         var getGlobalHistory = (playersRaw, tournaments) => {
@@ -477,277 +443,6 @@
 
         // --- Custom Views ---
 
-        function TopPlayersChart({ globalHistory, playersRaw, type, onNavigate }) {
-            const [range, setRange] = useState(10);
-            const [selectedLineId, setSelectedLineId] = useState(null);
-            const [hoveredLineId, setHoveredLineId] = useState(null);
-            
-            const filteredHistory = globalHistory.filter(h => h.isMajorPlus);
-            const historyData = filteredHistory.slice(range === 'all' ? 0 : -range);
-            if (historyData.length < 1) return <p className="text-royal-300 text-sm mt-4">Not enough Major+ tournament history to generate a graph.</p>;
-
-            const getVal = (s) => {
-                if (type === 'rank') return s.rank;
-                return s.pts;
-            };
-
-            const includedPlayerIds = new Set();
-            if (type === 'rank' || type === 'points') {
-                historyData.forEach(h => {
-                    h.standings.forEach(s => {
-                        if (s.rank <= 12) includedPlayerIds.add(s.id);
-                    });
-                });
-            }
-
-            const lines = [];
-            Array.from(includedPlayerIds).forEach(pid => {
-                const player = playersRaw.find(p => p.id === pid);
-                if (!player) return;
-
-                const visiblePoints = [];
-                for (let k = 0; k < historyData.length; k++) {
-                    const s = historyData[k].standings.find(st => st.id === pid);
-                    
-                    const prevS = k > 0 ? historyData[k-1].standings.find(st => st.id === pid) : null;
-                    const nextS = k < historyData.length - 1 ? historyData[k+1].standings.find(st => st.id === pid) : null;
-
-                    const isTop12 = s && s.rank <= 12;
-                    const prevTop12 = prevS && prevS.rank <= 12;
-                    const nextTop12 = nextS && nextS.rank <= 12;
-
-                    if (s && (isTop12 || prevTop12 || nextTop12)) {
-                        visiblePoints.push({ k, s, h: historyData[k] });
-                    }
-                }
-
-                const segments = [];
-                let currentSegment = [];
-                for (let i = 0; i < visiblePoints.length; i++) {
-                    if (currentSegment.length === 0) {
-                        currentSegment.push(visiblePoints[i]);
-                    } else {
-                        if (visiblePoints[i].k === currentSegment[currentSegment.length - 1].k + 1) {
-                            currentSegment.push(visiblePoints[i]);
-                        } else {
-                            segments.push(currentSegment);
-                            currentSegment = [visiblePoints[i]];
-                        }
-                    }
-                }
-                if (currentSegment.length > 0) segments.push(currentSegment);
-
-                if (segments.length > 0) {
-                    lines.push({ player, segments, color: getPlayerColor(player.id) });
-                }
-            });
-
-            const width = 1200;
-            // Shorter height to tightly compact the 1-12 spacing
-            const height = type === 'rank' ? 550 : 500; 
-            const pad = { top: 40, right: 260, bottom: 80, left: type === 'rank' ? 60 : 80 }; 
-
-            let maxPointsVal = 10;
-            const maxRankDisplay = 13; 
-            
-            historyData.forEach(h => { 
-                h.standings.forEach(s => { 
-                    if (includedPlayerIds.has(s.id) && s.rank <= 12) {
-                        if (getVal(s) > maxPointsVal) maxPointsVal = getVal(s);
-                    } 
-                }); 
-            });
-            
-            if (type !== 'rank') maxPointsVal = Math.ceil(maxPointsVal * 1.05);
-
-            const getX = (i) => historyData.length === 1 ? (pad.left + (width - pad.left - pad.right) / 2) : pad.left + (i * ((width - pad.left - pad.right) / (historyData.length - 1)));
-            
-            const getY = (val) => {
-                if (type === 'rank') {
-                    const boundedVal = val > 12 ? 13 : val;
-                    return pad.top + ((boundedVal - 1) / 12) * (height - pad.top - pad.bottom);
-                } else {
-                    return height - pad.bottom - ((val - 0) / (maxPointsVal - 0)) * (height - pad.top - pad.bottom);
-                }
-            };
-
-            lines.forEach(line => {
-                line.paths = line.segments.map(seg => {
-                    return seg.map((pt, i) => `${i === 0 ? 'M' : 'L'} ${getX(pt.k)} ${getY(getVal(pt.s))}`).join(' ');
-                });
-            });
-
-            const endLabels = lines.map(line => {
-                const lastSeg = line.segments[line.segments.length - 1];
-                const endPt = lastSeg[lastSeg.length - 1];
-                const rawY = getY(getVal(endPt.s));
-                return { id: line.player.id, targetY: rawY, currentY: rawY };
-            }).sort((a, b) => a.targetY - b.targetY);
-
-            const LABEL_HEIGHT = 34; 
-            for (let iter = 0; iter < 30; iter++) {
-                for (let i = 0; i < endLabels.length - 1; i++) {
-                    const diff = endLabels[i+1].currentY - endLabels[i].currentY;
-                    if (diff < LABEL_HEIGHT) {
-                        const overlap = LABEL_HEIGHT - diff;
-                        endLabels[i].currentY -= overlap / 2;
-                        endLabels[i+1].currentY += overlap / 2;
-                    }
-                }
-            }
-            
-            const labelPositions = {};
-            endLabels.forEach(el => {
-                if (el.currentY < pad.top - 15) el.currentY = pad.top - 15;
-                if (el.currentY > height - pad.bottom + 20) el.currentY = height - pad.bottom + 20;
-                labelPositions[el.id] = el.currentY;
-            });
-
-            const sortedLines = [...lines].sort((a, b) => {
-                if (a.player.id === selectedLineId || a.player.id === hoveredLineId) return 1;
-                if (b.player.id === selectedLineId || b.player.id === hoveredLineId) return -1;
-                return 0;
-            });
-
-            let metricLabel = 'Points';
-
-            return (
-                <div className="w-full">
-                    <div className="flex justify-between items-center mb-6">
-                        <div className="flex gap-2">
-                            <button onClick={() => setRange(10)} className={`px-4 py-1.5 rounded-lg text-sm font-bold transition-colors ${range === 10 ? 'bg-gold-500 text-royal-950' : 'bg-royal-800 text-royal-300 hover:text-white'}`}>Last 10</button>
-                            <button onClick={() => setRange(20)} className={`px-4 py-1.5 rounded-lg text-sm font-bold transition-colors ${range === 20 ? 'bg-gold-500 text-royal-950' : 'bg-royal-800 text-royal-300 hover:text-white'}`}>Last 20</button>
-                            <button onClick={() => setRange('all')} className={`px-4 py-1.5 rounded-lg text-sm font-bold transition-colors ${range === 'all' ? 'bg-gold-500 text-royal-950' : 'bg-royal-800 text-royal-300 hover:text-white'}`}>All Time</button>
-                        </div>
-                        {selectedLineId && (
-                            <button onClick={() => setSelectedLineId(null)} className="text-sm font-medium text-gold-500 hover:text-white px-3 py-1 bg-royal-800 rounded-md border border-royal-700 transition-colors">Clear Selection</button>
-                        )}
-                    </div>
-                    
-                    <div className="w-full bg-royal-900/50 rounded-xl border border-royal-700 pb-2 relative overflow-hidden">
-                        <svg viewBox={`0 0 ${width} ${height}`} className="w-full h-auto overflow-visible font-sans">
-                            <defs>
-                                {lines.map(line => (
-                                    <clipPath id={`clip-${type}-${line.player.id}`} key={`clip-${line.player.id}`}>
-                                        <circle cx="14" cy="14" r="14" />
-                                    </clipPath>
-                                ))}
-                            </defs>
-
-                            {/* Heavy Gridlines */}
-                            {type === 'rank' ? (
-                                <>
-                                    {[...Array(12)].map((_, i) => {
-                                        const r = i + 1;
-                                        return (
-                                            <g key={`grid-${i}`}>
-                                                <line x1={pad.left} y1={getY(r)} x2={width - pad.right + 20} y2={getY(r)} stroke="#13382d" strokeWidth="1" strokeDasharray="4 4" />
-                                                <text x={pad.left - 15} y={getY(r)} fill="#789e90" fontSize="12" fontWeight="bold" textAnchor="end" alignmentBaseline="middle">#{r}</text>
-                                            </g>
-                                        );
-                                    })}
-                                    <g>
-                                        <rect x={pad.left} y={getY(12.5)} width={width - pad.left - pad.right + 20} height="40" fill="#051611" opacity="0.6" />
-                                        <line x1={pad.left} y1={getY(13)} x2={width - pad.right + 20} y2={getY(13)} stroke="#ef4444" strokeWidth="1" strokeDasharray="8 4" opacity="0.5" />
-                                        <text x={pad.left - 15} y={getY(13)} fill="#ef4444" fontSize="12" fontWeight="bold" textAnchor="end" alignmentBaseline="middle" opacity="0.8">Drop</text>
-                                    </g>
-                                </>
-                            ) : (
-                                (() => {
-                                    const step = Math.max(10, Math.ceil(maxPointsVal / 15)); 
-                                    const yLines = [];
-                                    for(let v = 0; v <= maxPointsVal; v += step) yLines.push(v);
-                                    return yLines.map((p, i) => (
-                                        <g key={`grid-${i}`}>
-                                            <line x1={pad.left} y1={getY(p)} x2={width - pad.right + 20} y2={getY(p)} stroke="#13382d" strokeWidth="1" strokeDasharray="4 4" />
-                                            <text x={pad.left - 15} y={getY(p)} fill="#789e90" fontSize="12" fontWeight="bold" textAnchor="end" alignmentBaseline="middle">{p.toLocaleString()}</text>
-                                        </g>
-                                    ));
-                                })()
-                            )}
-                            
-                            {/* Lines */}
-                            {sortedLines.map((line) => {
-                                const isHighlighted = selectedLineId === line.player.id || hoveredLineId === line.player.id;
-                                const isFaded = (selectedLineId || hoveredLineId) && !isHighlighted;
-                                return line.paths.map((pStr, pIdx) => (
-                                    <path 
-                                        key={`path-${line.player.id}-${pIdx}`} 
-                                        d={pStr} fill="none" stroke={line.color} 
-                                        strokeWidth={isHighlighted ? 6 : 3} 
-                                        opacity={isFaded ? 0.15 : 0.9} 
-                                        strokeLinejoin="round" strokeLinecap="round" 
-                                        style={{ transition: 'stroke-width 0.2s ease, opacity 0.2s ease' }}
-                                        className="cursor-pointer"
-                                        onClick={() => setSelectedLineId(line.player.id === selectedLineId ? null : line.player.id)}
-                                        onMouseEnter={() => setHoveredLineId(line.player.id)}
-                                        onMouseLeave={() => setHoveredLineId(null)}
-                                    />
-                                ));
-                            })}
-                            
-                            {/* Dots and Labels */}
-                            {sortedLines.map((line) => {
-                                const isHighlighted = selectedLineId === line.player.id || hoveredLineId === line.player.id;
-                                const isFaded = (selectedLineId || hoveredLineId) && !isHighlighted;
-                                
-                                const lastSeg = line.segments[line.segments.length - 1];
-                                const endPt = lastSeg[lastSeg.length - 1];
-                                const endX = getX(endPt.k);
-                                const endY = getY(getVal(endPt.s));
-                                const adjY = labelPositions[line.player.id];
-
-                                return (
-                                    <g key={`overlay-${line.player.id}`} style={{ transition: 'opacity 0.2s ease' }} opacity={isFaded ? 0.2 : 1}>
-                                        {/* Plotted points */}
-                                        {line.segments.map((seg, sIdx) => seg.map((pt, i) => {
-                                            const ptX = getX(pt.k);
-                                            const ptY = getY(getVal(pt.s));
-                                            
-                                            return (
-                                                <g key={`pt-${line.player.id}-${sIdx}-${i}`} className="group cursor-crosshair">
-                                                    <circle cx={ptX} cy={ptY} r={isHighlighted ? "6" : "5"} fill="#051611" stroke={line.color} strokeWidth={isHighlighted ? 4 : 2} style={{ transition: 'r 0.2s ease, stroke-width 0.2s ease' }} />
-                                                    
-                                                    <text x={ptX} y={ptY - 12} fill={line.color} fontSize="12" fontWeight="900" textAnchor="middle" stroke="#051611" strokeWidth="4" paintOrder="stroke" className="opacity-0 group-hover:opacity-100" style={{ transition: 'opacity 0.2s ease' }}>
-                                                        {type === 'rank' ? `#${pt.s.rank}` : getVal(pt.s).toLocaleString()}
-                                                    </text>
-
-                                                    <circle cx={ptX} cy={ptY} r="20" fill="transparent" />
-                                                    <title>{`${pt.h.tournamentName}\n${line.player.name}\nRank: #${pt.s.rank}\nPoints: ${pt.s.pts.toLocaleString()}`}</title>
-                                                </g>
-                                            );
-                                        }))}
-
-                                        {/* Connecting Line if Label moved */}
-                                        {Math.abs(adjY - endY) > 2 && (
-                                            <path d={`M ${endX} ${endY} C ${endX + 10} ${endY}, ${endX + 10} ${adjY}, ${endX + 20} ${adjY}`} fill="none" stroke={line.color} strokeWidth="2" opacity="0.6" strokeDasharray="3 3" />
-                                        )}
-
-                                        {/* Interactive Inline Profile Label */}
-                                        <g 
-                                            transform={`translate(${endX + 20}, ${adjY - 14})`} 
-                                            className="cursor-pointer"
-                                            onClick={(e) => { e.stopPropagation(); onNavigate('players', line.player.id); }}
-                                            onMouseEnter={() => setHoveredLineId(line.player.id)}
-                                            onMouseLeave={() => setHoveredLineId(null)}
-                                        >
-                                            <rect x="-4" y="-4" width="180" height="36" rx="18" fill="#051611" fillOpacity={isHighlighted ? "1" : "0.85"} stroke={line.color} strokeWidth={isHighlighted ? 2 : 1} style={{ filter: isHighlighted ? 'drop-shadow(0 0 8px rgba(255,255,255,0.3))' : 'drop-shadow(0 4px 6px rgba(0,0,0,0.5))' }} />
-                                            {line.player.imageUrl ? (
-                                                <image href={line.player.imageUrl} x="0" y="0" width="28" height="28" clipPath={`url(#clip-${type}-${line.player.id})`} preserveAspectRatio="xMidYMid slice" />
-                                            ) : (
-                                                <circle cx="14" cy="14" r="14" fill="#0a241c" />
-                                            )}
-                                            <text x="36" y="19" fill="#f8fafc" fontSize="14" fontWeight="bold" style={{ textShadow: "0px 2px 4px black" }}>{line.player.name}</text>
-                                        </g>
-                                    </g>
-                                );
-                            })}
-                        </svg>
-                    </div>
-                </div>
-            );
-        }
-
         function TopNationsChart({ globalHistory, onNavigate }) {
             const [range, setRange] = useState(10);
             const [selectedLineId, setSelectedLineId] = useState(null);
@@ -755,13 +450,15 @@
             
             const filteredHistory = globalHistory.filter(h => h.isMajorPlus);
             const historyData = filteredHistory.slice(range === 'all' ? 0 : -range);
-            if (historyData.length < 1) return <p className="text-royal-300 text-sm mt-4">Not enough Major+ tournament history to generate a graph.</p>;
+            if (!historyData || historyData.length < 1) return <p className="text-royal-300 text-sm mt-4">Not enough Major+ tournament history to generate a graph.</p>;
 
             const includedNations = new Set();
             historyData.forEach(h => {
-                h.standings.forEach(s => {
-                    if (s.nationality) includedNations.add(s.nationality);
-                });
+                if (h && h.standings) {
+                    h.standings.forEach(s => {
+                        if (s && s.nationality) includedNations.add(s.nationality);
+                    });
+                }
             });
 
             let maxPointsVal = 10;
@@ -773,12 +470,14 @@
                 historyData.forEach((h, k) => {
                     let pts = 0;
                     let hasPlayer = false;
-                    h.standings.forEach(s => { 
-                        if (s.nationality === nat) {
-                            pts += s.pts; 
-                            hasPlayer = true;
-                        }
-                    });
+                    if (h && h.standings) {
+                        h.standings.forEach(s => { 
+                            if (s && s.nationality === nat) {
+                                pts += (s.pts || 0); 
+                                hasPlayer = true;
+                            }
+                        });
+                    }
                     
                     if (hasPlayer) hasDebuted = true;
                     if (hasDebuted) {
@@ -909,7 +608,7 @@
                                                     </text>
 
                                                     <circle cx={ptX} cy={ptY} r="20" fill="transparent" />
-                                                    <title>{`${pt.h.tournamentName}\n${line.name}\nPoints: ${pt.pts.toLocaleString()}`}</title>
+                                                    <title>{`${pt.h?.tournamentName || 'Tournament'}\n${line.name}\nPoints: ${pt.pts.toLocaleString()}`}</title>
                                                 </g>
                                             );
                                         })}
@@ -930,6 +629,295 @@
                                             <rect x="-4" y="-4" width="180" height="36" rx="18" fill="#051611" fillOpacity={isHighlighted ? "1" : "0.85"} stroke={line.color} strokeWidth={isHighlighted ? 2 : 1} style={{ filter: isHighlighted ? 'drop-shadow(0 0 8px rgba(255,255,255,0.3))' : 'drop-shadow(0 4px 6px rgba(0,0,0,0.5))' }} />
                                             <text x="12" y="21" fontSize="18" style={{ textShadow: "0px 2px 4px black" }}>{line.flag}</text>
                                             <text x="40" y="19" fill="#f8fafc" fontSize="14" fontWeight="bold" style={{ textShadow: "0px 2px 4px black" }}>{line.name}</text>
+                                        </g>
+                                    </g>
+                                );
+                            })}
+                        </svg>
+                    </div>
+                </div>
+            );
+        }
+
+        function TopPlayersChart({ globalHistory, playersRaw, type, onNavigate }) {
+            const [range, setRange] = useState(10);
+            const [selectedLineId, setSelectedLineId] = useState(null);
+            const [hoveredLineId, setHoveredLineId] = useState(null);
+            
+            const filteredHistory = globalHistory.filter(h => h.isMajorPlus);
+            const historyData = filteredHistory.slice(range === 'all' ? 0 : -range);
+            if (historyData.length < 1) return <p className="text-royal-300 text-sm mt-4">Not enough Major+ tournament history to generate a graph.</p>;
+
+            const getVal = (s) => {
+                if (type === 'rank') return s.rank;
+                return s.pts;
+            };
+
+            const includedPlayerIds = new Set();
+            if (type === 'rank' || type === 'points') {
+                historyData.forEach(h => {
+                    if (h.standings) {
+                        h.standings.forEach(s => {
+                            if (s.rank <= 12) includedPlayerIds.add(s.id);
+                        });
+                    }
+                });
+            }
+
+            const lines = [];
+            Array.from(includedPlayerIds).forEach(pid => {
+                const player = playersRaw.find(p => p.id === pid);
+                if (!player) return;
+
+                const visiblePoints = [];
+                for (let k = 0; k < historyData.length; k++) {
+                    const s = historyData[k].standings.find(st => st.id === pid);
+                    
+                    const prevS = k > 0 ? historyData[k-1].standings.find(st => st.id === pid) : null;
+                    const nextS = k < historyData.length - 1 ? historyData[k+1].standings.find(st => st.id === pid) : null;
+
+                    const isTop12 = s && s.rank <= 12;
+                    const prevTop12 = prevS && prevS.rank <= 12;
+                    const nextTop12 = nextS && nextS.rank <= 12;
+
+                    if (s && (isTop12 || prevTop12 || nextTop12)) {
+                        visiblePoints.push({ k, s, h: historyData[k] });
+                    }
+                }
+
+                const segments = [];
+                let currentSegment = [];
+                for (let i = 0; i < visiblePoints.length; i++) {
+                    if (currentSegment.length === 0) {
+                        currentSegment.push(visiblePoints[i]);
+                    } else {
+                        if (visiblePoints[i].k === currentSegment[currentSegment.length - 1].k + 1) {
+                            currentSegment.push(visiblePoints[i]);
+                        } else {
+                            segments.push(currentSegment);
+                            currentSegment = [visiblePoints[i]];
+                        }
+                    }
+                }
+                if (currentSegment.length > 0) segments.push(currentSegment);
+
+                if (segments.length > 0) {
+                    lines.push({ player, segments, color: getPlayerColor(player.id) });
+                }
+            });
+
+            const width = 1200;
+            const height = type === 'rank' ? 450 : 600; 
+            const pad = { top: 40, right: 260, bottom: 80, left: type === 'rank' ? 60 : 80 }; 
+
+            let maxPointsVal = 10;
+            const maxRankDisplay = 13; 
+            
+            historyData.forEach(h => { 
+                if (h.standings) {
+                    h.standings.forEach(s => { 
+                        if (includedPlayerIds.has(s.id) && s.rank <= 12) {
+                            if (getVal(s) > maxPointsVal) maxPointsVal = getVal(s);
+                        } 
+                    });
+                }
+            });
+            
+            if (type !== 'rank') maxPointsVal = Math.ceil(maxPointsVal * 1.05);
+
+            const getX = (i) => historyData.length === 1 ? (pad.left + (width - pad.left - pad.right) / 2) : pad.left + (i * ((width - pad.left - pad.right) / (historyData.length - 1)));
+            
+            const getY = (val) => {
+                if (type === 'rank') {
+                    const effVal = val > 12 ? 13 : val;
+                    return pad.top + ((effVal - 1) / 12) * ((height - pad.top - pad.bottom) * 0.75);
+                } else {
+                    return height - pad.bottom - ((val - 0) / (maxPointsVal - 0)) * (height - pad.top - pad.bottom);
+                }
+            };
+
+            lines.forEach(line => {
+                line.paths = line.segments.map(seg => {
+                    return seg.map((pt, i) => `${i === 0 ? 'M' : 'L'} ${getX(pt.k)} ${getY(getVal(pt.s))}`).join(' ');
+                });
+            });
+
+            const endLabels = lines.map(line => {
+                const lastSeg = line.segments[line.segments.length - 1];
+                const endPt = lastSeg[lastSeg.length - 1];
+                const rawY = getY(getVal(endPt.s));
+                return { id: line.player.id, targetY: rawY, currentY: rawY, endX: getX(endPt.k) };
+            });
+
+            const LABEL_HEIGHT = 30; 
+            for (let iter = 0; iter < 40; iter++) {
+                let moved = false;
+                for (let i = 0; i < endLabels.length - 1; i++) {
+                    for (let j = i + 1; j < endLabels.length; j++) {
+                        if (Math.abs(endLabels[i].endX - endLabels[j].endX) < 180) {
+                            const diff = endLabels[j].currentY - endLabels[i].currentY;
+                            if (diff >= 0 && diff < LABEL_HEIGHT) {
+                                const overlap = LABEL_HEIGHT - diff;
+                                endLabels[i].currentY -= overlap / 2;
+                                endLabels[j].currentY += overlap / 2;
+                                moved = true;
+                            } else if (diff < 0 && diff > -LABEL_HEIGHT) {
+                                const overlap = LABEL_HEIGHT + diff;
+                                endLabels[i].currentY += overlap / 2;
+                                endLabels[j].currentY -= overlap / 2;
+                                moved = true;
+                            }
+                        }
+                    }
+                }
+                endLabels.sort((a, b) => a.currentY - b.currentY);
+                if (!moved) break;
+            }
+            
+            const labelPositions = {};
+            endLabels.forEach(el => {
+                if (el.currentY < pad.top - 15) el.currentY = pad.top - 15;
+                if (el.currentY > height - pad.bottom + 40) el.currentY = height - pad.bottom + 40;
+                labelPositions[el.id] = el.currentY;
+            });
+
+            const sortedLines = [...lines].sort((a, b) => {
+                if (a.player.id === selectedLineId || a.player.id === hoveredLineId) return 1;
+                if (b.player.id === selectedLineId || b.player.id === hoveredLineId) return -1;
+                return 0;
+            });
+
+            let metricLabel = 'Points';
+
+            return (
+                <div className="w-full">
+                    <div className="flex justify-between items-center mb-6">
+                        <div className="flex gap-2">
+                            <button onClick={() => setRange(10)} className={`px-4 py-1.5 rounded-lg text-sm font-bold transition-colors ${range === 10 ? 'bg-gold-500 text-royal-950' : 'bg-royal-800 text-royal-300 hover:text-white'}`}>Last 10</button>
+                            <button onClick={() => setRange(20)} className={`px-4 py-1.5 rounded-lg text-sm font-bold transition-colors ${range === 20 ? 'bg-gold-500 text-royal-950' : 'bg-royal-800 text-royal-300 hover:text-white'}`}>Last 20</button>
+                            <button onClick={() => setRange('all')} className={`px-4 py-1.5 rounded-lg text-sm font-bold transition-colors ${range === 'all' ? 'bg-gold-500 text-royal-950' : 'bg-royal-800 text-royal-300 hover:text-white'}`}>All Time</button>
+                        </div>
+                        {selectedLineId && (
+                            <button onClick={() => setSelectedLineId(null)} className="text-sm font-medium text-gold-500 hover:text-white px-3 py-1 bg-royal-800 rounded-md border border-royal-700 transition-colors">Clear Selection</button>
+                        )}
+                    </div>
+                    
+                    <div className="w-full bg-royal-900/50 rounded-xl border border-royal-700 pb-2 relative overflow-hidden">
+                        <svg viewBox={`0 0 ${width} ${height}`} className="w-full h-auto overflow-visible font-sans">
+                            <defs>
+                                {lines.map(line => (
+                                    <clipPath id={`clip-${type}-${line.player.id}`} key={`clip-${line.player.id}`}>
+                                        <circle cx="14" cy="14" r="14" />
+                                    </clipPath>
+                                ))}
+                            </defs>
+
+                            {/* Heavy Gridlines */}
+                            {type === 'rank' ? (
+                                <>
+                                    {[...Array(12)].map((_, i) => {
+                                        const r = i + 1;
+                                        const yPos = pad.top + (i / 11) * ((height - pad.top - pad.bottom) * 0.75);
+                                        return (
+                                            <g key={`grid-${i}`}>
+                                                <line x1={pad.left} y1={yPos} x2={width - pad.right + 20} y2={yPos} stroke="#13382d" strokeWidth="1" strokeDasharray="4 4" />
+                                                <text x={pad.left - 15} y={yPos} fill="#789e90" fontSize="12" fontWeight="bold" textAnchor="end" alignmentBaseline="middle">#{r}</text>
+                                            </g>
+                                        );
+                                    })}
+                                    <g>
+                                        <rect x={pad.left} y={getY(13) - 20} width={width - pad.left - pad.right + 20} height="40" fill="#051611" opacity="0.6" />
+                                        <line x1={pad.left} y1={getY(13)} x2={width - pad.right + 20} y2={getY(13)} stroke="#ef4444" strokeWidth="1" strokeDasharray="8 4" opacity="0.5" />
+                                        <text x={pad.left - 15} y={getY(13)} fill="#ef4444" fontSize="12" fontWeight="bold" textAnchor="end" alignmentBaseline="middle" opacity="0.8">Drop</text>
+                                    </g>
+                                </>
+                            ) : (
+                                (() => {
+                                    const step = Math.max(10, Math.ceil(maxPointsVal / 15)); 
+                                    const yLines = [];
+                                    for(let v = 0; v <= maxPointsVal; v += step) yLines.push(v);
+                                    return yLines.map((p, i) => (
+                                        <g key={`grid-${i}`}>
+                                            <line x1={pad.left} y1={getY(p)} x2={width - pad.right + 20} y2={getY(p)} stroke="#13382d" strokeWidth="1" strokeDasharray="4 4" />
+                                            <text x={pad.left - 15} y={getY(p)} fill="#789e90" fontSize="12" fontWeight="bold" textAnchor="end" alignmentBaseline="middle">{p.toLocaleString()}</text>
+                                        </g>
+                                    ));
+                                })()
+                            )}
+                            
+                            {/* Lines */}
+                            {sortedLines.map((line) => {
+                                const isHighlighted = selectedLineId === line.player.id || hoveredLineId === line.player.id;
+                                const isFaded = (selectedLineId || hoveredLineId) && !isHighlighted;
+                                return line.paths.map((pStr, pIdx) => (
+                                    <path 
+                                        key={`path-${line.player.id}-${pIdx}`} 
+                                        d={pStr} fill="none" stroke={line.color} 
+                                        strokeWidth={isHighlighted ? 6 : 3} 
+                                        opacity={isFaded ? 0.15 : 0.9} 
+                                        strokeLinejoin="round" strokeLinecap="round" 
+                                        style={{ transition: 'stroke-width 0.2s ease, opacity 0.2s ease' }}
+                                        className="cursor-pointer"
+                                        onClick={() => setSelectedLineId(line.player.id === selectedLineId ? null : line.player.id)}
+                                        onMouseEnter={() => setHoveredLineId(line.player.id)}
+                                        onMouseLeave={() => setHoveredLineId(null)}
+                                    />
+                                ));
+                            })}
+                            
+                            {/* Dots and Labels */}
+                            {sortedLines.map((line) => {
+                                const isHighlighted = selectedLineId === line.player.id || hoveredLineId === line.player.id;
+                                const isFaded = (selectedLineId || hoveredLineId) && !isHighlighted;
+                                
+                                const lastSeg = line.segments[line.segments.length - 1];
+                                const endPt = lastSeg[lastSeg.length - 1];
+                                const endX = getX(endPt.k);
+                                const endY = getY(getVal(endPt.s));
+                                const adjY = labelPositions[line.player.id];
+
+                                return (
+                                    <g key={`overlay-${line.player.id}`} style={{ transition: 'opacity 0.2s ease' }} opacity={isFaded ? 0.2 : 1}>
+                                        {/* Plotted points */}
+                                        {line.segments.map((seg, sIdx) => seg.map((pt, i) => {
+                                            const ptX = getX(pt.k);
+                                            const ptY = getY(getVal(pt.s));
+                                            const isDropPoint = type === 'rank' && pt.s.rank > 12;
+                                            
+                                            return (
+                                                <g key={`pt-${line.player.id}-${sIdx}-${i}`} className="group cursor-crosshair">
+                                                    <circle cx={ptX} cy={ptY} r={isHighlighted ? "6" : "5"} fill="#051611" stroke={line.color} strokeWidth={isHighlighted ? 4 : 2} style={{ transition: 'r 0.2s ease, stroke-width 0.2s ease' }} />
+                                                    
+                                                    <text x={ptX} y={ptY - 15} fill={isDropPoint ? "#ef4444" : line.color} fontSize="12" fontWeight="900" textAnchor="middle" stroke="#051611" strokeWidth="4" paintOrder="stroke" className={isDropPoint ? "opacity-90" : "opacity-0 group-hover:opacity-100"} style={{ transition: 'opacity 0.2s ease' }}>
+                                                        {type === 'rank' ? `#${pt.s.rank}` : pt.s.pts.toLocaleString()}
+                                                    </text>
+
+                                                    <circle cx={ptX} cy={ptY} r="20" fill="transparent" />
+                                                    <title>{`${pt.h?.tournamentName || 'Tournament'}\n${line.player.name}\nRank: #${pt.s.rank}\nPoints: ${pt.s.pts.toLocaleString()}`}</title>
+                                                </g>
+                                            );
+                                        }))}
+
+                                        {/* Connecting Line if Label moved */}
+                                        {Math.abs(adjY - endY) > 2 && (
+                                            <path d={`M ${endX} ${endY} C ${endX + 10} ${endY}, ${endX + 10} ${adjY}, ${endX + 20} ${adjY}`} fill="none" stroke={line.color} strokeWidth="2" opacity="0.6" strokeDasharray="3 3" />
+                                        )}
+
+                                        {/* Interactive Inline Profile Label */}
+                                        <g 
+                                            transform={`translate(${endX + 20}, ${adjY - 14})`} 
+                                            className="cursor-pointer"
+                                            onClick={(e) => { e.stopPropagation(); onNavigate('players', line.player.id); }}
+                                            onMouseEnter={() => setHoveredLineId(line.player.id)}
+                                            onMouseLeave={() => setHoveredLineId(null)}
+                                        >
+                                            <rect x="-4" y="-4" width="180" height="36" rx="18" fill="#051611" fillOpacity={isHighlighted ? "1" : "0.85"} stroke={line.color} strokeWidth={isHighlighted ? 2 : 1} style={{ filter: isHighlighted ? 'drop-shadow(0 0 8px rgba(255,255,255,0.3))' : 'drop-shadow(0 4px 6px rgba(0,0,0,0.5))' }} />
+                                            {line.player.imageUrl ? (
+                                                <image href={line.player.imageUrl} x="0" y="0" width="28" height="28" clipPath={`url(#clip-${type}-${line.player.id})`} preserveAspectRatio="xMidYMid slice" />
+                                            ) : (
+                                                <circle cx="14" cy="14" r="14" fill="#0a241c" />
+                                            )}
+                                            <text x="36" y="19" fill="#f8fafc" fontSize="14" fontWeight="bold" style={{ textShadow: "0px 2px 4px black" }}>{line.player.name}</text>
                                         </g>
                                     </g>
                                 );
@@ -1688,10 +1676,6 @@
                                     </p>
                                     <IndividualPlayerChart history={rankingHistory} type="points" filterPlayed={true} totalPlayersCount={players.length} />
                                 </div>
-                                <div className="md:col-span-2 lg:col-span-3 bg-royal-900 p-6 rounded-xl border border-royal-800 shadow-md">
-                                    <h2 className="text-2xl font-bold text-white flex items-center gap-2 mb-6"><BarChart2 className="text-gold-500"/> Career Points Accumulation</h2>
-                                    <IndividualPlayerChart history={rankingHistory} type="careerPoints" filterPlayed={true} totalPlayersCount={players.length} />
-                                </div>
                             </div>
                         </>
                     )}
@@ -1801,12 +1785,13 @@
             
             const tierConf = TOURNAMENT_TIERS[tier];
             
+            // Dynamic Size Availability based on Tier Rules
             const allowedSizes = useMemo(() => {
                 if (tier === 'finals') return [8];
                 if (tier === 'grand_slam') return [64];
                 if (tier === 'major') return [32, 64];
                 if (tier === 'pro') return [16, 32, 64];
-                return [8, 16, 32, 64]; 
+                return [8, 16, 32, 64]; // Challenger
             }, [tier]);
 
             useEffect(() => { 
@@ -1980,8 +1965,8 @@
 
                         <div className={`grid ${reqAuto > 0 ? 'md:grid-cols-2' : 'grid-cols-1'} gap-8`}>
                             {reqAuto > 0 && (
-                                <div className="flex flex-col gap-6 h-[500px]">
-                                    <div className="flex flex-col flex-1 min-h-0">
+                                <div className="flex flex-col gap-6">
+                                    <div className="flex flex-col h-[400px]">
                                         <div className="flex justify-between items-center mb-4 shrink-0">
                                             <div className="flex items-center gap-3">
                                                 <h3 className="font-bold text-lg text-white">Auto Qualifiers (Top {reqAuto})</h3>
@@ -2018,7 +2003,7 @@
                                     </div>
 
                                     {withdrawnPlayers.length > 0 && (
-                                        <div className="flex flex-col h-[150px] shrink-0">
+                                        <div className="flex flex-col flex-1 min-h-[150px]">
                                             <h3 className="font-bold text-royal-300 mb-2 text-xs uppercase tracking-widest shrink-0">Withdrawn / Skipped</h3>
                                             <div className="bg-royal-950/50 rounded-lg p-2 flex-1 overflow-y-auto border border-royal-800/50 space-y-1">
                                                 {withdrawnPlayers.map(p => (
@@ -2036,7 +2021,7 @@
                                 </div>
                             )}
 
-                            <div className="flex flex-col gap-6 h-[500px]">
+                            <div className="flex flex-col h-[624px]">
                                 <div className="flex justify-between items-center mb-4 shrink-0">
                                     <h3 className="font-bold text-lg text-white">{reqAuto === 0 ? 'Participants' : (reqWc === 0 ? 'Alternates / Standby' : 'Select Wildcards')}</h3>
                                     <div className="flex gap-2 items-center flex-wrap justify-end">
@@ -2058,7 +2043,7 @@
                                     </div>
                                 </div>
                                 
-                                <div className="bg-royal-950 rounded-lg p-2 flex-1 flex flex-col border border-royal-800 min-h-0">
+                                <div className="bg-royal-950 rounded-lg p-2 flex-1 flex flex-col border border-royal-800">
                                     <div className="relative mb-2 shrink-0">
                                         <input 
                                             type="text" 
@@ -2069,7 +2054,7 @@
                                         />
                                         <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-royal-400" />
                                     </div>
-                                    <div className="overflow-y-auto space-y-1 pr-1 flex-1 min-h-0">
+                                    <div className="overflow-y-auto space-y-1 pr-1 flex-1">
                                         {filteredRemaining.map(p => { 
                                             const isS = selectedWildcards.includes(p.id); 
                                             const isDisabled = reqWc === 0 || (!isS && selectedWildcards.length >= reqWc);
@@ -2352,7 +2337,7 @@
                                 {matchH2H.total > 0 ? (
                                     <div className="text-center mb-8">
                                         <div className="inline-block bg-royal-950 border border-royal-800 rounded-full px-6 py-2 text-sm font-medium text-royal-200">
-                                            Head-to-Head: <span className="text-white font-bold ml-2">{getPlayer(resolvingMatch.p1).name} <span className="mx-1" style={{ color: tierConf.hex }}>{matchH2H.p1Wins} - {matchH2H.p2Wins}</span> {getPlayer(resolvingMatch.p2).name}</span>
+                                            Head-to-Head: <span className="text-white font-bold ml-2 cursor-pointer hover:underline" onClick={() => { setResolvingMatch(null); onNavigate('players', resolvingMatch.p1); }}>{getPlayer(resolvingMatch.p1).name}</span> <span className="mx-1" style={{ color: tierConf.hex }}>{matchH2H.p1Wins} - {matchH2H.p2Wins}</span> <span className="text-white font-bold cursor-pointer hover:underline" onClick={() => { setResolvingMatch(null); onNavigate('players', resolvingMatch.p2); }}>{getPlayer(resolvingMatch.p2).name}</span>
                                         </div>
                                     </div>
                                 ) : (
@@ -2382,11 +2367,11 @@
                                                         <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5 bg-black/40 px-2 py-1 rounded-full">{imgs.map((_, i) => <div key={i} className={`w-2 h-2 rounded-full ${i === iIdx ? '' : 'bg-white/40'}`} style={{ backgroundColor: i === iIdx ? tierConf.hex : undefined }} />)}</div></>
                                                     )}
                                                 </div>
-                                                <h3 className="text-3xl font-black text-white uppercase text-center mb-1 flex items-center justify-center gap-2">
+                                                <h3 className="text-3xl font-black text-white uppercase text-center mb-1 flex items-center justify-center gap-2 cursor-pointer hover:text-gold-400" onClick={() => { setResolvingMatch(null); onNavigate('players', pid); }}>
                                                     {getSeedText(tournament, pid) && <span className="text-xl text-royal-400 font-mono tracking-tighter">{getSeedText(tournament, pid)}</span>}
                                                     {p.name}
                                                 </h3>
-                                                <div className="font-medium mb-3 flex items-center justify-center gap-2" style={{ color: tierConf.hex }}><span className="text-2xl">{getFlag(p.nationality)}</span> {getCountryName(p.nationality)}</div>
+                                                <div className="font-medium mb-3 flex items-center justify-center gap-2" style={{ color: tierConf.hex }}><span className="text-2xl cursor-pointer hover:scale-110 transition-transform" onClick={() => { setResolvingMatch(null); onNavigate('nations', null, null, p.nationality); }}>{getFlag(p.nationality)}</span> <span className="cursor-pointer hover:underline" onClick={() => { setResolvingMatch(null); onNavigate('nations', null, null, p.nationality); }}>{getCountryName(p.nationality)}</span></div>
                                                 {renderRecentForm(pid)}
                                                 <div className="w-full space-y-3 mt-auto">
                                                     <button onClick={() => submitResult(pid, 'close')} className="w-full bg-[#d4af37]/10 hover:bg-[#d4af37]/20 text-[#d4af37] border border-[#d4af37]/50 p-4 rounded-xl font-bold transition-colors">Win (Close Match)</button>
@@ -2798,7 +2783,7 @@
                                 {matchH2H.total > 0 ? (
                                     <div className="text-center mb-8">
                                         <div className="inline-block bg-royal-950 border border-royal-800 rounded-full px-6 py-2 text-sm font-medium text-royal-200">
-                                            Head-to-Head: <span className="text-white font-bold ml-2">{getPlayer(resolvingMatch.p1).name} <span className="mx-1" style={{ color: tierConf.hex }}>{matchH2H.p1Wins} - {matchH2H.p2Wins}</span> {getPlayer(resolvingMatch.p2).name}</span>
+                                            Head-to-Head: <span className="text-white font-bold ml-2 cursor-pointer hover:underline" onClick={() => { setResolvingMatch(null); onNavigate('players', resolvingMatch.p1); }}>{getPlayer(resolvingMatch.p1).name}</span> <span className="mx-1" style={{ color: tierConf.hex }}>{matchH2H.p1Wins} - {matchH2H.p2Wins}</span> <span className="text-white font-bold cursor-pointer hover:underline" onClick={() => { setResolvingMatch(null); onNavigate('players', resolvingMatch.p2); }}>{getPlayer(resolvingMatch.p2).name}</span>
                                         </div>
                                     </div>
                                 ) : (
@@ -2828,11 +2813,11 @@
                                                         <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5 bg-black/40 px-2 py-1 rounded-full">{imgs.map((_, i) => <div key={i} className={`w-2 h-2 rounded-full ${i === iIdx ? '' : 'bg-white/40'}`} style={{ backgroundColor: i === iIdx ? tierConf.hex : undefined }} />)}</div></>
                                                     )}
                                                 </div>
-                                                <h3 className="text-3xl font-black text-white uppercase text-center mb-1 flex items-center justify-center gap-2">
+                                                <h3 className="text-3xl font-black text-white uppercase text-center mb-1 flex items-center justify-center gap-2 cursor-pointer hover:text-gold-400" onClick={() => { setResolvingMatch(null); onNavigate('players', pid); }}>
                                                     {getSeedText(tournament, pid) && <span className="text-xl text-royal-400 font-mono tracking-tighter">{getSeedText(tournament, pid)}</span>}
                                                     {p.name}
                                                 </h3>
-                                                <div className="font-medium mb-3 flex items-center justify-center gap-2" style={{ color: tierConf.hex }}><span className="text-2xl">{getFlag(p.nationality)}</span> {getCountryName(p.nationality)}</div>
+                                                <div className="font-medium mb-3 flex items-center justify-center gap-2" style={{ color: tierConf.hex }}><span className="text-2xl cursor-pointer hover:scale-110 transition-transform" onClick={() => { setResolvingMatch(null); onNavigate('nations', null, null, p.nationality); }}>{getFlag(p.nationality)}</span> <span className="cursor-pointer hover:underline" onClick={() => { setResolvingMatch(null); onNavigate('nations', null, null, p.nationality); }}>{getCountryName(p.nationality)}</span></div>
                                                 {renderRecentForm(pid)}
                                                 <div className="w-full space-y-3 mt-auto">
                                                     <button onClick={() => submitResult(pid, 'close')} className="w-full bg-[#d4af37]/10 hover:bg-[#d4af37]/20 text-[#d4af37] border border-[#d4af37]/50 p-4 rounded-xl font-bold transition-colors">Win (Close Match)</button>
