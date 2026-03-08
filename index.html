@@ -3146,8 +3146,7 @@
                             {activeTab === 'nations' && !selectedNationCode && <NationsView players={players} playersRaw={playersRaw} tournaments={tournaments} onNavigate={navigate} />}
                             {activeTab === 'nations' && selectedNationCode && <NationProfile code={selectedNationCode} players={players} onBack={() => navigate('nations')} onNavigate={navigate} />}
                             {activeTab === 'players' && !selectedPlayerId && <PlayersView players={players} onSelectPlayer={handlePlayerSelect} db={db} appId={appId} />}
-                            {activeTab === 'players' && selectedPlayerId && <PlayerProfile player={players.find(p => p.id === selectedPlayerId)} players={players} onBack={() => navigateTo('players')} tournaments={tournaments} db={db} appId={appId} onNavigate={navigate} />}
-                            {activeTab === 'tournaments' && !selectedTournamentId && <TournamentsView tournaments={tournaments} onSelect={(id) => navigate('tournaments', null, id)} onCreate={() => navigateTo('create_tournament')} />}
+                            {activeTab === 'players' && selectedPlayerId && <PlayerProfile player={players.find(p => p.id === selectedPlayerId)} players={players} playersRaw={playersRaw} onBack={() => navigateTo('players')} tournaments={tournaments} db={db} appId={appId} onNavigate={navigate} />}                            {activeTab === 'tournaments' && !selectedTournamentId && <TournamentsView tournaments={tournaments} onSelect={(id) => navigate('tournaments', null, id)} onCreate={() => navigateTo('create_tournament')} />}
                             {activeTab === 'tournaments' && selectedTournamentId && (() => {
                                 const t = tournaments.find(t => t.id === selectedTournamentId);
                                 if (!t) return null;
@@ -3167,3 +3166,4 @@
     </script>
 </body>
 </html>
+
