@@ -2457,8 +2457,8 @@
                                             )}
                                         </div>
                                         <h3 className="text-3xl font-black text-white uppercase text-center mb-1 flex items-center justify-center gap-2 cursor-pointer hover:text-gold-400" onClick={() => { setResolvingMatch(null); onNavigate('players', pid); }}>
-                                            {getSeedText(tournament, pid) && <span className="text-xl text-royal-400 font-mono tracking-tighter">{getSeedText(tournament, pid)}</span>}
                                             {p.name}
+                                            {getSeedText(tournament, pid) && <span className="text-xl text-royal-400 font-mono tracking-tighter ml-2">{getSeedText(tournament, pid)}</span>}
                                         </h3>
                                         <div className="font-medium mb-3 flex items-center justify-center gap-2" style={{ color: tierConf.hex }}><span className="text-2xl cursor-pointer hover:scale-110 transition-transform" onClick={() => { setResolvingMatch(null); onNavigate('nations', null, null, p.nationality); }}>{getFlag(p.nationality)}</span> <span className="cursor-pointer hover:underline" onClick={() => { setResolvingMatch(null); onNavigate('nations', null, null, p.nationality); }}>{getCountryName(p.nationality)}</span></div>
                                         {renderRecentForm(pid)}
@@ -2478,17 +2478,12 @@
                 </div>
             );
         }
-        
+
         function TournamentBracket({ tournament, allTournaments, players, onBack, db, appId, onNavigate }) {
             const [resolvingMatch, setResolvingMatch] = useState(null);
-            const [p1ImgIdx, setP1ImgIdx] = useState(0);
-            const [p2ImgIdx, setP2ImgIdx] = useState(0);
             const [showDelete, setShowDelete] = useState(false);
             
-            useEffect(() => { setP1ImgIdx(0); setP2ImgIdx(0); }, [resolvingMatch]);
-            
             const getPlayer = (id) => players.find(p => p.id === id) || { name: 'TBD', rank: '-', nationality: 'UNK' };
-            const getImages = (p) => (p && p.images && p.images.length > 0) ? p.images : (p && p.imageUrl ? [p.imageUrl] : []);
             
             let parsedBracket = [];
             try { parsedBracket = typeof tournament.bracket === 'string' ? JSON.parse(tournament.bracket) : tournament.bracket; } catch(e){}
@@ -2501,7 +2496,7 @@
 
             const handleMatchClick = (rIdx, mIdx, match) => { 
                 if (tournament.status === 'completed' || !match || !match.p1 || !match.p2 || match.winner) return; 
-                if (match.type === 'bye') return; // Cannot resolve byes
+                if (match.type === 'bye') return; 
                 setResolvingMatch({ roundIndex: rIdx, matchIndex: mIdx, ...match }); 
             };
 
@@ -2532,12 +2527,6 @@
                     onBack();
                     await window.fb.deleteDoc(window.fb.doc(db, 'artifacts', appId, 'public', 'data', 'tournaments', tournament.id));
                 } catch(e) { console.error(e); }
-            };
-
-            const handlePlayerClick = (e, playerId) => {
-                if (tournament.status !== 'completed') return; 
-                e.stopPropagation();
-                if (playerId) onNavigate('players', playerId);
             };
 
             return (
@@ -2583,22 +2572,21 @@
                                             
                                             return (
                                                 <div key={match.id} className="flex-1 flex flex-col justify-center relative py-2">
-                                                    {/* GLOWING BOX LOGIC HERE */}
                                                     <div onClick={() => handleMatchClick(rIdx, mIdx, match)} 
                                                          className={`relative z-10 border-2 rounded-lg transition-all overflow-hidden ${isReady ? 'cursor-pointer hover:scale-105 z-20' : match.winner ? 'border-royal-800' : 'border-royal-800/30 opacity-40'}`} 
                                                          style={{ 
-                                                             background: isReady ? `linear-gradient(${tierConf.hex}2A, ${tierConf.hex}2A), #0a241c` : (match.winner && !isBye ? `linear-gradient(${tierConf.hex}1A, ${tierConf.hex}1A), #051611` : '#051611'),
+                                                             background: isReady ? `linear-gradient(${tierConf.hex}15, ${tierConf.hex}15), #0a241c` : (match.winner && !isBye ? `linear-gradient(${tierConf.hex}0A, ${tierConf.hex}0A), #051611` : '#051611'),
                                                              borderColor: isReady ? tierConf.hex : undefined,
-                                                             boxShadow: isReady ? `0 0 15px ${tierConf.hex}55` : undefined
+                                                             boxShadow: isReady ? `0 0 8px ${tierConf.hex}40` : undefined
                                                          }}>
                                                         <div className={`p-2 flex justify-between items-center border-b border-royal-800/50 ${match.winner === match.p1 && !isBye ? 'bg-black/20' : ''}`}>
                                                             <div className="flex items-center gap-2 overflow-hidden w-full pr-2">
                                                                 {match.p1 ? (
                                                                     <>
                                                                         <img src={p1.images?.[0] || p1.imageUrl || "https://via.placeholder.com/40"} loading="lazy" decoding="async" className="w-5 h-5 rounded-full object-cover border border-royal-700 shrink-0" />
-                                                                        <span onClick={(e) => handlePlayerClick(e, match.p1)} className={`text-sm font-medium flex items-center gap-1 truncate ${match.winner && match.winner !== match.p1 && !isBye ? 'text-royal-500 line-through' : 'text-white'} ${tournament.status === 'completed' ? 'cursor-pointer hover:text-gold-400 hover:underline' : ''}`}>
-                                                                            <span className="text-[10px] text-royal-400 font-mono tracking-tighter mr-0.5">{getSeedText(tournament, match.p1)}</span>
+                                                                        <span onClick={tournament.status === 'completed' ? (e) => { e.stopPropagation(); onNavigate('players', match.p1); } : undefined} className={`text-sm font-medium flex items-center gap-1 truncate ${match.winner && match.winner !== match.p1 && !isBye ? 'text-royal-500 line-through' : 'text-white'} ${tournament.status === 'completed' ? 'cursor-pointer hover:text-gold-400 hover:underline' : ''}`}>
                                                                             {getFlag(p1.nationality)} <span className="truncate">{p1.name}</span>
+                                                                            {getSeedText(tournament, match.p1) && <span className="text-[10px] text-royal-400 font-mono tracking-tighter">{getSeedText(tournament, match.p1)}</span>}
                                                                         </span>
                                                                     </>
                                                                 ) : <span className="text-sm font-medium text-royal-500">TBD</span>}
@@ -2610,9 +2598,9 @@
                                                                 {match.p2 ? (
                                                                     <>
                                                                         <img src={p2.images?.[0] || p2.imageUrl || "https://via.placeholder.com/40"} loading="lazy" decoding="async" className="w-5 h-5 rounded-full object-cover border border-royal-700 shrink-0" />
-                                                                        <span onClick={(e) => handlePlayerClick(e, match.p2)} className={`text-sm font-medium flex items-center gap-1 truncate ${match.winner && match.winner !== match.p2 && !isBye ? 'text-royal-500 line-through' : 'text-white'} ${tournament.status === 'completed' ? 'cursor-pointer hover:text-gold-400 hover:underline' : ''}`}>
-                                                                            <span className="text-[10px] text-royal-400 font-mono tracking-tighter mr-0.5">{getSeedText(tournament, match.p2)}</span>
+                                                                        <span onClick={tournament.status === 'completed' ? (e) => { e.stopPropagation(); onNavigate('players', match.p2); } : undefined} className={`text-sm font-medium flex items-center gap-1 truncate ${match.winner && match.winner !== match.p2 && !isBye ? 'text-royal-500 line-through' : 'text-white'} ${tournament.status === 'completed' ? 'cursor-pointer hover:text-gold-400 hover:underline' : ''}`}>
                                                                             {getFlag(p2.nationality)} <span className="truncate">{p2.name}</span>
+                                                                            {getSeedText(tournament, match.p2) && <span className="text-[10px] text-royal-400 font-mono tracking-tighter">{getSeedText(tournament, match.p2)}</span>}
                                                                         </span>
                                                                     </>
                                                                 ) : (isBye ? <span className="text-sm font-bold text-royal-500 italic tracking-widest">BYE</span> : <span className="text-sm font-medium text-royal-500">TBD</span>)}
@@ -2631,20 +2619,16 @@
                             )})}
                         </div>
                     </div>
+                    <ResolveMatchModal resolvingMatch={resolvingMatch} setResolvingMatch={setResolvingMatch} submitResult={submitResult} handleRandomize={handleRandomize} players={players} allTournaments={allTournaments} tournament={tournament} tierConf={tierConf} onNavigate={onNavigate} />
                 </div>
             );
         }
 
         function SNBInternationalsBracket({ tournament, players, onBack, db, appId, allTournaments, onNavigate }) {
             const [resolvingMatch, setResolvingMatch] = useState(null);
-            const [p1ImgIdx, setP1ImgIdx] = useState(0);
-            const [p2ImgIdx, setP2ImgIdx] = useState(0);
             const [showDelete, setShowDelete] = useState(false);
-            
-            useEffect(() => { setP1ImgIdx(0); setP2ImgIdx(0); }, [resolvingMatch]);
 
             const getPlayer = (id) => players.find(p => p.id === id) || { name: 'TBD', rank: '-', nationality: 'UNK' };
-            const getImages = (p) => (p && p.images && p.images.length > 0) ? p.images : (p && p.imageUrl ? [p.imageUrl] : []);
 
             let groupMatches = [];
             let knockout = [[],[]];
@@ -2732,12 +2716,6 @@
                 } catch(e) { console.error(e); }
             };
 
-            const handlePlayerClick = (e, playerId) => {
-                if (tournament.status !== 'completed') return; 
-                e.stopPropagation();
-                if (playerId) onNavigate('players', playerId);
-            };
-
             const tierKey = getTournamentTier(tournament);
             const tierConf = TOURNAMENT_TIERS[tierKey];
 
@@ -2758,7 +2736,10 @@
                                     <tr key={s.id} className={isGroupStageComplete && idx < 2 ? 'bg-[#059669]/10' : ''}>
                                         <td className="p-3 flex items-center gap-2">
                                             <span className={`w-5 h-5 flex items-center justify-center rounded-full text-xs font-bold ${isGroupStageComplete && idx < 2 ? 'bg-[#059669] text-royal-950' : 'bg-royal-700 text-royal-200'}`}>{idx+1}</span>
-                                            <span onClick={(e) => handlePlayerClick(e, s.id)} className={`truncate ${tournament.status === 'completed' ? 'cursor-pointer hover:text-gold-400 hover:underline' : ''}`}>{getFlag(p.nationality)} {p.name}</span>
+                                            <span onClick={tournament.status === 'completed' ? (e) => { e.stopPropagation(); onNavigate('players', s.id); } : undefined} className={`truncate flex items-center gap-1 ${tournament.status === 'completed' ? 'cursor-pointer hover:text-gold-400 hover:underline' : ''}`}>
+                                                {getFlag(p.nationality)} {p.name}
+                                                {getSeedText(tournament, s.id) && <span className="text-[10px] text-royal-400 font-mono tracking-tighter">{getSeedText(tournament, s.id)}</span>}
+                                            </span>
                                         </td>
                                         <td className="p-3 text-center">{s.wins}-{s.losses}</td>
                                         <td className={`p-3 text-center ${s.tiebreaker > 0 ? 'text-[#059669]' : s.tiebreaker < 0 ? 'text-[#be123c]' : 'text-royal-400'}`}>{s.tiebreaker > 0 ? `+${s.tiebreaker}` : s.tiebreaker}</td>
@@ -2769,7 +2750,13 @@
                                 const p = getPlayer(pid);
                                 return (
                                     <tr key={pid}>
-                                        <td className="p-3 flex items-center gap-2"><span className="w-5 h-5 flex items-center justify-center rounded-full text-xs font-bold bg-royal-700 text-royal-200">-</span> <span onClick={(e) => handlePlayerClick(e, pid)} className={`truncate ${tournament.status === 'completed' ? 'cursor-pointer hover:text-gold-400 hover:underline' : ''}`}>{getFlag(p.nationality)} {p.name}</span></td>
+                                        <td className="p-3 flex items-center gap-2">
+                                            <span className="w-5 h-5 flex items-center justify-center rounded-full text-xs font-bold bg-royal-700 text-royal-200">-</span> 
+                                            <span onClick={tournament.status === 'completed' ? (e) => { e.stopPropagation(); onNavigate('players', pid); } : undefined} className={`truncate flex items-center gap-1 ${tournament.status === 'completed' ? 'cursor-pointer hover:text-gold-400 hover:underline' : ''}`}>
+                                                {getFlag(p.nationality)} {p.name}
+                                                {getSeedText(tournament, pid) && <span className="text-[10px] text-royal-400 font-mono tracking-tighter">{getSeedText(tournament, pid)}</span>}
+                                            </span>
+                                        </td>
                                         <td className="p-3 text-center text-royal-400">0-0</td>
                                         <td className="p-3 text-center text-royal-400">0</td>
                                     </tr>
@@ -2825,18 +2812,18 @@
                                     <div key={match.id} onClick={() => handleMatchClick('group', mIdx, match)} 
                                          className={`border-2 rounded-xl p-3 transition-all overflow-hidden ${isReady ? 'hover:scale-105 cursor-pointer z-20' : 'border-royal-800 opacity-50'}`} 
                                          style={{ 
-                                             background: isReady ? `linear-gradient(${tierConf.hex}2A, ${tierConf.hex}2A), #0a241c` : `linear-gradient(${tierConf.hex}1A, ${tierConf.hex}1A), #051611`,
+                                             background: isReady ? `linear-gradient(${tierConf.hex}15, ${tierConf.hex}15), #0a241c` : `linear-gradient(${tierConf.hex}0A, ${tierConf.hex}0A), #051611`,
                                              borderColor: isReady ? tierConf.hex : undefined,
-                                             boxShadow: isReady ? `0 0 15px ${tierConf.hex}55` : undefined
+                                             boxShadow: isReady ? `0 0 8px ${tierConf.hex}40` : undefined
                                          }}>
                                         <div className="text-xs font-bold text-royal-400 mb-2 uppercase tracking-wider">Group {match.group}</div>
                                         
                                         <div className={`flex justify-between items-center mb-2 ${match.winner === match.p1 ? 'bg-black/20 rounded px-1' : ''}`}>
                                             <div className="flex items-center gap-2 overflow-hidden w-full pr-2">
                                                 <img src={p1.images?.[0] || p1.imageUrl || "https://via.placeholder.com/40"} loading="lazy" decoding="async" className="w-5 h-5 rounded-full object-cover border border-royal-700 shrink-0" />
-                                                <span onClick={(e) => handlePlayerClick(e, match.p1)} className={`text-sm font-medium flex items-center gap-1 truncate ${match.winner && match.winner !== match.p1 ? 'text-royal-500 line-through' : 'text-white'} ${tournament.status === 'completed' ? 'cursor-pointer hover:text-gold-400 hover:underline' : ''}`}>
-                                                    <span className="text-[10px] text-royal-400 font-mono tracking-tighter mr-0.5">{getSeedText(tournament, match.p1)}</span>
+                                                <span onClick={tournament.status === 'completed' ? (e) => { e.stopPropagation(); onNavigate('players', match.p1); } : undefined} className={`text-sm font-medium flex items-center gap-1 truncate ${match.winner && match.winner !== match.p1 ? 'text-royal-500 line-through' : 'text-white'} ${tournament.status === 'completed' ? 'cursor-pointer hover:text-gold-400 hover:underline' : ''}`}>
                                                     {getFlag(p1.nationality)} <span className="truncate">{p1.name}</span>
+                                                    {getSeedText(tournament, match.p1) && <span className="text-[10px] text-royal-400 font-mono tracking-tighter">{getSeedText(tournament, match.p1)}</span>}
                                                 </span>
                                             </div>
                                             {match.winner === match.p1 && <CheckCircle className="w-4 h-4 text-[#059669] shrink-0" />}
@@ -2845,9 +2832,9 @@
                                         <div className={`flex justify-between items-center ${match.winner === match.p2 ? 'bg-black/20 rounded px-1' : ''}`}>
                                             <div className="flex items-center gap-2 overflow-hidden w-full pr-2">
                                                 <img src={p2.images?.[0] || p2.imageUrl || "https://via.placeholder.com/40"} loading="lazy" decoding="async" className="w-5 h-5 rounded-full object-cover border border-royal-700 shrink-0" />
-                                                <span onClick={(e) => handlePlayerClick(e, match.p2)} className={`text-sm font-medium flex items-center gap-1 truncate ${match.winner && match.winner !== match.p2 ? 'text-royal-500 line-through' : 'text-white'} ${tournament.status === 'completed' ? 'cursor-pointer hover:text-gold-400 hover:underline' : ''}`}>
-                                                    <span className="text-[10px] text-royal-400 font-mono tracking-tighter mr-0.5">{getSeedText(tournament, match.p2)}</span>
+                                                <span onClick={tournament.status === 'completed' ? (e) => { e.stopPropagation(); onNavigate('players', match.p2); } : undefined} className={`text-sm font-medium flex items-center gap-1 truncate ${match.winner && match.winner !== match.p2 ? 'text-royal-500 line-through' : 'text-white'} ${tournament.status === 'completed' ? 'cursor-pointer hover:text-gold-400 hover:underline' : ''}`}>
                                                     {getFlag(p2.nationality)} <span className="truncate">{p2.name}</span>
+                                                    {getSeedText(tournament, match.p2) && <span className="text-[10px] text-royal-400 font-mono tracking-tighter">{getSeedText(tournament, match.p2)}</span>}
                                                 </span>
                                             </div>
                                             {match.winner === match.p2 && <CheckCircle className="w-4 h-4 text-[#059669] shrink-0" />}
@@ -2873,18 +2860,18 @@
                                         <div key={match.id} onClick={() => handleMatchClick('sf', mIdx, match)} 
                                              className={`border-2 rounded-xl p-3 transition-all overflow-hidden ${isReady ? 'hover:scale-105 cursor-pointer z-20' : match.winner ? 'border-royal-800' : 'border-dashed border-royal-800/50 opacity-30'}`} 
                                              style={{ 
-                                                 background: isReady ? `linear-gradient(${tierConf.hex}2A, ${tierConf.hex}2A), #0a241c` : (match.winner ? `linear-gradient(${tierConf.hex}1A, ${tierConf.hex}1A), #051611` : '#051611'),
+                                                 background: isReady ? `linear-gradient(${tierConf.hex}15, ${tierConf.hex}15), #0a241c` : (match.winner ? `linear-gradient(${tierConf.hex}0A, ${tierConf.hex}0A), #051611` : '#051611'),
                                                  borderColor: isReady ? tierConf.hex : undefined,
-                                                 boxShadow: isReady ? `0 0 15px ${tierConf.hex}55` : undefined
+                                                 boxShadow: isReady ? `0 0 8px ${tierConf.hex}40` : undefined
                                              }}>
                                             <div className={`flex justify-between items-center mb-2 ${match.winner === match.p1 ? 'bg-black/20 rounded px-1' : ''}`}>
                                                 <div className="flex items-center gap-2 overflow-hidden w-full pr-2">
                                                     {match.p1 ? (
                                                         <>
                                                             <img src={p1.images?.[0] || p1.imageUrl || "https://via.placeholder.com/40"} loading="lazy" decoding="async" className="w-5 h-5 rounded-full object-cover border border-royal-700 shrink-0" />
-                                                            <span onClick={(e) => handlePlayerClick(e, match.p1)} className={`text-sm font-medium flex items-center gap-1 truncate ${match.winner && match.winner !== match.p1 ? 'text-royal-500 line-through' : 'text-white'} ${tournament.status === 'completed' ? 'cursor-pointer hover:text-gold-400 hover:underline' : ''}`}>
-                                                                <span className="text-[10px] text-royal-400 font-mono tracking-tighter mr-0.5">{getSeedText(tournament, match.p1)}</span>
+                                                            <span onClick={tournament.status === 'completed' ? (e) => { e.stopPropagation(); onNavigate('players', match.p1); } : undefined} className={`text-sm font-medium flex items-center gap-1 truncate ${match.winner && match.winner !== match.p1 ? 'text-royal-500 line-through' : 'text-white'} ${tournament.status === 'completed' ? 'cursor-pointer hover:text-gold-400 hover:underline' : ''}`}>
                                                                 {getFlag(p1.nationality)} <span className="truncate">{p1.name}</span>
+                                                                {getSeedText(tournament, match.p1) && <span className="text-[10px] text-royal-400 font-mono tracking-tighter">{getSeedText(tournament, match.p1)}</span>}
                                                             </span>
                                                         </>
                                                     ) : <span className="text-sm font-medium text-royal-500">TBD</span>}
@@ -2896,9 +2883,9 @@
                                                     {match.p2 ? (
                                                         <>
                                                             <img src={p2.images?.[0] || p2.imageUrl || "https://via.placeholder.com/40"} loading="lazy" decoding="async" className="w-5 h-5 rounded-full object-cover border border-royal-700 shrink-0" />
-                                                            <span onClick={(e) => handlePlayerClick(e, match.p2)} className={`text-sm font-medium flex items-center gap-1 truncate ${match.winner && match.winner !== match.p2 ? 'text-royal-500 line-through' : 'text-white'} ${tournament.status === 'completed' ? 'cursor-pointer hover:text-gold-400 hover:underline' : ''}`}>
-                                                                <span className="text-[10px] text-royal-400 font-mono tracking-tighter mr-0.5">{getSeedText(tournament, match.p2)}</span>
+                                                            <span onClick={tournament.status === 'completed' ? (e) => { e.stopPropagation(); onNavigate('players', match.p2); } : undefined} className={`text-sm font-medium flex items-center gap-1 truncate ${match.winner && match.winner !== match.p2 ? 'text-royal-500 line-through' : 'text-white'} ${tournament.status === 'completed' ? 'cursor-pointer hover:text-gold-400 hover:underline' : ''}`}>
                                                                 {getFlag(p2.nationality)} <span className="truncate">{p2.name}</span>
+                                                                {getSeedText(tournament, match.p2) && <span className="text-[10px] text-royal-400 font-mono tracking-tighter">{getSeedText(tournament, match.p2)}</span>}
                                                             </span>
                                                         </>
                                                     ) : <span className="text-sm font-medium text-royal-500">TBD</span>}
@@ -2923,18 +2910,18 @@
                                         <div key={match.id} onClick={() => handleMatchClick('f', mIdx, match)} 
                                              className={`border-2 rounded-xl p-4 shadow-2xl transition-all overflow-hidden ${isReady ? 'hover:scale-105 cursor-pointer z-20' : match.winner ? 'border-royal-800' : 'border-dashed border-royal-800/50 opacity-30'}`} 
                                              style={{ 
-                                                 background: isReady ? `linear-gradient(${tierConf.hex}2A, ${tierConf.hex}2A), #0a241c` : (match.winner ? `linear-gradient(${tierConf.hex}1A, ${tierConf.hex}1A), #051611` : '#051611'),
+                                                 background: isReady ? `linear-gradient(${tierConf.hex}15, ${tierConf.hex}15), #0a241c` : (match.winner ? `linear-gradient(${tierConf.hex}0A, ${tierConf.hex}0A), #051611` : '#051611'),
                                                  borderColor: isReady ? tierConf.hex : undefined,
-                                                 boxShadow: isReady ? `0 0 15px ${tierConf.hex}80` : undefined
+                                                 boxShadow: isReady ? `0 0 8px ${tierConf.hex}40` : undefined
                                              }}>
                                             <div className={`flex justify-between items-center mb-3 ${match.winner === match.p1 ? 'rounded px-2 py-1' : ''}`} style={{ backgroundColor: match.winner === match.p1 ? `${tierConf.hex}20` : undefined }}>
                                                 <div className="flex items-center gap-2 overflow-hidden w-full pr-2">
                                                     {match.p1 ? (
                                                         <>
                                                             <img src={p1.images?.[0] || p1.imageUrl || "https://via.placeholder.com/40"} loading="lazy" decoding="async" className="w-6 h-6 rounded-full object-cover border border-royal-700 shrink-0" />
-                                                            <span onClick={(e) => handlePlayerClick(e, match.p1)} className={`text-base font-bold flex items-center gap-1 truncate ${match.winner && match.winner !== match.p1 ? 'text-royal-500 line-through' : (match.winner === match.p1 ? '' : 'text-white')} ${tournament.status === 'completed' ? 'cursor-pointer hover:text-gold-400 hover:underline' : ''}`} style={{ color: match.winner === match.p1 ? tierConf.hex : undefined }}>
-                                                                <span className="text-[11px] text-royal-400 font-mono tracking-tighter mr-0.5">{getSeedText(tournament, match.p1)}</span>
+                                                            <span onClick={tournament.status === 'completed' ? (e) => { e.stopPropagation(); onNavigate('players', match.p1); } : undefined} className={`text-base font-bold flex items-center gap-1 truncate ${match.winner && match.winner !== match.p1 ? 'text-royal-500 line-through' : (match.winner === match.p1 ? '' : 'text-white')} ${tournament.status === 'completed' ? 'cursor-pointer hover:text-gold-400 hover:underline' : ''}`} style={{ color: match.winner === match.p1 ? tierConf.hex : undefined }}>
                                                                 {getFlag(p1.nationality)} <span className="truncate">{p1.name}</span>
+                                                                {getSeedText(tournament, match.p1) && <span className="text-[11px] text-royal-400 font-mono tracking-tighter">{getSeedText(tournament, match.p1)}</span>}
                                                             </span>
                                                         </>
                                                     ) : <span className="text-base font-bold text-royal-500">TBD</span>}
@@ -2946,9 +2933,9 @@
                                                     {match.p2 ? (
                                                         <>
                                                             <img src={p2.images?.[0] || p2.imageUrl || "https://via.placeholder.com/40"} loading="lazy" decoding="async" className="w-6 h-6 rounded-full object-cover border border-royal-700 shrink-0" />
-                                                            <span onClick={(e) => handlePlayerClick(e, match.p2)} className={`text-base font-bold flex items-center gap-1 truncate ${match.winner && match.winner !== match.p2 ? 'text-royal-500 line-through' : (match.winner === match.p2 ? '' : 'text-white')} ${tournament.status === 'completed' ? 'cursor-pointer hover:text-gold-400 hover:underline' : ''}`} style={{ color: match.winner === match.p2 ? tierConf.hex : undefined }}>
-                                                                <span className="text-[11px] text-royal-400 font-mono tracking-tighter mr-0.5">{getSeedText(tournament, match.p2)}</span>
+                                                            <span onClick={tournament.status === 'completed' ? (e) => { e.stopPropagation(); onNavigate('players', match.p2); } : undefined} className={`text-base font-bold flex items-center gap-1 truncate ${match.winner && match.winner !== match.p2 ? 'text-royal-500 line-through' : (match.winner === match.p2 ? '' : 'text-white')} ${tournament.status === 'completed' ? 'cursor-pointer hover:text-gold-400 hover:underline' : ''}`} style={{ color: match.winner === match.p2 ? tierConf.hex : undefined }}>
                                                                 {getFlag(p2.nationality)} <span className="truncate">{p2.name}</span>
+                                                                {getSeedText(tournament, match.p2) && <span className="text-[11px] text-royal-400 font-mono tracking-tighter">{getSeedText(tournament, match.p2)}</span>}
                                                             </span>
                                                         </>
                                                     ) : <span className="text-base font-bold text-royal-500">TBD</span>}
@@ -2961,6 +2948,7 @@
                             </div>
                         </div>
                     </div>
+                    <ResolveMatchModal resolvingMatch={resolvingMatch} setResolvingMatch={setResolvingMatch} submitResult={submitResult} handleRandomize={handleRandomize} players={players} allTournaments={allTournaments} tournament={tournament} tierConf={tierConf} onNavigate={onNavigate} />
                 </div>
             );
         }
@@ -3116,6 +3104,7 @@
     </script>
 </body>
 </html>
+
 
 
 
