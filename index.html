@@ -180,44 +180,63 @@
             if (isWinner) {
                 if (tier === 'grand_slam') {
                     return (
-                        <svg width={size} height={size} viewBox="0 0 100 100" className={className} style={{filter: 'drop-shadow(0 10px 15px rgba(0,0,0,0.8))'}}>
+                        <svg width={size} height={size} viewBox="0 -5 100 105" className={className} style={{filter: 'drop-shadow(0 12px 16px rgba(0,0,0,0.8))'}}>
                             {defs}
-                            {/* Back Ribbons (The folds flowing behind the cup) */}
-                            <path d="M 22 25 C 0 35, 5 65, 12 95" fill="none" stroke={c[0]} strokeWidth="4.5" strokeLinecap="round" opacity="0.6" />
-                            <path d="M 78 25 C 100 35, 95 65, 88 95" fill="none" stroke={c[0]} strokeWidth="4.5" strokeLinecap="round" opacity="0.6" />
+                            {/* Deep Background Ribbons */}
+                            <path d="M 15 30 C -10 50, 20 80, 5 100" fill="none" stroke={c[0]} strokeWidth="4.5" opacity="0.6" strokeLinecap="round" />
+                            <path d="M 85 20 C 110 40, 80 80, 95 100" fill="none" stroke={c[2]} strokeWidth="4.5" opacity="0.6" strokeLinecap="round" />
 
-                            {/* Base Tiered Pedestal */}
-                            <polygon points="30,95 70,95 65,85 35,85" fill="url(#chromeDark)" />
-                            <polygon points="35,85 65,85 60,75 40,75" fill="url(#chrome1)" />
-                            <path d="M 40 75 Q 50 65 60 75" fill="url(#chrome2)" />
-                            <rect x="46" y="60" width="8" height="15" fill="url(#chromeDark)" />
+                            {/* Asymmetrical Fractured Pedestal */}
+                            <polygon points="25,95 85,90 75,80 30,85" fill="url(#chromeDark)" />
+                            <polygon points="30,85 75,80 65,70 40,75" fill="url(#chrome1)" />
+                            <polygon points="20,95 40,75 30,85" fill="url(#chrome2)" opacity="0.9" />
+                            <polygon points="85,90 75,80 88,75" fill="#000000" opacity="0.4" />
+                            <rect x="42" y="60" width="14" height="15" fill="url(#chromeDark)" transform="skewX(-15)" />
 
-                            {/* Intricate Handles (Scrolled) */}
-                            <path d="M 30 35 C 5 15, -5 65, 35 60" fill="none" stroke="url(#chromeDark)" strokeWidth="5" strokeLinecap="round" />
-                            <path d="M 30 35 C 5 15, -5 65, 35 60" fill="none" stroke="url(#chrome1)" strokeWidth="2.5" strokeLinecap="round" />
-                            <path d="M 70 35 C 95 15, 105 65, 65 60" fill="none" stroke="url(#chromeDark)" strokeWidth="5" strokeLinecap="round" />
-                            <path d="M 70 35 C 95 15, 105 65, 65 60" fill="none" stroke="url(#chrome1)" strokeWidth="2.5" strokeLinecap="round" />
-
-                            {/* The Main Cup (Deep, heavily faceted) */}
-                            <path d="M 18 25 C 18 65, 35 70, 50 70 C 65 70, 82 65, 82 25 Z" fill="url(#chrome1)" />
-                            {/* Cubist Shading Overlays */}
-                            <path d="M 18 25 C 18 65, 35 70, 50 70 L 50 25 Z" fill="#ffffff" opacity="0.3" />
-                            <polygon points="30,25 45,65 60,25" fill="url(#chrome2)" opacity="0.8" />
-                            <polygon points="40,25 50,55 55,25" fill="#ffffff" opacity="0.5" />
-                            <polygon points="60,25 75,55 82,25" fill="#000000" opacity="0.25" />
-
-                            {/* Ornate Domed Lid */}
-                            <path d="M 15 25 C 15 5, 85 5, 85 25 Z" fill="url(#chrome2)" />
-                            <path d="M 25 25 C 25 12, 75 12, 75 25 Z" fill="url(#chromeDark)" />
-                            <polygon points="46,12 54,12 50,2" fill="url(#goldLight)" />
-                            <circle cx="50" cy="2" r="3" fill="url(#goldLight)" />
+                            {/* Duality Handles - Picasso Asymmetry */}
+                            {/* Left Handle: Smooth, sweeping, organic */}
+                            <path d="M 28 32 C -8 10, -12 65, 35 60" fill="none" stroke="url(#chromeDark)" strokeWidth="5" strokeLinecap="round" />
+                            <path d="M 28 32 C -8 10, -12 65, 35 60" fill="none" stroke="url(#chrome1)" strokeWidth="2" />
                             
-                            {/* Front Ribbons (Organically draping and twisting) */}
-                            <path d="M 25 35 C 10 50, 30 75, 15 98" fill="none" stroke={c[1]} strokeWidth="3.5" strokeLinecap="round" style={{filter: 'drop-shadow(2px 2px 2px rgba(0,0,0,0.4))'}} />
-                            <path d="M 29 35 C 15 50, 35 75, 19 98" fill="none" stroke={c[2]} strokeWidth="3.5" strokeLinecap="round" style={{filter: 'drop-shadow(2px 2px 2px rgba(0,0,0,0.4))'}} />
+                            {/* Right Handle: Jagged, sharp, mechanical */}
+                            <polyline points="70,30 95,15 85,45 105,55 70,62" fill="none" stroke="url(#chrome2)" strokeWidth="4" strokeLinejoin="bevel" />
+                            <polyline points="70,30 95,15 85,45" fill="none" stroke="url(#chromeDark)" strokeWidth="6" strokeLinejoin="bevel" opacity="0.5" />
+
+                            {/* Fractured Cubist Chalice Body */}
+                            {/* Base Anchor Plate */}
+                            <polygon points="20,25 80,30 65,70 35,65" fill="url(#chrome1)" />
                             
-                            <path d="M 75 35 C 90 50, 70 75, 85 98" fill="none" stroke={c[1]} strokeWidth="3.5" strokeLinecap="round" style={{filter: 'drop-shadow(-2px 2px 2px rgba(0,0,0,0.4))'}} />
-                            <path d="M 71 35 C 85 50, 65 75, 81 98" fill="none" stroke={c[2]} strokeWidth="3.5" strokeLinecap="round" style={{filter: 'drop-shadow(-2px 2px 2px rgba(0,0,0,0.4))'}} />
+                            {/* Intersecting Glass/Silver Shards */}
+                            <polygon points="15,40 55,20 60,65 25,60" fill="url(#chrome2)" opacity="0.95" />
+                            <polygon points="45,15 85,45 50,75 30,50" fill="url(#chromeDark)" opacity="0.8" />
+                            <polygon points="35,25 75,50 65,65 40,40" fill="url(#chrome1)" opacity="0.85" />
+                            <polygon points="20,25 45,15 55,20 15,40" fill="#ffffff" opacity="0.4" />
+
+                            {/* Deep Engravings & Etchings */}
+                            <path d="M 25 45 L 45 35 M 30 50 L 55 45 M 35 55 L 60 60" stroke="#1e293b" strokeWidth="1" strokeDasharray="3 1.5" />
+                            <path d="M 65 30 L 75 40 L 65 55" fill="none" stroke="url(#chrome1)" strokeWidth="1.5" />
+
+                            {/* Cubist "Eye" / Center Crest */}
+                            <polygon points="48,32 62,48 48,65 34,48" fill="url(#goldLight)" style={{filter: 'drop-shadow(0 4px 4px rgba(0,0,0,0.5))'}} />
+                            <polygon points="48,32 62,48 48,48" fill="#ffffff" opacity="0.6" />
+                            <polygon points="34,48 48,65 48,48" fill="#b45309" opacity="0.7" />
+                            <circle cx="45" cy="48" r="4" fill="#0f172a" />
+                            <circle cx="46" cy="47" r="1.5" fill="#ffffff" />
+
+                            {/* Shattered Crown Lid */}
+                            <polygon points="15,25 85,30 70,15 30,20" fill="url(#chromeDark)" />
+                            <polygon points="30,20 70,15 65,2 45,8" fill="url(#chrome2)" />
+                            <polygon points="45,8 65,2 55,-8 40,-4" fill="url(#goldLight)" />
+                            <polygon points="40,-4 55,-8 45,-8" fill="#ffffff" opacity="0.8" />
+                            <circle cx="55" cy="-8" r="4" fill="url(#goldLight)" />
+                            
+                            {/* Foreground Ribbons Weaving Through the Shards */}
+                            <path d="M 26 35 C 0 60, 45 75, 18 100" fill="none" stroke={c[1]} strokeWidth="4.5" strokeLinecap="square" style={{filter: 'drop-shadow(3px 4px 4px rgba(0,0,0,0.6))'}} />
+                            <path d="M 72 38 C 95 65, 50 80, 82 100" fill="none" stroke={c[1]} strokeWidth="4.5" strokeLinecap="square" style={{filter: 'drop-shadow(-3px 4px 4px rgba(0,0,0,0.6))'}} />
+                            
+                            {/* Inner ribbon stripe */}
+                            <path d="M 26 35 C 0 60, 45 75, 18 100" fill="none" stroke={c[2]} strokeWidth="1.5" opacity="0.8" />
+                            <path d="M 72 38 C 95 65, 50 80, 82 100" fill="none" stroke={c[2]} strokeWidth="1.5" opacity="0.8" />
                         </svg>
                     );
                 }
@@ -365,14 +384,7 @@
             }
             
             // Fallback for minor tiers or non-major results
-            return (
-                <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 100 100" className={className}>
-                    <path d="M 15 20 C -10 50 30 80 45 75 L 50 50 Z" fill="currentColor" opacity="0.4" />
-                    <polygon points="50,50 85,15 95,40 60,80 45,75" fill="currentColor" />
-                    <polygon points="45,75 60,80 75,95 20,90" fill="currentColor" opacity="0.7" />
-                    <path d="M 10 15 C 40 30 70 5 95 10 L 85 20 C 60 25 30 35 15 20 Z" fill="currentColor" />
-                </svg>
-            );
+            return null;
         };
 
         
@@ -2201,7 +2213,7 @@
                                     <div className={`absolute top-0 left-0 w-full h-1 opacity-50`} style={{ backgroundColor: tierConf?.hex }}></div>
                                     <div className="flex-1">
                                         <h3 className="font-bold text-lg text-white mb-3 flex items-center gap-2 truncate">
-                                            {!isActive && t.status === 'completed' && (
+                                            {['grand_slam', 'finals', 'major'].includes(tierKey) && (
                                                 <DynamicTrophy tier={tierKey} result="Winner" country={t.hostCountry} size={28} className="shrink-0 drop-shadow-md" />
                                             )}
                                             {getFlag(t.hostCountry)} <span className="truncate">{t.name}</span>
@@ -2761,7 +2773,7 @@
                                 <ArrowLeft className="w-4 h-4" /> Back to Tournaments
                             </button>
                             <h1 className="text-2xl md:text-3xl font-bold text-white flex items-center gap-3">
-                                {tournament.status === 'completed' && (
+                                {['grand_slam', 'finals', 'major'].includes(tierKey) && (
                                     <DynamicTrophy tier={tierKey} result="Winner" country={tournament.hostCountry} size={48} className="drop-shadow-lg shrink-0" />
                                 )}
                                 <span className={`${tierConf?.color || 'text-royal-300'} text-sm uppercase tracking-widest border border-current px-2 py-1 rounded shrink-0`}>{tierConf?.name || 'Tournament'}</span>
@@ -2788,7 +2800,6 @@
                                 if (!Array.isArray(round)) return null;
                                 const isFinalRound = rIdx === totalRounds - 1;
                                 const finalMatch = isFinalRound ? round[0] : null;
-                                // Trophy sits at the top ONLY if both slots are empty!
                                 const showHeaderTrophy = isFinalRound && finalMatch && !finalMatch.p1 && !finalMatch.p2;
                                 
                                 return (
@@ -3010,6 +3021,9 @@
                 </div>
             );
 
+            const finalMatch = knockout[1] ? knockout[1][0] : null;
+            const showHeaderTrophy = finalMatch && !finalMatch.p1 && !finalMatch.p2;
+
             return (
                 <div className="h-full flex flex-col pb-20 max-w-6xl mx-auto space-y-8">
                     <div className="flex justify-between items-start md:items-center mb-6">
@@ -3018,15 +3032,12 @@
                                 <ArrowLeft className="w-4 h-4" /> Back to Tournaments
                             </button>
                             <h1 className="text-3xl font-bold text-white flex items-center gap-3">
-                                {tournament.status === 'completed' && (
-                                    <DynamicTrophy tier="finals" result="Winner" country={tournament.hostCountry} size={48} className="drop-shadow-lg shrink-0" />
-                                )}
+                                <DynamicTrophy tier="finals" result="Winner" country={tournament.hostCountry} size={48} className="drop-shadow-lg shrink-0" />
                                 <span className="text-emerald-500 text-sm uppercase tracking-widest border border-emerald-500/50 px-2 py-1 rounded bg-emerald-500/20 shrink-0">SNB Internationals</span>
                                 <span className="text-4xl shrink-0" title={getCountryName(tournament.hostCountry || 'USA')}>{getFlag(tournament.hostCountry || 'USA')}</span>
                                 <span className="truncate">{tournament.name}</span>
                                 {tournament.status === 'completed' && <span className="bg-[#059669]/20 text-[#059669] text-sm px-2 py-1 rounded font-bold uppercase shrink-0">Completed</span>}
                             </h1>
-                            {tournament.description && <p className="text-royal-300 text-sm mt-2 max-w-2xl">{tournament.description}</p>}
                         </div>
                         <div className="mt-4 md:mt-0 shrink-0">
                             {showDelete ? (
@@ -3098,13 +3109,11 @@
                             {knockout.map((round, rIdx) => {
                                 if (!Array.isArray(round)) return null;
                                 const isFinalRound = rIdx === 1;
-                                const finalMatch = isFinalRound ? round[0] : null;
-                                const showHeaderTrophy = isFinalRound && finalMatch && !finalMatch.p1 && !finalMatch.p2;
                                 
                                 return (
                                 <div key={rIdx} className="flex flex-col w-64 shrink-0 mr-12 h-full">
                                     <div className="text-center text-royal-400 font-bold text-sm uppercase tracking-wider mb-4 flex flex-col items-center justify-end min-h-[60px]">
-                                        {showHeaderTrophy && <DynamicTrophy tier="finals" result="Winner" country={tournament.hostCountry} size={48} className="mb-2 drop-shadow-xl opacity-80" />}
+                                        {isFinalRound && showHeaderTrophy && <DynamicTrophy tier="finals" result="Winner" country={tournament.hostCountry} size={48} className="mb-2 drop-shadow-xl opacity-80" />}
                                         <div className="flex items-center justify-center gap-2">
                                             {isFinalRound && !showHeaderTrophy && <Trophy className="w-4 h-4 inline-block mb-0.5 opacity-50" style={{ color: tierConf.hex }} />}
                                             {isFinalRound ? 'Championship' : 'Semifinals'}
@@ -3329,6 +3338,7 @@
     </script>
 </body>
 </html>
+
 
 
 
