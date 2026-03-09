@@ -142,15 +142,30 @@
         
         var getCountryColors = (code) => {
             const map = {
-                'USA': ['#b91c1c', '#ffffff', '#1d4ed8'], 'GBR': ['#032b44', '#ffffff', '#c8102e'],
-                'FRA': ['#002654', '#ffffff', '#ed2939'], 'AUS': ['#012169', '#ffffff', '#e4002b'],
-                'ESP': ['#aa151b', '#f1bf00', '#aa151b'], 'ITA': ['#009246', '#ffffff', '#ce2b37'],
-                'GER': ['#000000', '#dd0000', '#ffcc00'], 'CAN': ['#ff0000', '#ffffff', '#ff0000'],
-                'SUI': ['#ff0000', '#ffffff', '#ff0000'], 'SRB': ['#c6363c', '#0c4076', '#ffffff'],
-                'ARG': ['#75aadb', '#ffffff', '#75aadb'], 'BRA': ['#009c3b', '#ffdf00', '#002776'],
-                'CHN': ['#ee1c25', '#ffff00', '#ee1c25'], 'JPN': ['#ffffff', '#bc002d', '#ffffff'],
-                'MEX': ['#006847', '#ffffff', '#ce1126'], 'CUB': ['#002a8f', '#ffffff', '#cf142b'],
-                'SWE': ['#005293', '#fecb00', '#005293']
+                // North America
+                'USA': ['#b91c1c', '#ffffff', '#1d4ed8'], 'CAN': ['#ff0000', '#ffffff', '#ff0000'], 'MEX': ['#006847', '#ffffff', '#ce1126'],
+                // Europe
+                'GBR': ['#032b44', '#ffffff', '#c8102e'], 'FRA': ['#002654', '#ffffff', '#ed2939'], 'ESP': ['#aa151b', '#f1bf00', '#aa151b'], 
+                'ITA': ['#009246', '#ffffff', '#ce2b37'], 'GER': ['#000000', '#dd0000', '#ffcc00'], 'SUI': ['#ff0000', '#ffffff', '#ff0000'], 
+                'SRB': ['#c6363c', '#0c4076', '#ffffff'], 'SWE': ['#005293', '#fecb00', '#005293'], 'RUS': ['#c6363c', '#ffffff', '#0039a6'],
+                'CRO': ['#c6363c', '#ffffff', '#171796'], 'NED': ['#ae1c28', '#ffffff', '#21468b'], 'BEL': ['#ae1c28', '#ffffff', '#21468b'],
+                'POL': ['#ffffff', '#dc143c', '#ffffff'], 'CZE': ['#ffffff', '#dc143c', '#ffffff'], 'GRE': ['#001489', '#ffffff', '#001489'],
+                'AUT': ['#ed2939', '#ffffff', '#ed2939'], 'POR': ['#006600', '#ff0000', '#ffcc00'], 'DEN': ['#ae1c28', '#ffffff', '#21468b'],
+                'NOR': ['#c60c30', '#ffffff', '#c60c30'], 'FIN': ['#ffffff', '#002f6c', '#ffffff'], 'ROU': ['#002b7f', '#fcd116', '#ce1126'],
+                'BUL': ['#002b7f', '#fcd116', '#ce1126'], 'HUN': ['#ffffff', '#00966e', '#d62612'], 'SVK': ['#ffffff', '#0b4ea2', '#ee1c25'],
+                // South America
+                'ARG': ['#75aadb', '#ffffff', '#75aadb'], 'BRA': ['#009c3b', '#ffdf00', '#002776'], 'CHI': ['#0039a6', '#ffffff', '#d52b1e'],
+                'COL': ['#0039a6', '#ffffff', '#d52b1e'], 'PER': ['#fcd116', '#003893', '#ce1126'], 'URU': ['#d52b1e', '#ffffff', '#d52b1e'],
+                // Asia & Oceania
+                'AUS': ['#012169', '#ffffff', '#e4002b'], 'JPN': ['#ffffff', '#bc002d', '#ffffff'], 'CHN': ['#ee1c25', '#ffff00', '#ee1c25'], 
+                'KOR': ['#ffffff', '#cd2e3a', '#ffffff'], 'IND': ['#ff9933', '#ffffff', '#138808'], 'THA': ['#ed1c24', '#ffffff', '#241d4f'],
+                'TPE': ['#ed1c24', '#ffffff', '#241d4f'], 'KAZ': ['#ffffff', '#000000', '#cd2e3a'], 'UZB': ['#00afaa', '#fce100', '#00afaa'],
+                'NZL': ['#ba0c2f', '#ffffff', '#00205b'], 'INA': ['#ff9933', '#ffffff', '#138808'], 'ISR': ['#0038b8', '#ffffff', '#0038b8'],
+                // Africa
+                'RSA': ['#007749', '#ffb81c', '#e03c31'], 'EGY': ['#007a4d', '#ffffff', '#000000'], 'MAR': ['#ce1126', '#ffffff', '#007a3d'],
+                'TUN': ['#e70013', '#ffffff', '#e70013'], 'ALG': ['#006233', '#ffffff', '#d21034'],
+                // Carribean / Misc
+                'CUB': ['#002a8f', '#ffffff', '#cf142b'], 'PUR': ['#0050f0', '#ffffff', '#ed1c24'], 'DOM': ['#002d62', '#ffffff', '#ce1126']
             };
             return map[code] || ['#94a3b8', '#cbd5e1', '#94a3b8']; 
         };
@@ -1375,9 +1390,10 @@
             });
 
             const width = 1200;
-            // INCREASED HEIGHT: Now 850px to comfortably fit 12 massive profile tags
-            const height = type === 'rank' ? 850 : 600; 
-            const pad = { top: 60, right: 260, bottom: 80, left: type === 'rank' ? 60 : 80 }; 
+            // Tighter rank chart height
+            const height = type === 'rank' ? 700 : 650; 
+            // Give rank chart more bottom padding for dropped labels
+            const pad = { top: 60, right: 260, bottom: type === 'rank' ? 100 : 60, left: type === 'rank' ? 60 : 80 }; 
 
             let maxPointsVal = 10;
             
@@ -1397,10 +1413,10 @@
             
             const getY = (val) => {
                 if (type === 'rank') {
-                    // Pushes the 'Drop' line to the absolute bottom pad
-                    if (val > 12) return pad.top + (height - pad.top - pad.bottom); 
-                    // Spreads Ranks 1-12 over the top 80% of the chart, leaving a large gap before Drop zone
-                    return pad.top + ((val - 1) / 11) * ((height - pad.top - pad.bottom) * 0.80);
+                    // Position 13 is exactly the Drop Line
+                    if (val > 12) return pad.top + (12 / 12) * (height - pad.top - pad.bottom); 
+                    // Spread Ranks 1-12 over the main area
+                    return pad.top + ((val - 1) / 12) * (height - pad.top - pad.bottom);
                 } else {
                     return height - pad.bottom - ((val - 0) / (maxPointsVal - 0)) * (height - pad.top - pad.bottom);
                 }
@@ -1412,43 +1428,60 @@
                 });
             });
 
+            // Initialize endLabels with their true value to ensure perfect sorting hierarchy
             const endLabels = lines.map(line => {
                 const lastSeg = line.segments[line.segments.length - 1];
                 const endPt = lastSeg[lastSeg.length - 1];
-                const rawY = getY(getVal(endPt.s));
-                return { id: line.player.id, targetY: rawY, currentY: rawY, endX: getX(endPt.k) };
+                let rawY = getY(getVal(endPt.s));
+                
+                // Push dropped players UNDER the line
+                if (type === 'rank' && endPt.s.rank > 12) {
+                    rawY += 40;
+                }
+                
+                return { 
+                    id: line.player.id, 
+                    targetY: rawY, 
+                    currentY: rawY, 
+                    endX: getX(endPt.k),
+                    val: getVal(endPt.s)
+                };
             });
 
-            // ENHANCED COLLISION ALGORITHM
-            const LABEL_HEIGHT = 44; // Box size + padding
+            // STRICT HIERARCHY SORT: Pre-sort by actual Rank/Points so high performers stay on top
+            endLabels.sort((a, b) => {
+                if (type === 'points') return b.val - a.val; // Higher points = first
+                return a.val - b.val; // Lower rank (1) = first
+            });
+
+            // ENHANCED COLLISION SWEEP ALGORITHM
+            const LABEL_HEIGHT = 44; 
             for (let iter = 0; iter < 50; iter++) {
                 let moved = false;
                 for (let i = 0; i < endLabels.length - 1; i++) {
                     for (let j = i + 1; j < endLabels.length; j++) {
-                        if (Math.abs(endLabels[i].endX - endLabels[j].endX) < 180) {
+                        // Only resolve collisions if they end on the same X-axis tick
+                        if (Math.abs(endLabels[i].endX - endLabels[j].endX) < 100) {
                             const diff = endLabels[j].currentY - endLabels[i].currentY;
-                            if (diff >= 0 && diff < LABEL_HEIGHT) {
+                            // Because array is sorted, [i] MUST be above [j].
+                            // If diff is less than label height, they overlap and [j] needs to be pushed down.
+                            if (diff < LABEL_HEIGHT) {
                                 const overlap = LABEL_HEIGHT - diff;
                                 endLabels[i].currentY -= overlap / 2;
                                 endLabels[j].currentY += overlap / 2;
-                                moved = true;
-                            } else if (diff < 0 && diff > -LABEL_HEIGHT) {
-                                const overlap = LABEL_HEIGHT + diff;
-                                endLabels[i].currentY += overlap / 2;
-                                endLabels[j].currentY -= overlap / 2;
                                 moved = true;
                             }
                         }
                     }
                 }
-                endLabels.sort((a, b) => a.currentY - b.currentY);
                 if (!moved) break;
             }
             
             const labelPositions = {};
             endLabels.forEach(el => {
-                if (el.currentY < pad.top - 15) el.currentY = pad.top - 15;
-                if (el.currentY > height - pad.bottom + 40) el.currentY = height - pad.bottom + 40;
+                // Soft clamping so we don't squish labels at the extreme edges
+                if (el.currentY < 20) el.currentY = 20; 
+                if (el.currentY > height - 20) el.currentY = height - 20;
                 labelPositions[el.id] = el.currentY;
             });
 
@@ -1486,7 +1519,7 @@
                                 <>
                                     {[...Array(12)].map((_, i) => {
                                         const r = i + 1;
-                                        const yPos = pad.top + (i / 11) * ((height - pad.top - pad.bottom) * 0.80);
+                                        const yPos = pad.top + (i / 12) * (height - pad.top - pad.bottom);
                                         return (
                                             <g key={`grid-${i}`}>
                                                 <line x1={pad.left} y1={yPos} x2={width - pad.right + 20} y2={yPos} stroke="#13382d" strokeWidth="1" strokeDasharray="4 4" />
@@ -1495,7 +1528,7 @@
                                         );
                                     })}
                                     <g>
-                                        <rect x={pad.left} y={getY(13) - 20} width={width - pad.left - pad.right + 20} height="40" fill="#051611" opacity="0.6" />
+                                        <rect x={pad.left} y={getY(13) - 15} width={width - pad.left - pad.right + 20} height="50" fill="#051611" opacity="0.6" />
                                         <line x1={pad.left} y1={getY(13)} x2={width - pad.right + 20} y2={getY(13)} stroke="#ef4444" strokeWidth="1" strokeDasharray="8 4" opacity="0.5" />
                                         <text x={pad.left - 15} y={getY(13)} fill="#ef4444" fontSize="12" fontWeight="bold" textAnchor="end" alignmentBaseline="middle" opacity="0.8">Drop</text>
                                     </g>
@@ -3731,6 +3764,7 @@
     </script>
 </body>
 </html>
+
 
 
 
