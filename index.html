@@ -1894,15 +1894,24 @@
                 const stats = {};
                 players.forEach(p => {
                     const nat = p.nationality || 'UNK';
-                    if (!stats[nat]) stats[nat] = { code: nat, points: 0, bonusPoints: 0, wins: 0, losses: 0, players: 0, titles: 0 };
-                    stats[nat].points += (p.points || 0);
-                    stats[nat].bonusPoints += (p.bonusPoints || 0);
-                    stats[nat].wins += (p.stats?.wins || 0);
-                    stats[nat].losses += (p.stats?.losses || 0);
-                    stats[nat].players += 1;
-                    stats[nat].titles += p.recentTournaments.filter(t => t.result === 'Winner').length;
+                    if (!stats[nat]) stats[nat] = { code: nat, points: 0, bonusPoints: 0, wins: 0, losses: 0, activePlayers: 0, retiredPlayers: 0, titles: 0 };
+                    
+                    if (p.retired) {
+                        stats[nat].retiredPlayers += 1;
+                    } else {
+                        stats[nat].points += (p.points || 0);
+                        stats[nat].bonusPoints += (p.bonusPoints || 0);
+                        stats[nat].wins += (p.stats?.wins || 0);
+                        stats[nat].losses += (p.stats?.losses || 0);
+                        stats[nat].activePlayers += 1;
+                    }
+                    stats[nat].titles += p.recentTournaments?.filter(t => t.result === 'Winner').length || 0;
                 });
-                return Object.values(stats).sort((a,b) => b.points - a.points || b.bonusPoints - a.bonusPoints);
+                
+                return Object.values(stats)
+                    .filter(n => n.activePlayers > 0 || n.retiredPlayers > 0)
+                    .sort((a,b) => b.points - a.points || b.bonusPoints - a.bonusPoints)
+                    .map((n, i) => ({ ...n, rank: i + 1}));
             }, [players]);
 
             return (
@@ -1921,19 +1930,22 @@
                         <div className="overflow-x-auto">
                             <table className="w-full text-left border-collapse">
                                 <thead><tr className="bg-royal-900/80 text-royal-200 text-sm uppercase">
-                                    <th className="p-4 text-center w-16">#</th><th>Nation</th><th className="text-center">Players</th><th className="text-gold-500">Official Points</th><th className="text-center">Titles</th><th className="text-center">W-L</th>
+                                    <th className="p-4 text-center w-16">#</th><th>Nation</th><th className="text-center">Players</th><th className="text-gold-500 text-right">Active Points</th><th className="text-center">All-Time Titles</th><th className="text-center hidden md:table-cell">Active W-L</th>
                                 </tr></thead>
                                 <tbody className="divide-y divide-royal-800/50">{nationStats.map((n, idx) => (
                                     <tr key={n.code} onClick={() => onNavigate('nations', null, null, n.code)} className="hover:bg-royal-800/80 transition-colors cursor-pointer group">
-                                        <td className="p-4 text-center text-royal-400 font-bold">{idx + 1}</td>
-                                        <td className="p-4 font-medium text-white flex items-center gap-3 group-hover:text-gold-500 transition-colors"><span className="text-2xl">{getFlag(n.code)}</span>{getCountryName(n.code)}</td>
-                                        <td className="p-4 text-center text-royal-200">{n.players}</td>
-                                        <td className="p-4 font-bold text-gold-500">
+                                        <td className="p-4 text-center text-royal-400 font-bold text-lg">{idx + 1}</td>
+                                        <td className="p-4 font-bold text-white text-lg flex items-center gap-3 group-hover:text-gold-500 transition-colors"><span className="text-3xl drop-shadow-md">{getFlag(n.code)}</span>{getCountryName(n.code)}</td>
+                                        <td className="p-4 text-center text-royal-200">
+                                            {n.activePlayers}
+                                            {n.retiredPlayers > 0 && <span className="text-xs text-royal-500 block">+{n.retiredPlayers} Ret.</span>}
+                                        </td>
+                                        <td className="p-4 font-black text-gold-500 text-xl text-right">
                                             {n.points.toLocaleString()}
                                             {n.bonusPoints > 0 && <span className="text-emerald-400 text-xs ml-1 font-bold">+{n.bonusPoints}</span>}
                                         </td>
-                                        <td className="p-4 text-center font-bold text-gold-400">{n.titles}</td>
-                                        <td className="p-4 text-center text-royal-200">{n.wins} - {n.losses}</td>
+                                        <td className="p-4 text-center font-bold text-gold-400 text-lg">{n.titles}</td>
+                                        <td className="p-4 text-center text-royal-200 hidden md:table-cell">{n.wins} - {n.losses}</td>
                                     </tr>
                                 ))}</tbody>
                             </table>
@@ -1943,36 +1955,59 @@
             );
         }
 
-        function NationProfile({ code, players, onBack, onNavigate }) {
-            const nationPlayers = useMemo(() => {
-                return players.filter(p => (p.nationality || 'UNK') === code).sort((a,b) => b.points - a.points || b.totalPoints - a.totalPoints);
-            }, [players, code]);
+        function NationProfile({ code, players, onBack, onNavigate, playersRaw, tournaments }) {
+            const { active, retired } = useMemo(() => {
+                const natPlayers = players.filter(p => (p.nationality || 'UNK') === code);
+                const activeList = natPlayers.filter(p => !p.retired).sort((a,b) => b.points - a.points || b.totalPoints - a.totalPoints);
+                
+                // Calculate historical peak stats for retired players in this country
+                const globalHist = (tournaments && playersRaw) ? getGlobalHistory(playersRaw, tournaments) : [];
+                const retiredList = natPlayers.filter(p => p.retired).map(p => {
+                    let peakRank = 9999, peakPoints = 0;
+                    globalHist.forEach(h => {
+                        const s = h.standings?.find(st => st.id === p.id);
+                        if (s) {
+                            if (s.rank > 0 && s.rank < peakRank) peakRank = s.rank;
+                            if (s.pts > peakPoints) peakPoints = s.pts;
+                        }
+                    });
+                    if (peakRank === 9999) peakRank = p.rank || '-';
+                    if (peakPoints === 0) peakPoints = p.points || 0;
+                    return { ...p, peakRank, peakPoints };
+                }).sort((a,b) => b.peakPoints - a.peakPoints);
+
+                return { active: activeList, retired: retiredList };
+            }, [players, code, playersRaw, tournaments]);
 
             const stats = useMemo(() => {
                 let points = 0, bonusPoints = 0, wins = 0, losses = 0, titles = 0;
-                nationPlayers.forEach(p => {
-                    points += (p.points || 0);
-                    bonusPoints += (p.bonusPoints || 0);
-                    wins += (p.stats?.wins || 0);
-                    losses += (p.stats?.losses || 0);
-                    titles += p.recentTournaments.filter(t => t.result === 'Winner').length;
+                active.forEach(p => {
+                    points += (p.points || 0); bonusPoints += (p.bonusPoints || 0);
+                    wins += (p.stats?.wins || 0); losses += (p.stats?.losses || 0);
                 });
-                return { points, bonusPoints, wins, losses, titles, players: nationPlayers.length };
-            }, [nationPlayers]);
+                // Titles belong to the country forever, even if the player retires
+                active.forEach(p => titles += p.recentTournaments?.filter(t => t.result === 'Winner').length || 0);
+                retired.forEach(p => titles += p.recentTournaments?.filter(t => t.result === 'Winner').length || 0);
+
+                return { points, bonusPoints, wins, losses, titles, activeCount: active.length, retiredCount: retired.length };
+            }, [active, retired]);
 
             return (
                 <div className="max-w-5xl mx-auto space-y-6 pb-20">
                     <button onClick={onBack} className="flex items-center gap-2 text-royal-200 hover:text-white"><ArrowLeft size={16}/> Back to Nations</button>
                     
                     <div className="bg-royal-900 rounded-2xl p-8 border border-royal-800 flex flex-col md:flex-row gap-8 relative shadow-lg items-center md:items-start">
-                        <div className="text-8xl">{getFlag(code)}</div>
+                        <div className="text-8xl drop-shadow-lg">{getFlag(code)}</div>
                         <div className="flex-1 text-center md:text-left">
                             <h1 className="text-4xl font-bold text-white mb-6">{getCountryName(code)}</h1>
                             <div className="flex flex-wrap justify-center md:justify-start gap-4">
-                                <div className="bg-royal-950/50 border border-royal-800 p-4 rounded-lg text-center min-w-[100px]"><div className="text-royal-200 font-bold uppercase text-xs tracking-widest mb-1">Players</div><div className="text-2xl font-black text-white">{stats.players}</div></div>
-                                <div className="bg-royal-950/50 border border-royal-800 p-4 rounded-lg text-center min-w-[100px]"><div className="text-royal-200 font-bold uppercase text-xs tracking-widest mb-1">Official Points</div><div className="text-2xl font-black text-gold-500">{stats.points.toLocaleString()} {stats.bonusPoints > 0 && <span className="text-emerald-400 text-sm ml-1">+{stats.bonusPoints}</span>}</div></div>
-                                <div className="bg-royal-950/50 border border-royal-800 p-4 rounded-lg text-center min-w-[100px]"><div className="text-royal-200 font-bold uppercase text-xs tracking-widest mb-1">Titles</div><div className="text-2xl font-black text-gold-400">{stats.titles}</div></div>
-                                <div className="bg-royal-950/50 border border-royal-800 p-4 rounded-lg text-center min-w-[100px]"><div className="text-royal-200 font-bold uppercase text-xs tracking-widest mb-1">W-L</div><div className="text-2xl font-black text-white">{stats.wins}-{stats.losses}</div></div>
+                                <div className="bg-royal-950/50 border border-royal-800 p-4 rounded-lg text-center min-w-[100px]">
+                                    <div className="text-royal-200 font-bold uppercase text-xs tracking-widest mb-1">Players</div>
+                                    <div className="text-2xl font-black text-white">{stats.activeCount} <span className="text-sm font-medium text-royal-400 block -mt-1">+{stats.retiredCount} Ret.</span></div>
+                                </div>
+                                <div className="bg-royal-950/50 border border-royal-800 p-4 rounded-lg text-center min-w-[100px]"><div className="text-royal-200 font-bold uppercase text-xs tracking-widest mb-1">Active Pts</div><div className="text-2xl font-black text-gold-500">{stats.points.toLocaleString()} {stats.bonusPoints > 0 && <span className="text-emerald-400 text-sm ml-1">+{stats.bonusPoints}</span>}</div></div>
+                                <div className="bg-royal-950/50 border border-royal-800 p-4 rounded-lg text-center min-w-[100px]"><div className="text-royal-200 font-bold uppercase text-xs tracking-widest mb-1">All-Time Titles</div><div className="text-2xl font-black text-gold-400">{stats.titles}</div></div>
+                                <div className="bg-royal-950/50 border border-royal-800 p-4 rounded-lg text-center min-w-[100px]"><div className="text-royal-200 font-bold uppercase text-xs tracking-widest mb-1">Active W-L</div><div className="text-2xl font-black text-white">{stats.wins}-{stats.losses}</div></div>
                             </div>
                         </div>
                     </div>
@@ -1982,30 +2017,74 @@
                         <div className="overflow-x-auto">
                             <table className="w-full text-left border-collapse">
                                 <thead>
-                                    <tr className="bg-royal-950/50 text-royal-200 text-sm uppercase tracking-wider">
+                                    <tr className="bg-royal-950/80 text-royal-200 text-sm uppercase tracking-wider border-b border-royal-800">
                                         <th className="p-4 font-semibold w-16 text-center">Nat. Rank</th>
                                         <th className="p-4 font-semibold w-16 text-center">Global Rank</th>
                                         <th className="p-4 font-semibold">Player</th>
-                                        <th className="p-4 font-semibold">Points</th>
+                                        <th className="p-4 font-semibold text-right">Points</th>
                                         <th className="p-4 font-semibold text-center">W-L</th>
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-royal-800">
-                                    {nationPlayers.map((player, idx) => (
+                                    {/* ACTIVE PLAYERS */}
+                                    {active.map((player, idx) => (
                                         <tr key={player.id} onClick={() => onNavigate('players', player.id)} className="hover:bg-royal-800/50 transition-colors cursor-pointer group">
-                                            <td className="p-4 text-center font-bold text-white">{idx + 1}</td>
-                                            <td className="p-4 text-center font-bold text-royal-400">{player.rank}</td>
+                                            <td className="p-4 text-center font-bold text-white text-lg">{idx + 1}</td>
+                                            <td className="p-4 text-center font-bold text-royal-400 text-lg">#{player.rank}</td>
                                             <td className="p-4 font-medium text-white flex items-center gap-3">
-                                                <img src={player.imageUrl || "https://via.placeholder.com/40"} loading="lazy" decoding="async" className="w-10 h-10 rounded-full object-cover border border-royal-700 shrink-0" />
-                                                <div className="group-hover:text-gold-500 transition-colors">{player.name}</div>
+                                                <div className="w-10 h-10 rounded-full overflow-hidden border border-royal-700 bg-black shrink-0">
+                                                    <PlayerMedia url={player.imageUrl || (player.images ? player.images[0] : '')} className="w-full h-full" />
+                                                </div>
+                                                <div className="group-hover:text-gold-500 font-bold text-lg transition-colors">{player.name}</div>
                                             </td>
-                                            <td className="p-4 font-bold text-gold-500">
+                                            <td className="p-4 font-bold text-gold-500 text-right text-lg">
                                                 {player.points.toLocaleString()}
                                                 {player.bonusPoints > 0 && <span className="text-emerald-400 text-xs ml-1 font-bold">+{player.bonusPoints}</span>}
                                             </td>
-                                            <td className="p-4 text-center text-royal-200">{player.stats.wins} - {player.stats.losses}</td>
+                                            <td className="p-4 text-center text-royal-200 font-medium">{player.stats.wins} - {player.stats.losses}</td>
                                         </tr>
                                     ))}
+
+                                    {/* HALL OF FAME SEPARATOR & RETIRED PLAYERS */}
+                                    {retired.length > 0 && (
+                                        <>
+                                            <tr className="bg-royal-950/90 border-t-4 border-royal-800">
+                                                <td colSpan="5" className="p-4 text-center">
+                                                    <div className="inline-flex items-center gap-3">
+                                                        <div className="h-px w-16 bg-royal-700"></div>
+                                                        <span className="text-royal-400 font-bold uppercase tracking-widest text-sm flex items-center gap-2">
+                                                            <Trophy size={16} className="text-royal-500" /> Hall of Fame
+                                                        </span>
+                                                        <div className="h-px w-16 bg-royal-700"></div>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                            {retired.map((player) => (
+                                                <tr key={player.id} onClick={() => onNavigate('players', player.id)} className="hover:bg-royal-800/50 cursor-pointer transition-colors group opacity-80 hover:opacity-100 bg-black/20">
+                                                    <td className="p-4 text-center font-bold text-royal-500 text-lg">-</td>
+                                                    <td className="p-4 text-center">
+                                                        <div className="text-[10px] text-royal-500 uppercase font-bold tracking-widest leading-tight mb-0.5">Peak<br/>Rank</div>
+                                                        <div className="font-bold text-royal-400 group-hover:text-white">#{player.peakRank}</div>
+                                                    </td>
+                                                    <td className="p-4 font-medium text-white flex items-center gap-3">
+                                                        <div className="w-10 h-10 rounded-full overflow-hidden border border-royal-700 bg-black shrink-0 relative">
+                                                            <PlayerMedia url={player.imageUrl || (player.images ? player.images[0] : '')} className="w-full h-full" />
+                                                            <div className="absolute inset-0 bg-black/40 backdrop-grayscale-[0.5]"></div>
+                                                        </div>
+                                                        <div className="group-hover:text-gold-400 font-bold text-lg text-royal-200 transition-colors flex items-center gap-2">
+                                                            {player.name}
+                                                            <span className="text-[9px] bg-[#be123c]/20 text-[#fb7185] px-1.5 py-0.5 rounded uppercase tracking-wider border border-[#be123c]/30 shrink-0">Retired</span>
+                                                        </div>
+                                                    </td>
+                                                    <td className="p-4 font-bold text-royal-300 text-right text-lg">
+                                                        <div className="text-[10px] text-royal-500 uppercase font-bold tracking-widest mb-0.5">Peak Pts</div>
+                                                        {player.peakPoints.toLocaleString()}
+                                                    </td>
+                                                    <td className="p-4 text-center text-royal-500 font-medium">{player.stats.wins} - {player.stats.losses}</td>
+                                                </tr>
+                                            ))}
+                                        </>
+                                    )}
                                 </tbody>
                             </table>
                         </div>
@@ -2100,23 +2179,44 @@
         function DashboardView({ playersRaw, tournaments, onSelectPlayer, players }) {
             const [asOfId, setAsOfId] = useState('');
 
-            const displayPlayers = useMemo(() => {
-                if (!asOfId) return calculatePlayerRankings(playersRaw, tournaments);
+            const { active, retired } = useMemo(() => {
+                const targetT = asOfId ? tournaments.find(t => t.id === asOfId) : null;
+                const filteredTournaments = targetT 
+                    ? tournaments.filter(t => t.status === 'completed' && (t.completedAt || 0) <= (targetT.completedAt || 0))
+                    : tournaments.filter(t => t.status === 'completed');
                 
-                const targetT = tournaments.find(t => t.id === asOfId);
-                if (!targetT) return calculatePlayerRankings(playersRaw, tournaments);
-                
-                // Filter tournaments to only those completed BEFORE or AT the same time as the target
-                const filteredTournaments = tournaments.filter(t => t.status === 'completed' && (t.completedAt || 0) <= (targetT.completedAt || 0));
-                return calculatePlayerRankings(playersRaw, filteredTournaments);
+                const rankedPlayers = calculatePlayerRankings(playersRaw, filteredTournaments);
+                const globalHist = getGlobalHistory(playersRaw, filteredTournaments);
+
+                // Separate active and fix their sequential ranking
+                const activeList = rankedPlayers.filter(p => !p.retired);
+                activeList.forEach((p, i) => p.currentRank = i + 1);
+
+                // Isolate retired and calculate their historical peaks
+                const retiredList = rankedPlayers.filter(p => p.retired).map(p => {
+                    let peakRank = 9999;
+                    let peakPoints = 0;
+                    globalHist.forEach(h => {
+                        const s = h.standings?.find(st => st.id === p.id);
+                        if (s) {
+                            if (s.rank > 0 && s.rank < peakRank) peakRank = s.rank;
+                            if (s.pts > peakPoints) peakPoints = s.pts;
+                        }
+                    });
+                    if (peakRank === 9999) peakRank = p.rank || '-';
+                    if (peakPoints === 0) peakPoints = p.points || 0;
+                    return { ...p, peakRank, peakPoints };
+                }).sort((a, b) => b.peakPoints - a.peakPoints);
+
+                return { active: activeList, retired: retiredList };
             }, [playersRaw, tournaments, asOfId]);
 
             return (
                 <div className="max-w-5xl mx-auto space-y-6 pb-20">
                     <header className="mb-8 flex flex-col md:flex-row md:items-end justify-between gap-6">
                         <div>
-                            <h1 className="text-3xl font-bold text-white">Global Rankings</h1>
-                            <p className="text-royal-300 mt-2">Based on the last 20 Major+ tournament performances.</p>
+                            <h1 className="text-3xl font-bold text-white flex items-center gap-3"><Globe2 size={32} className="text-gold-500"/> Global Rankings</h1>
+                            <p className="text-royal-300 mt-2">Official world tour standings and Hall of Fame legends.</p>
                         </div>
                         <HistoricalTournamentSelect tournaments={tournaments} value={asOfId} onChange={setAsOfId} />
                     </header>
@@ -2124,31 +2224,36 @@
                         <div className="overflow-x-auto">
                             <table className="w-full text-left border-collapse">
                                 <thead>
-                                    <tr className="bg-royal-950/50 text-royal-200 text-sm uppercase tracking-wider">
+                                    <tr className="bg-royal-950/80 text-royal-200 text-sm uppercase tracking-wider border-b border-royal-800">
                                         <th className="p-4 font-semibold w-16 text-center">Rank</th>
                                         <th className="p-4 font-semibold">Player</th>
-                                        <th className="p-4 font-semibold">Points</th>
-                                        <th className="p-4 font-semibold text-center">W-L</th>
-                                        <th className="p-4 font-semibold hidden md:table-cell">Tour Form</th>
-                                        <th className="p-4 font-semibold hidden lg:table-cell">Match Form</th>
+                                        <th className="p-4 font-semibold text-right">Points</th>
+                                        <th className="p-4 font-semibold text-center hidden md:table-cell">W-L</th>
+                                        <th className="p-4 font-semibold hidden lg:table-cell">Form</th>
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-royal-800">
-                                    {displayPlayers.map((player) => (
+                                    {/* ACTIVE PLAYERS */}
+                                    {active.map((player) => (
                                         <tr key={player.id} onClick={() => onSelectPlayer(player.id)} className="hover:bg-royal-800/50 transition-colors cursor-pointer group">
-                                            <td className="p-4 text-center font-bold text-royal-400">{player.rank}</td>
+                                            <td className="p-4 text-center font-bold text-xl text-royal-200 group-hover:text-white">#{player.currentRank}</td>
                                             <td className="p-4 font-medium text-white flex items-center gap-3">
-                                                <img src={player.imageUrl || "https://via.placeholder.com/40"} loading="lazy" decoding="async" className="w-10 h-10 rounded-full object-cover border border-royal-700 shrink-0" />
-                                                <div><div className="group-hover:text-gold-500 transition-colors">{getFlag(player.nationality)} {player.name}</div><div className="text-xs text-royal-300">{getCountryName(player.nationality)}</div></div>
+                                                <div className="w-10 h-10 rounded-full overflow-hidden border border-royal-700 shrink-0 bg-black">
+                                                    <PlayerMedia url={player.imageUrl || (player.images ? player.images[0] : '')} className="w-full h-full" />
+                                                </div>
+                                                <div>
+                                                    <div className="group-hover:text-gold-500 transition-colors font-bold text-lg flex items-center gap-2">{player.name}</div>
+                                                    <div className="text-sm text-royal-400 flex items-center gap-1.5 mt-0.5"><span>{getFlag(player.nationality)}</span> {getCountryName(player.nationality)}</div>
+                                                </div>
                                             </td>
-                                            <td className="p-4 font-bold text-gold-500">
+                                            <td className="p-4 font-black text-gold-500 text-xl text-right">
                                                 {player.points.toLocaleString()}
-                                                {player.bonusPoints > 0 && <span className="text-emerald-400 text-xs ml-1 font-bold">+{player.bonusPoints}</span>}
+                                                {player.bonusPoints > 0 && <span className="text-emerald-400 text-sm ml-1 font-bold">+{player.bonusPoints}</span>}
                                             </td>
-                                            <td className="p-4 text-center text-royal-200">{player.stats.wins} - {player.stats.losses}</td>
-                                            <td className="p-4 hidden md:table-cell">
+                                            <td className="p-4 text-center text-royal-200 font-medium hidden md:table-cell">{player.stats.wins} - {player.stats.losses}</td>
+                                            <td className="p-4 hidden lg:table-cell">
                                                 <div className="flex gap-1.5">
-                                                    {player.recentTournaments.slice(0, 7).map((t, i) => {
+                                                    {player.recentTournaments.slice(0, 5).map((t, i) => {
                                                         let lbl = '';
                                                         if (t.result === 'Winner') lbl = 'W';
                                                         else if (t.result === 'Final' || t.result === 'Finalist') lbl = 'F';
@@ -2166,11 +2271,7 @@
                                                                         'bg-royal-700 text-royal-100';
 
                                                         return (
-                                                            <div 
-                                                                key={i} 
-                                                                title={`${t.tournamentName} (${t.result})`} 
-                                                                className={`w-5 h-5 flex items-center justify-center rounded-sm text-[10px] font-bold ${bgClass}`}
-                                                            >
+                                                            <div key={i} title={`${t.tournamentName} (${t.result})`} className={`w-6 h-6 flex items-center justify-center rounded-sm text-[10px] font-bold ${bgClass}`}>
                                                                 {lbl}
                                                             </div>
                                                         );
@@ -2178,26 +2279,52 @@
                                                     {player.recentTournaments.length === 0 && <span className="text-royal-400 text-xs">-</span>}
                                                 </div>
                                             </td>
-                                            <td className="p-4 hidden lg:table-cell">
-                                                <div className="flex gap-1.5">
-                                                    {player.recentMatches.slice(0, 7).map((m, i) => (
-                                                        <div 
-                                                            key={i} 
-                                                            title={`${m.isWin ? 'Win' : 'Loss'} (${m.type === 'lopsided' ? 'Lopsided' : 'Close'})`} 
-                                                            className={`w-5 h-5 flex items-center justify-center rounded-sm text-[10px] font-bold ${
-                                                                m.isWin 
-                                                                    ? (m.type === 'lopsided' ? 'bg-[#059669] text-[#020b08]' : 'bg-[#059669]/20 text-[#059669] border border-[#059669]/50') 
-                                                                    : (m.type === 'lopsided' ? 'bg-[#be123c] text-white' : 'bg-[#be123c]/20 text-[#fb7185] border border-[#be123c]/50')
-                                                            }`}
-                                                        >
-                                                            {m.isWin ? 'W' : 'L'}
-                                                        </div>
-                                                    ))}
-                                                    {player.recentMatches.length === 0 && <span className="text-royal-400 text-xs">-</span>}
-                                                </div>
-                                            </td>
                                         </tr>
                                     ))}
+
+                                    {/* HALL OF FAME SEPARATOR & RETIRED PLAYERS */}
+                                    {retired.length > 0 && (
+                                        <>
+                                            <tr className="bg-royal-950/90 border-t-4 border-royal-800">
+                                                <td colSpan="5" className="p-4 text-center">
+                                                    <div className="inline-flex items-center gap-3">
+                                                        <div className="h-px w-16 bg-royal-700"></div>
+                                                        <span className="text-royal-400 font-bold uppercase tracking-widest text-sm flex items-center gap-2">
+                                                            <Trophy size={16} className="text-royal-500" /> Hall of Fame
+                                                        </span>
+                                                        <div className="h-px w-16 bg-royal-700"></div>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                            {retired.map((player) => (
+                                                <tr key={player.id} onClick={() => onSelectPlayer(player.id)} className="hover:bg-royal-800/50 cursor-pointer transition-colors group opacity-80 hover:opacity-100 bg-black/20">
+                                                    <td className="p-4 text-center">
+                                                        <div className="text-[10px] text-royal-500 uppercase font-bold tracking-widest leading-tight mb-0.5">Peak Rank</div>
+                                                        <div className="font-bold text-lg text-royal-400 group-hover:text-white">#{player.peakRank}</div>
+                                                    </td>
+                                                    <td className="p-4 font-medium text-white flex items-center gap-3">
+                                                        <div className="w-10 h-10 rounded-full overflow-hidden border border-royal-700 shrink-0 relative bg-black">
+                                                            <PlayerMedia url={player.imageUrl || (player.images ? player.images[0] : '')} className="w-full h-full" />
+                                                            <div className="absolute inset-0 bg-black/40 backdrop-grayscale-[0.5]"></div>
+                                                        </div>
+                                                        <div>
+                                                            <div className="font-bold text-royal-200 text-lg group-hover:text-gold-400 transition-colors flex items-center gap-2">
+                                                                {player.name}
+                                                                <span className="text-[9px] bg-[#be123c]/20 text-[#fb7185] px-1.5 py-0.5 rounded uppercase tracking-wider border border-[#be123c]/30 shrink-0">Retired</span>
+                                                            </div>
+                                                            <div className="text-sm text-royal-500 flex items-center gap-1.5 mt-0.5"><span className="grayscale opacity-70">{getFlag(player.nationality)}</span> {getCountryName(player.nationality)}</div>
+                                                        </div>
+                                                    </td>
+                                                    <td className="p-4 text-right">
+                                                        <div className="text-[10px] text-royal-500 uppercase font-bold tracking-widest mb-0.5">Peak Pts</div>
+                                                        <div className="font-black text-royal-300 text-lg group-hover:text-gold-500 transition-colors">{player.peakPoints.toLocaleString()}</div>
+                                                    </td>
+                                                    <td className="p-4 text-center font-medium text-royal-500 hidden md:table-cell">{player.stats.wins}-{player.stats.losses}</td>
+                                                    <td className="p-4 hidden lg:table-cell"><span className="text-[10px] uppercase font-bold tracking-widest text-royal-600 border border-royal-700 px-2 py-1 rounded">Legend</span></td>
+                                                </tr>
+                                            ))}
+                                        </>
+                                    )}
                                 </tbody>
                             </table>
                         </div>
@@ -3944,6 +4071,7 @@
     </script>
 </body>
 </html>
+
 
 
 
