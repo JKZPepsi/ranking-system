@@ -2214,13 +2214,34 @@
             const [showAddForm, setShowAddForm] = useState(false);
             const [searchQuery, setSearchQuery] = useState('');
 
+            // 1. First, accurately calculate everyone's rank based on points/wins
+            const playersWithRank = useMemo(() => {
+                return [...players].sort((a, b) => {
+                    if (a.points !== b.points) return (b.points || 0) - (a.points || 0);
+                    return (b.stats?.wins || 0) - (a.stats?.wins || 0);
+                }).map((p, i) => ({ ...p, rank: i + 1 }));
+            }, [players]);
+
             const displayedPlayers = useMemo(() => {
-                let filtered = [...players];
+                let filtered = [...playersWithRank];
+                
+                // 2. Filter by Search Query
                 if (searchQuery.trim()) {
-                    filtered = players.filter(p => (p.name || '').toLowerCase().includes(searchQuery.toLowerCase()));
+                    filtered = filtered.filter(p => 
+                        (p.name || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+                        (p.nationality || '').toLowerCase().includes(searchQuery.toLowerCase())
+                    );
                 }
-                return filtered.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
-            }, [players, searchQuery]);
+                
+                // 3. Sort: Active players up top, Retired at the absolute bottom.
+                // Within those two groups, they remain perfectly sorted by their rank.
+                return filtered.sort((a, b) => {
+                    const aRet = !!a.retired;
+                    const bRet = !!b.retired;
+                    if (aRet !== bRet) return aRet ? 1 : -1; // Push retired down
+                    return a.rank - b.rank;
+                });
+            }, [playersWithRank, searchQuery]);
 
             const handleAddPlayer = async (e) => {
                 e.preventDefault(); if (!newPlayerName.trim()) return;
@@ -2228,19 +2249,27 @@
                 try {
                     const validImages = newPlayerImages.map(url => url.trim()).filter(Boolean);
                     const playersRef = window.fb.collection(db, 'artifacts', appId, 'public', 'data', 'players');
-                    await window.fb.addDoc(playersRef, { name: newPlayerName.trim(), nationality: newPlayerNationality || 'UNK', imageUrl: validImages[0] || '', images: validImages, createdAt: Date.now() });
+                    await window.fb.addDoc(playersRef, { 
+                        name: newPlayerName.trim(), 
+                        nationality: newPlayerNationality || 'UNK', 
+                        imageUrl: validImages[0] || '', 
+                        images: validImages, 
+                        createdAt: Date.now(),
+                        retired: false // Default to active when creating
+                    });
                     setNewPlayerName(''); setNewPlayerNationality(''); setNewPlayerImages(['', '', '', '']); setShowAddForm(false);
                 } catch (err) { console.error(err); }
                 setIsAdding(false);
             };
 
             const exportToCSV = () => {
-                const headers = ['Rank', 'Name', 'Nationality', 'Official Points', 'Bonus Points', 'Wins', 'Losses'];
-                const rows = players.map(p => [
-                    p.rank,
+                const headers = ['Rank', 'Name', 'Nationality', 'Status', 'Official Points', 'Bonus Points', 'Wins', 'Losses'];
+                const rows = playersWithRank.map(p => [
+                    p.retired ? '-' : p.rank,
                     `"${p.name}"`,
                     p.nationality || 'UNK',
-                    p.points,
+                    p.retired ? 'Retired' : 'Active',
+                    p.points || 0,
                     p.bonusPoints || 0,
                     p.stats?.wins || 0,
                     p.stats?.losses || 0
@@ -2257,49 +2286,90 @@
             };
 
             return (
-                <div className="max-w-5xl mx-auto space-y-6">
-                    <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-                        <h1 className="text-3xl font-bold text-white">Players</h1>
-                        <div className="flex flex-col md:flex-row gap-2 w-full md:w-auto">
+                <div className="max-w-5xl mx-auto space-y-6 pb-20">
+                    <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
+                        <h1 className="text-3xl font-bold text-white shrink-0">Players</h1>
+                        <div className="flex flex-col md:flex-row gap-2 w-full lg:w-auto">
+                            {/* Search Bar */}
                             <input 
                                 type="text" 
                                 placeholder="Search players..." 
-                                className="bg-royal-950 border border-royal-800 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-gold-500 w-full md:w-56 lg:w-72"
+                                className="bg-royal-950 border border-royal-800 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-gold-500 w-full md:w-64"
                                 value={searchQuery}
                                 onChange={e => setSearchQuery(e.target.value)}
                             />
+                            {/* Actions */}
                             <div className="flex gap-2 w-full md:w-auto">
                                 <button onClick={exportToCSV} className="flex-1 md:flex-none bg-royal-800 px-4 py-2 rounded-lg flex items-center justify-center gap-2 whitespace-nowrap hover:bg-royal-700 transition-colors text-royal-200 hover:text-white"><Download size={16}/> Export CSV</button>
                                 <button onClick={() => setShowAddForm(!showAddForm)} className="flex-1 md:flex-none bg-gold-500 px-4 py-2 rounded-lg flex items-center justify-center gap-2 whitespace-nowrap hover:bg-gold-600 text-royal-950 font-bold transition-colors">{showAddForm ? <X size={20}/> : <Plus size={20}/>} {showAddForm ? 'Cancel' : 'Add Player'}</button>
                             </div>
                         </div>
                     </div>
+
                     {showAddForm && (
-                        <form onSubmit={handleAddPlayer} className="bg-royal-900 p-6 rounded-xl border border-royal-800 space-y-4">
+                        <form onSubmit={handleAddPlayer} className="bg-royal-900 p-6 rounded-xl border border-royal-800 space-y-4 shadow-xl">
                             <div className="grid md:grid-cols-2 gap-4">
-                                <input type="text" placeholder="Name..." required className="bg-royal-950 border border-royal-800 rounded-lg px-4 py-3 text-white" value={newPlayerName} onChange={e => setNewPlayerName(e.target.value)} />
+                                <input type="text" placeholder="Player Name..." required className="bg-royal-950 border border-royal-800 rounded-lg px-4 py-3 text-white" value={newPlayerName} onChange={e => setNewPlayerName(e.target.value)} />
                                 <CountrySelect value={newPlayerNationality} onChange={setNewPlayerNationality} />
                             </div>
-                            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                                {[0,1,2,3].map(i => <input key={i} type="url" placeholder={`Img URL ${i+1}`} className="w-full bg-royal-950 border border-royal-800 rounded-lg px-4 py-3 text-white" value={newPlayerImages[i]} onChange={e => { const ni = [...newPlayerImages]; ni[i] = e.target.value; setNewPlayerImages(ni); }} />)}
-                            </div>
-                            <div className="flex justify-end"><button type="submit" className="bg-gold-500 px-8 py-2.5 rounded-lg font-bold text-royal-950 hover:bg-gold-600 transition-colors">Save Player</button></div>
-                        </form>
-                    )}
-                    <div className="grid md:grid-cols-3 gap-4">{displayedPlayers.map(p => (
-                        <div key={p.id} onClick={() => onSelectPlayer(p.id)} className="bg-royal-900 border border-royal-800 rounded-xl p-5 hover:border-gold-500 cursor-pointer flex flex-col justify-between transition-all hover:scale-[1.02] hover:shadow-lg hover:shadow-gold-500/10">
-                            <div className="flex items-center gap-4">
-                                <img src={p.imageUrl || "https://via.placeholder.com/60"} loading="lazy" decoding="async" className="w-12 h-12 rounded-full object-cover shrink-0 border border-royal-600" />
-                                <div>
-                                    <h3 className="font-bold text-white flex items-center gap-2">{getFlag(p.nationality)} {p.name}</h3>
-                                    <div className="text-xs text-royal-300 mt-0.5">Rank: #{p.rank} • {p.points.toLocaleString()} pts {p.bonusPoints > 0 && <span className="text-emerald-400 font-bold ml-1">+{p.bonusPoints}</span>}</div>
+                            
+                            {/* Visual Media Previews for Add Player Form */}
+                            <div className="bg-royal-950/50 p-4 rounded-xl border border-royal-800 mt-2">
+                                <h3 className="font-bold text-white mb-4 text-sm uppercase tracking-widest text-royal-400">Media Links & Preview</h3>
+                                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                    {[0,1,2,3].map(i => (
+                                        <div key={i} className="space-y-3">
+                                            <input type="url" placeholder={`Media URL ${i+1}`} className="w-full bg-royal-950 p-2 rounded-lg text-xs text-white border border-royal-700 focus:border-gold-500 transition-colors" value={newPlayerImages[i]} onChange={e => { const ni = [...newPlayerImages]; ni[i] = e.target.value; setNewPlayerImages(ni); }} />
+                                            {/* Aspect Ratio Preview Box */}
+                                            <div className="w-full aspect-[3/4] bg-black rounded-lg border-2 border-royal-800 overflow-hidden flex items-center justify-center shadow-inner">
+                                                {newPlayerImages[i] ? <PlayerMedia url={newPlayerImages[i]} className="w-full h-full object-cover" /> : <span className="text-royal-700 font-bold text-[10px]">SLOT {i+1}</span>}
+                                            </div>
+                                        </div>
+                                    ))}
                                 </div>
                             </div>
-                        </div>
-                    ))}
-                    {displayedPlayers.length === 0 && (
-                        <div className="col-span-3 text-center py-12 text-royal-400 border-2 border-dashed border-royal-800 rounded-xl">No players found matching your search.</div>
+
+                            <div className="flex justify-end pt-2"><button type="submit" disabled={isAdding} className="bg-gold-500 px-8 py-2.5 rounded-lg font-bold text-royal-950 hover:bg-gold-600 transition-colors disabled:opacity-50">{isAdding ? 'Saving...' : 'Save Player'}</button></div>
+                        </form>
                     )}
+
+                    <div className="grid md:grid-cols-3 gap-4">
+                        {displayedPlayers.map((p, index) => {
+                            // Detect when we transition from Active to Retired to inject a subtle divider
+                            const showRetiredDivider = p.retired && (index === 0 || !displayedPlayers[index - 1].retired);
+                            
+                            return (
+                                <React.Fragment key={p.id}>
+                                    {showRetiredDivider && (
+                                        <div className="col-span-full mt-4 mb-2 flex items-center gap-4">
+                                            <div className="h-px bg-royal-800 flex-1"></div>
+                                            <div className="text-sm font-bold tracking-widest uppercase text-royal-500">Hall of Fame</div>
+                                            <div className="h-px bg-royal-800 flex-1"></div>
+                                        </div>
+                                    )}
+                                    <div onClick={() => onSelectPlayer(p.id)} className={`bg-royal-900 border border-royal-800 rounded-xl p-5 hover:border-gold-500 cursor-pointer flex flex-col justify-between transition-all hover:scale-[1.02] hover:shadow-lg hover:shadow-gold-500/10 ${p.retired ? 'opacity-70 hover:opacity-100 grayscale hover:grayscale-0' : ''}`}>
+                                        <div className="flex items-center gap-4">
+                                            <div className="w-12 h-12 rounded-full overflow-hidden shrink-0 border border-royal-600 bg-black relative">
+                                                <PlayerMedia url={p.imageUrl || (p.images ? p.images[0] : '')} className="w-full h-full" />
+                                            </div>
+                                            <div className="min-w-0">
+                                                <h3 className="font-bold text-white flex items-center gap-2 truncate">
+                                                    <span className="shrink-0">{getFlag(p.nationality)}</span> 
+                                                    <span className="truncate">{p.name}</span>
+                                                    {p.retired && <span className="text-[9px] bg-[#be123c]/20 text-[#fb7185] px-1.5 py-0.5 rounded uppercase tracking-wider ml-1 border border-[#be123c]/30 shrink-0">Retired</span>}
+                                                </h3>
+                                                <div className="text-xs text-royal-300 mt-0.5">Rank: {p.retired ? '-' : `#${p.rank}`} • {p.points.toLocaleString()} pts {p.bonusPoints > 0 && <span className="text-emerald-400 font-bold ml-1">+{p.bonusPoints}</span>}</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </React.Fragment>
+                            );
+                        })}
+                        {displayedPlayers.length === 0 && (
+                            <div className="col-span-3 text-center py-12 text-royal-400 border-2 border-dashed border-royal-800 rounded-xl">
+                                No players found matching your search.
+                            </div>
+                        )}
                     </div>
                 </div>
             );
@@ -2310,6 +2380,7 @@
             const [editName, setEditName] = useState('');
             const [editNationality, setEditNationality] = useState('');
             const [editImages, setEditImages] = useState(['', '', '', '']);
+            const [editRetired, setEditRetired] = useState(false); // NEW: Retirement State
             const [isSaving, setIsSaving] = useState(false);
             const [showDelete, setShowDelete] = useState(false);
 
@@ -2318,6 +2389,7 @@
                     setEditName(player.name); setEditNationality(player.nationality || 'UNK');
                     const imgs = player.images || [player.imageUrl];
                     setEditImages([imgs[0] || '', imgs[1] || '', imgs[2] || '', imgs[3] || '']);
+                    setEditRetired(!!player.retired);
                 }
             }, [player]);
 
@@ -2327,7 +2399,13 @@
                     if (!player) return;
                     const validImages = editImages.map(u => u.trim()).filter(Boolean);
                     const pRef = window.fb.doc(db, 'artifacts', appId, 'public', 'data', 'players', player.id);
-                    await window.fb.updateDoc(pRef, { name: editName.trim(), nationality: editNationality, imageUrl: validImages[0] || '', images: validImages });
+                    await window.fb.updateDoc(pRef, { 
+                        name: editName.trim(), 
+                        nationality: editNationality, 
+                        imageUrl: validImages[0] || '', 
+                        images: validImages,
+                        retired: editRetired // Saves the retirement status
+                    });
                     setIsEditing(false);
                 } catch (err) { console.error(err); }
                 setIsSaving(false);
@@ -2485,35 +2563,65 @@
                 <div className="max-w-4xl mx-auto space-y-6 pb-20">
                     <button onClick={onBack} className="flex items-center gap-2 text-royal-200 hover:text-white"><ArrowLeft size={16}/> Back</button>
                     {isEditing ? (
-                        <form onSubmit={handleUpdate} className="bg-royal-900 rounded-2xl p-8 space-y-4">
+                        <form onSubmit={handleUpdate} className="bg-royal-900 rounded-2xl p-8 space-y-6">
                             <div className="grid md:grid-cols-2 gap-4">
                                 <input type="text" className="w-full bg-royal-950 p-3 rounded-lg text-white border border-royal-800" value={editName} onChange={e => setEditName(e.target.value)} />
                                 <CountrySelect value={editNationality} onChange={setEditNationality} />
                             </div>
-                            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                                {editImages.map((u, i) => <input key={i} placeholder={`Img URL ${i+1}`} className="w-full bg-royal-950 p-3 rounded-lg text-white border border-royal-800" value={u} onChange={e => { const ni = [...editImages]; ni[i] = e.target.value; setEditImages(ni); }} />)}
+                            
+                            {/* NEW: Retirement Toggle */}
+                            <div className="flex justify-between items-center bg-royal-950 p-4 rounded-lg border border-royal-800">
+                                <div>
+                                    <div className="font-bold text-white">Player Status</div>
+                                    <div className="text-xs text-royal-400">Retired players are hidden from tournament bracket generation.</div>
+                                </div>
+                                <button type="button" onClick={() => setEditRetired(!editRetired)} className={`px-5 py-2 rounded-lg font-bold tracking-wide transition-colors ${editRetired ? 'bg-[#be123c]/20 text-[#fb7185] border border-[#be123c]/50' : 'bg-[#059669]/20 text-[#059669] border border-[#059669]/50'}`}>
+                                    {editRetired ? 'Retired' : 'Active'}
+                                </button>
                             </div>
-                            <div className="flex justify-between pt-4">
-                                <button type="button" onClick={() => setShowDelete(true)} className="text-red-500 font-bold">Delete Player</button>
+
+                            {/* NEW: Visual Media Previews */}
+                            <div className="bg-royal-950/50 p-4 rounded-xl border border-royal-800">
+                                <h3 className="font-bold text-white mb-4 flex items-center gap-2"><Image size={18} className="text-royal-400"/> Media Links & Preview Grid</h3>
+                                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                    {editImages.map((u, i) => (
+                                        <div key={i} className="space-y-3">
+                                            <input placeholder={`Media URL ${i+1}`} className="w-full bg-royal-950 p-2 rounded-lg text-xs text-white border border-royal-700 focus:border-gold-500 transition-colors" value={u} onChange={e => { const ni = [...editImages]; ni[i] = e.target.value; setEditImages(ni); }} />
+                                            {/* Aspect Ratio Preview Box */}
+                                            <div className="w-full aspect-[3/4] bg-black rounded-lg border-2 border-royal-800 overflow-hidden flex items-center justify-center shadow-inner">
+                                                {u ? <PlayerMedia url={u} className="w-full h-full object-cover" /> : <span className="text-royal-700 font-bold text-xs">SLOT {i+1}</span>}
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+
+                            <div className="flex justify-between pt-4 border-t border-royal-800">
+                                <button type="button" onClick={() => setShowDelete(true)} className="text-[#be123c] font-bold hover:text-[#fb7185] transition-colors">Delete Player</button>
                                 <button type="submit" className="bg-gold-500 px-6 py-2 rounded-lg text-royal-950 font-bold hover:bg-gold-600 transition-colors">Save Changes</button>
                             </div>
-                            {showDelete && <div className="mt-4 p-4 border border-red-500 bg-red-500/10 rounded flex justify-between items-center"><span>Are you sure?</span><div className="flex gap-2"><button type="button" onClick={handleDelete} className="bg-red-500 hover:bg-red-600 transition-colors px-4 py-1 rounded font-bold">Yes</button><button type="button" onClick={() => setShowDelete(false)} className="text-royal-200 hover:text-white">No</button></div></div>}
+                            {showDelete && <div className="mt-4 p-4 border border-[#be123c] bg-[#be123c]/10 rounded flex justify-between items-center"><span>Are you sure? This cannot be undone.</span><div className="flex gap-2"><button type="button" onClick={handleDelete} className="bg-[#be123c] hover:bg-red-600 text-white transition-colors px-4 py-1 rounded font-bold">Yes, Delete</button><button type="button" onClick={() => setShowDelete(false)} className="text-royal-200 hover:text-white">Cancel</button></div></div>}
                         </form>
                     ) : (
                         <>
                             <div className="bg-royal-900 rounded-2xl p-8 border border-royal-800 flex flex-col md:flex-row gap-8 relative shadow-lg">
                                 <button onClick={() => setIsEditing(true)} className="absolute top-4 right-4 bg-royal-950 p-2 rounded-lg border border-royal-800 hover:border-gold-500 transition-colors z-10"><Edit2 size={16} className="text-royal-300 hover:text-gold-500"/></button>
                                 
-                                {/* SMART MEDIA AVATAR */}
-                                <div className="w-32 h-48 md:w-40 md:h-56 rounded-lg overflow-hidden border-4 border-royal-700 shrink-0 bg-black">
+                                <div className="w-32 h-48 md:w-40 md:h-56 rounded-lg overflow-hidden border-4 border-royal-700 shrink-0 bg-black relative">
                                     <PlayerMedia url={player.images?.[0] || player.imageUrl} className="w-full h-full" />
+                                    {/* Greyscale overlay if retired */}
+                                    {player.retired && <div className="absolute inset-0 bg-black/40 backdrop-grayscale-[0.5]"></div>}
                                 </div>
                                 
                                 <div className="flex-1">
-                                    <h1 className="text-4xl font-bold text-white">{player.name}</h1>
+                                    <h1 className="text-4xl font-bold text-white flex flex-wrap items-center gap-3">
+                                        {player.name}
+                                        {/* Retired Badge */}
+                                        {player.retired && <span className="text-sm px-2 py-1 bg-[#be123c]/20 text-[#fb7185] border border-[#be123c]/50 rounded uppercase tracking-widest align-middle flex items-center gap-1 shadow-[0_0_8px_rgba(190,18,60,0.3)]"><span className="w-1.5 h-1.5 rounded-full bg-[#fb7185]"></span> RETIRED</span>}
+                                    </h1>
                                     <p className="text-xl text-gold-500 my-4 flex items-center gap-2"><span className="text-2xl">{getFlag(player.nationality)}</span> {getCountryName(player.nationality)}</p>
                                     <div className="flex flex-wrap gap-4">
-                                        <div className="bg-gold-500/10 border border-gold-500/30 p-4 rounded-lg text-center min-w-[100px]"><div className="text-gold-500 font-bold uppercase text-xs tracking-widest mb-1">Rank</div><div className="text-2xl font-black text-white">#{player.rank}</div></div>
+                                        <div className={`bg-gold-500/10 border border-gold-500/30 p-4 rounded-lg text-center min-w-[100px] ${player.retired ? 'opacity-50' : ''}`}><div className="text-gold-500 font-bold uppercase text-xs tracking-widest mb-1">Rank</div><div className="text-2xl font-black text-white">{player.retired ? '-' : `#${player.rank}`}</div></div>
                                         <div className="bg-royal-950/50 border border-royal-800 p-4 rounded-lg text-center min-w-[100px]">
                                             <div className="text-royal-200 font-bold uppercase text-xs tracking-widest mb-1">Points</div>
                                             <div className="text-2xl font-black text-gold-500">
@@ -2591,7 +2699,6 @@
                                 {player.images?.length > 1 && (
                                     <div className="md:col-span-2 lg:col-span-3 bg-royal-900 p-6 rounded-xl border border-royal-800 shadow-md">
                                         <h2 className="text-xl font-bold text-white mb-4">Gallery</h2>
-                                        {/* SMART MEDIA GALLERY */}
                                         <div className="flex gap-4 overflow-x-auto pb-4">
                                             {player.images.map((img, i) => (
                                                 <div key={i} className="w-48 h-64 shrink-0 rounded-lg border-2 border-royal-700 overflow-hidden bg-black">
@@ -2760,7 +2867,10 @@
             }
             const expectedWinnerPoints = Math.round(tierConf.points.WINNER * sizeMultiplier);
             
-            const eligiblePlayers = [...players]
+            // Filter out retired players so they never enter the tournament pool
+            const activePlayers = players.filter(p => !p.retired);
+
+            const eligiblePlayers = [...activePlayers]
                 .filter(p => p.rank > tierConf.excludeTop && !withdrawnIds.includes(p.id))
                 .sort((a, b) => a.rank - b.rank);
             
@@ -2768,9 +2878,9 @@
             const reqAuto = size - reqWc;
             const autoQualifiers = eligiblePlayers.slice(0, reqAuto);
             const remainingPlayers = eligiblePlayers.slice(reqAuto);
-            const hasEnoughPlayers = players.length >= size + tierConf.excludeTop;
+            const hasEnoughPlayers = activePlayers.length >= size + tierConf.excludeTop;
 
-            const withdrawnPlayers = [...players]
+            const withdrawnPlayers = [...activePlayers]
                 .filter(p => withdrawnIds.includes(p.id))
                 .sort((a, b) => a.rank - b.rank);
             
@@ -3834,6 +3944,7 @@
     </script>
 </body>
 </html>
+
 
 
 
