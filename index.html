@@ -144,28 +144,37 @@
             const map = {
                 // North America
                 'USA': ['#b91c1c', '#ffffff', '#1d4ed8'], 'CAN': ['#ff0000', '#ffffff', '#ff0000'], 'MEX': ['#006847', '#ffffff', '#ce1126'],
+                'CUB': ['#002a8f', '#ffffff', '#cf142b'], 'PUR': ['#ed1c24', '#ffffff', '#0050f0'], 'DOM': ['#002d62', '#ffffff', '#ce1126'],
+                'JAM': ['#000000', '#007749', '#ffb81c'], 'BAH': ['#00a9ce', '#fecb00', '#000000'],
                 // Europe
                 'GBR': ['#032b44', '#ffffff', '#c8102e'], 'FRA': ['#002654', '#ffffff', '#ed2939'], 'ESP': ['#aa151b', '#f1bf00', '#aa151b'], 
                 'ITA': ['#009246', '#ffffff', '#ce2b37'], 'GER': ['#000000', '#dd0000', '#ffcc00'], 'SUI': ['#ff0000', '#ffffff', '#ff0000'], 
-                'SRB': ['#c6363c', '#0c4076', '#ffffff'], 'SWE': ['#005293', '#fecb00', '#005293'], 'RUS': ['#c6363c', '#ffffff', '#0039a6'],
-                'CRO': ['#c6363c', '#ffffff', '#171796'], 'NED': ['#ae1c28', '#ffffff', '#21468b'], 'BEL': ['#ae1c28', '#ffffff', '#21468b'],
-                'POL': ['#ffffff', '#dc143c', '#ffffff'], 'CZE': ['#ffffff', '#dc143c', '#ffffff'], 'GRE': ['#001489', '#ffffff', '#001489'],
-                'AUT': ['#ed2939', '#ffffff', '#ed2939'], 'POR': ['#006600', '#ff0000', '#ffcc00'], 'DEN': ['#ae1c28', '#ffffff', '#21468b'],
-                'NOR': ['#c60c30', '#ffffff', '#c60c30'], 'FIN': ['#ffffff', '#002f6c', '#ffffff'], 'ROU': ['#002b7f', '#fcd116', '#ce1126'],
-                'BUL': ['#002b7f', '#fcd116', '#ce1126'], 'HUN': ['#ffffff', '#00966e', '#d62612'], 'SVK': ['#ffffff', '#0b4ea2', '#ee1c25'],
+                'SRB': ['#c6363c', '#0c4076', '#ffffff'], 'SWE': ['#005293', '#fecb00', '#005293'], 'RUS': ['#ffffff', '#0039a6', '#d52b1e'],
+                'CRO': ['#c6363c', '#ffffff', '#171796'], 'NED': ['#ae1c28', '#ffffff', '#21468b'], 'BEL': ['#000000', '#fdda24', '#ef3340'],
+                'POL': ['#ffffff', '#dc143c', '#ffffff'], 'CZE': ['#11457e', '#ffffff', '#d7141a'], 'GRE': ['#001489', '#ffffff', '#001489'],
+                'AUT': ['#ed2939', '#ffffff', '#ed2939'], 'POR': ['#006600', '#ff0000', '#ffcc00'], 'DEN': ['#c60c30', '#ffffff', '#c60c30'],
+                'NOR': ['#ba0c2f', '#ffffff', '#00205b'], 'FIN': ['#ffffff', '#002f6c', '#ffffff'], 'ROU': ['#002b7f', '#fcd116', '#ce1126'],
+                'BUL': ['#ffffff', '#00966e', '#d62612'], 'HUN': ['#ce2939', '#ffffff', '#477050'], 'SVK': ['#ffffff', '#0b4ea2', '#ee1c25'],
+                'BLR': ['#c8313e', '#4aa657', '#ffffff'], 'UKR': ['#0057b7', '#ffd700', '#0057b7'], 'TUR': ['#e30a17', '#ffffff', '#e30a17'],
+                'ISL': ['#02529c', '#ffffff', '#dc1e35'], 'IRL': ['#169b62', '#ffffff', '#ff883e'], 'LTU': ['#fdb913', '#006a44', '#c1272d'],
+                'LAT': ['#9e3039', '#ffffff', '#9e3039'], 'EST': ['#0072ce', '#000000', '#ffffff'], 'SLO': ['#ffffff', '#005ce6', '#ed1c24'],
+                'GEO': ['#ffffff', '#ff0000', '#ffffff'], 'ARM': ['#d90012', '#0033a0', '#f28e00'], 'MON': ['#ce1126', '#ffffff', '#ce1126'],
                 // South America
                 'ARG': ['#75aadb', '#ffffff', '#75aadb'], 'BRA': ['#009c3b', '#ffdf00', '#002776'], 'CHI': ['#0039a6', '#ffffff', '#d52b1e'],
-                'COL': ['#0039a6', '#ffffff', '#d52b1e'], 'PER': ['#fcd116', '#003893', '#ce1126'], 'URU': ['#d52b1e', '#ffffff', '#d52b1e'],
+                'COL': ['#fcd116', '#003893', '#ce1126'], 'PER': ['#d91023', '#ffffff', '#d91023'], 'URU': ['#0038a8', '#ffffff', '#fcd116'],
+                'ECU': ['#ffdd00', '#034ea2', '#ed1c24'], 'PAR': ['#d52b1e', '#ffffff', '#0038a8'],
                 // Asia & Oceania
-                'AUS': ['#012169', '#ffffff', '#e4002b'], 'JPN': ['#ffffff', '#bc002d', '#ffffff'], 'CHN': ['#ee1c25', '#ffff00', '#ee1c25'], 
-                'KOR': ['#ffffff', '#cd2e3a', '#ffffff'], 'IND': ['#ff9933', '#ffffff', '#138808'], 'THA': ['#ed1c24', '#ffffff', '#241d4f'],
-                'TPE': ['#ed1c24', '#ffffff', '#241d4f'], 'KAZ': ['#ffffff', '#000000', '#cd2e3a'], 'UZB': ['#00afaa', '#fce100', '#00afaa'],
-                'NZL': ['#ba0c2f', '#ffffff', '#00205b'], 'INA': ['#ff9933', '#ffffff', '#138808'], 'ISR': ['#0038b8', '#ffffff', '#0038b8'],
+                'AUS': ['#012169', '#ffffff', '#e4002b'], 'NZL': ['#00247d', '#ffffff', '#cc142b'], 'JPN': ['#ffffff', '#bc002d', '#ffffff'], 
+                'CHN': ['#ee1c25', '#ffff00', '#ee1c25'], 'KOR': ['#ffffff', '#cd2e3a', '#0f64cd'], 'IND': ['#ff9933', '#ffffff', '#138808'], 
+                'THA': ['#a51931', '#f4f5f8', '#2d2a4a'], 'TPE': ['#fe0000', '#000095', '#ffffff'], 'KAZ': ['#00afec', '#fce100', '#00afec'], 
+                'UZB': ['#0099b5', '#ffffff', '#1eb53a'], 'INA': ['#ff0000', '#ffffff', '#ff0000'], 'PHI': ['#0038a8', '#ffffff', '#ce1126'], 
+                'VIE': ['#da251d', '#ffff00', '#da251d'], 'ISR': ['#0038b8', '#ffffff', '#0038b8'], 'QAT': ['#8a1538', '#ffffff', '#8a1538'], 
+                'UAE': ['#00732f', '#ffffff', '#000000'], 'KSA': ['#006c35', '#ffffff', '#006c35'], 'BHR': ['#ce1126', '#ffffff', '#ce1126'], 
+                'KUW': ['#007a3d', '#ffffff', '#ce1126'], 'OMA': ['#db161b', '#ffffff', '#008000'], 'SIN': ['#ed2939', '#ffffff', '#ed2939'], 
+                'MAS': ['#012c7d', '#ffcc00', '#cc0000'],
                 // Africa
-                'RSA': ['#007749', '#ffb81c', '#e03c31'], 'EGY': ['#007a4d', '#ffffff', '#000000'], 'MAR': ['#ce1126', '#ffffff', '#007a3d'],
-                'TUN': ['#e70013', '#ffffff', '#e70013'], 'ALG': ['#006233', '#ffffff', '#d21034'],
-                // Carribean / Misc
-                'CUB': ['#002a8f', '#ffffff', '#cf142b'], 'PUR': ['#0050f0', '#ffffff', '#ed1c24'], 'DOM': ['#002d62', '#ffffff', '#ce1126']
+                'RSA': ['#007749', '#ffb81c', '#e03c31'], 'EGY': ['#ce1126', '#ffffff', '#000000'], 'MAR': ['#c1272d', '#006233', '#c1272d'],
+                'TUN': ['#e70013', '#ffffff', '#e70013'], 'ALG': ['#006233', '#ffffff', '#d21034'], 'NGR': ['#008751', '#ffffff', '#008751']
             };
             return map[code] || ['#94a3b8', '#cbd5e1', '#94a3b8']; 
         };
@@ -451,7 +460,7 @@
             } // END if (isWinner) --> This bracket was missing!
             
             if (isFinalist) {
-                // SNB Int Runner Up (The Twin Blade Silver Obelisk)
+                // SNB Int Runner Up (The Shattered Silver Monolith - Middle Ground)
                 if (tier === 'finals') {
                     return (
                         <svg width={size} height={size} viewBox="-15 -10 130 150" className={className} style={{filter: 'drop-shadow(0 15px 22px rgba(0,0,0,0.85))'}}>
@@ -459,12 +468,10 @@
                                 <linearGradient id="snbFinObsidian" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stopColor="#1e293b"/><stop offset="50%" stopColor="#020617"/><stop offset="100%" stopColor="#0f172a"/></linearGradient>
                                 <linearGradient id="snbFinChrome" x1="0" y1="1" x2="1" y2="0"><stop offset="0%" stopColor="#475569"/><stop offset="50%" stopColor="#f8fafc"/><stop offset="100%" stopColor="#334155"/></linearGradient>
                                 <linearGradient id="snbFinCyan" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stopColor="#67e8f9"/><stop offset="50%" stopColor="#06b6d4"/><stop offset="100%" stopColor="#083344"/></linearGradient>
-                                <linearGradient id="snbFinMagenta" x1="0" y1="1" x2="1" y2="0"><stop offset="0%" stopColor="#f9a8d4"/><stop offset="50%" stopColor="#d946ef"/><stop offset="100%" stopColor="#4a044e"/></linearGradient>
-                                <linearGradient id="snbFinSilver" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#ffffff"/><stop offset="50%" stopColor="#cbd5e1"/><stop offset="100%" stopColor="#64748b"/></linearGradient>
-                                <linearGradient id="snbFinPurple" x1="0" y1="1" x2="1" y2="0"><stop offset="0%" stopColor="#c084fc"/><stop offset="100%" stopColor="#6b21a8"/></linearGradient>
+                                <linearGradient id="snbFinSilver" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#ffffff"/><stop offset="50%" stopColor="#e2e8f0"/><stop offset="100%" stopColor="#94a3b8"/></linearGradient>
                             </defs>
 
-                            {/* EXACT Match to the Winner's Stealth Base */}
+                            {/* Base (Matches Winner & SF to anchor the tournament theme) */}
                             <path d="M 20 140 L 80 140 L 95 125 L 5 125 Z" fill="url(#snbFinObsidian)" />
                             <path d="M 5 125 L 95 125 L 85 110 L 15 110 Z" fill="#0f172a" />
                             <path d="M 15 110 L 85 110 L 70 100 L 30 100 Z" fill="url(#snbFinChrome)" />
@@ -472,40 +479,31 @@
                             <path d="M 30 100 L 70 100 L 65 95 L 35 95 Z" fill="url(#snbFinCyan)" />
                             <polygon points="45,95 55,95 52,100 48,100" fill="#ffffff" style={{filter: 'drop-shadow(0 0 6px #67e8f9)'}}/>
 
-                            {/* Background Stained Glass Shards (Connecting to the SF Crystal) */}
-                            <polygon points="50,90 15,50 30,20 55,40" fill="url(#snbFinPurple)" stroke="#d8b4fe" strokeWidth="1" opacity="0.65" strokeLinejoin="round"/>
-                            <polygon points="50,90 85,45 70,15 45,35" fill="url(#snbFinMagenta)" stroke="#f9a8d4" strokeWidth="1" opacity="0.65" strokeLinejoin="round"/>
+                            {/* The Monolith Core (Winner DNA) but Fractured (SF DNA) */}
+                            {/* Deep Background Chrome Pillars */}
+                            <polygon points="30,95 45,30 55,35 60,95" fill="url(#snbFinChrome)" opacity="0.6"/>
+                            <polygon points="65,95 75,40 60,45 50,95" fill="#334155" opacity="0.8"/>
 
-                            {/* Twin Outer Blades (Connecting to the Winner, but only 2 instead of 4) */}
-                            {/* Left Blade */}
-                            <path d="M 28 95 L 38 60 L 22 25 L 10 65 Z" fill="url(#snbFinObsidian)" />
-                            <path d="M 28 95 L 38 60 L 22 25 L 10 65 Z" fill="url(#snbFinChrome)" opacity="0.3"/>
-                            <path d="M 22 25 L 38 60 L 28 95" fill="none" stroke="url(#snbFinChrome)" strokeWidth="2" />
-                            <path d="M 10 65 L 22 25 L 32 25" fill="none" stroke="#ffffff" strokeWidth="1.5" opacity="0.6"/>
-
-                            {/* Right Blade */}
-                            <path d="M 72 95 L 62 60 L 78 25 L 90 65 Z" fill="url(#snbFinObsidian)" />
-                            <path d="M 72 95 L 62 60 L 78 25 L 90 65 Z" fill="url(#snbFinChrome)" opacity="0.3"/>
-                            <path d="M 78 25 L 62 60 L 72 95" fill="none" stroke="url(#snbFinChrome)" strokeWidth="2" />
-                            <path d="M 90 65 L 78 25 L 68 25" fill="none" stroke="#ffffff" strokeWidth="1.5" opacity="0.6"/>
-
-                            {/* The Floating Silver Obelisk (Finalist Core) */}
-                            <polygon points="50,88 36,52 50,15 64,52" fill="url(#snbFinSilver)" style={{filter: 'drop-shadow(0 0 12px rgba(255,255,255,0.4))'}} />
+                            {/* Main Silver Fractured Monolith */}
+                            <polygon points="50,95 25,45 45,10 65,55" fill="url(#snbFinSilver)" style={{filter: 'drop-shadow(0 0 10px rgba(255,255,255,0.2))'}}/>
+                            <polygon points="50,95 25,45 45,10" fill="#ffffff" opacity="0.5" />
+                            <polygon points="50,95 65,55 45,10" fill="#475569" opacity="0.4" />
                             
-                            {/* Sharp Cubist Facets for the Silver Core */}
-                            <polygon points="50,88 36,52 50,15" fill="#ffffff" opacity="0.65" />
-                            <polygon points="50,88 64,52 50,15" fill="#475569" opacity="0.6" />
-                            <path d="M 50 15 L 50 88 M 36 52 L 50 56 L 64 52" fill="none" stroke="#ffffff" strokeWidth="2.5" strokeLinejoin="round" />
-                            <polygon points="46,52 54,52 50,60" fill="#ffffff" />
+                            {/* Glowing Cyan Fractures emerging from the cracks */}
+                            <polygon points="45,95 35,65 50,45 60,75" fill="url(#snbFinCyan)" />
+                            <polygon points="45,95 35,65 50,45" fill="#ffffff" opacity="0.3" />
+                            <path d="M 35 65 L 50 45 L 60 75" fill="none" stroke="#ffffff" strokeWidth="1.5" strokeLinejoin="round" />
 
-                            {/* Sweeping Neon Energy Arcs (Dynamic digital flow) */}
-                            <path d="M 15 50 Q 50 80 85 45" fill="none" stroke="url(#snbFinCyan)" strokeWidth="3" opacity="0.9" strokeLinecap="round" style={{filter: 'drop-shadow(0 0 6px #06b6d4)'}} />
-                            <path d="M 20 65 Q 50 35 80 60" fill="none" stroke="url(#snbFinMagenta)" strokeWidth="2" strokeDasharray="10 6" opacity="0.9" strokeLinecap="round" style={{filter: 'drop-shadow(0 0 6px #d946ef)'}} />
+                            {/* Sharp Cut Lines (Lead lines from SF DNA) */}
+                            <path d="M 50 95 L 45 10 M 25 45 L 65 55 M 35 30 L 55 20" fill="none" stroke="#ffffff" strokeWidth="1.5" opacity="0.8" />
 
-                            {/* Apex Spire & Digital Debris */}
-                            <polygon points="48,15 52,15 50,-2" fill="url(#snbFinSilver)" />
-                            <circle cx="50" cy="-2" r="3" fill="url(#snbFinCyan)" style={{filter: 'drop-shadow(0 0 6px #67e8f9)'}} />
-                            <circle cx="50" cy="-2" r="1.5" fill="#ffffff" />
+                            {/* Floating Geometric Shards (SF DNA) */}
+                            <polygon points="15,40 22,32 18,25" fill="url(#snbFinSilver)" stroke="#ffffff" strokeWidth="0.5"/>
+                            <polygon points="75,25 85,35 80,45" fill="url(#snbFinCyan)" stroke="#ffffff" strokeWidth="0.5"/>
+                            <polygon points="60,15 65,5 70,10" fill="url(#snbFinChrome)" stroke="#ffffff" strokeWidth="0.5"/>
+
+                            {/* Apex Sparkle */}
+                            <circle cx="45" cy="5" r="2.5" fill="#ffffff" style={{filter: 'drop-shadow(0 0 6px #ffffff)'}}/>
                         </svg>
                     );
                 }
@@ -688,18 +686,17 @@
                     );
                 } else {
                     // ---------------------------------------------------------
-                    // GRAND SLAM & MAJOR SF: Royal, Flawless Crystal Obelisk
+                    // GRAND SLAM & MAJOR SF: Icy Silver/White Fractured Crystal
                     // ---------------------------------------------------------
                     const sScale = tier === 'grand_slam' ? 1 : 0.88;
                     return (
                         <svg width={size} height={size} viewBox="-15 -10 130 155" className={className} style={{filter: 'drop-shadow(0 15px 22px rgba(0,0,0,0.85))'}}>
                             <defs>
-                                {/* Icy, royal frosted sapphire/crystal gradients */}
-                                <linearGradient id="gsIce1" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stopColor="#ffffff" stopOpacity="0.9"/><stop offset="50%" stopColor="#bae6fd" stopOpacity="0.7"/><stop offset="100%" stopColor="#38bdf8" stopOpacity="0.85"/></linearGradient>
-                                <linearGradient id="gsIce2" x1="1" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#e0f2fe" stopOpacity="0.9"/><stop offset="60%" stopColor="#7dd3fc" stopOpacity="0.6"/><stop offset="100%" stopColor="#0284c7" stopOpacity="0.9"/></linearGradient>
-                                <linearGradient id="gsIce3" x1="0" y1="1" x2="1" y2="0"><stop offset="0%" stopColor="#0ea5e9" stopOpacity="0.8"/><stop offset="50%" stopColor="#0369a1" stopOpacity="0.5"/><stop offset="100%" stopColor="#000000" stopOpacity="0.7"/></linearGradient>
+                                {/* Pure icy silver, white, and pale blue gradients */}
+                                <linearGradient id="gsIceWhite" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stopColor="#ffffff" stopOpacity="0.95"/><stop offset="100%" stopColor="#f1f5f9" stopOpacity="0.85"/></linearGradient>
+                                <linearGradient id="gsIceSilver" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stopColor="#e2e8f0" stopOpacity="0.9"/><stop offset="100%" stopColor="#94a3b8" stopOpacity="0.95"/></linearGradient>
+                                <linearGradient id="gsIceBlue" x1="0" y1="1" x2="1" y2="0"><stop offset="0%" stopColor="#cbd5e1" stopOpacity="0.85"/><stop offset="100%" stopColor="#64748b" stopOpacity="0.95"/></linearGradient>
                                 
-                                {/* High-Contrast Silver Setting */}
                                 <linearGradient id="gsPlinthDark" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stopColor="#1e293b"/><stop offset="50%" stopColor="#475569"/><stop offset="100%" stopColor="#0f172a"/></linearGradient>
                                 <linearGradient id="gsPlinthLight" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stopColor="#e2e8f0"/><stop offset="50%" stopColor="#ffffff"/><stop offset="100%" stopColor="#94a3b8"/></linearGradient>
                             </defs>
@@ -710,56 +707,54 @@
                                 <path d="M 28 85 Q -5 110 15 150" fill="none" stroke={c[0]} strokeWidth="4.5" opacity="0.6" strokeLinecap="round" />
                                 <path d="M 72 85 Q 105 110 85 150" fill="none" stroke={c[0]} strokeWidth="4.5" opacity="0.6" strokeLinecap="round" />
 
-                                {/* Tiered Obsidian & Silver Plinth */}
+                                {/* Tiered Obsidian & Silver Plinth (Kept for royal anchor) */}
                                 <path d="M 22 125 L 78 125 L 72 110 L 28 110 Z" fill="url(#gsPlinthDark)" />
                                 <path d="M 28 110 L 72 110 L 65 102 L 35 102 Z" fill="url(#gsPlinthLight)" />
                                 <polygon points="22,125 78,125 74,130 26,130" fill="#020617" />
-                                <rect x="30" y="118" width="40" height="4" fill="url(#gsPlinthLight)" rx="1" style={{filter: 'drop-shadow(0 2px 2px rgba(0,0,0,0.6))'}}/>
-
-                                {/* --- THE CRYSTAL OBELISK --- */}
                                 
-                                {/* Back / Ambient Shadow Facets */}
-                                <polygon points="50,10 20,45 35,100 65,100 80,45" fill="url(#gsIce3)" />
-                                
-                                {/* Mid Core Glow Facets */}
-                                <polygon points="50,20 30,50 40,95 60,95 70,50" fill="url(#gsIce1)" />
-                                
-                                {/* Cubist / Radiant Cut Inner Depth */}
-                                <polygon points="50,20 30,50 50,60" fill="#ffffff" opacity="0.6"/>
-                                <polygon points="50,20 70,50 50,60" fill="#0284c7" opacity="0.4"/>
-                                <polygon points="30,50 40,95 50,60" fill="#ffffff" opacity="0.25"/>
-                                <polygon points="70,50 60,95 50,60" fill="#0f172a" opacity="0.3"/>
-                                <polygon points="40,95 60,95 50,60" fill="url(#gsIce2)" opacity="0.95"/>
-                                
-                                {/* Central Raised Hero Facet */}
-                                <polygon points="50,30 38,55 45,85 55,85 62,55" fill="url(#gsIce1)" stroke="#ffffff" strokeWidth="0.75" style={{filter: 'drop-shadow(0 4px 6px rgba(0,0,0,0.4))'}}/>
-                                
-                                {/* Hero Facet Sub-Cuts */}
-                                <polygon points="50,30 38,55 50,65" fill="#ffffff" opacity="0.6"/>
-                                <polygon points="50,30 62,55 50,65" fill="#000000" opacity="0.15"/>
-                                <polygon points="38,55 45,85 50,65" fill="#bae6fd" opacity="0.5"/>
-                                <polygon points="62,55 55,85 50,65" fill="#0369a1" opacity="0.4"/>
-                                <polygon points="45,85 55,85 50,65" fill="#ffffff" opacity="0.4"/>
+                                {/* Elegant Flush Flag Inlay */}
+                                <polygon points="41,102 47,102 48,110 42,110" fill={c[0]} />
+                                <polygon points="47,102 53,102 52,110 48,110" fill={c[1]} />
+                                <polygon points="53,102 59,102 58,110 52,110" fill={c[2]} />
+                                <polygon points="41,102 59,102 50,110" fill="#ffffff" opacity="0.2" />
 
-                                {/* Brilliant Edge Highlights (The Sharp 'Glass' lines) */}
-                                <path d="M 50 10 L 20 45 L 35 100 M 50 10 L 80 45 L 65 100 M 20 45 L 80 45 M 30 50 L 70 50 M 50 20 L 50 60 M 30 50 L 50 60 L 70 50 M 40 95 L 50 60 L 60 95 M 50 65 L 50 85 M 38 55 L 62 55 M 45 85 L 55 85" stroke="#ffffff" strokeWidth="1.2" fill="none" strokeLinejoin="round" opacity="0.9"/>
-                                <path d="M 50 10 L 50 30 M 20 45 L 38 55 M 80 45 L 62 55" stroke="#ffffff" strokeWidth="1" fill="none" opacity="0.6"/>
+                                {/* --- ICY SHATTERED CRYSTAL (SNB structural inspiration, GS colors) --- */}
+                                
+                                {/* Background Frost Shards */}
+                                <polygon points="50,100 15,50 30,10 50,35" fill="url(#gsIceSilver)" stroke="#cbd5e1" strokeWidth="1.5" strokeLinejoin="round" />
+                                <polygon points="50,100 85,45 70,15 50,40" fill="url(#gsIceBlue)" stroke="#94a3b8" strokeWidth="1.5" strokeLinejoin="round" />
+                                
+                                {/* Mid-Layer Platinum Shards */}
+                                <polygon points="45,102 5,65 25,25 55,60" fill="url(#gsIceWhite)" stroke="#ffffff" strokeWidth="1.5" strokeLinejoin="round" />
+                                <polygon points="55,102 95,70 75,30 45,65" fill="url(#gsIceSilver)" stroke="#e2e8f0" strokeWidth="1.5" strokeLinejoin="round" />
+                                
+                                {/* Deep Shadows for 3D depth */}
+                                <polygon points="50,102 25,25 50,20" fill="#000000" opacity="0.15" />
+                                <polygon points="50,102 75,30 50,20" fill="#000000" opacity="0.1" />
 
-                                {/* --- THE SILVER LOTUS SETTING (Prongs holding the gem) --- */}
-                                {/* Base Cup */}
-                                <path d="M 35 102 Q 50 110 65 102 Q 60 115 50 115 Q 40 115 35 102 Z" fill="url(#gsPlinthDark)"/>
-                                {/* Side Prongs */}
-                                <path d="M 32 95 Q 38 105 45 102 Q 35 70 28 65 Q 25 75 32 95 Z" fill="url(#gsPlinthLight)" style={{filter: 'drop-shadow(2px 2px 3px rgba(0,0,0,0.5))'}}/>
-                                <path d="M 68 95 Q 62 105 55 102 Q 65 70 72 65 Q 75 75 68 95 Z" fill="url(#gsPlinthLight)" style={{filter: 'drop-shadow(-2px 2px 3px rgba(0,0,0,0.5))'}}/>
-                                {/* Center Front Prongs */}
-                                <path d="M 42 102 Q 45 70 50 60 Q 55 70 58 102 Q 50 108 42 102 Z" fill="url(#gsPlinthLight)" style={{filter: 'drop-shadow(0 3px 4px rgba(0,0,0,0.6))'}}/>
-                                <path d="M 46 102 L 50 75 L 54 102" fill="none" stroke="url(#gsPlinthDark)" strokeWidth="1" opacity="0.7"/>
+                                {/* Front Hero Ice Monolith */}
+                                <polygon points="50,102 22,55 50,5 78,60" fill="url(#gsIceWhite)" style={{filter: 'drop-shadow(0 4px 6px rgba(0,0,0,0.2))'}}/>
+                                <polygon points="50,102 22,55 50,5" fill="#ffffff" opacity="0.5" />
+                                <polygon points="50,102 78,60 50,5" fill="#94a3b8" opacity="0.3" />
+                                
+                                {/* Crisp Inner Diamond Core Facet */}
+                                <polygon points="50,85 32,55 50,20 68,58" fill="url(#gsIceSilver)" />
+                                <polygon points="50,85 32,55 50,20" fill="#ffffff" opacity="0.7" />
+                                <polygon points="50,85 68,58 50,20" fill="#64748b" opacity="0.3" />
+                                
+                                {/* Pure White Sharp Facet Lines */}
+                                <path d="M 50 102 L 50 5 M 22 55 L 50 60 L 78 60 M 32 55 L 50 20 L 68 58 M 50 85 L 32 55 M 50 85 L 68 58" fill="none" stroke="#ffffff" strokeWidth="1.5" opacity="0.9" strokeLinecap="round" strokeLinejoin="round" />
 
-                                {/* Top Sparkle */}
-                                <circle cx="50" cy="8" r="2.5" fill="#ffffff" style={{filter: 'drop-shadow(0 0 5px #ffffff)'}} />
-                                <path d="M 50 2 L 50 14 M 44 8 L 56 8" stroke="#ffffff" strokeWidth="1" fill="none" opacity="0.8"/>
+                                {/* Floating Ice Shards (Digital/Picasso flair) */}
+                                <polygon points="12,35 20,25 16,18" fill="url(#gsIceWhite)" stroke="#ffffff" strokeWidth="1" />
+                                <polygon points="85,30 95,40 88,45" fill="url(#gsIceSilver)" stroke="#ffffff" strokeWidth="1" />
+                                <polygon points="65,10 70,5 75,12" fill="url(#gsIceBlue)" stroke="#ffffff" strokeWidth="1" />
 
-                                {/* Foreground Silk Ribbons (Draping naturally over the base) */}
+                                {/* Top Starburst Sparkle */}
+                                <circle cx="50" cy="5" r="3" fill="#ffffff" style={{filter: 'drop-shadow(0 0 5px #ffffff)'}} />
+                                <path d="M 50 -1 L 50 11 M 44 5 L 56 5" fill="none" stroke="#ffffff" strokeWidth="1.5" opacity="0.9" />
+
+                                {/* Foreground Silk Ribbons (Draping over the base) */}
                                 <path d="M 25 88 C 5 110, 35 130, 12 152" fill="none" stroke={c[1]} strokeWidth="4.5" strokeLinecap="round" style={{filter: 'drop-shadow(3px 4px 4px rgba(0,0,0,0.7))'}}/>
                                 <path d="M 25 88 C 5 110, 35 130, 12 152" fill="none" stroke="#ffffff" strokeWidth="1" strokeDasharray="3 2" opacity="0.6"/>
                                 <path d="M 30 90 C 10 110, 40 130, 18 152" fill="none" stroke={c[2]} strokeWidth="4.5" strokeLinecap="round" style={{filter: 'drop-shadow(3px 4px 4px rgba(0,0,0,0.7))'}}/>
@@ -3458,12 +3453,17 @@
                                 <ArrowLeft className="w-4 h-4" /> Back to Tournaments
                             </button>
                             <h1 className="text-3xl font-bold text-white flex items-center gap-3">
-                                <DynamicTrophy tier="finals" result="Winner" country={tournament.hostCountry} size={48} className="drop-shadow-lg shrink-0" />
-                                <span className="text-emerald-500 text-sm uppercase tracking-widest border border-emerald-500/50 px-2 py-1 rounded bg-emerald-500/20 shrink-0">SNB Internationals</span>
+                                {tournament.status === 'completed' && (
+                                    <DynamicTrophy tier="finals" result="Winner" country={tournament.hostCountry} size={48} className="drop-shadow-lg shrink-0" />
+                                )}
+                                <span className={`${tierConf?.color || 'text-cyan-400'} text-sm uppercase tracking-widest border border-current px-2 py-1 rounded shrink-0`}>
+                                    {tierConf?.name || 'SNB Internationals'}
+                                </span>
                                 <span className="text-4xl shrink-0" title={getCountryName(tournament.hostCountry || 'USA')}>{getFlag(tournament.hostCountry || 'USA')}</span>
                                 <span className="truncate">{tournament.name}</span>
-                                {tournament.status === 'completed' && <span className="bg-[#059669]/20 text-[#059669] text-sm px-2 py-1 rounded font-bold uppercase shrink-0">Completed</span>}
+                                {tournament.status === 'completed' && <span className="bg-[#059669]/20 text-[#059669] text-sm px-2 py-1 rounded font-bold uppercase shrink-0">COMPLETED</span>}
                             </h1>
+                            {tournament.description && <p className="text-royal-300 text-sm mt-2 max-w-2xl">{tournament.description}</p>}
                         </div>
                         <div className="mt-4 md:mt-0 shrink-0">
                             {showDelete ? (
@@ -3545,54 +3545,55 @@
                                             {isFinalRound ? 'Championship' : 'Semifinals'}
                                         </div>
                                     </div>
-                                    <div className="flex-1 flex flex-col justify-around">
+                                    <div className="flex-1 flex flex-col">
                                         {round.map((match, mIdx) => {
                                             if (!match) return null;
                                             const p1 = getPlayer(match.p1), p2 = getPlayer(match.p2);
-                                            const isReady = match.p1 && match.p2 && !match.winner && tournament.status !== 'completed';
+                                            const isBye = match.type === 'bye';
+                                            const isReady = match.p1 && match.p2 && !match.winner && tournament.status !== 'completed' && !isBye;
                                             
                                             return (
-                                                <div key={match.id} className="relative py-4">
+                                                <div key={match.id} className="flex-1 flex flex-col justify-center relative py-2">
                                                     <div onClick={() => handleMatchClick(rIdx === 0 ? 'sf' : 'f', mIdx, match)} 
-                                                         className={`relative z-10 border-2 rounded-xl p-3 transition-all overflow-hidden ${isReady ? 'cursor-pointer hover:scale-105 z-20' : match.winner ? 'border-royal-800' : 'border-dashed border-royal-800/50 opacity-30'}`} 
+                                                         className={`relative z-10 border-2 rounded-lg transition-all overflow-hidden ${isReady ? 'cursor-pointer hover:scale-105 z-20' : match.winner ? 'border-royal-800' : 'border-royal-800/30 opacity-40'}`} 
                                                          style={{ 
-                                                             background: isReady ? `linear-gradient(${tierConf.hex}15, ${tierConf.hex}15), #0a241c` : (match.winner ? `linear-gradient(${tierConf.hex}0A, ${tierConf.hex}0A), #051611` : '#051611'),
+                                                             background: isReady ? `linear-gradient(${tierConf.hex}15, ${tierConf.hex}15), #0a241c` : (match.winner && !isBye ? `linear-gradient(${tierConf.hex}0A, ${tierConf.hex}0A), #051611` : '#051611'),
                                                              borderColor: isReady ? tierConf.hex : undefined,
-                                                             boxShadow: isReady ? `0 0 10px ${tierConf.hex}50` : undefined
+                                                             boxShadow: isReady ? `0 0 8px ${tierConf.hex}40` : undefined
                                                          }}>
-                                                        <div className={`p-2 flex justify-between items-center mb-2 ${match.winner && match.winner === match.p1 ? 'bg-black/20 rounded px-1' : ''}`}>
+                                                        <div className={`p-2 flex justify-between items-center border-b border-royal-800/50 ${match.winner && match.winner === match.p1 && !isBye ? 'bg-black/20' : ''}`}>
                                                             <div className="flex items-center gap-2 overflow-hidden w-full pr-2">
                                                                 {match.p1 ? (
                                                                     <>
-                                                                        <img src={p1.images?.[0] || p1.imageUrl || "https://via.placeholder.com/40"} loading="lazy" decoding="async" className="w-6 h-6 rounded-full object-cover border border-royal-700 shrink-0" />
-                                                                        <span onClick={tournament.status === 'completed' ? (e) => { e.stopPropagation(); onNavigate('players', match.p1); } : undefined} className={`text-base font-bold flex items-center truncate ${match.winner && match.winner !== match.p1 ? 'text-royal-500 line-through' : 'text-white'} ${tournament.status === 'completed' ? 'cursor-pointer hover:text-gold-400 hover:underline' : ''}`}>
+                                                                        <img src={p1.images?.[0] || p1.imageUrl || "https://via.placeholder.com/40"} loading="lazy" decoding="async" className="w-5 h-5 rounded-full object-cover border border-royal-700 shrink-0" />
+                                                                        <span onClick={tournament.status === 'completed' ? (e) => { e.stopPropagation(); onNavigate('players', match.p1); } : undefined} className={`text-sm font-medium flex items-center truncate ${match.winner && match.winner !== match.p1 && !isBye ? 'text-royal-500 line-through' : 'text-white'} ${tournament.status === 'completed' ? 'cursor-pointer hover:text-gold-400 hover:underline' : ''}`}>
                                                                             {getFlag(p1.nationality)} <span className="truncate ml-1">{p1.name}</span>
                                                                             {getSeedText(tournament, match.p1) && <span className="text-[10px] text-royal-400 font-mono tracking-tighter ml-1.5">{getSeedText(tournament, match.p1)}</span>}
                                                                         </span>
                                                                     </>
                                                                 ) : <span className="text-sm font-medium text-royal-500">TBD</span>}
                                                             </div>
-                                                            {match.winner && match.winner === match.p1 && (
+                                                            {match.winner && match.winner === match.p1 && !isBye && (
                                                                 isFinalRound 
-                                                                ? <DynamicTrophy tier="finals" result="Winner" country={tournament.hostCountry} size={32} className="shrink-0" /> 
+                                                                ? <DynamicTrophy tier="finals" result="Winner" country={tournament.hostCountry} size={28} className="shrink-0" /> 
                                                                 : <CheckCircle size={16} className="text-[#059669] shrink-0"/>
                                                             )}
                                                         </div>
-                                                        <div className={`p-2 flex justify-between items-center ${match.winner && match.winner === match.p2 ? 'bg-black/20 rounded px-1' : ''}`}>
+                                                        <div className={`p-2 flex justify-between items-center ${match.winner && match.winner === match.p2 && !isBye ? 'bg-black/20' : ''}`}>
                                                             <div className="flex items-center gap-2 overflow-hidden w-full pr-2">
                                                                 {match.p2 ? (
                                                                     <>
-                                                                        <img src={p2.images?.[0] || p2.imageUrl || "https://via.placeholder.com/40"} loading="lazy" decoding="async" className="w-6 h-6 rounded-full object-cover border border-royal-700 shrink-0" />
-                                                                        <span onClick={tournament.status === 'completed' ? (e) => { e.stopPropagation(); onNavigate('players', match.p2); } : undefined} className={`text-base font-bold flex items-center truncate ${match.winner && match.winner !== match.p2 ? 'text-royal-500 line-through' : 'text-white'} ${tournament.status === 'completed' ? 'cursor-pointer hover:text-gold-400 hover:underline' : ''}`}>
+                                                                        <img src={p2.images?.[0] || p2.imageUrl || "https://via.placeholder.com/40"} loading="lazy" decoding="async" className="w-5 h-5 rounded-full object-cover border border-royal-700 shrink-0" />
+                                                                        <span onClick={tournament.status === 'completed' ? (e) => { e.stopPropagation(); onNavigate('players', match.p2); } : undefined} className={`text-sm font-medium flex items-center truncate ${match.winner && match.winner !== match.p2 && !isBye ? 'text-royal-500 line-through' : 'text-white'} ${tournament.status === 'completed' ? 'cursor-pointer hover:text-gold-400 hover:underline' : ''}`}>
                                                                             {getFlag(p2.nationality)} <span className="truncate ml-1">{p2.name}</span>
                                                                             {getSeedText(tournament, match.p2) && <span className="text-[10px] text-royal-400 font-mono tracking-tighter ml-1.5">{getSeedText(tournament, match.p2)}</span>}
                                                                         </span>
                                                                     </>
-                                                                ) : <span className="text-sm font-medium text-royal-500">TBD</span>}
+                                                                ) : (isBye ? <span className="text-sm font-bold text-royal-500 italic tracking-widest">BYE</span> : <span className="text-sm font-medium text-royal-500">TBD</span>)}
                                                             </div>
-                                                            {match.winner && match.winner === match.p2 && (
+                                                            {match.winner && match.winner === match.p2 && !isBye && (
                                                                 isFinalRound 
-                                                                ? <DynamicTrophy tier="finals" result="Winner" country={tournament.hostCountry} size={32} className="shrink-0" /> 
+                                                                ? <DynamicTrophy tier="finals" result="Winner" country={tournament.hostCountry} size={28} className="shrink-0" /> 
                                                                 : <CheckCircle size={16} className="text-[#059669] shrink-0"/>
                                                             )}
                                                         </div>
@@ -3764,6 +3765,7 @@
     </script>
 </body>
 </html>
+
 
 
 
