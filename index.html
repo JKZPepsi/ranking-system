@@ -1894,15 +1894,22 @@
                 const stats = {};
                 players.forEach(p => {
                     const nat = p.nationality || 'UNK';
-                    if (!stats[nat]) stats[nat] = { code: nat, points: 0, bonusPoints: 0, wins: 0, losses: 0, players: 0, titles: 0 };
-                    stats[nat].points += (p.points || 0);
-                    stats[nat].bonusPoints += (p.bonusPoints || 0);
-                    stats[nat].wins += (p.stats?.wins || 0);
-                    stats[nat].losses += (p.stats?.losses || 0);
-                    stats[nat].players += 1;
-                    stats[nat].titles += p.recentTournaments.filter(t => t.result === 'Winner').length;
+                    if (!stats[nat]) stats[nat] = { code: nat, points: 0, bonusPoints: 0, wins: 0, losses: 0, players: 0, titles: 0, retiredPlayers: 0 };
+                    
+                    if (p.retired) {
+                        stats[nat].retiredPlayers += 1;
+                    } else {
+                        stats[nat].points += (p.points || 0);
+                        stats[nat].bonusPoints += (p.bonusPoints || 0);
+                        stats[nat].wins += (p.stats?.wins || 0);
+                        stats[nat].losses += (p.stats?.losses || 0);
+                        stats[nat].players += 1;
+                    }
+                    stats[nat].titles += p.recentTournaments?.filter(t => t.result === 'Winner').length || 0;
                 });
-                return Object.values(stats).sort((a,b) => b.points - a.points || b.bonusPoints - a.bonusPoints);
+                return Object.values(stats)
+                    .filter(n => n.players > 0 || n.retiredPlayers > 0)
+                    .sort((a,b) => b.points - a.points || b.bonusPoints - a.bonusPoints);
             }, [players]);
 
             return (
@@ -1921,13 +1928,16 @@
                         <div className="overflow-x-auto">
                             <table className="w-full text-left border-collapse">
                                 <thead><tr className="bg-royal-900/80 text-royal-200 text-sm uppercase">
-                                    <th className="p-4 text-center w-16">#</th><th>Nation</th><th className="text-center">Players</th><th className="text-gold-500">Official Points</th><th className="text-center">Titles</th><th className="text-center">W-L</th>
+                                    <th className="p-4 text-center w-16">#</th><th>Nation</th><th className="text-center">Active Players</th><th className="text-gold-500">Active Points</th><th className="text-center">All-Time Titles</th><th className="text-center">Active W-L</th>
                                 </tr></thead>
                                 <tbody className="divide-y divide-royal-800/50">{nationStats.map((n, idx) => (
                                     <tr key={n.code} onClick={() => onNavigate('nations', null, null, n.code)} className="hover:bg-royal-800/80 transition-colors cursor-pointer group">
                                         <td className="p-4 text-center text-royal-400 font-bold">{idx + 1}</td>
                                         <td className="p-4 font-medium text-white flex items-center gap-3 group-hover:text-gold-500 transition-colors"><span className="text-2xl">{getFlag(n.code)}</span>{getCountryName(n.code)}</td>
-                                        <td className="p-4 text-center text-royal-200">{n.players}</td>
+                                        <td className="p-4 text-center text-royal-200">
+                                            {n.players}
+                                            {n.retiredPlayers > 0 && <span className="text-xs text-royal-500 block">+{n.retiredPlayers} Ret.</span>}
+                                        </td>
                                         <td className="p-4 font-bold text-gold-500">
                                             {n.points.toLocaleString()}
                                             {n.bonusPoints > 0 && <span className="text-emerald-400 text-xs ml-1 font-bold">+{n.bonusPoints}</span>}
@@ -1944,21 +1954,23 @@
         }
 
         function NationProfile({ code, players, onBack, onNavigate }) {
-            const nationPlayers = useMemo(() => {
-                return players.filter(p => (p.nationality || 'UNK') === code).sort((a,b) => b.points - a.points || b.totalPoints - a.totalPoints);
+            const { active, retired } = useMemo(() => {
+                const natPlayers = players.filter(p => (p.nationality || 'UNK') === code);
+                const activeList = natPlayers.filter(p => !p.retired).sort((a,b) => b.points - a.points || b.totalPoints - a.totalPoints);
+                const retiredList = natPlayers.filter(p => p.retired).sort((a,b) => (b.points || 0) - (a.points || 0));
+                return { active: activeList, retired: retiredList };
             }, [players, code]);
 
             const stats = useMemo(() => {
                 let points = 0, bonusPoints = 0, wins = 0, losses = 0, titles = 0;
-                nationPlayers.forEach(p => {
-                    points += (p.points || 0);
-                    bonusPoints += (p.bonusPoints || 0);
-                    wins += (p.stats?.wins || 0);
-                    losses += (p.stats?.losses || 0);
-                    titles += p.recentTournaments.filter(t => t.result === 'Winner').length;
+                active.forEach(p => {
+                    points += (p.points || 0); bonusPoints += (p.bonusPoints || 0);
+                    wins += (p.stats?.wins || 0); losses += (p.stats?.losses || 0);
                 });
-                return { points, bonusPoints, wins, losses, titles, players: nationPlayers.length };
-            }, [nationPlayers]);
+                active.forEach(p => titles += p.recentTournaments?.filter(t => t.result === 'Winner').length || 0);
+                retired.forEach(p => titles += p.recentTournaments?.filter(t => t.result === 'Winner').length || 0);
+                return { points, bonusPoints, wins, losses, titles, players: active.length };
+            }, [active, retired]);
 
             return (
                 <div className="max-w-5xl mx-auto space-y-6 pb-20">
@@ -1969,10 +1981,10 @@
                         <div className="flex-1 text-center md:text-left">
                             <h1 className="text-4xl font-bold text-white mb-6">{getCountryName(code)}</h1>
                             <div className="flex flex-wrap justify-center md:justify-start gap-4">
-                                <div className="bg-royal-950/50 border border-royal-800 p-4 rounded-lg text-center min-w-[100px]"><div className="text-royal-200 font-bold uppercase text-xs tracking-widest mb-1">Players</div><div className="text-2xl font-black text-white">{stats.players}</div></div>
-                                <div className="bg-royal-950/50 border border-royal-800 p-4 rounded-lg text-center min-w-[100px]"><div className="text-royal-200 font-bold uppercase text-xs tracking-widest mb-1">Official Points</div><div className="text-2xl font-black text-gold-500">{stats.points.toLocaleString()} {stats.bonusPoints > 0 && <span className="text-emerald-400 text-sm ml-1">+{stats.bonusPoints}</span>}</div></div>
-                                <div className="bg-royal-950/50 border border-royal-800 p-4 rounded-lg text-center min-w-[100px]"><div className="text-royal-200 font-bold uppercase text-xs tracking-widest mb-1">Titles</div><div className="text-2xl font-black text-gold-400">{stats.titles}</div></div>
-                                <div className="bg-royal-950/50 border border-royal-800 p-4 rounded-lg text-center min-w-[100px]"><div className="text-royal-200 font-bold uppercase text-xs tracking-widest mb-1">W-L</div><div className="text-2xl font-black text-white">{stats.wins}-{stats.losses}</div></div>
+                                <div className="bg-royal-950/50 border border-royal-800 p-4 rounded-lg text-center min-w-[100px]"><div className="text-royal-200 font-bold uppercase text-xs tracking-widest mb-1">Active Players</div><div className="text-2xl font-black text-white">{stats.players}</div></div>
+                                <div className="bg-royal-950/50 border border-royal-800 p-4 rounded-lg text-center min-w-[100px]"><div className="text-royal-200 font-bold uppercase text-xs tracking-widest mb-1">Active Pts</div><div className="text-2xl font-black text-gold-500">{stats.points.toLocaleString()} {stats.bonusPoints > 0 && <span className="text-emerald-400 text-sm ml-1">+{stats.bonusPoints}</span>}</div></div>
+                                <div className="bg-royal-950/50 border border-royal-800 p-4 rounded-lg text-center min-w-[100px]"><div className="text-royal-200 font-bold uppercase text-xs tracking-widest mb-1">All-Time Titles</div><div className="text-2xl font-black text-gold-400">{stats.titles}</div></div>
+                                <div className="bg-royal-950/50 border border-royal-800 p-4 rounded-lg text-center min-w-[100px]"><div className="text-royal-200 font-bold uppercase text-xs tracking-widest mb-1">Active W-L</div><div className="text-2xl font-black text-white">{stats.wins}-{stats.losses}</div></div>
                             </div>
                         </div>
                     </div>
@@ -1991,12 +2003,15 @@
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-royal-800">
-                                    {nationPlayers.map((player, idx) => (
+                                    {/* ACTIVE PLAYERS */}
+                                    {active.map((player, idx) => (
                                         <tr key={player.id} onClick={() => onNavigate('players', player.id)} className="hover:bg-royal-800/50 transition-colors cursor-pointer group">
                                             <td className="p-4 text-center font-bold text-white">{idx + 1}</td>
-                                            <td className="p-4 text-center font-bold text-royal-400">{player.rank}</td>
+                                            <td className="p-4 text-center font-bold text-royal-400">#{player.rank}</td>
                                             <td className="p-4 font-medium text-white flex items-center gap-3">
-                                                <img src={player.imageUrl || "https://via.placeholder.com/40"} loading="lazy" decoding="async" className="w-10 h-10 rounded-full object-cover border border-royal-700 shrink-0" />
+                                                <div className="w-10 h-10 rounded-full overflow-hidden border border-royal-700 bg-black shrink-0">
+                                                    <PlayerMedia url={player.imageUrl || (player.images ? player.images[0] : '')} className="w-full h-full" />
+                                                </div>
                                                 <div className="group-hover:text-gold-500 transition-colors">{player.name}</div>
                                             </td>
                                             <td className="p-4 font-bold text-gold-500">
@@ -2006,6 +2021,44 @@
                                             <td className="p-4 text-center text-royal-200">{player.stats.wins} - {player.stats.losses}</td>
                                         </tr>
                                     ))}
+
+                                    {/* HALL OF FAME SEPARATOR & RETIRED PLAYERS */}
+                                    {retired.length > 0 && (
+                                        <>
+                                            <tr className="bg-royal-950/90 border-t-2 border-royal-700">
+                                                <td colSpan="5" className="p-4 text-center">
+                                                    <div className="inline-flex items-center gap-3">
+                                                        <div className="h-px w-16 bg-royal-700"></div>
+                                                        <span className="text-royal-400 font-bold uppercase tracking-widest text-sm flex items-center gap-2">
+                                                            <Trophy size={16} className="text-royal-500" /> Hall of Fame
+                                                        </span>
+                                                        <div className="h-px w-16 bg-royal-700"></div>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                            {retired.map((player) => (
+                                                <tr key={player.id} onClick={() => onNavigate('players', player.id)} className="hover:bg-royal-800/50 transition-colors cursor-pointer group opacity-80 hover:opacity-100 bg-black/20">
+                                                    <td className="p-4 text-center font-bold text-royal-500">-</td>
+                                                    <td className="p-4 text-center font-bold text-royal-500">-</td>
+                                                    <td className="p-4 font-medium text-white flex items-center gap-3">
+                                                        <div className="w-10 h-10 rounded-full overflow-hidden border border-royal-700 bg-black shrink-0 relative">
+                                                            <PlayerMedia url={player.imageUrl || (player.images ? player.images[0] : '')} className="w-full h-full" />
+                                                            <div className="absolute inset-0 bg-black/40 backdrop-grayscale-[0.5]"></div>
+                                                        </div>
+                                                        <div className="group-hover:text-gold-500 transition-colors flex items-center gap-2">
+                                                            {player.name}
+                                                            <span className="text-[9px] bg-[#be123c]/20 text-[#fb7185] px-1.5 py-0.5 rounded uppercase tracking-wider border border-[#be123c]/30 shrink-0">Retired</span>
+                                                        </div>
+                                                    </td>
+                                                    <td className="p-4 font-bold text-royal-300">
+                                                        <span className="text-[10px] text-royal-500 uppercase tracking-widest mr-2">Peak</span>
+                                                        {(player.points || 0).toLocaleString()}
+                                                    </td>
+                                                    <td className="p-4 text-center text-royal-500 font-medium">{player.stats.wins} - {player.stats.losses}</td>
+                                                </tr>
+                                            ))}
+                                        </>
+                                    )}
                                 </tbody>
                             </table>
                         </div>
@@ -2100,15 +2153,34 @@
         function DashboardView({ playersRaw, tournaments, onSelectPlayer, players }) {
             const [asOfId, setAsOfId] = useState('');
 
-            const displayPlayers = useMemo(() => {
-                if (!asOfId) return calculatePlayerRankings(playersRaw, tournaments);
+            const { active, retired } = useMemo(() => {
+                const targetT = asOfId ? tournaments.find(t => t.id === asOfId) : null;
+                const filteredTournaments = targetT 
+                    ? tournaments.filter(t => t.status === 'completed' && (t.completedAt || 0) <= (targetT.completedAt || 0))
+                    : tournaments.filter(t => t.status === 'completed');
                 
-                const targetT = tournaments.find(t => t.id === asOfId);
-                if (!targetT) return calculatePlayerRankings(playersRaw, tournaments);
-                
-                // Filter tournaments to only those completed BEFORE or AT the same time as the target
-                const filteredTournaments = tournaments.filter(t => t.status === 'completed' && (t.completedAt || 0) <= (targetT.completedAt || 0));
-                return calculatePlayerRankings(playersRaw, filteredTournaments);
+                const rankedPlayers = calculatePlayerRankings(playersRaw, filteredTournaments);
+                const globalHist = getGlobalHistory(playersRaw, filteredTournaments);
+
+                const activeList = rankedPlayers.filter(p => !p.retired);
+                activeList.forEach((p, i) => p.currentRank = i + 1);
+
+                const retiredList = rankedPlayers.filter(p => p.retired).map(p => {
+                    let peakRank = 9999;
+                    let peakPoints = 0;
+                    globalHist.forEach(h => {
+                        const s = h.standings?.find(st => st.id === p.id);
+                        if (s) {
+                            if (s.rank > 0 && s.rank < peakRank) peakRank = s.rank;
+                            if (s.pts > peakPoints) peakPoints = s.pts;
+                        }
+                    });
+                    if (peakRank === 9999) peakRank = p.rank || '-';
+                    if (peakPoints === 0) peakPoints = p.points || 0;
+                    return { ...p, peakRank, peakPoints };
+                }).sort((a, b) => b.peakPoints - a.peakPoints);
+
+                return { active: activeList, retired: retiredList };
             }, [playersRaw, tournaments, asOfId]);
 
             return (
@@ -2134,11 +2206,13 @@
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-royal-800">
-                                    {displayPlayers.map((player) => (
+                                    {active.map((player) => (
                                         <tr key={player.id} onClick={() => onSelectPlayer(player.id)} className="hover:bg-royal-800/50 transition-colors cursor-pointer group">
-                                            <td className="p-4 text-center font-bold text-royal-400">{player.rank}</td>
+                                            <td className="p-4 text-center font-bold text-royal-400">{player.currentRank}</td>
                                             <td className="p-4 font-medium text-white flex items-center gap-3">
-                                                <img src={player.imageUrl || "https://via.placeholder.com/40"} loading="lazy" decoding="async" className="w-10 h-10 rounded-full object-cover border border-royal-700 shrink-0" />
+                                                <div className="w-10 h-10 rounded-full overflow-hidden border border-royal-700 bg-black shrink-0">
+                                                    <PlayerMedia url={player.imageUrl || (player.images ? player.images[0] : '')} className="w-full h-full" />
+                                                </div>
                                                 <div><div className="group-hover:text-gold-500 transition-colors">{getFlag(player.nationality)} {player.name}</div><div className="text-xs text-royal-300">{getCountryName(player.nationality)}</div></div>
                                             </td>
                                             <td className="p-4 font-bold text-gold-500">
@@ -2166,11 +2240,7 @@
                                                                         'bg-royal-700 text-royal-100';
 
                                                         return (
-                                                            <div 
-                                                                key={i} 
-                                                                title={`${t.tournamentName} (${t.result})`} 
-                                                                className={`w-5 h-5 flex items-center justify-center rounded-sm text-[10px] font-bold ${bgClass}`}
-                                                            >
+                                                            <div key={i} title={`${t.tournamentName} (${t.result})`} className={`w-5 h-5 flex items-center justify-center rounded-sm text-[10px] font-bold ${bgClass}`}>
                                                                 {lbl}
                                                             </div>
                                                         );
@@ -2181,9 +2251,7 @@
                                             <td className="p-4 hidden lg:table-cell">
                                                 <div className="flex gap-1.5">
                                                     {player.recentMatches.slice(0, 7).map((m, i) => (
-                                                        <div 
-                                                            key={i} 
-                                                            title={`${m.isWin ? 'Win' : 'Loss'} (${m.type === 'lopsided' ? 'Lopsided' : 'Close'})`} 
+                                                        <div key={i} title={`${m.isWin ? 'Win' : 'Loss'} (${m.type === 'lopsided' ? 'Lopsided' : 'Close'})`} 
                                                             className={`w-5 h-5 flex items-center justify-center rounded-sm text-[10px] font-bold ${
                                                                 m.isWin 
                                                                     ? (m.type === 'lopsided' ? 'bg-[#059669] text-[#020b08]' : 'bg-[#059669]/20 text-[#059669] border border-[#059669]/50') 
@@ -2198,6 +2266,51 @@
                                             </td>
                                         </tr>
                                     ))}
+
+                                    {/* HALL OF FAME SEPARATOR & RETIRED PLAYERS */}
+                                    {retired.length > 0 && (
+                                        <>
+                                            <tr className="bg-royal-950/90 border-t-2 border-royal-700">
+                                                <td colSpan="6" className="p-4 text-center">
+                                                    <div className="inline-flex items-center gap-3">
+                                                        <div className="h-px w-16 bg-royal-700"></div>
+                                                        <span className="text-royal-400 font-bold uppercase tracking-widest text-sm flex items-center gap-2">
+                                                            <Trophy size={16} className="text-royal-500" /> Hall of Fame
+                                                        </span>
+                                                        <div className="h-px w-16 bg-royal-700"></div>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                            {retired.map((player) => (
+                                                <tr key={player.id} onClick={() => onSelectPlayer(player.id)} className="hover:bg-royal-800/50 transition-colors cursor-pointer group opacity-80 hover:opacity-100 bg-black/20">
+                                                    <td className="p-4 text-center">
+                                                        <div className="text-[10px] text-royal-500 uppercase font-bold tracking-widest leading-tight mb-0.5">Peak Rnk</div>
+                                                        <div className="font-bold text-royal-400 group-hover:text-white">#{player.peakRank}</div>
+                                                    </td>
+                                                    <td className="p-4 font-medium text-white flex items-center gap-3">
+                                                        <div className="w-10 h-10 rounded-full overflow-hidden border border-royal-700 bg-black shrink-0 relative">
+                                                            <PlayerMedia url={player.imageUrl || (player.images ? player.images[0] : '')} className="w-full h-full" />
+                                                            <div className="absolute inset-0 bg-black/40 backdrop-grayscale-[0.5]"></div>
+                                                        </div>
+                                                        <div>
+                                                            <div className="group-hover:text-gold-500 transition-colors flex items-center gap-2">
+                                                                {getFlag(player.nationality)} {player.name}
+                                                                <span className="text-[9px] bg-[#be123c]/20 text-[#fb7185] px-1.5 py-0.5 rounded uppercase tracking-wider border border-[#be123c]/30 shrink-0">Retired</span>
+                                                            </div>
+                                                            <div className="text-xs text-royal-300">{getCountryName(player.nationality)}</div>
+                                                        </div>
+                                                    </td>
+                                                    <td className="p-4 font-bold text-royal-300">
+                                                        <div className="text-[10px] text-royal-500 uppercase font-bold tracking-widest mb-0.5">Peak Pts</div>
+                                                        {player.peakPoints.toLocaleString()}
+                                                    </td>
+                                                    <td className="p-4 text-center text-royal-200">{player.stats.wins} - {player.stats.losses}</td>
+                                                    <td className="p-4 hidden md:table-cell text-royal-500 font-bold uppercase tracking-widest text-[10px]">- Legend -</td>
+                                                    <td className="p-4 hidden lg:table-cell text-royal-500 font-bold uppercase tracking-widest text-[10px]">- Legend -</td>
+                                                </tr>
+                                            ))}
+                                        </>
+                                    )}
                                 </tbody>
                             </table>
                         </div>
@@ -2582,7 +2695,7 @@
 
                             {/* NEW: Visual Media Previews */}
                             <div className="bg-royal-950/50 p-4 rounded-xl border border-royal-800">
-                                <h3 className="font-bold text-white mb-4 flex items-center gap-2"><Image size={18} className="text-royal-400"/> Media Links & Preview Grid</h3>
+                                <h3 className="font-bold text-white mb-4 flex items-center gap-2"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-royal-400"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg> Media Links & Preview Grid</h3>
                                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                                     {editImages.map((u, i) => (
                                         <div key={i} className="space-y-3">
@@ -3944,6 +4057,8 @@
     </script>
 </body>
 </html>
+
+
 
 
 
