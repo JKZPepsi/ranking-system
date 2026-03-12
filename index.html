@@ -1406,12 +1406,6 @@
 
             if (historyData.length < 1) return <p className="text-royal-300 text-sm mt-4">Not enough Major+ tournament history.</p>;
 
-            const playerDebuts = useMemo(() => {
-                const debuts = {};
-                filteredHistory.forEach(h => h.standings?.forEach(s => { if (!debuts[s.id]) debuts[s.id] = h.id; }));
-                return debuts;
-            }, [filteredHistory]);
-
             const CHART_PALETTE = [
                 "#facc15", "#38bdf8", "#f472b6", "#4ade80", "#fb923c", "#a78bfa", "#2dd4bf", "#f87171", 
                 "#818cf8", "#e879f9", "#34d399", "#fbbf24", "#60a5fa", "#a3e635", "#f43f5e", "#c084fc", 
@@ -1437,8 +1431,9 @@
             const width = 1300;
             const effectiveCutoff = hasCutoff ? cutoff : absoluteMaxRank;
             
-            const LABEL_HEIGHT = isAll ? 20 : 32; 
-            const LABEL_WIDTH = isAll ? 140 : 200;
+            // Extreme compact mode for "All Time" to prevent overlap
+            const LABEL_HEIGHT = isAll ? 18 : 34; 
+            const LABEL_WIDTH = isAll ? 120 : 200;
 
             let maxPointsVal = 10;
             if (type !== 'rank') {
@@ -1448,20 +1443,24 @@
                 maxPointsVal = Math.ceil(maxPointsVal * 1.05);
             }
 
-            // Dynamic Vertical Height Scaling
+            // DYNAMIC HEIGHT: Stretches dramatically in "All Time" to guarantee enough room for the label stack
             let plotHeight = 480;
             if (type === 'rank') {
-                plotHeight = isAll ? Math.max(600, includedPlayerIds.size * LABEL_HEIGHT * 1.2) : (cutoff === 8 ? 400 : cutoff === 12 ? 500 : 800);
+                plotHeight = isAll ? Math.max(600, includedPlayerIds.size * LABEL_HEIGHT * 1.5) : (cutoff === 8 ? 400 : cutoff === 12 ? 500 : 800);
             } else {
                 const baseHeight = cutoff === 8 ? 500 : cutoff === 12 ? 650 : cutoff === 24 ? 900 : 1100;
                 plotHeight = isAll ? Math.max(baseHeight, includedPlayerIds.size * LABEL_HEIGHT * 1.5) : baseHeight;
             }
 
-            const pad = { top: 60, right: isAll ? 160 : 260, left: type === 'rank' ? 60 : 80, bottom: isAll ? 40 : 100 }; 
+            const pad = { top: 60, right: isAll ? 150 : 260, left: type === 'rank' ? 60 : 80, bottom: isAll ? 40 : 100 }; 
             const gridBottomY = pad.top + plotHeight;
-            const minChartVal = 0; // True Zero Floor for Points
+            
+            // EXACT ZERO BASELINE: Points charts always firmly root to 0
+            const minChartVal = 0; 
 
             const getX = (i) => historyData.length <= 1 ? (pad.left + (width - pad.left - pad.right) / 2) : pad.left + (i * ((width - pad.left - pad.right) / (historyData.length - 1)));
+            const activeEndX = getX(historyData.length - 1);
+            
             const getY = (val) => {
                 if (type === 'rank') return pad.top + ((val - 1) / Math.max(1, effectiveCutoff - 1)) * plotHeight;
                 return gridBottomY - (val / Math.max(1, maxPointsVal)) * plotHeight;
@@ -1491,7 +1490,7 @@
                 for (let k = 0; k < historyData.length; k++) {
                     const s = historyData[k].standings?.find(st => st.id === pid);
                     let val = s ? (type === 'rank' ? s.rank : s.pts) : (type === 'rank' ? effectiveCutoff + 5 : -1000); 
-                    timeline.push({ k, x: getX(k), y: getY(val), val, isIN: s && (!hasCutoff || s.rank <= cutoff), s, exists: !!s, isDebut: s && playerDebuts[pid] === historyData[k].id });
+                    timeline.push({ k, x: getX(k), y: getY(val), val, isIN: s && (!hasCutoff || s.rank <= cutoff), s, exists: !!s });
                 }
 
                 const segments = [];
@@ -1507,6 +1506,7 @@
                 for (let k = 0; k < timeline.length; k++) {
                     const pt = timeline[k], prev = k > 0 ? timeline[k-1] : null, next = k < timeline.length - 1 ? timeline[k+1] : null;
                     if (isAll) {
+                        // Flawless Pop-In logic: No drop lines from the sky
                         if (pt.exists) currentSeg.push({ ...pt, isDot: true });
                         else if (currentSeg.length > 0) { segments.push(currentSeg); currentSeg = []; }
                     } else if (pt.isIN) {
@@ -1523,42 +1523,56 @@
             });
 
             // -------------------------------------------------------------
-            // 4. LABEL PHYSICS ENGINE
+            // 4. UNIVERSAL COLLISION PHYSICS (100% Anti-Overlap)
             // -------------------------------------------------------------
-            let activeLabels = [], droppedLabels = [];
+            const allLabels = [];
             lines.forEach(line => {
                 const endPt = line.segments[line.segments.length - 1].slice(-1)[0];
                 const isDropped = hasCutoff ? (endPt.isIntersection || endPt.k < historyData.length - 1) : (!endPt.exists || endPt.k < historyData.length - 1);
-                const labelObj = { id: line.player.id, endX: endPt.x, endY: endPt.y, currentY: endPt.y, actualVal: endPt.val, isDropped, name: line.player.name };
-                if (isDropped) droppedLabels.push(labelObj); else activeLabels.push(labelObj);
+                
+                let threshY = endPt.y;
+                if (hasCutoff && isDropped) {
+                    const ratio = historyData.length <= 1 ? 0 : (endPt.x - pad.left) / (width - pad.left - pad.right);
+                    const exactK = ratio * (historyData.length - 1);
+                    const lowerK = Math.floor(exactK);
+                    const upperK = Math.ceil(exactK);
+                    if (lowerK >= 0 && upperK < thresholdData.length) {
+                        const t = exactK - lowerK;
+                        threshY = thresholdData[lowerK].y + t * (thresholdData[upperK].y - thresholdData[lowerK].y);
+                    }
+                }
+                
+                const minY = isDropped && hasCutoff ? threshY + 16 : 0;
+                let currentY = isDropped && hasCutoff ? Math.max(endPt.y + 16, minY) : endPt.y;
+
+                allLabels.push({ id: line.player.id, endX: endPt.x, endY: endPt.y, currentY, actualVal: endPt.val, isDropped, minY, name: line.player.name });
             });
 
-            if (type === 'rank') {
-                activeLabels.forEach(al => al.currentY = al.endY); // Flawless natural spacing
-            } else {
-                // Points physics: center-out sweeper constrained to 0-line
-                for (let iter = 0; iter < 50; iter++) {
-                    let moved = false;
-                    for (let i = 0; i < activeLabels.length - 1; i++) {
-                        for (let j = i + 1; j < activeLabels.length; j++) {
-                            if (Math.abs(activeLabels[i].endX - activeLabels[j].endX) < LABEL_WIDTH) {
-                                const diff = activeLabels[j].currentY - activeLabels[i].currentY;
-                                if (Math.abs(diff) < LABEL_HEIGHT) {
-                                    const overlap = LABEL_HEIGHT - Math.abs(diff);
-                                    if (diff >= 0) { activeLabels[i].currentY -= overlap/2; activeLabels[j].currentY += overlap/2; } 
-                                    else { activeLabels[i].currentY += overlap/2; activeLabels[j].currentY -= overlap/2; }
-                                    moved = true;
-                                }
+            // Aggressive Center-Out Repulsion Physics
+            for (let iter = 0; iter < 150; iter++) {
+                let moved = false;
+                for (let i = 0; i < allLabels.length - 1; i++) {
+                    for (let j = i + 1; j < allLabels.length; j++) {
+                        if (Math.abs(allLabels[i].endX - allLabels[j].endX) < LABEL_WIDTH * 0.8) {
+                            const diff = allLabels[j].currentY - allLabels[i].currentY;
+                            if (Math.abs(diff) < LABEL_HEIGHT) {
+                                const overlap = LABEL_HEIGHT - Math.abs(diff);
+                                if (diff >= 0) { allLabels[i].currentY -= overlap/2; allLabels[j].currentY += overlap/2; } 
+                                else { allLabels[i].currentY += overlap/2; allLabels[j].currentY -= overlap/2; }
+                                moved = true;
                             }
                         }
                     }
-                    // Crucial Clamp: Ensure the lowest active label rests perfectly on the 0-line!
-                    activeLabels.forEach(l => { if (l.currentY > gridBottomY) { l.currentY = gridBottomY; moved = true; } });
-                    if (!moved) break;
                 }
+                // Enforce floors and ceilings
+                allLabels.forEach(el => {
+                    if (el.isDropped && hasCutoff && el.currentY < el.minY) { el.currentY = el.minY; moved = true; }
+                    // Prevent labels from ever pushing above the top of the canvas
+                    if (el.currentY < pad.top - 20) { el.currentY = pad.top - 20; moved = true; }
+                });
+                if (!moved) break;
             }
 
-            const allLabels = [...activeLabels, ...droppedLabels];
             const labelPositions = {};
             let maxLabelY = gridBottomY;
             allLabels.forEach(el => {
@@ -1566,6 +1580,7 @@
                 if ((!el.isDropped || showDropped || el.id === selectedLineId || el.id === hoveredLineId) && el.currentY > maxLabelY) maxLabelY = el.currentY;
             });
 
+            // Dynamic Canvas hugging the exact lowest rendered element
             const dynamicHeight = maxLabelY + LABEL_HEIGHT + 10;
             const thresholdPath = thresholdData.map((pt, i) => `${i === 0 ? 'M' : 'L'} ${pt.x} ${pt.y}`).join(' ');
             const dropZonePath = `${thresholdPath} L ${getX(historyData.length - 1)} ${dynamicHeight} L ${getX(0)} ${dynamicHeight} Z`;
@@ -1610,7 +1625,8 @@
                     
                     return yLines.map((p, i) => (
                         <g key={`grid-${i}`}>
-                            <line x1={pad.left} y1={getY(p)} x2={width - pad.right + 20} y2={getY(p)} stroke={i === 0 ? "#1e4033" : "#13382d"} strokeWidth={i === 0 ? "2.5" : "1"} strokeDasharray={i === 0 ? "none" : "4 4"} />
+                            {/* Baseline is thick solid, rest are thin dashed */}
+                            <line x1={pad.left} y1={getY(p)} x2={width - pad.right + 20} y2={getY(p)} stroke={p === 0 ? "#1e4033" : "#13382d"} strokeWidth={p === 0 ? "2.5" : "1"} strokeDasharray={p === 0 ? "none" : "4 4"} />
                             <text x={pad.left - 15} y={getY(p)} fill="#789e90" fontSize="12" fontWeight="bold" textAnchor="end" alignmentBaseline="middle">{Math.round(p).toLocaleString()}</text>
                         </g>
                     ));
@@ -1624,9 +1640,13 @@
                     const shouldShowText = isHighlighted && (!skipText || i % 2 === 0 || isLastPt);
                     
                     // True Hollow Dots vs Solid Debut Dots
-                    const rSize = isHighlighted ? (isAll ? "3.5" : "4") : (isAll ? "2" : "2.5");
+                    // We detect debut if this is the literal first segment and first point of their drawn path
+                    const isSolidDebut = (sIdx === 0 && i === 0);
+                    
+                    const rSize = isHighlighted ? (isAll ? "3" : "4") : (isAll ? "1.5" : "2");
                     const sWidth = isHighlighted ? 2.5 : 1.5;
-                    const fillC = pt.isDebut ? line.color : "#051611";
+                    const fillC = isSolidDebut ? line.color : "#051611"; // "#051611" creates the see-through hollow effect
+                    const debutR = isHighlighted ? "4.5" : (isAll ? "2.5" : "3.5");
 
                     return (
                         <g key={`pt-${line.player.id}-${sIdx}-${i}`} className="group cursor-pointer" 
@@ -1634,14 +1654,14 @@
                            onMouseEnter={() => setHoveredLineId(line.player.id)}
                            onMouseLeave={() => setHoveredLineId(null)}>
                             
-                            <circle cx={pt.x} cy={pt.y} r={pt.isDebut ? "4" : rSize} fill={fillC} stroke={line.color} strokeWidth={sWidth} style={{ transition: 'r 0.2s ease, stroke-width 0.2s ease' }} />
+                            <circle cx={pt.x} cy={pt.y} r={isSolidDebut ? debutR : rSize} fill={fillC} stroke={line.color} strokeWidth={isSolidDebut ? 0 : sWidth} style={{ transition: 'r 0.2s ease, stroke-width 0.2s ease' }} />
                             
                             <text x={pt.x} y={pt.y - 12} fill={line.color} fontSize="12" fontWeight="900" textAnchor="middle" stroke="#051611" strokeWidth="4" paintOrder="stroke" className={shouldShowText ? "opacity-100" : "opacity-0 group-hover:opacity-100"} style={{ transition: 'opacity 0.2s ease' }}>
                                 {type === 'rank' ? `#${pt.val}` : Math.round(pt.val).toLocaleString()}
                             </text>
 
                             <circle cx={pt.x} cy={pt.y} r="20" fill="transparent" />
-                            <title>{`${pt.s?.h?.tournamentName || 'Tournament'}\n${line.player.name}\nRank: #${pt.s?.rank}\nPoints: ${pt.s?.pts.toLocaleString()}${pt.isDebut ? ' (Tour Debut)' : ''}`}</title>
+                            <title>{`${pt.s?.h?.tournamentName || 'Tournament'}\n${line.player.name}\nRank: #${pt.s?.rank}\nPoints: ${pt.s?.pts.toLocaleString()}${isSolidDebut ? ' (Debut)' : ''}`}</title>
                         </g>
                     );
                 }));
@@ -1649,21 +1669,21 @@
 
             const renderLabels = (line, isHighlighted, isDropped, endX, endY, adjY) => {
                 return (
-                    <g transform={`translate(${endX + (isAll ? 15 : 25)}, ${adjY - (isAll ? 10 : 14)})`} 
+                    <g transform={`translate(${endX + (isAll ? 10 : 25)}, ${adjY - (isAll ? 9 : 14)})`} 
                         className="cursor-pointer" style={{ transition: 'opacity 0.3s ease, transform 0.3s ease' }}
                         onClick={(e) => { e.stopPropagation(); onNavigate('players', line.player.id); }}
                         onMouseEnter={() => setHoveredLineId(line.player.id)}
                         onMouseLeave={() => setHoveredLineId(null)}>
                         
-                        <rect x="-4" y="-4" width={isAll ? 130 : 180} height={isAll ? 20 : 36} rx={isAll ? 10 : 18} fill="#051611" fillOpacity={isHighlighted ? "1" : (isDropped ? "0.6" : "0.85")} stroke={line.color} strokeWidth={isHighlighted ? 2 : 1} style={{ filter: isHighlighted ? 'drop-shadow(0 0 8px rgba(255,255,255,0.3))' : 'drop-shadow(0 4px 6px rgba(0,0,0,0.5))' }} />
+                        <rect x="-4" y="-4" width={isAll ? 120 : 180} height={isAll ? 18 : 36} rx={isAll ? 9 : 18} fill="#051611" fillOpacity={isHighlighted ? "1" : (isDropped ? "0.6" : "0.85")} stroke={line.color} strokeWidth={isHighlighted ? 2 : 1} style={{ filter: isHighlighted ? 'drop-shadow(0 0 8px rgba(255,255,255,0.3))' : 'drop-shadow(0 4px 6px rgba(0,0,0,0.5))' }} />
                         
                         {line.player.imageUrl ? (
-                            <image href={line.player.imageUrl} x="0" y={isAll ? -2 : 0} width={isAll ? 16 : 28} height={isAll ? 16 : 28} clipPath={`url(#clip-${type}-${line.player.id})`} preserveAspectRatio="xMidYMid slice" style={{ filter: isDropped && !isHighlighted ? 'grayscale(0.7)' : 'none' }} />
+                            <image href={line.player.imageUrl} x="0" y={isAll ? -2 : 0} width={isAll ? 14 : 28} height={isAll ? 14 : 28} clipPath={`url(#clip-${type}-${line.player.id})`} preserveAspectRatio="xMidYMid slice" style={{ filter: isDropped && !isHighlighted ? 'grayscale(0.7)' : 'none' }} />
                         ) : (
-                            <circle cx={isAll ? 8 : 14} cy={isAll ? 6 : 14} r={isAll ? 8 : 14} fill="#0a241c" />
+                            <circle cx={isAll ? 7 : 14} cy={isAll ? 5 : 14} r={isAll ? 7 : 14} fill="#0a241c" />
                         )}
                         
-                        <text x={isAll ? 22 : 36} y={isAll ? 9 : 19} fill={isDropped && !isHighlighted ? "#94a3b8" : "#f8fafc"} fontSize={isAll ? 10 : 14} fontWeight="bold" style={{ textShadow: "0px 2px 4px black" }}>{line.player.name}</text>
+                        <text x={isAll ? 18 : 36} y={isAll ? 8 : 19} fill={isDropped && !isHighlighted ? "#94a3b8" : "#f8fafc"} fontSize={isAll ? 9 : 14} fontWeight="bold" style={{ textShadow: "0px 2px 4px black" }}>{line.player.name}</text>
                     </g>
                 );
             };
@@ -1673,7 +1693,6 @@
             // -------------------------------------------------------------
             return (
                 <div className="w-full" id={`snb-chart-${type}`}>
-                    {/* Toolbar Controls */}
                     <div className="flex flex-wrap gap-4 items-center justify-between mb-6 bg-royal-900/40 p-2.5 rounded-xl border border-royal-800">
                         <div className="flex items-center gap-4 flex-wrap">
                             <div className="flex items-center gap-1.5 bg-royal-950 p-1.5 rounded-lg border border-royal-800">
@@ -1718,18 +1737,16 @@
                         )}
                     </div>
                     
-                    {/* SVG Chart Canvas */}
                     <div className="w-full bg-royal-900/50 rounded-xl border border-royal-700 pb-2 relative overflow-x-auto select-none custom-scrollbar" onClick={() => setSelectedLineId(null)}>
                         <svg viewBox={`0 0 ${width} ${dynamicHeight}`} style={{ minWidth: `${width}px`, transition: 'viewBox 0.3s ease' }} className="h-auto overflow-visible font-sans">
                             <defs>
                                 {lines.map(line => (
                                     <clipPath id={`clip-${type}-${line.player.id}`} key={`clip-${line.player.id}`}>
-                                        <circle cx={isAll ? "8" : "14"} cy={isAll ? "6" : "14"} r={isAll ? "8" : "14"} />
+                                        <circle cx={isAll ? "7" : "14"} cy={isAll ? "5" : "14"} r={isAll ? "7" : "14"} />
                                     </clipPath>
                                 ))}
                             </defs>
 
-                            {/* Red Threshold Zone */}
                             {hasCutoff && (
                                 <g className="threshold-layer">
                                     <path d={dropZonePath} fill="#000000" opacity="0.3" style={{ transition: 'd 0.3s ease' }} />
@@ -1741,7 +1758,6 @@
 
                             {renderGridlines()}
                             
-                            {/* Lines Layer */}
                             {sortedLines.map((line) => {
                                 const isHighlighted = selectedLineId === line.player.id || hoveredLineId === line.player.id;
                                 const isFaded = (selectedLineId || hoveredLineId) && !isHighlighted;
@@ -1752,7 +1768,6 @@
                                 ));
                             })}
                             
-                            {/* Interaction & Labels Layer */}
                             {sortedLines.map((line) => {
                                 const isHighlighted = selectedLineId === line.player.id || hoveredLineId === line.player.id;
                                 const isFaded = (selectedLineId || hoveredLineId) && !isHighlighted;
@@ -1764,12 +1779,9 @@
                                 return (
                                     <g key={`overlay-${line.player.id}`} style={{ transition: 'opacity 0.2s ease' }} opacity={isFaded ? 0.2 : 1}>
                                         {renderDots(line, isHighlighted, isFaded, historyData.length > 15)}
-
-                                        {/* Dotted Connection Line */}
                                         {shouldShowLabel && (Math.abs(adjY - endPt.y) > 2 || isDropped) && (
-                                            <path d={`M ${endPt.x} ${endPt.y} C ${endPt.x + 15} ${endPt.y}, ${endPt.x + 10} ${adjY}, ${endPt.x + (isAll ? 15 : 25)} ${adjY}`} fill="none" stroke={line.color} strokeWidth="1.5" opacity="0.6" strokeDasharray="4 4" style={{ transition: 'opacity 0.3s ease' }} />
+                                            <path d={`M ${endPt.x} ${endPt.y} C ${endPt.x + 15} ${endPt.y}, ${endPt.x + 10} ${adjY}, ${endPt.x + (isAll ? 10 : 25)} ${adjY}`} fill="none" stroke={line.color} strokeWidth="1.5" opacity="0.6" strokeDasharray="4 4" style={{ transition: 'opacity 0.3s ease' }} />
                                         )}
-
                                         {shouldShowLabel && renderLabels(line, isHighlighted, isDropped, endPt.x, endPt.y, adjY)}
                                     </g>
                                 );
@@ -4209,6 +4221,7 @@
     </script>
 </body>
 </html>
+
 
 
 
