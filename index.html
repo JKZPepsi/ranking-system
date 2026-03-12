@@ -1431,15 +1431,16 @@
                 });
             });
 
-            // Dynamic Scaling based on the selected Cutoff
-            const width = 1200;
+            // Expanded Width for extra horizontal breathing room
+            const width = 1300;
             const effectiveCutoff = hasCutoff ? cutoff : absoluteMaxRank;
             
+            // INCREASED POINTS PLOT HEIGHT: Fixes steep lines and cramped spacing!
             let plotHeight = 480;
             if (type === 'rank') {
                 plotHeight = cutoff === 8 ? 400 : cutoff === 12 ? 500 : cutoff === 24 ? 800 : 1200;
             } else {
-                plotHeight = cutoff === 8 ? 400 : cutoff === 12 ? 480 : cutoff === 24 ? 600 : 800;
+                plotHeight = cutoff === 8 ? 500 : cutoff === 12 ? 650 : cutoff === 24 ? 900 : 1300;
             }
 
             const pad = { top: 60, right: 260, left: type === 'rank' ? 60 : 80 }; 
@@ -1461,8 +1462,10 @@
                 return gridBottomY - ((val - 0) / maxPointsVal) * plotHeight;
             };
 
+            // BUG FIX: Added x: getX(k) so the red dashed line renders properly across the screen!
             const thresholdData = historyData.map((h, k) => {
-                if (!hasCutoff) return { k, val: 0, y: height + 2000 }; // Throw red line off screen if 'All' is selected
+                if (!hasCutoff) return { k, x: getX(k), val: 0, y: gridBottomY + 2000 }; 
+                
                 let val = type === 'rank' ? cutoff + 1 : 0;
                 if (type !== 'rank' && h.standings) {
                     const sCut = h.standings.find(s => s.rank === cutoff + 1);
@@ -1470,7 +1473,7 @@
                     else if (h.standings.length >= cutoff + 1) val = h.standings[cutoff].pts;
                     else if (h.standings.length > 0) val = h.standings[h.standings.length - 1].pts;
                 }
-                return { k, val, y: getY(val) };
+                return { k, x: getX(k), val, y: getY(val) };
             });
 
             const lines = [];
@@ -1546,7 +1549,7 @@
             // -------------------------------------------------------------
             // PRECISION ANCHOR & FLUID COLLISION SYSTEM
             // -------------------------------------------------------------
-            const LABEL_HEIGHT = 32; 
+            const LABEL_HEIGHT = 34; 
             const LABEL_WIDTH = 200;
             
             let activeLabels = [];
@@ -1643,7 +1646,6 @@
                 }
             });
 
-            // Dynamic Canvas hugging the exact lowest rendered element
             const dynamicHeight = maxLabelY + LABEL_HEIGHT + 10;
             const dropZonePath = `${thresholdPath} L ${getX(historyData.length - 1)} ${dynamicHeight} L ${getX(0)} ${dynamicHeight} Z`;
 
@@ -1664,7 +1666,6 @@
 
             const skipText = historyData.length > 15;
 
-            // Generate Gridlines dynamically based on Cutoff
             const gridLines = [];
             if (type === 'rank') {
                 if (cutoff === 'all') {
@@ -1678,11 +1679,8 @@
 
             return (
                 <div className="w-full" id={`snb-chart-${type}`}>
-                    {/* UNIVERSAL SYNC TOOLBAR */}
                     <div className="flex flex-wrap gap-4 items-center justify-between mb-6 bg-royal-900/40 p-2.5 rounded-xl border border-royal-800">
                         <div className="flex items-center gap-4 flex-wrap">
-                            
-                            {/* Window Toggle */}
                             <div className="flex items-center gap-1.5 bg-royal-950 p-1.5 rounded-lg border border-royal-800">
                                 <span className="text-[10px] text-royal-400 uppercase tracking-widest font-bold px-2 hidden sm:block">Window</span>
                                 {[10, 20, 50, 'all'].map(ws => (
@@ -1696,7 +1694,6 @@
                                 ))}
                             </div>
 
-                            {/* Pagination Controls */}
                             {windowSize !== 'all' && (
                                 <div className="flex items-center gap-2 bg-royal-950 p-1.5 rounded-lg border border-royal-800">
                                     <button 
@@ -1721,7 +1718,6 @@
                             
                             <div className="w-px h-6 bg-royal-700 hidden lg:block"></div>
 
-                            {/* Variable Cutoff Toggle */}
                             <div className="flex items-center gap-1.5 bg-royal-950 p-1.5 rounded-lg border border-royal-800">
                                 <span className="text-[10px] text-royal-400 uppercase tracking-widest font-bold px-2 hidden sm:block">Cutoff</span>
                                 {[8, 12, 24, 'all'].map(c => (
@@ -1735,7 +1731,6 @@
                                 ))}
                             </div>
 
-                            {/* Show/Hide Dropped */}
                             {hasCutoff && (
                                 <button 
                                     onClick={() => updateSnbChartState({ showDropped: !showDropped })} 
@@ -1751,8 +1746,8 @@
                         )}
                     </div>
                     
-                    <div className="w-full bg-royal-900/50 rounded-xl border border-royal-700 pb-2 relative overflow-hidden select-none">
-                        <svg viewBox={`0 0 ${width} ${dynamicHeight}`} className="w-full h-auto overflow-visible font-sans" style={{ transition: 'viewBox 0.3s ease' }}>
+                    <div className="w-full bg-royal-900/50 rounded-xl border border-royal-700 pb-2 relative overflow-x-auto select-none custom-scrollbar">
+                        <svg viewBox={`0 0 ${width} ${dynamicHeight}`} style={{ minWidth: `${width}px`, transition: 'viewBox 0.3s ease' }} className="h-auto overflow-visible font-sans">
                             <defs>
                                 {lines.map(line => (
                                     <clipPath id={`clip-${type}-${line.player.id}`} key={`clip-${line.player.id}`}>
@@ -1843,7 +1838,9 @@
 
                                             return (
                                                 <g key={`pt-${line.player.id}-${sIdx}-${i}`} className="group cursor-pointer" 
-                                                   onClick={(e) => { e.stopPropagation(); setSelectedLineId(line.player.id === selectedLineId ? null : line.player.id); }}>
+                                                   onClick={(e) => { e.stopPropagation(); setSelectedLineId(line.player.id === selectedLineId ? null : line.player.id); }}
+                                                   onMouseEnter={() => setHoveredLineId(line.player.id)}
+                                                   onMouseLeave={() => setHoveredLineId(null)}>
                                                     <circle cx={pt.x} cy={pt.y} r={isHighlighted ? "4" : "2.5"} fill="#051611" stroke={line.color} strokeWidth={isHighlighted ? 3 : 1.5} style={{ transition: 'r 0.2s ease, stroke-width 0.2s ease' }} />
                                                     
                                                     <text x={pt.x} y={pt.y - 12} fill={line.color} fontSize="12" fontWeight="900" textAnchor="middle" stroke="#051611" strokeWidth="4" paintOrder="stroke" className={shouldShowText ? "opacity-100" : "opacity-0 group-hover:opacity-100"} style={{ transition: 'opacity 0.2s ease' }}>
@@ -4316,6 +4313,7 @@
     </script>
 </body>
 </html>
+
 
 
 
