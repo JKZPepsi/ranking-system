@@ -701,65 +701,79 @@
                     );
                 } else {
                     // ---------------------------------------------------------
-                    // ---------------------------------------------------------
-                    // GRAND SLAM & MAJOR SF: Crystal Lotus Award
+                    // GRAND SLAM & MAJOR SF: Faceted Crystal Lotus
                     // ---------------------------------------------------------
                     const sScale = tier === 'grand_slam' ? 0.82 : 0.75; 
                     return (
                         <svg width={size} height={size} viewBox="-15 -10 130 155" className={className} style={{filter: 'drop-shadow(0 10px 15px rgba(0,0,0,0.7))'}}>
                             <defs>
-                                <linearGradient id="cGlass1" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stopColor="#ffffff" stopOpacity="0.9"/><stop offset="100%" stopColor="#bae6fd" stopOpacity="0.2"/></linearGradient>
-                                <linearGradient id="cGlass2" x1="1" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#f0f9ff" stopOpacity="0.7"/><stop offset="100%" stopColor="#38bdf8" stopOpacity="0.1"/></linearGradient>
-                                <linearGradient id="cGlass3" x1="0" y1="1" x2="0" y2="0"><stop offset="0%" stopColor="#0ea5e9" stopOpacity="0.3"/><stop offset="100%" stopColor="#ffffff" stopOpacity="0.8"/></linearGradient>
+                                {/* Icy, Refractive Crystal Gradients */}
+                                <linearGradient id="cGlass1" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stopColor="#ffffff" stopOpacity="0.95"/><stop offset="100%" stopColor="#bae6fd" stopOpacity="0.3"/></linearGradient>
+                                <linearGradient id="cGlass2" x1="1" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#f0f9ff" stopOpacity="0.7"/><stop offset="100%" stopColor="#0ea5e9" stopOpacity="0.2"/></linearGradient>
+                                <linearGradient id="cGlass3" x1="0" y1="1" x2="0" y2="0"><stop offset="0%" stopColor="#e0f2fe" stopOpacity="0.8"/><stop offset="100%" stopColor="#ffffff" stopOpacity="0.9"/></linearGradient>
                                 
+                                {/* Heavy Squared Mahogany Wood */}
                                 <linearGradient id="sfWoodTop" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stopColor="#451a03"/><stop offset="50%" stopColor="#78350f"/><stop offset="100%" stopColor="#451a03"/></linearGradient>
                                 <linearGradient id="sfWoodFront" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#78350f"/><stop offset="100%" stopColor="#2c1002"/></linearGradient>
                                 <linearGradient id="gsPlinthLight" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stopColor="#e2e8f0"/><stop offset="50%" stopColor="#ffffff"/><stop offset="100%" stopColor="#94a3b8"/></linearGradient>
                             </defs>
                             
                             <g transform={`translate(50,60) scale(${sScale}) translate(-50,-60)`}>
-                                {/* Base */}
+                                
+                                {/* Squared Mahogany Base */}
                                 <polygon points="15,115 85,115 95,125 5,125" fill="url(#sfWoodTop)" />
                                 <rect x="5" y="125" width="90" height="15" fill="url(#sfWoodFront)" />
+                                
+                                {/* Flag Colors down the front center */}
                                 <rect x="40" y="125" width="6.66" height="15" fill={c[0]} />
                                 <rect x="46.66" y="125" width="6.66" height="15" fill={c[1]} />
                                 <rect x="53.32" y="125" width="6.66" height="15" fill={c[2]} />
                                 <rect x="40" y="125" width="20" height="15" fill="#ffffff" opacity="0.15" />
                                 <rect x="40" y="125" width="20" height="15" fill="none" stroke="#000000" strokeWidth="0.5" opacity="0.3" />
 
-                                {/* Mount */}
+                                {/* Clean Silver Mount */}
                                 <path d="M 30,115 L 70,115 L 65,100 L 35,100 Z" fill="url(#gsPlinthLight)" style={{filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.5))'}}/>
-                                <path d="M 30,115 L 70,115 L 65,100 L 35,100 Z" fill="none" stroke="#ffffff" strokeWidth="1" opacity="0.8" />
+                                <path d="M 30,115 L 70,115 L 65,100 L 35,100 Z" fill="none" stroke="#ffffff" strokeWidth="1.5" opacity="0.9" strokeLinejoin="round" />
                                 <rect x="33" y="112" width="34" height="3" fill="#94a3b8" opacity="0.8" />
 
-                                {/* --- THE CRYSTAL LOTUS --- */}
-                                {/* Back glowing aura petal */}
-                                <path d="M 50 100 C 0 80 10 10 50 5 C 90 10 100 80 50 100 Z" fill="url(#cGlass2)" opacity="0.6" />
+                                {/* --- THE FACETED CRYSTAL LOTUS --- */}
                                 
-                                {/* Large Side Petals */}
-                                <path d="M 50 100 C 10 90 5 35 30 15 C 45 25 50 45 50 60 Z" fill="url(#cGlass1)" opacity="0.8" stroke="#ffffff" strokeWidth="1" strokeLinejoin="round"/>
-                                <path d="M 50 100 C 90 90 95 35 70 15 C 55 25 50 45 50 60 Z" fill="url(#cGlass3)" opacity="0.7" stroke="#ffffff" strokeWidth="1" strokeLinejoin="round"/>
-
-                                {/* Inner Mid Petals */}
-                                <path d="M 50 100 C 25 80 20 40 40 25 C 48 35 50 50 50 70 Z" fill="#ffffff" opacity="0.4" stroke="#ffffff" strokeWidth="1.5" strokeLinejoin="round"/>
-                                <path d="M 50 100 C 75 80 80 40 60 25 C 52 35 50 50 50 70 Z" fill="#bae6fd" opacity="0.3" stroke="#ffffff" strokeWidth="1.5" strokeLinejoin="round"/>
-
-                                {/* Central Teardrop Core */}
-                                <path d="M 50 100 Q 35 70 42 40 Q 50 25 58 40 Q 65 70 50 100 Z" fill="url(#cGlass1)" style={{filter: 'drop-shadow(0 0 8px rgba(255,255,255,0.6))'}} stroke="#ffffff" strokeWidth="2" strokeLinejoin="round"/>
+                                {/* Background Frosted Petals */}
+                                <polygon points="50,95 20,40 30,20 45,45" fill="url(#cGlass2)" opacity="0.6" stroke="#bae6fd" strokeWidth="1" strokeLinejoin="round" />
+                                <polygon points="50,95 80,40 70,20 55,45" fill="url(#cGlass2)" opacity="0.6" stroke="#bae6fd" strokeWidth="1" strokeLinejoin="round" />
                                 
-                                {/* Core Facet Reflection */}
-                                <path d="M 50 100 Q 35 70 42 40 Q 50 25 50 100" fill="#ffffff" opacity="0.5"/>
-
-                                {/* Scalloped Gathering Rings */}
-                                <path d="M 35 100 Q 50 90 65 100" fill="none" stroke="#ffffff" strokeWidth="2" opacity="0.9" />
-                                <path d="M 40 95 Q 50 85 60 95" fill="none" stroke="#ffffff" strokeWidth="1.5" opacity="0.7" />
-
-                                {/* Top Sparkles */}
-                                <circle cx="50" cy="5" r="2.5" fill="#ffffff" style={{filter: 'drop-shadow(0 0 5px #ffffff)'}} />
-                                <path d="M 50 -1 L 50 11 M 44 5 L 56 5" fill="none" stroke="#ffffff" strokeWidth="1.2" opacity="0.8" />
+                                {/* Outer Blooming Petals (Creates the rounded, wide flower silhouette) */}
+                                <polygon points="50,95 10,65 22,50" fill="url(#cGlass1)" opacity="0.5" stroke="#ffffff" strokeWidth="1.2" strokeLinejoin="round" />
+                                <polygon points="10,65 15,45 30,35 22,50" fill="url(#cGlass3)" opacity="0.7" stroke="#ffffff" strokeWidth="1.2" strokeLinejoin="round" />
                                 
-                                <circle cx="30" cy="15" r="1.5" fill="#ffffff" style={{filter: 'drop-shadow(0 0 3px #ffffff)'}} />
-                                <circle cx="70" cy="15" r="1.5" fill="#ffffff" style={{filter: 'drop-shadow(0 0 3px #ffffff)'}} />
+                                <polygon points="50,95 90,65 78,50" fill="url(#cGlass1)" opacity="0.5" stroke="#ffffff" strokeWidth="1.2" strokeLinejoin="round" />
+                                <polygon points="90,65 85,45 70,35 78,50" fill="url(#cGlass3)" opacity="0.7" stroke="#ffffff" strokeWidth="1.2" strokeLinejoin="round" />
+                                
+                                {/* Inner Wrapped Petals (Adds depth) */}
+                                <polygon points="50,95 22,50 35,40" fill="#ffffff" opacity="0.3" stroke="#ffffff" strokeWidth="1.2" strokeLinejoin="round" />
+                                <polygon points="22,50 30,25 45,35 35,40" fill="url(#cGlass1)" opacity="0.8" stroke="#ffffff" strokeWidth="1.2" strokeLinejoin="round" />
+                                
+                                <polygon points="50,95 78,50 65,40" fill="#ffffff" opacity="0.3" stroke="#ffffff" strokeWidth="1.2" strokeLinejoin="round" />
+                                <polygon points="78,50 70,25 55,35 65,40" fill="url(#cGlass1)" opacity="0.8" stroke="#ffffff" strokeWidth="1.2" strokeLinejoin="round" />
+                                
+                                {/* Central Bud Back Refractions */}
+                                <polygon points="45,35 50,10 38,55" fill="url(#cGlass2)" opacity="0.5" stroke="#ffffff" strokeWidth="1" strokeLinejoin="round" />
+                                <polygon points="55,35 50,10 62,55" fill="url(#cGlass2)" opacity="0.5" stroke="#ffffff" strokeWidth="1" strokeLinejoin="round" />
+                                
+                                {/* Front Main Bud (The striking core shape) */}
+                                <polygon points="50,95 38,55 50,10" fill="url(#cGlass1)" stroke="#ffffff" strokeWidth="1.5" strokeLinejoin="round" />
+                                <polygon points="50,95 62,55 50,10" fill="url(#cGlass3)" stroke="#ffffff" strokeWidth="1.5" strokeLinejoin="round" />
+                                
+                                {/* Glowing Diamond Heart inside the Bud */}
+                                <polygon points="50,85 43,55 50,25 57,55" fill="#ffffff" opacity="0.5" style={{filter: 'drop-shadow(0 0 8px rgba(255,255,255,0.9))'}} stroke="#ffffff" strokeWidth="1" strokeLinejoin="round" />
+                                <polygon points="50,85 43,55 50,25" fill="#ffffff" opacity="0.8" />
+                                
+                                {/* Crisp Center Cut Line */}
+                                <path d="M 50 10 L 50 95" fill="none" stroke="#ffffff" strokeWidth="2.5" opacity="0.9" strokeLinecap="round" />
+
+                                {/* Top Apex Sparkle */}
+                                <circle cx="50" cy="10" r="2.5" fill="#ffffff" style={{filter: 'drop-shadow(0 0 5px #ffffff)'}} />
+                                <path d="M 50 4 L 50 16 M 44 10 L 56 10" fill="none" stroke="#ffffff" strokeWidth="1.2" opacity="0.8" strokeLinecap="round"/>
                             </g>
                         </svg>
                     );
@@ -1388,7 +1402,6 @@
                 const visiblePoints = [];
                 for (let k = 0; k < historyData.length; k++) {
                     const s = historyData[k].standings.find(st => st.id === pid);
-                    
                     const prevS = k > 0 ? historyData[k-1].standings.find(st => st.id === pid) : null;
                     const nextS = k < historyData.length - 1 ? historyData[k+1].standings.find(st => st.id === pid) : null;
 
@@ -1423,13 +1436,10 @@
             });
 
             const width = 1200;
-            // Tighter rank chart height
             const height = type === 'rank' ? 700 : 650; 
-            // Give rank chart more bottom padding for dropped labels
-            const pad = { top: 60, right: 260, bottom: type === 'rank' ? 100 : 60, left: type === 'rank' ? 60 : 80 }; 
+            const pad = { top: 60, right: 260, bottom: type === 'rank' ? 100 : 100, left: type === 'rank' ? 60 : 80 }; 
 
             let maxPointsVal = 10;
-            
             historyData.forEach(h => { 
                 if (h.standings) {
                     h.standings.forEach(s => { 
@@ -1439,21 +1449,34 @@
                     });
                 }
             });
-            
             if (type !== 'rank') maxPointsVal = Math.ceil(maxPointsVal * 1.05);
 
             const getX = (i) => historyData.length === 1 ? (pad.left + (width - pad.left - pad.right) / 2) : pad.left + (i * ((width - pad.left - pad.right) / (historyData.length - 1)));
             
             const getY = (val) => {
                 if (type === 'rank') {
-                    // Position 13 is exactly the Drop Line
                     if (val > 12) return pad.top + (12 / 12) * (height - pad.top - pad.bottom); 
-                    // Spread Ranks 1-12 over the main area
                     return pad.top + ((val - 1) / 12) * (height - pad.top - pad.bottom);
                 } else {
                     return height - pad.bottom - ((val - 0) / (maxPointsVal - 0)) * (height - pad.top - pad.bottom);
                 }
             };
+
+            // Calculate the dynamic 13th place threshold for every tournament
+            const thresholdData = historyData.map((h, k) => {
+                if (type === 'rank') return { k, val: 13, y: getY(13) };
+                let val = 0;
+                if (h.standings) {
+                    const s13 = h.standings.find(s => s.rank === 13);
+                    if (s13) val = s13.pts;
+                    else if (h.standings.length >= 13) val = h.standings[12].pts;
+                    else if (h.standings.length > 0) val = h.standings[h.standings.length - 1].pts;
+                }
+                return { k, val, y: getY(val) };
+            });
+            
+            const thresholdPath = thresholdData.map((pt, i) => `${i === 0 ? 'M' : 'L'} ${getX(pt.k)} ${pt.y}`).join(' ');
+            const dropZonePath = `${thresholdPath} L ${getX(historyData.length - 1)} ${height} L ${getX(0)} ${height} Z`;
 
             lines.forEach(line => {
                 line.paths = line.segments.map(seg => {
@@ -1461,15 +1484,18 @@
                 });
             });
 
-            // Initialize endLabels with their true value to ensure perfect sorting hierarchy
+            // Initialize endLabels with logic to "sink" dropped players below the threshold line
             const endLabels = lines.map(line => {
                 const lastSeg = line.segments[line.segments.length - 1];
                 const endPt = lastSeg[lastSeg.length - 1];
                 let rawY = getY(getVal(endPt.s));
                 
-                // Push dropped players UNDER the line
-                if (type === 'rank' && endPt.s.rank > 12) {
-                    rawY += 40;
+                const isDropped = endPt.k < historyData.length - 1 || endPt.s.rank > 12;
+
+                if (isDropped) {
+                    const threshY = thresholdData[endPt.k].y;
+                    // Visually push the label completely under the red dashed threshold line
+                    rawY = Math.max(rawY + 20, threshY + 30);
                 }
                 
                 return { 
@@ -1477,14 +1503,15 @@
                     targetY: rawY, 
                     currentY: rawY, 
                     endX: getX(endPt.k),
-                    val: getVal(endPt.s)
+                    val: getVal(endPt.s),
+                    isDropped
                 };
             });
 
-            // STRICT HIERARCHY SORT: Pre-sort by actual Rank/Points so high performers stay on top
+            // STRICT HIERARCHY SORT
             endLabels.sort((a, b) => {
-                if (type === 'points') return b.val - a.val; // Higher points = first
-                return a.val - b.val; // Lower rank (1) = first
+                if (type === 'points') return b.val - a.val;
+                return a.val - b.val; 
             });
 
             // ENHANCED COLLISION SWEEP ALGORITHM
@@ -1493,15 +1520,17 @@
                 let moved = false;
                 for (let i = 0; i < endLabels.length - 1; i++) {
                     for (let j = i + 1; j < endLabels.length; j++) {
-                        // Only resolve collisions if they end on the same X-axis tick
                         if (Math.abs(endLabels[i].endX - endLabels[j].endX) < 100) {
                             const diff = endLabels[j].currentY - endLabels[i].currentY;
-                            // Because array is sorted, [i] MUST be above [j].
-                            // If diff is less than label height, they overlap and [j] needs to be pushed down.
-                            if (diff < LABEL_HEIGHT) {
+                            if (diff >= 0 && diff < LABEL_HEIGHT) {
                                 const overlap = LABEL_HEIGHT - diff;
                                 endLabels[i].currentY -= overlap / 2;
                                 endLabels[j].currentY += overlap / 2;
+                                moved = true;
+                            } else if (diff < 0 && diff > -LABEL_HEIGHT) {
+                                const overlap = LABEL_HEIGHT + diff;
+                                endLabels[i].currentY += overlap / 2;
+                                endLabels[j].currentY -= overlap / 2;
                                 moved = true;
                             }
                         }
@@ -1512,7 +1541,6 @@
             
             const labelPositions = {};
             endLabels.forEach(el => {
-                // Soft clamping so we don't squish labels at the extreme edges
                 if (el.currentY < 20) el.currentY = 20; 
                 if (el.currentY > height - 20) el.currentY = height - 20;
                 labelPositions[el.id] = el.currentY;
@@ -1547,7 +1575,17 @@
                                 ))}
                             </defs>
 
-                            {/* Heavy Gridlines */}
+                            {/* Drop Zone Shading & Dynamic Threshold Line */}
+                            <g className="threshold-layer">
+                                <path d={dropZonePath} fill="#000000" opacity="0.3" />
+                                <path d={thresholdPath} fill="none" stroke="#ef4444" strokeWidth="2" strokeDasharray="8 6" opacity="0.6" />
+                                <text x={width - pad.right + 10} y={thresholdData[thresholdData.length - 1].y} fill="#ef4444" fontSize="12" fontWeight="bold" alignmentBaseline="middle" opacity="0.8">
+                                    Top 12 Cutoff
+                                </text>
+                                {type === 'rank' && <text x={pad.left - 15} y={getY(13)} fill="#ef4444" fontSize="12" fontWeight="bold" textAnchor="end" alignmentBaseline="middle" opacity="0.8">Drop</text>}
+                            </g>
+
+                            {/* Standard Gridlines */}
                             {type === 'rank' ? (
                                 <>
                                     {[...Array(12)].map((_, i) => {
@@ -1560,11 +1598,6 @@
                                             </g>
                                         );
                                     })}
-                                    <g>
-                                        <rect x={pad.left} y={getY(13) - 15} width={width - pad.left - pad.right + 20} height="50" fill="#051611" opacity="0.6" />
-                                        <line x1={pad.left} y1={getY(13)} x2={width - pad.right + 20} y2={getY(13)} stroke="#ef4444" strokeWidth="1" strokeDasharray="8 4" opacity="0.5" />
-                                        <text x={pad.left - 15} y={getY(13)} fill="#ef4444" fontSize="12" fontWeight="bold" textAnchor="end" alignmentBaseline="middle" opacity="0.8">Drop</text>
-                                    </g>
                                 </>
                             ) : (
                                 (() => {
@@ -1610,6 +1643,7 @@
                                 const endX = getX(endPt.k);
                                 const endY = getY(getVal(endPt.s));
                                 const adjY = labelPositions[line.player.id];
+                                const isDropped = endPt.k < historyData.length - 1 || endPt.s.rank > 12;
 
                                 return (
                                     <g key={`overlay-${line.player.id}`} style={{ transition: 'opacity 0.2s ease' }} opacity={isFaded ? 0.2 : 1}>
@@ -1633,9 +1667,9 @@
                                             );
                                         }))}
 
-                                        {/* Connecting Line if Label moved */}
+                                        {/* Connecting Line if Label moved (Crucial for anchored drop labels) */}
                                         {Math.abs(adjY - endY) > 2 && (
-                                            <path d={`M ${endX} ${endY} C ${endX + 10} ${endY}, ${endX + 10} ${adjY}, ${endX + 20} ${adjY}`} fill="none" stroke={line.color} strokeWidth="2" opacity="0.6" strokeDasharray="3 3" />
+                                            <path d={`M ${endX} ${endY} C ${endX + 10} ${endY}, ${endX + 10} ${adjY}, ${endX + 20} ${adjY}`} fill="none" stroke={line.color} strokeWidth="2" opacity="0.7" strokeDasharray="3 3" />
                                         )}
 
                                         {/* Interactive Inline Profile Label */}
@@ -1646,13 +1680,16 @@
                                             onMouseEnter={() => setHoveredLineId(line.player.id)}
                                             onMouseLeave={() => setHoveredLineId(null)}
                                         >
-                                            <rect x="-4" y="-4" width="180" height="36" rx="18" fill="#051611" fillOpacity={isHighlighted ? "1" : "0.85"} stroke={line.color} strokeWidth={isHighlighted ? 2 : 1} style={{ filter: isHighlighted ? 'drop-shadow(0 0 8px rgba(255,255,255,0.3))' : 'drop-shadow(0 4px 6px rgba(0,0,0,0.5))' }} />
+                                            <rect x="-4" y="-4" width="180" height="36" rx="18" fill="#051611" fillOpacity={isHighlighted ? "1" : (isDropped ? "0.6" : "0.85")} stroke={line.color} strokeWidth={isHighlighted ? 2 : 1} style={{ filter: isHighlighted ? 'drop-shadow(0 0 8px rgba(255,255,255,0.3))' : 'drop-shadow(0 4px 6px rgba(0,0,0,0.5))' }} />
                                             {line.player.imageUrl ? (
-                                                <image href={line.player.imageUrl} x="0" y="0" width="28" height="28" clipPath={`url(#clip-${type}-${line.player.id})`} preserveAspectRatio="xMidYMid slice" />
+                                                <image href={line.player.imageUrl} x="0" y="0" width="28" height="28" clipPath={`url(#clip-${type}-${line.player.id})`} preserveAspectRatio="xMidYMid slice" style={{ filter: isDropped ? 'grayscale(0.5)' : 'none' }} />
                                             ) : (
                                                 <circle cx="14" cy="14" r="14" fill="#0a241c" />
                                             )}
-                                            <text x="36" y="19" fill="#f8fafc" fontSize="14" fontWeight="bold" style={{ textShadow: "0px 2px 4px black" }}>{line.player.name}</text>
+                                            <text x="36" y="19" fill={isDropped && !isHighlighted ? "#cbd5e1" : "#f8fafc"} fontSize="14" fontWeight="bold" style={{ textShadow: "0px 2px 4px black" }}>{line.player.name}</text>
+                                            
+                                            {/* Sunk label drop indicator */}
+                                            {isDropped && <circle cx="176" cy="14" r="4" fill="#ef4444" opacity="0.8" />}
                                         </g>
                                     </g>
                                 );
@@ -1662,7 +1699,6 @@
                 </div>
             );
         }
-
         function TopNationsChart({ globalHistory, onNavigate }) {
             const [range, setRange] = useState(10);
             const [selectedLineId, setSelectedLineId] = useState(null);
@@ -4058,6 +4094,7 @@
     </script>
 </body>
 </html>
+
 
 
 
