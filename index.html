@@ -1378,95 +1378,37 @@
             const historyData = filteredHistory.slice(range === 'all' ? 0 : -range);
             if (historyData.length < 1) return <p className="text-royal-300 text-sm mt-4">Not enough Major+ tournament history to generate a graph.</p>;
 
-            const getVal = (s) => {
-                if (type === 'rank') return s.rank;
-                return s.pts;
-            };
+            const getVal = (s) => type === 'rank' ? s.rank : s.pts;
 
             const includedPlayerIds = new Set();
-            if (type === 'rank' || type === 'points') {
-                historyData.forEach(h => {
-                    if (h.standings) {
-                        h.standings.forEach(s => {
-                            if (s.rank <= 12) includedPlayerIds.add(s.id);
-                        });
-                    }
-                });
-            }
-
-            const lines = [];
-            Array.from(includedPlayerIds).forEach(pid => {
-                const player = playersRaw.find(p => p.id === pid);
-                if (!player) return;
-
-                const visiblePoints = [];
-                for (let k = 0; k < historyData.length; k++) {
-                    const s = historyData[k].standings.find(st => st.id === pid);
-                    const prevS = k > 0 ? historyData[k-1].standings.find(st => st.id === pid) : null;
-                    const nextS = k < historyData.length - 1 ? historyData[k+1].standings.find(st => st.id === pid) : null;
-
-                    const isTop12 = s && s.rank <= 12;
-                    const prevTop12 = prevS && prevS.rank <= 12;
-                    const nextTop12 = nextS && nextS.rank <= 12;
-
-                    if (s && (isTop12 || prevTop12 || nextTop12)) {
-                        visiblePoints.push({ k, s, h: historyData[k] });
-                    }
-                }
-
-                const segments = [];
-                let currentSegment = [];
-                for (let i = 0; i < visiblePoints.length; i++) {
-                    if (currentSegment.length === 0) {
-                        currentSegment.push(visiblePoints[i]);
-                    } else {
-                        if (visiblePoints[i].k === currentSegment[currentSegment.length - 1].k + 1) {
-                            currentSegment.push(visiblePoints[i]);
-                        } else {
-                            segments.push(currentSegment);
-                            currentSegment = [visiblePoints[i]];
-                        }
-                    }
-                }
-                if (currentSegment.length > 0) segments.push(currentSegment);
-
-                if (segments.length > 0) {
-                    lines.push({ player, segments, color: getPlayerColor(player.id) });
-                }
+            historyData.forEach(h => {
+                if (h.standings) h.standings.forEach(s => { if (s.rank <= 12) includedPlayerIds.add(s.id); });
             });
 
             const width = 1200;
-            const height = type === 'rank' ? 700 : 650; 
-            const pad = { top: 60, right: 260, bottom: type === 'rank' ? 100 : 100, left: type === 'rank' ? 60 : 80 }; 
+            // Expanded bottom padding to give dropped labels plenty of room to pool under the red line
+            const height = type === 'rank' ? 750 : 700; 
+            const pad = { top: 60, right: 260, bottom: 160, left: type === 'rank' ? 60 : 80 }; 
 
             let maxPointsVal = 10;
             historyData.forEach(h => { 
-                if (h.standings) {
-                    h.standings.forEach(s => { 
-                        if (includedPlayerIds.has(s.id) && s.rank <= 12) {
-                            if (getVal(s) > maxPointsVal) maxPointsVal = getVal(s);
-                        } 
-                    });
-                }
+                if (h.standings) h.standings.forEach(s => { 
+                    if (includedPlayerIds.has(s.id) && s.rank <= 12 && getVal(s) > maxPointsVal) maxPointsVal = getVal(s);
+                });
             });
             if (type !== 'rank') maxPointsVal = Math.ceil(maxPointsVal * 1.05);
 
             const getX = (i) => historyData.length === 1 ? (pad.left + (width - pad.left - pad.right) / 2) : pad.left + (i * ((width - pad.left - pad.right) / (historyData.length - 1)));
             
             const getY = (val) => {
-                if (type === 'rank') {
-                    if (val > 12) return pad.top + (12 / 12) * (height - pad.top - pad.bottom); 
-                    return pad.top + ((val - 1) / 12) * (height - pad.top - pad.bottom);
-                } else {
-                    return height - pad.bottom - ((val - 0) / (maxPointsVal - 0)) * (height - pad.top - pad.bottom);
-                }
+                if (type === 'rank') return pad.top + ((val - 1) / 12) * (height - pad.top - pad.bottom);
+                return height - pad.bottom - ((val - 0) / (maxPointsVal - 0)) * (height - pad.top - pad.bottom);
             };
 
-            // Calculate the dynamic 13th place threshold for every tournament
+            // Dynamically track the exact 13th place threshold for every single tournament
             const thresholdData = historyData.map((h, k) => {
-                if (type === 'rank') return { k, val: 13, y: getY(13) };
-                let val = 0;
-                if (h.standings) {
+                let val = type === 'rank' ? 13 : 0;
+                if (type !== 'rank' && h.standings) {
                     const s13 = h.standings.find(s => s.rank === 13);
                     if (s13) val = s13.pts;
                     else if (h.standings.length >= 13) val = h.standings[12].pts;
@@ -1474,63 +1416,138 @@
                 }
                 return { k, val, y: getY(val) };
             });
+
+            const lines = [];
             
-            const thresholdPath = thresholdData.map((pt, i) => `${i === 0 ? 'M' : 'L'} ${getX(pt.k)} ${pt.y}`).join(' ');
+            // True Slope Linear Interpolation Engine
+            Array.from(includedPlayerIds).forEach(pid => {
+                const player = playersRaw.find(p => p.id === pid);
+                if (!player) return;
+
+                const timeline = [];
+                for (let k = 0; k < historyData.length; k++) {
+                    const s = historyData[k].standings?.find(st => st.id === pid);
+                    let val = type === 'rank' ? 25 : 0; 
+                    let isIN = false;
+                    
+                    if (s) {
+                        val = type === 'rank' ? s.rank : s.pts;
+                        isIN = s.rank <= 12;
+                    } else if (k > 0) {
+                        val = timeline[k-1].val; // Carry over previous val if missing
+                    }
+                    timeline.push({ k, x: getX(k), y: getY(val), val, isIN, s });
+                }
+
+                const segments = [];
+                let currentSeg = [];
+
+                // Calculates the exact pixel coordinate where the player line intersects the red threshold line
+                const computeIntersection = (p0, p1, t0, t1) => {
+                    const D = (t1.y - p1.y) - (t0.y - p0.y);
+                    if (Math.abs(D) < 0.001) return null; 
+                    let t = (p0.y - t0.y) / D;
+                    t = Math.max(0, Math.min(1, t)); 
+                    return {
+                        x: p0.x + t * (p1.x - p0.x),
+                        y: p0.y + t * (p1.y - p0.y),
+                        isDot: false, isIntersection: true, k: p0.k + t, val: t0.val + t * (t1.val - t0.val)
+                    };
+                };
+
+                for (let k = 0; k < timeline.length; k++) {
+                    const pt = timeline[k];
+                    const prev = k > 0 ? timeline[k-1] : null;
+                    const next = k < timeline.length - 1 ? timeline[k+1] : null;
+
+                    if (pt.isIN) {
+                        if (prev && !prev.isIN) {
+                            const I = computeIntersection(prev, pt, thresholdData[k-1], thresholdData[k]);
+                            if (I) currentSeg.push(I);
+                        }
+                        
+                        currentSeg.push({ ...pt, isDot: true });
+                        
+                        if (next && !next.isIN) {
+                            const I = computeIntersection(pt, next, thresholdData[k], thresholdData[k+1]);
+                            if (I) {
+                                currentSeg.push(I);
+                                segments.push(currentSeg);
+                                currentSeg = [];
+                            }
+                        }
+                    }
+                }
+                if (currentSeg.length > 0) segments.push(currentSeg);
+                if (segments.length > 0) lines.push({ player, segments, color: getPlayerColor(player.id) });
+            });
+
+            const thresholdPath = thresholdData.map((pt, i) => `${i === 0 ? 'M' : 'L'} ${pt.x} ${pt.y}`).join(' ');
             const dropZonePath = `${thresholdPath} L ${getX(historyData.length - 1)} ${height} L ${getX(0)} ${height} Z`;
 
             lines.forEach(line => {
-                line.paths = line.segments.map(seg => {
-                    return seg.map((pt, i) => `${i === 0 ? 'M' : 'L'} ${getX(pt.k)} ${getY(getVal(pt.s))}`).join(' ');
-                });
+                line.paths = line.segments.map(seg => seg.map((pt, i) => `${i === 0 ? 'M' : 'L'} ${pt.x} ${pt.y}`).join(' '));
             });
 
-            // Initialize endLabels with logic to "sink" dropped players below the threshold line
+            // Isolate Dropped Labels to force them under the red line
             const endLabels = lines.map(line => {
                 const lastSeg = line.segments[line.segments.length - 1];
                 const endPt = lastSeg[lastSeg.length - 1];
-                let rawY = getY(getVal(endPt.s));
                 
-                const isDropped = endPt.k < historyData.length - 1 || endPt.s.rank > 12;
-
-                if (isDropped) {
-                    const threshY = thresholdData[endPt.k].y;
-                    // Visually push the label completely under the red dashed threshold line
-                    rawY = Math.max(rawY + 20, threshY + 30);
-                }
+                let targetY = endPt.y;
+                const isDropped = endPt.isIntersection;
+                
+                // Plunge dropped labels strictly below their exact threshold intersection point
+                if (isDropped) targetY = endPt.y + 40;
                 
                 return { 
-                    id: line.player.id, 
-                    targetY: rawY, 
-                    currentY: rawY, 
-                    endX: getX(endPt.k),
-                    val: getVal(endPt.s),
+                    id: line.player.id, targetY, currentY: targetY, 
+                    endX: endPt.x, endY: endPt.y, 
+                    sortVal: isDropped ? (type === 'points' ? -1 : 999) : endPt.val,
                     isDropped
                 };
             });
 
-            // STRICT HIERARCHY SORT
+            // Strict Hierarchy Sort
             endLabels.sort((a, b) => {
-                if (type === 'points') return b.val - a.val;
-                return a.val - b.val; 
+                if (a.isDropped && !b.isDropped) return 1;
+                if (!a.isDropped && b.isDropped) return -1;
+                if (type === 'points') return b.sortVal - a.sortVal;
+                return a.sortVal - b.sortVal;
             });
 
-            // ENHANCED COLLISION SWEEP ALGORITHM
+            // Enhanced Collision Sweeper (Enforces Threshold Boundary)
             const LABEL_HEIGHT = 44; 
             for (let iter = 0; iter < 50; iter++) {
                 let moved = false;
+                
+                // Phase 1: Ensure dropped labels never float up into the active lines
+                for (let i = 0; i < endLabels.length; i++) {
+                    if (endLabels[i].isDropped) {
+                        const minY = endLabels[i].endY + 25;
+                        if (endLabels[i].currentY < minY) {
+                            endLabels[i].currentY = minY;
+                            moved = true;
+                        }
+                    }
+                }
+                
+                // Phase 2: Standard Collision Sweeper
                 for (let i = 0; i < endLabels.length - 1; i++) {
                     for (let j = i + 1; j < endLabels.length; j++) {
-                        if (Math.abs(endLabels[i].endX - endLabels[j].endX) < 100) {
+                        if (Math.abs(endLabels[i].endX - endLabels[j].endX) < 140) {
                             const diff = endLabels[j].currentY - endLabels[i].currentY;
                             if (diff >= 0 && diff < LABEL_HEIGHT) {
                                 const overlap = LABEL_HEIGHT - diff;
-                                endLabels[i].currentY -= overlap / 2;
-                                endLabels[j].currentY += overlap / 2;
+                                if (endLabels[j].isDropped && !endLabels[i].isDropped) endLabels[j].currentY += overlap;
+                                else if (!endLabels[j].isDropped && endLabels[i].isDropped) endLabels[i].currentY += overlap;
+                                else { endLabels[i].currentY -= overlap / 2; endLabels[j].currentY += overlap / 2; }
                                 moved = true;
                             } else if (diff < 0 && diff > -LABEL_HEIGHT) {
                                 const overlap = LABEL_HEIGHT + diff;
-                                endLabels[i].currentY += overlap / 2;
-                                endLabels[j].currentY -= overlap / 2;
+                                if (endLabels[j].isDropped && !endLabels[i].isDropped) endLabels[j].currentY += overlap;
+                                else if (!endLabels[j].isDropped && endLabels[i].isDropped) endLabels[i].currentY += overlap;
+                                else { endLabels[i].currentY += overlap / 2; endLabels[j].currentY -= overlap / 2; }
                                 moved = true;
                             }
                         }
@@ -1565,7 +1582,7 @@
                         )}
                     </div>
                     
-                    <div className="w-full bg-royal-900/50 rounded-xl border border-royal-700 pb-2 relative overflow-hidden">
+                    <div className="w-full bg-royal-900/50 rounded-xl border border-royal-700 pb-2 relative overflow-hidden select-none">
                         <svg viewBox={`0 0 ${width} ${height}`} className="w-full h-auto overflow-visible font-sans">
                             <defs>
                                 {lines.map(line => (
@@ -1575,14 +1592,20 @@
                                 ))}
                             </defs>
 
-                            {/* Drop Zone Shading & Dynamic Threshold Line */}
+                            {/* THE RED ZONE: Placed at bottom layer so lines run over it */}
                             <g className="threshold-layer">
                                 <path d={dropZonePath} fill="#000000" opacity="0.3" />
-                                <path d={thresholdPath} fill="none" stroke="#ef4444" strokeWidth="2" strokeDasharray="8 6" opacity="0.6" />
+                                <path d={thresholdPath} fill="none" stroke="#ef4444" strokeWidth="3" strokeDasharray="8 6" opacity="0.7" />
+                                {/* Red Threshold Dots */}
+                                {thresholdData.map((pt, i) => (
+                                    <circle key={`thresh-dot-${i}`} cx={getX(pt.k)} cy={pt.y} r="5" fill="#051611" stroke="#ef4444" strokeWidth="2" opacity="0.8" />
+                                ))}
                                 <text x={width - pad.right + 10} y={thresholdData[thresholdData.length - 1].y} fill="#ef4444" fontSize="12" fontWeight="bold" alignmentBaseline="middle" opacity="0.8">
                                     Top 12 Cutoff
                                 </text>
-                                {type === 'rank' && <text x={pad.left - 15} y={getY(13)} fill="#ef4444" fontSize="12" fontWeight="bold" textAnchor="end" alignmentBaseline="middle" opacity="0.8">Drop</text>}
+                                <text x={pad.left - 15} y={thresholdData[0].y} fill="#ef4444" fontSize="12" fontWeight="bold" textAnchor="end" alignmentBaseline="middle" opacity="0.8">
+                                    Drop
+                                </text>
                             </g>
 
                             {/* Standard Gridlines */}
@@ -1613,7 +1636,7 @@
                                 })()
                             )}
                             
-                            {/* Lines */}
+                            {/* Player Lines */}
                             {sortedLines.map((line) => {
                                 const isHighlighted = selectedLineId === line.player.id || hoveredLineId === line.player.id;
                                 const isFaded = (selectedLineId || hoveredLineId) && !isHighlighted;
@@ -1626,7 +1649,7 @@
                                         strokeLinejoin="round" strokeLinecap="round" 
                                         style={{ transition: 'stroke-width 0.2s ease, opacity 0.2s ease' }}
                                         className="cursor-pointer"
-                                        onClick={() => setSelectedLineId(line.player.id === selectedLineId ? null : line.player.id)}
+                                        onClick={(e) => { e.stopPropagation(); setSelectedLineId(line.player.id === selectedLineId ? null : line.player.id); }}
                                         onMouseEnter={() => setHoveredLineId(line.player.id)}
                                         onMouseLeave={() => setHoveredLineId(null)}
                                     />
@@ -1640,41 +1663,41 @@
                                 
                                 const lastSeg = line.segments[line.segments.length - 1];
                                 const endPt = lastSeg[lastSeg.length - 1];
-                                const endX = getX(endPt.k);
-                                const endY = getY(getVal(endPt.s));
+                                const endX = endPt.x;
+                                const endY = endPt.y;
                                 const adjY = labelPositions[line.player.id];
-                                const isDropped = endPt.k < historyData.length - 1 || endPt.s.rank > 12;
+                                const isDropped = endPt.isIntersection;
 
                                 return (
                                     <g key={`overlay-${line.player.id}`} style={{ transition: 'opacity 0.2s ease' }} opacity={isFaded ? 0.2 : 1}>
                                         {/* Plotted points */}
                                         {line.segments.map((seg, sIdx) => seg.map((pt, i) => {
-                                            const ptX = getX(pt.k);
-                                            const ptY = getY(getVal(pt.s));
-                                            const isDropPoint = type === 'rank' && pt.s.rank > 12;
-                                            
+                                            if (!pt.isDot) return null;
                                             return (
-                                                <g key={`pt-${line.player.id}-${sIdx}-${i}`} className="group cursor-crosshair">
-                                                    <circle cx={ptX} cy={ptY} r={isHighlighted ? "6" : "5"} fill="#051611" stroke={line.color} strokeWidth={isHighlighted ? 4 : 2} style={{ transition: 'r 0.2s ease, stroke-width 0.2s ease' }} />
+                                                <g key={`pt-${line.player.id}-${sIdx}-${i}`} className="group cursor-pointer" 
+                                                   onClick={(e) => { e.stopPropagation(); setSelectedLineId(line.player.id === selectedLineId ? null : line.player.id); }}>
+                                                    <circle cx={pt.x} cy={pt.y} r={isHighlighted ? "6" : "5"} fill="#051611" stroke={line.color} strokeWidth={isHighlighted ? 4 : 2} style={{ transition: 'r 0.2s ease, stroke-width 0.2s ease' }} />
                                                     
-                                                    <text x={ptX} y={ptY - 15} fill={isDropPoint ? "#ef4444" : line.color} fontSize="12" fontWeight="900" textAnchor="middle" stroke="#051611" strokeWidth="4" paintOrder="stroke" className={isDropPoint ? "opacity-90" : "opacity-0 group-hover:opacity-100"} style={{ transition: 'opacity 0.2s ease' }}>
-                                                        {type === 'rank' ? `#${pt.s.rank}` : pt.s.pts.toLocaleString()}
+                                                    {/* ALWAYS show values when line is selected! */}
+                                                    <text x={pt.x} y={pt.y - 15} fill={line.color} fontSize="12" fontWeight="900" textAnchor="middle" stroke="#051611" strokeWidth="4" paintOrder="stroke" className={isHighlighted ? "opacity-100" : "opacity-0 group-hover:opacity-100"} style={{ transition: 'opacity 0.2s ease' }}>
+                                                        {type === 'rank' ? `#${pt.val}` : Math.round(pt.val).toLocaleString()}
                                                     </text>
 
-                                                    <circle cx={ptX} cy={ptY} r="20" fill="transparent" />
-                                                    <title>{`${pt.h?.tournamentName || 'Tournament'}\n${line.player.name}\nRank: #${pt.s.rank}\nPoints: ${pt.s.pts.toLocaleString()}`}</title>
+                                                    {/* MASSIVE invisible click-target area so selecting lines is super easy */}
+                                                    <circle cx={pt.x} cy={pt.y} r="25" fill="transparent" />
+                                                    <title>{`${pt.s?.h?.tournamentName || 'Tournament'}\n${line.player.name}\nRank: #${pt.s?.rank}\nPoints: ${pt.s?.pts.toLocaleString()}`}</title>
                                                 </g>
                                             );
                                         }))}
 
-                                        {/* Connecting Line if Label moved (Crucial for anchored drop labels) */}
-                                        {Math.abs(adjY - endY) > 2 && (
-                                            <path d={`M ${endX} ${endY} C ${endX + 10} ${endY}, ${endX + 10} ${adjY}, ${endX + 20} ${adjY}`} fill="none" stroke={line.color} strokeWidth="2" opacity="0.7" strokeDasharray="3 3" />
+                                        {/* Curved Dotted Connecting Line to Dropped/Offset Labels */}
+                                        {(Math.abs(adjY - endY) > 2 || isDropped) && (
+                                            <path d={`M ${endX} ${endY} C ${endX + 15} ${endY}, ${endX + 10} ${adjY}, ${endX + 25} ${adjY}`} fill="none" stroke={line.color} strokeWidth="2" opacity="0.6" strokeDasharray="4 4" />
                                         )}
 
-                                        {/* Interactive Inline Profile Label */}
+                                        {/* Interactive Profile Label */}
                                         <g 
-                                            transform={`translate(${endX + 20}, ${adjY - 14})`} 
+                                            transform={`translate(${endX + 25}, ${adjY - 14})`} 
                                             className="cursor-pointer"
                                             onClick={(e) => { e.stopPropagation(); onNavigate('players', line.player.id); }}
                                             onMouseEnter={() => setHoveredLineId(line.player.id)}
@@ -1682,14 +1705,14 @@
                                         >
                                             <rect x="-4" y="-4" width="180" height="36" rx="18" fill="#051611" fillOpacity={isHighlighted ? "1" : (isDropped ? "0.6" : "0.85")} stroke={line.color} strokeWidth={isHighlighted ? 2 : 1} style={{ filter: isHighlighted ? 'drop-shadow(0 0 8px rgba(255,255,255,0.3))' : 'drop-shadow(0 4px 6px rgba(0,0,0,0.5))' }} />
                                             {line.player.imageUrl ? (
-                                                <image href={line.player.imageUrl} x="0" y="0" width="28" height="28" clipPath={`url(#clip-${type}-${line.player.id})`} preserveAspectRatio="xMidYMid slice" style={{ filter: isDropped ? 'grayscale(0.5)' : 'none' }} />
+                                                <image href={line.player.imageUrl} x="0" y="0" width="28" height="28" clipPath={`url(#clip-${type}-${line.player.id})`} preserveAspectRatio="xMidYMid slice" style={{ filter: isDropped && !isHighlighted ? 'grayscale(0.7)' : 'none' }} />
                                             ) : (
                                                 <circle cx="14" cy="14" r="14" fill="#0a241c" />
                                             )}
-                                            <text x="36" y="19" fill={isDropped && !isHighlighted ? "#cbd5e1" : "#f8fafc"} fontSize="14" fontWeight="bold" style={{ textShadow: "0px 2px 4px black" }}>{line.player.name}</text>
+                                            <text x="36" y="19" fill={isDropped && !isHighlighted ? "#94a3b8" : "#f8fafc"} fontSize="14" fontWeight="bold" style={{ textShadow: "0px 2px 4px black" }}>{line.player.name}</text>
                                             
-                                            {/* Sunk label drop indicator */}
-                                            {isDropped && <circle cx="176" cy="14" r="4" fill="#ef4444" opacity="0.8" />}
+                                            {/* Red marker identifying a sunk dropped label */}
+                                            {isDropped && <circle cx="168" cy="14" r="4" fill="#ef4444" opacity="0.8" />}
                                         </g>
                                     </g>
                                 );
@@ -1699,6 +1722,7 @@
                 </div>
             );
         }
+        
         function TopNationsChart({ globalHistory, onNavigate }) {
             const [range, setRange] = useState(10);
             const [selectedLineId, setSelectedLineId] = useState(null);
@@ -4094,6 +4118,7 @@
     </script>
 </body>
 </html>
+
 
 
 
