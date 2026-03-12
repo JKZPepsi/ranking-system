@@ -2115,66 +2115,86 @@
         }
 
         function NationsView({ players, playersRaw, tournaments, onNavigate }) {
-            const globalHistory = useMemo(() => getGlobalHistory(playersRaw, tournaments), [playersRaw, tournaments]);
-
+            // Bulletproof fallback in case playersRaw isn't passed down initially
+            const safePlayers = playersRaw || players || [];
+            const globalHistory = useMemo(() => getGlobalHistory(safePlayers, tournaments), [safePlayers, tournaments]);
+            
             const nationStats = useMemo(() => {
                 const stats = {};
-                players.forEach(p => {
-                    const nat = p.nationality || 'UNK';
-                    if (!stats[nat]) stats[nat] = { code: nat, points: 0, bonusPoints: 0, wins: 0, losses: 0, players: 0, titles: 0, retiredPlayers: 0 };
-                    
-                    if (p.retired) {
-                        stats[nat].retiredPlayers += 1;
-                    } else {
-                        stats[nat].points += (p.points || 0);
-                        stats[nat].bonusPoints += (p.bonusPoints || 0);
-                        stats[nat].wins += (p.stats?.wins || 0);
-                        stats[nat].losses += (p.stats?.losses || 0);
-                        stats[nat].players += 1;
+                safePlayers.forEach(p => {
+                    const code = p.nationality || 'UNK';
+                    if (!stats[code]) stats[code] = { code, players: 0, activePlayers: 0, points: 0, titles: 0 };
+                    stats[code].players++;
+                    if (!p.retired) {
+                        stats[code].activePlayers++;
+                        stats[code].points += (p.points || 0);
                     }
-                    stats[nat].titles += p.recentTournaments?.filter(t => t.result === 'Winner').length || 0;
                 });
-                return Object.values(stats)
-                    .filter(n => n.players > 0 || n.retiredPlayers > 0)
-                    .sort((a,b) => b.points - a.points || b.bonusPoints - a.bonusPoints);
-            }, [players]);
+
+                tournaments.forEach(t => {
+                    if (t.status === 'completed' && t.bracket) {
+                        let b = []; try { b = typeof t.bracket === 'string' ? JSON.parse(t.bracket) : t.bracket; } catch(e){}
+                        const finalMatch = b[1]?.[0] || b[b.length-1]?.[0];
+                        if (finalMatch?.winner) {
+                            const winner = safePlayers.find(p => p.id === finalMatch.winner);
+                            if (winner) {
+                                const code = winner.nationality || 'UNK';
+                                if (stats[code]) stats[code].titles++;
+                            }
+                        }
+                    }
+                });
+
+                return Object.values(stats).sort((a, b) => b.points - a.points || b.activePlayers - a.activePlayers);
+            }, [safePlayers, tournaments]);
 
             return (
                 <div className="max-w-[1400px] mx-auto space-y-8 pb-20">
                     <header className="mb-4">
-                        <h1 className="text-3xl font-bold text-white flex items-center gap-3"><NationsIcon size={32} className="text-gold-500"/> Nations Analytics</h1>
-                        <p className="text-royal-300 mt-2">Aggregate performance and historical trajectory of all active players by country.</p>
+                        <h1 className="text-3xl font-bold text-white flex items-center gap-3"><Globe size={32} className="text-blue-400"/> Global Nations</h1>
+                        <p className="text-royal-300 mt-2">The arms race for international dominance. Only active players contribute to the current National Points total.</p>
                     </header>
 
-                    <div className="bg-royal-900 p-6 rounded-2xl border border-royal-800 shadow-xl">
-                        <h2 className="text-2xl font-bold text-white flex items-center gap-3 mb-6"><NationsIcon size={28} className="text-gold-500"/> Global Nations Trajectory</h2>
-                        <TopNationsChart globalHistory={globalHistory} onNavigate={onNavigate} />
+                    <div className="bg-royal-900 p-6 rounded-2xl border border-royal-800 shadow-xl mb-8">
+                        <h2 className="text-2xl font-bold text-white flex items-center gap-3 mb-6"><TrendingUp size={28} className="text-emerald-400"/> Top Nations Trajectory</h2>
+                        {/* THE FIX: Passing safePlayers into the chart */}
+                        <TopNationsChart globalHistory={globalHistory} playersRaw={safePlayers} onNavigate={onNavigate} />
                     </div>
 
-                    <div className="bg-royal-950/50 rounded-xl border border-royal-800 overflow-hidden shadow-xl w-full mt-8">
-                        <div className="overflow-x-auto">
-                            <table className="w-full text-left border-collapse">
-                                <thead><tr className="bg-royal-900/80 text-royal-200 text-sm uppercase">
-                                    <th className="p-4 text-center w-16">#</th><th>Nation</th><th className="text-center">Active Players</th><th className="text-gold-500">Active Points</th><th className="text-center">All-Time Titles</th><th className="text-center">Active W-L</th>
-                                </tr></thead>
-                                <tbody className="divide-y divide-royal-800/50">{nationStats.map((n, idx) => (
-                                    <tr key={n.code} onClick={() => onNavigate('nations', null, null, n.code)} className="hover:bg-royal-800/80 transition-colors cursor-pointer group">
-                                        <td className="p-4 text-center text-royal-400 font-bold">{idx + 1}</td>
-                                        <td className="p-4 font-medium text-white flex items-center gap-3 group-hover:text-gold-500 transition-colors"><span className="text-2xl">{getFlag(n.code)}</span>{getCountryName(n.code)}</td>
-                                        <td className="p-4 text-center text-royal-200">
-                                            {n.players}
-                                            {n.retiredPlayers > 0 && <span className="text-xs text-royal-500 block">+{n.retiredPlayers} Ret.</span>}
-                                        </td>
-                                        <td className="p-4 font-bold text-gold-500">
-                                            {n.points.toLocaleString()}
-                                            {n.bonusPoints > 0 && <span className="text-emerald-400 text-xs ml-1 font-bold">+{n.bonusPoints}</span>}
-                                        </td>
-                                        <td className="p-4 text-center font-bold text-gold-400">{n.titles}</td>
-                                        <td className="p-4 text-center text-royal-200">{n.wins} - {n.losses}</td>
-                                    </tr>
-                                ))}</tbody>
-                            </table>
-                        </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                        {nationStats.map((nat, idx) => (
+                            <div key={nat.code} onClick={() => onNavigate('nations', null, null, nat.code)} className="bg-royal-900 rounded-xl border border-royal-800 p-6 hover:bg-royal-800/80 transition-all cursor-pointer group shadow-lg relative overflow-hidden">
+                                <div className="absolute -right-6 -bottom-6 text-9xl opacity-5 group-hover:opacity-10 transition-opacity pointer-events-none drop-shadow-md">
+                                    {getFlag(nat.code)}
+                                </div>
+                                <div className="flex justify-between items-start mb-4 relative z-10">
+                                    <div className="flex items-center gap-3">
+                                        <span className="text-4xl drop-shadow-md">{getFlag(nat.code)}</span>
+                                        <div>
+                                            <h3 className="text-xl font-bold text-white leading-tight">{getCountryName(nat.code)}</h3>
+                                            <span className="text-xs font-bold text-royal-400 uppercase tracking-widest">{nat.code}</span>
+                                        </div>
+                                    </div>
+                                    <div className="bg-royal-950 px-3 py-1 rounded-lg border border-royal-800 shadow-inner">
+                                        <span className="text-gold-500 font-black text-lg">#{idx + 1}</span>
+                                    </div>
+                                </div>
+                                <div className="space-y-3 relative z-10">
+                                    <div className="flex justify-between items-center bg-royal-950/50 p-2.5 rounded-lg border border-royal-800/50">
+                                        <span className="text-royal-300 text-sm font-medium">Active Points</span>
+                                        <span className="text-white font-bold">{nat.points.toLocaleString()}</span>
+                                    </div>
+                                    <div className="flex justify-between items-center bg-royal-950/50 p-2.5 rounded-lg border border-royal-800/50">
+                                        <span className="text-royal-300 text-sm font-medium">Active Roster</span>
+                                        <span className="text-white font-bold">{nat.activePlayers} <span className="text-royal-500 text-xs">/ {nat.players} total</span></span>
+                                    </div>
+                                    <div className="flex justify-between items-center bg-royal-950/50 p-2.5 rounded-lg border border-royal-800/50">
+                                        <span className="text-royal-300 text-sm font-medium">Major Titles</span>
+                                        <span className="text-gold-400 font-bold">{nat.titles}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        ))}
                     </div>
                 </div>
             );
@@ -4462,10 +4482,14 @@
                         <div className="flex-1 overflow-auto p-4 md:p-8">
                             {activeTab === 'dashboard' && <DashboardView playersRaw={playersRaw} tournaments={tournaments} onSelectPlayer={handlePlayerSelect} players={players} />}
                             {activeTab === 'analytics' && <AnalyticsView playersRaw={playersRaw} tournaments={tournaments} players={players} onNavigate={navigate} />}
+                            
+                            {/* NATIONS VIEWS UPDATED HERE */}
                             {activeTab === 'nations' && !selectedNationCode && <NationsView players={players} playersRaw={playersRaw} tournaments={tournaments} onNavigate={navigate} />}
-                            {activeTab === 'nations' && selectedNationCode && <NationProfile code={selectedNationCode} players={players} onBack={() => navigate('nations')} onNavigate={navigate} />}
+                            {activeTab === 'nations' && selectedNationCode && <NationProfile code={selectedNationCode} players={players} onBack={() => navigate('nations')} onNavigate={navigate} playersRaw={playersRaw} tournaments={tournaments} />}
+                            
                             {activeTab === 'players' && !selectedPlayerId && <PlayersView players={players} onSelectPlayer={handlePlayerSelect} db={db} appId={appId} />}
-                            {activeTab === 'players' && selectedPlayerId && <PlayerProfile player={players.find(p => p.id === selectedPlayerId)} players={players} playersRaw={playersRaw} onBack={() => navigateTo('players')} tournaments={tournaments} db={db} appId={appId} onNavigate={navigate} />}                            {activeTab === 'tournaments' && !selectedTournamentId && <TournamentsView tournaments={tournaments} onSelect={(id) => navigate('tournaments', null, id)} onCreate={() => navigateTo('create_tournament')} />}
+                            {activeTab === 'players' && selectedPlayerId && <PlayerProfile player={players.find(p => p.id === selectedPlayerId)} players={players} playersRaw={playersRaw} onBack={() => navigateTo('players')} tournaments={tournaments} db={db} appId={appId} onNavigate={navigate} />}
+                            {activeTab === 'tournaments' && !selectedTournamentId && <TournamentsView tournaments={tournaments} onSelect={(id) => navigate('tournaments', null, id)} onCreate={() => navigateTo('create_tournament')} />}
                             {activeTab === 'tournaments' && selectedTournamentId && (() => {
                                 const t = tournaments.find(t => t.id === selectedTournamentId);
                                 if (!t) return null;
@@ -4485,6 +4509,7 @@
     </script>
 </body>
 </html>
+
 
 
 
