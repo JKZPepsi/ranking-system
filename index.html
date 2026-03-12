@@ -1428,13 +1428,10 @@
                 if (s.rank > absoluteMaxRank) absoluteMaxRank = s.rank;
             }));
 
-            // -------------------------------------------------------------
-            // DYNAMIC SCALING ENGINE
-            // -------------------------------------------------------------
             const width = 1300;
             const effectiveCutoff = hasCutoff ? cutoff : absoluteMaxRank;
             
-            const LABEL_HEIGHT = isAll ? 22 : 34; 
+            const LABEL_HEIGHT = isAll ? 20 : 32; 
             const LABEL_WIDTH = isAll ? 130 : 200;
 
             let maxPointsVal = 10;
@@ -1445,21 +1442,20 @@
                 maxPointsVal = Math.ceil(maxPointsVal * 1.05);
             }
 
+            // Ensures the grid physically stretches so labels fit cleanly INSIDE the lines
             let plotHeight = 480;
             if (type === 'rank') {
-                plotHeight = isAll ? Math.max(600, includedPlayerIds.size * LABEL_HEIGHT * 1.4) : (cutoff === 8 ? 400 : cutoff === 12 ? 500 : 800);
+                plotHeight = isAll ? Math.max(600, includedPlayerIds.size * LABEL_HEIGHT * 1.1) : (cutoff === 8 ? 400 : cutoff === 12 ? 500 : 800);
             } else {
                 const baseHeight = cutoff === 8 ? 500 : cutoff === 12 ? 650 : cutoff === 24 ? 900 : 1100;
-                plotHeight = isAll ? Math.max(baseHeight, includedPlayerIds.size * LABEL_HEIGHT * 1.5) : baseHeight;
+                plotHeight = isAll ? Math.max(baseHeight, includedPlayerIds.size * LABEL_HEIGHT * 1.1) : baseHeight;
             }
 
             const pad = { top: 60, right: isAll ? 150 : 260, left: type === 'rank' ? 60 : 80, bottom: isAll ? 40 : 100 }; 
             const gridBottomY = pad.top + plotHeight;
-            const minChartVal = 0; 
+            const minChartVal = 0; // True Zero Floor
 
             const getX = (i) => historyData.length <= 1 ? (pad.left + (width - pad.left - pad.right) / 2) : pad.left + (i * ((width - pad.left - pad.right) / (historyData.length - 1)));
-            const activeEndX = getX(historyData.length - 1);
-            
             const getY = (val) => {
                 if (type === 'rank') return pad.top + ((val - 1) / Math.max(1, effectiveCutoff - 1)) * plotHeight;
                 return gridBottomY - (val / Math.max(1, maxPointsVal)) * plotHeight;
@@ -1477,9 +1473,6 @@
                 return { k, x: getX(k), val, y: getY(val) };
             });
 
-            // -------------------------------------------------------------
-            // PATH GENERATION
-            // -------------------------------------------------------------
             const lines = [];
             Array.from(includedPlayerIds).forEach(pid => {
                 const player = playersRaw.find(p => p.id === pid);
@@ -1521,132 +1514,51 @@
             });
 
             // -------------------------------------------------------------
-            // UNIVERSAL PHYSICS ENGINE (100% Ordered & Non-Overlapping)
+            // NEW FLOOR-CLAMPED UPWARD PHYSICS (Zero Overlaps, Zero Dangling)
             // -------------------------------------------------------------
-            let activeLabels = [];
-            let droppedLabels = [];
-
+            const allLabels = [];
             lines.forEach(line => {
                 const endPt = line.segments[line.segments.length - 1].slice(-1)[0];
-                const isDropped = hasCutoff ? (endPt.isIntersection || endPt.k < historyData.length - 1) : (!endPt.exists || endPt.k < historyData.length - 1);
-                const labelObj = { id: line.player.id, endX: endPt.x, endY: endPt.y, currentY: endPt.y, actualVal: endPt.val, isDropped, name: line.player.name };
-                if (isDropped) droppedLabels.push(labelObj); else activeLabels.push(labelObj);
+                const isDropped = hasCutoff && (endPt.isIntersection || endPt.k < historyData.length - 1);
+                allLabels.push({ id: line.player.id, endX: endPt.x, endY: endPt.y, currentY: endPt.y, actualVal: endPt.val, isDropped, name: line.player.name });
             });
 
-            if (isAll) {
-                // ALL-TIME ENGINE: Strict sorting for rightmost column, fluid avoidance for early retirees
-                const allLabels = [...activeLabels, ...droppedLabels];
-                const rightmost = allLabels.filter(al => al.endX === activeEndX);
-                if (type === 'rank') rightmost.sort((a,b) => a.actualVal - b.actualVal);
-                else rightmost.sort((a,b) => b.actualVal - a.actualVal);
-
-                if (rightmost.length > 0) {
-                    rightmost[0].currentY = rightmost[0].endY;
-                    for (let i = 1; i < rightmost.length; i++) rightmost[i].currentY = Math.max(rightmost[i].endY, rightmost[i-1].currentY + LABEL_HEIGHT);
-                }
-
-                const others = allLabels.filter(al => al.endX !== activeEndX);
-                for (let iter = 0; iter < 100; iter++) {
-                    let moved = false;
-                    for (let i = 0; i < others.length; i++) {
-                        let el = others[i];
-                        for (let a = 0; a < rightmost.length; a++) {
-                            const act = rightmost[a];
-                            if (Math.abs(el.endX - act.endX) < LABEL_WIDTH) {
-                                const diff = el.currentY - act.currentY;
-                                if (Math.abs(diff) < LABEL_HEIGHT) { el.currentY = diff >= 0 ? act.currentY + LABEL_HEIGHT : act.currentY - LABEL_HEIGHT; moved = true; }
-                            }
-                        }
-                        for (let j = i + 1; j < others.length; j++) {
-                            const other = others[j];
-                            if (Math.abs(el.endX - other.endX) < LABEL_WIDTH) {
-                                const diff = other.currentY - el.currentY;
-                                if (Math.abs(diff) < LABEL_HEIGHT) {
-                                    const overlap = LABEL_HEIGHT - Math.abs(diff);
-                                    if (diff >= 0) { el.currentY -= overlap/2; other.currentY += overlap/2; }
-                                    else { el.currentY += overlap/2; other.currentY -= overlap/2; }
-                                    moved = true;
-                                }
-                            }
-                        }
-                    }
-                    if (!moved) break;
-                }
-                
-                // Transfer changes back to lists
-                activeLabels = allLabels.filter(l => !l.isDropped);
-                droppedLabels = allLabels.filter(l => l.isDropped);
-
+            if (type === 'rank') {
+                allLabels.sort((a,b) => a.actualVal - b.actualVal);
             } else {
-                // CUTOFF ENGINE: Active players lock perfectly, Dropped sink below red line
-                if (type === 'rank') {
-                    activeLabels.forEach(al => al.currentY = al.endY);
-                } else {
-                    activeLabels.sort((a, b) => b.actualVal - a.actualVal);
-                    if (activeLabels.length > 0) {
-                        activeLabels[0].currentY = activeLabels[0].endY;
-                        for (let i = 1; i < activeLabels.length; i++) activeLabels[i].currentY = Math.max(activeLabels[i].endY, activeLabels[i - 1].currentY + LABEL_HEIGHT);
-                    }
-                }
-
-                if (droppedLabels.length > 0) {
-                    const lowestActiveY = activeLabels.length > 0 ? Math.max(...activeLabels.map(l => l.currentY)) : 0;
-                    droppedLabels.forEach(el => {
-                        const ratio = historyData.length <= 1 ? 0 : (el.endX - pad.left) / (width - pad.left - pad.right);
-                        const exactK = ratio * (historyData.length - 1);
-                        const lowerK = Math.floor(exactK);
-                        const upperK = Math.ceil(exactK);
-                        let threshY = el.endY;
-                        if (lowerK >= 0 && upperK < thresholdData.length) {
-                            threshY = thresholdData[lowerK].y + (exactK - lowerK) * (thresholdData[upperK].y - thresholdData[lowerK].y);
-                        }
-                        
-                        el.minY = threshY + 16; 
-                        if (el.endX > activeEndX - 190 && activeLabels.length > 0) el.minY = Math.max(el.minY, lowestActiveY + LABEL_HEIGHT + 10);
-                        el.currentY = Math.max(el.endY + 16, el.minY);
-                    });
-
-                    for (let iter = 0; iter < 50; iter++) {
-                        let moved = false;
-                        for (let i = 0; i < droppedLabels.length; i++) {
-                            let el = droppedLabels[i];
-                            for (let a = 0; a < activeLabels.length; a++) {
-                                const act = activeLabels[a];
-                                if (Math.abs(el.endX - act.endX) < LABEL_WIDTH) {
-                                    if (el.currentY >= act.currentY && el.currentY - act.currentY < LABEL_HEIGHT) { el.currentY = act.currentY + LABEL_HEIGHT; moved = true; }
-                                }
-                            }
-                            for (let j = i + 1; j < droppedLabels.length; j++) {
-                                const other = droppedLabels[j];
-                                if (Math.abs(el.endX - other.endX) < LABEL_WIDTH) {
-                                    const diff = other.currentY - el.currentY;
-                                    if (Math.abs(diff) < LABEL_HEIGHT) {
-                                        const overlap = LABEL_HEIGHT - Math.abs(diff);
-                                        if (diff >= 0) { el.currentY -= overlap/2; other.currentY += overlap/2; }
-                                        else { el.currentY += overlap/2; other.currentY -= overlap/2; }
-                                        moved = true;
-                                    }
-                                }
-                            }
-                            if (el.currentY < el.minY) { el.currentY = el.minY; moved = true; }
-                        }
-                        if (!moved) break;
-                    }
-                }
+                allLabels.sort((a,b) => b.actualVal - a.actualVal);
             }
 
-            const allLabels = [...activeLabels, ...droppedLabels];
+            for (let iter = 0; iter < 150; iter++) {
+                let moved = false;
+                for (let i = 0; i < allLabels.length - 1; i++) {
+                    for (let j = i + 1; j < allLabels.length; j++) {
+                        if (Math.abs(allLabels[i].endX - allLabels[j].endX) < LABEL_WIDTH * 0.8) {
+                            const diff = allLabels[j].currentY - allLabels[i].currentY;
+                            if (Math.abs(diff) < LABEL_HEIGHT) {
+                                const overlap = LABEL_HEIGHT - Math.abs(diff);
+                                if (diff >= 0) { allLabels[i].currentY -= overlap/2; allLabels[j].currentY += overlap/2; } 
+                                else { allLabels[i].currentY += overlap/2; allLabels[j].currentY -= overlap/2; }
+                                moved = true;
+                            }
+                        }
+                    }
+                }
+                // HARD FLOOR CLAMP: Pushes everything UPWARDS from the 0 line!
+                allLabels.forEach(l => {
+                    if (l.currentY > gridBottomY) { l.currentY = gridBottomY; moved = true; }
+                    if (l.currentY < pad.top) { l.currentY = pad.top; moved = true; }
+                });
+                if (!moved) break;
+            }
+
             const labelPositions = {};
-            let maxLabelY = gridBottomY;
+            allLabels.forEach(el => labelPositions[el.id] = el.currentY);
 
-            allLabels.forEach(el => {
-                labelPositions[el.id] = el.currentY;
-                if ((!el.isDropped || showDropped || isAll || el.id === selectedLineId || el.id === hoveredLineId) && el.currentY > maxLabelY) maxLabelY = el.currentY;
-            });
-
-            const dynamicHeight = maxLabelY + LABEL_HEIGHT + 10;
+            // Tightly fits around the grid, no more empty space below!
+            const dynamicHeight = gridBottomY + pad.bottom;
             const thresholdPath = thresholdData.map((pt, i) => `${i === 0 ? 'M' : 'L'} ${pt.x} ${pt.y}`).join(' ');
-            const dropZonePath = `${thresholdPath} L ${getX(historyData.length - 1)} ${dynamicHeight} L ${getX(0)} ${dynamicHeight} Z`;
+            const dropZonePath = `${thresholdPath} L ${getX(historyData.length - 1)} ${gridBottomY} L ${getX(0)} ${gridBottomY} Z`;
 
             const sortedLines = [...lines].sort((a, b) => {
                 const aH = a.player.id === selectedLineId || a.player.id === hoveredLineId, bH = b.player.id === selectedLineId || b.player.id === hoveredLineId;
@@ -1656,8 +1568,6 @@
                 if (aL.isDropped && !bL.isDropped) return -1; if (!aL.isDropped && bL.isDropped) return 1;
                 return type === 'points' ? aL.actualVal - bL.actualVal : bL.actualVal - aL.actualVal;
             });
-
-            const skipText = historyData.length > 15;
 
             return (
                 <div className="w-full" id={`snb-chart-${type}`}>
@@ -1674,13 +1584,9 @@
                             </div>
                             {!isAll && windowSize !== 'all' && (
                                 <div className="flex items-center gap-2 bg-royal-950 p-1.5 rounded-lg border border-royal-800">
-                                    <button onClick={() => updateSnbChartState({ offset: Math.min(maxOffset, safeOffset + windowSize) })} disabled={safeOffset >= maxOffset} className="p-1 hover:bg-royal-800 text-royal-400 hover:text-white rounded disabled:opacity-30 transition-colors">
-                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
-                                    </button>
+                                    <button onClick={() => updateSnbChartState({ offset: Math.min(maxOffset, safeOffset + windowSize) })} disabled={safeOffset >= maxOffset} className="p-1 hover:bg-royal-800 text-royal-400 hover:text-white rounded disabled:opacity-30 transition-colors"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg></button>
                                     <span className="text-xs font-bold text-royal-300 w-28 text-center tabular-nums">{startIndex + 1} - {endIndex} of {N}</span>
-                                    <button onClick={() => updateSnbChartState({ offset: Math.max(0, safeOffset - windowSize) })} disabled={safeOffset <= 0} className="p-1 hover:bg-royal-800 text-royal-400 hover:text-white rounded disabled:opacity-30 transition-colors">
-                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
-                                    </button>
+                                    <button onClick={() => updateSnbChartState({ offset: Math.max(0, safeOffset - windowSize) })} disabled={safeOffset <= 0} className="p-1 hover:bg-royal-800 text-royal-400 hover:text-white rounded disabled:opacity-30 transition-colors"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg></button>
                                 </div>
                             )}
                             <div className="w-px h-6 bg-royal-700 hidden lg:block"></div>
@@ -1700,9 +1606,7 @@
                                 </button>
                             )}
                         </div>
-                        {selectedLineId && (
-                            <button onClick={() => setSelectedLineId(null)} className="text-xs font-medium text-gold-500 hover:text-white px-4 py-1.5 bg-royal-800 rounded-md border border-royal-700 transition-colors">Clear Selection</button>
-                        )}
+                        {selectedLineId && <button onClick={() => setSelectedLineId(null)} className="text-xs font-medium text-gold-500 hover:text-white px-4 py-1.5 bg-royal-800 rounded-md border border-royal-700 transition-colors">Clear Selection</button>}
                     </div>
                     
                     <div className="w-full bg-royal-900/50 rounded-xl border border-royal-700 pb-2 relative overflow-x-auto select-none custom-scrollbar" onClick={() => setSelectedLineId(null)}>
@@ -1710,7 +1614,7 @@
                             <defs>
                                 {lines.map(line => (
                                     <clipPath id={`clip-${type}-${line.player.id}`} key={`clip-${line.player.id}`}>
-                                        <circle cx={isAll ? "7" : "14"} cy={isAll ? "6" : "14"} r={isAll ? "7" : "14"} />
+                                        <circle cx={isAll ? "8" : "14"} cy={isAll ? "6" : "14"} r={isAll ? "8" : "14"} />
                                     </clipPath>
                                 ))}
                             </defs>
@@ -1724,67 +1628,51 @@
                                 </g>
                             )}
 
+                            {/* GRIDLINES */}
                             {type === 'rank' ? (
-                                <>
-                                    {(() => {
-                                        const rLines = [];
-                                        if (isAll) {
-                                            const step = effectiveCutoff > 30 ? 5 : 2;
-                                            for (let i = 1; i <= effectiveCutoff; i += step) rLines.push(i);
-                                            if (!rLines.includes(1)) rLines.unshift(1);
-                                            if (!rLines.includes(effectiveCutoff)) rLines.push(effectiveCutoff);
-                                        } else {
-                                            for (let i = 1; i <= cutoff; i++) rLines.push(i);
-                                        }
-                                        return rLines.map((r, i) => {
-                                            const yPos = pad.top + ((r - 1) / Math.max(1, effectiveCutoff - 1)) * plotHeight;
-                                            return (
-                                                <g key={`grid-${i}`}>
-                                                    <line x1={pad.left} y1={yPos} x2={width - pad.right + 20} y2={yPos} stroke="#13382d" strokeWidth="1" strokeDasharray="4 4" />
-                                                    <text x={pad.left - 15} y={yPos} fill="#789e90" fontSize="12" fontWeight="bold" textAnchor="end" alignmentBaseline="middle">#{r}</text>
-                                                </g>
-                                            );
-                                        });
-                                    })()}
-                                </>
+                                (() => {
+                                    const rLines = [];
+                                    const step = isAll ? (effectiveCutoff > 30 ? 5 : 2) : 1;
+                                    for (let i = 1; i <= effectiveCutoff; i += step) rLines.push(i);
+                                    if (isAll && !rLines.includes(1)) rLines.unshift(1);
+                                    if (isAll && !rLines.includes(effectiveCutoff)) rLines.push(effectiveCutoff);
+                                    return rLines.map((r, i) => (
+                                        <g key={`grid-${i}`}>
+                                            <line x1={pad.left} y1={pad.top + ((r - 1) / Math.max(1, effectiveCutoff - 1)) * plotHeight} x2={width - pad.right + 20} y2={pad.top + ((r - 1) / Math.max(1, effectiveCutoff - 1)) * plotHeight} stroke="#13382d" strokeWidth="1" strokeDasharray="4 4" />
+                                            <text x={pad.left - 15} y={pad.top + ((r - 1) / Math.max(1, effectiveCutoff - 1)) * plotHeight} fill="#789e90" fontSize="12" fontWeight="bold" textAnchor="end" alignmentBaseline="middle">#{r}</text>
+                                        </g>
+                                    ));
+                                })()
                             ) : (
-                                <>
-                                    {(() => {
-                                        const tickCount = isAll ? 20 : 15;
-                                        const rawStep = maxPointsVal / tickCount;
-                                        const mag = Math.pow(10, Math.floor(Math.log10(rawStep || 1)));
-                                        const step = Math.max(10, Math.ceil(rawStep / mag) * mag);
-                                        
-                                        const yLines = [0]; 
-                                        for(let v = step; v <= maxPointsVal; v += step) yLines.push(v);
-                                        
-                                        return yLines.map((p, i) => (
-                                            <g key={`grid-${i}`}>
-                                                <line x1={pad.left} y1={getY(p)} x2={width - pad.right + 20} y2={getY(p)} stroke={i === 0 ? "#1e4033" : "#13382d"} strokeWidth={i === 0 ? "2.5" : "1"} strokeDasharray={i === 0 ? "none" : "4 4"} />
-                                                <text x={pad.left - 15} y={getY(p)} fill="#789e90" fontSize="12" fontWeight="bold" textAnchor="end" alignmentBaseline="middle">{Math.round(p).toLocaleString()}</text>
-                                            </g>
-                                        ));
-                                    })()}
-                                </>
+                                (() => {
+                                    const rawStep = maxPointsVal / (isAll ? 20 : 15);
+                                    const mag = Math.pow(10, Math.floor(Math.log10(rawStep || 1)));
+                                    const step = Math.max(10, Math.ceil(rawStep / mag) * mag);
+                                    const yLines = [0]; for(let v = step; v <= maxPointsVal; v += step) yLines.push(v);
+                                    return yLines.map((p, i) => (
+                                        <g key={`grid-${i}`}>
+                                            <line x1={pad.left} y1={getY(p)} x2={width - pad.right + 20} y2={getY(p)} stroke={p === 0 ? "#1e4033" : "#13382d"} strokeWidth={p === 0 ? "3" : "1"} strokeDasharray={p === 0 ? "none" : "4 4"} />
+                                            <text x={pad.left - 15} y={getY(p)} fill="#789e90" fontSize="12" fontWeight="bold" textAnchor="end" alignmentBaseline="middle">{Math.round(p).toLocaleString()}</text>
+                                        </g>
+                                    ));
+                                })()
                             )}
                             
+                            {/* LINES */}
                             {sortedLines.map((line) => {
                                 const isHighlighted = selectedLineId === line.player.id || hoveredLineId === line.player.id;
                                 const isFaded = (selectedLineId || hoveredLineId) && !isHighlighted;
                                 return line.paths.map((pStr, pIdx) => (
-                                    <path key={`path-${line.player.id}-${pIdx}`} d={pStr} fill="none" stroke={line.color} strokeWidth={isHighlighted ? 4 : (isAll ? 1.2 : 2)} opacity={isFaded ? 0.15 : 0.9} strokeLinejoin="round" strokeLinecap="round" style={{ transition: 'stroke-width 0.2s ease, opacity 0.2s ease' }} className="cursor-pointer"
-                                        onClick={(e) => { e.stopPropagation(); setSelectedLineId(line.player.id === selectedLineId ? null : line.player.id); }} onMouseEnter={() => setHoveredLineId(line.player.id)} onMouseLeave={() => setHoveredLineId(null)}
-                                    />
+                                    <path key={`path-${line.player.id}-${pIdx}`} d={pStr} fill="none" stroke={line.color} strokeWidth={isHighlighted ? 4 : (isAll ? 1.2 : 2)} opacity={isFaded ? 0.15 : 0.9} strokeLinejoin="round" strokeLinecap="round" className="cursor-pointer" onClick={(e) => { e.stopPropagation(); setSelectedLineId(line.player.id === selectedLineId ? null : line.player.id); }} onMouseEnter={() => setHoveredLineId(line.player.id)} onMouseLeave={() => setHoveredLineId(null)} />
                                 ));
                             })}
                             
+                            {/* DOTS & LABELS */}
                             {sortedLines.map((line) => {
                                 const isHighlighted = selectedLineId === line.player.id || hoveredLineId === line.player.id;
                                 const isFaded = (selectedLineId || hoveredLineId) && !isHighlighted;
                                 const endPt = line.segments[line.segments.length - 1].slice(-1)[0];
                                 const isDropped = hasCutoff ? (endPt.isIntersection || endPt.k < historyData.length - 1) : (!endPt.exists || endPt.k < historyData.length - 1);
-                                
-                                // In All Time, everyone is rendered. With Cutoff, respect showDropped toggle.
                                 const shouldShowLabel = isAll ? true : (!isDropped || showDropped || isHighlighted);
                                 const adjY = labelPositions[line.player.id];
 
@@ -1793,29 +1681,21 @@
                                         {line.segments.map((seg, sIdx) => seg.map((pt, i) => {
                                             if (!pt.isDot) return null;
                                             const isLastPt = (sIdx === line.segments.length - 1 && i === seg.length - 1);
-                                            const shouldShowText = isHighlighted && (!skipText || i % 2 === 0 || isLastPt);
+                                            const shouldShowText = isHighlighted && (historyData.length <= 15 || i % 2 === 0 || isLastPt);
                                             
-                                            // SOLID DEBUT LOGIC
-                                            const isSolidDebut = (sIdx === 0 && i === 0 && pt.isDebut);
+                                            // DOT LOGIC: Clean Hollow Rings vs Solid Debuts
+                                            const isSolidDebut = pt.isDebut && sIdx === 0 && i === 0;
                                             const rSize = isHighlighted ? (isAll ? "3" : "4") : (isAll ? "1.5" : "2.5");
                                             const sWidth = isHighlighted ? 2.5 : 1.5;
-                                            const debutR = isHighlighted ? "4.5" : (isAll ? "3" : "4");
+                                            const debutR = isHighlighted ? "4.5" : (isAll ? "3" : "3.5");
 
                                             return (
-                                                <g key={`pt-${line.player.id}-${sIdx}-${i}`} className="group cursor-pointer" 
-                                                   onClick={(e) => { e.stopPropagation(); setSelectedLineId(line.player.id === selectedLineId ? null : line.player.id); }}
-                                                   onMouseEnter={() => setHoveredLineId(line.player.id)}
-                                                   onMouseLeave={() => setHoveredLineId(null)}>
+                                                <g key={`pt-${line.player.id}-${sIdx}-${i}`} className="group cursor-pointer" onClick={(e) => { e.stopPropagation(); setSelectedLineId(line.player.id === selectedLineId ? null : line.player.id); }} onMouseEnter={() => setHoveredLineId(line.player.id)} onMouseLeave={() => setHoveredLineId(null)}>
                                                     
-                                                    {/* Standard hollow dots vs Solid colored debut dots */}
-                                                    <circle cx={pt.x} cy={pt.y} r={isSolidDebut ? debutR : rSize} fill={isSolidDebut ? line.color : "#051611"} stroke={isSolidDebut ? "#ffffff" : line.color} strokeWidth={isSolidDebut ? 1 : sWidth} style={{ transition: 'r 0.2s ease, stroke-width 0.2s ease' }} />
+                                                    <circle cx={pt.x} cy={pt.y} r={isSolidDebut ? debutR : rSize} fill={isSolidDebut ? line.color : "#051611"} stroke={line.color} strokeWidth={isSolidDebut ? 0 : sWidth} style={{ transition: 'r 0.2s ease, stroke-width 0.2s ease' }} />
                                                     
-                                                    <text x={pt.x} y={pt.y - 12} fill={line.color} fontSize="12" fontWeight="900" textAnchor="middle" stroke="#051611" strokeWidth="4" paintOrder="stroke" className={shouldShowText ? "opacity-100" : "opacity-0 group-hover:opacity-100"} style={{ transition: 'opacity 0.2s ease' }}>
-                                                        {type === 'rank' ? `#${pt.val}` : Math.round(pt.val).toLocaleString()}
-                                                    </text>
-
+                                                    <text x={pt.x} y={pt.y - 12} fill={line.color} fontSize="12" fontWeight="900" textAnchor="middle" stroke="#051611" strokeWidth="4" paintOrder="stroke" className={shouldShowText ? "opacity-100" : "opacity-0 group-hover:opacity-100"}>{type === 'rank' ? `#${pt.val}` : Math.round(pt.val).toLocaleString()}</text>
                                                     <circle cx={pt.x} cy={pt.y} r="20" fill="transparent" />
-                                                    <title>{`${pt.s?.h?.tournamentName || 'Tournament'}\n${line.player.name}\nRank: #${pt.s?.rank}\nPoints: ${pt.s?.pts.toLocaleString()}${isSolidDebut ? ' (Tour Debut)' : ''}`}</title>
                                                 </g>
                                             );
                                         }))}
@@ -1825,20 +1705,11 @@
                                         )}
 
                                         {shouldShowLabel && (
-                                            <g transform={`translate(${endPt.x + (isAll ? 10 : 25)}, ${adjY - (isAll ? 10 : 14)})`} 
-                                                className="cursor-pointer" style={{ transition: 'opacity 0.3s ease, transform 0.3s ease' }}
-                                                onClick={(e) => { e.stopPropagation(); onNavigate('players', line.player.id); }}
-                                                onMouseEnter={() => setHoveredLineId(line.player.id)}
-                                                onMouseLeave={() => setHoveredLineId(null)}>
-                                                
+                                            <g transform={`translate(${endPt.x + (isAll ? 10 : 25)}, ${adjY - (isAll ? 10 : 14)})`} className="cursor-pointer" style={{ transition: 'opacity 0.3s ease, transform 0.3s ease' }} onClick={(e) => { e.stopPropagation(); onNavigate('players', line.player.id); }} onMouseEnter={() => setHoveredLineId(line.player.id)} onMouseLeave={() => setHoveredLineId(null)}>
                                                 <rect x="-4" y="-4" width={isAll ? 120 : 180} height={isAll ? 20 : 36} rx={isAll ? 10 : 18} fill="#051611" fillOpacity={isHighlighted ? "1" : (isDropped ? "0.6" : "0.85")} stroke={line.color} strokeWidth={isHighlighted ? 2 : 1} style={{ filter: isHighlighted ? 'drop-shadow(0 0 8px rgba(255,255,255,0.3))' : 'drop-shadow(0 4px 6px rgba(0,0,0,0.5))' }} />
-                                                
                                                 {line.player.imageUrl ? (
                                                     <image href={line.player.imageUrl} x="0" y={isAll ? -2 : 0} width={isAll ? 14 : 28} height={isAll ? 14 : 28} clipPath={`url(#clip-${type}-${line.player.id})`} preserveAspectRatio="xMidYMid slice" style={{ filter: isDropped && !isHighlighted ? 'grayscale(0.7)' : 'none' }} />
-                                                ) : (
-                                                    <circle cx={isAll ? 7 : 14} cy={isAll ? 6 : 14} r={isAll ? 7 : 14} fill="#0a241c" />
-                                                )}
-                                                
+                                                ) : ( <circle cx={isAll ? 7 : 14} cy={isAll ? 6 : 14} r={isAll ? 7 : 14} fill="#0a241c" /> )}
                                                 <text x={isAll ? 18 : 36} y={isAll ? 10 : 19} fill={isDropped && !isHighlighted ? "#94a3b8" : "#f8fafc"} fontSize={isAll ? 9 : 14} fontWeight="bold" style={{ textShadow: "0px 2px 4px black" }}>{line.player.name}</text>
                                             </g>
                                         )}
@@ -1874,16 +1745,8 @@
 
             if (historyData.length < 1) return <p className="text-royal-300 text-sm mt-4">Not enough Major+ tournament history.</p>;
 
-            // OLYMPIC SPORTING COLORS DICTIONARY
             const NATION_COLORS = {
-                'USA': '#38bdf8', 'GBR': '#f87171', 'AUS': '#facc15', 'FRA': '#60a5fa',
-                'GER': '#f8fafc', 'ITA': '#60a5fa', 'ESP': '#facc15', 'NED': '#fb923c',
-                'BRA': '#4ade80', 'ARG': '#7dd3fc', 'JPN': '#818cf8', 'CAN': '#ef4444',
-                'CHN': '#f43f5e', 'RUS': '#f87171', 'SWE': '#fde047', 'NOR': '#ef4444',
-                'MEX': '#22c55e', 'KOR': '#38bdf8', 'NZL': '#94a3b8', 'RSA': '#10b981',
-                'SUI': '#ef4444', 'BEL': '#ef4444', 'AUT': '#ef4444', 'POR': '#10b981',
-                'POL': '#f8fafc', 'CZE': '#38bdf8', 'CRO': '#f87171', 'SRB': '#ef4444',
-                'DEN': '#ef4444', 'FIN': '#38bdf8', 'IRL': '#4ade80', 'UKR': '#facc15'
+                'USA': '#38bdf8', 'GBR': '#f87171', 'AUS': '#facc15', 'FRA': '#60a5fa', 'GER': '#f8fafc', 'ITA': '#60a5fa', 'ESP': '#facc15', 'NED': '#fb923c', 'BRA': '#4ade80', 'ARG': '#7dd3fc', 'JPN': '#818cf8', 'CAN': '#ef4444', 'CHN': '#f43f5e', 'RUS': '#f87171', 'SWE': '#fde047', 'NOR': '#ef4444', 'MEX': '#22c55e', 'KOR': '#38bdf8', 'NZL': '#94a3b8', 'RSA': '#10b981', 'SUI': '#ef4444', 'BEL': '#ef4444', 'AUT': '#ef4444', 'POR': '#10b981', 'POL': '#f8fafc', 'CZE': '#38bdf8', 'CRO': '#f87171', 'SRB': '#ef4444', 'DEN': '#ef4444', 'FIN': '#38bdf8', 'IRL': '#4ade80', 'UKR': '#facc15'
             };
             const getNationColor = (code) => {
                 if (NATION_COLORS[code]) return NATION_COLORS[code];
@@ -1895,7 +1758,7 @@
             playersRaw.forEach(p => { if (p.nationality) nationCodes.add(p.nationality); });
 
             const width = 1300;
-            const LABEL_HEIGHT = 26; 
+            const LABEL_HEIGHT = 22; 
             const LABEL_WIDTH = 130;
 
             let maxPointsVal = 10;
@@ -1915,12 +1778,12 @@
             });
             maxPointsVal = Math.ceil(maxPointsVal * 1.05);
 
-            const plotHeight = Math.max(500, nationCodes.size * LABEL_HEIGHT * 1.2);
-            const pad = { top: 60, right: 140, left: 80, bottom: 40 }; 
+            // Scale guarantees labels fit perfectly without pushing down past 0!
+            const plotHeight = Math.max(500, nationCodes.size * LABEL_HEIGHT * 1.1);
+            const pad = { top: 60, right: 150, left: 80, bottom: 40 }; 
             const gridBottomY = pad.top + plotHeight;
 
             const getX = (i) => historyData.length <= 1 ? (pad.left + (width - pad.left - pad.right) / 2) : pad.left + (i * ((width - pad.left - pad.right) / (historyData.length - 1)));
-            const activeEndX = getX(historyData.length - 1);
             const getY = (val) => gridBottomY - (val / Math.max(1, maxPointsVal)) * plotHeight;
 
             const lines = [];
@@ -1944,37 +1807,50 @@
                 }
             });
 
-            // PHYSICS ENGINE (Center-Out Stack for Nations)
-            let activeLabels = [];
+            const allLabels = [];
             lines.forEach(line => {
                 const endPt = line.segments[line.segments.length - 1].slice(-1)[0];
-                activeLabels.push({ id: line.code, endX: endPt.x, endY: endPt.y, currentY: endPt.y, actualVal: endPt.val });
+                allLabels.push({ id: line.code, endX: endPt.x, endY: endPt.y, currentY: endPt.y, actualVal: endPt.val });
             });
 
-            activeLabels.sort((a,b) => b.actualVal - a.actualVal);
-            if (activeLabels.length > 0) {
-                activeLabels[0].currentY = activeLabels[0].endY;
-                for (let i = 1; i < activeLabels.length; i++) activeLabels[i].currentY = Math.max(activeLabels[i].endY, activeLabels[i-1].currentY + LABEL_HEIGHT);
+            // CLAMPED UPWARD PHYSICS 
+            allLabels.sort((a,b) => b.actualVal - a.actualVal);
+            for (let iter = 0; iter < 150; iter++) {
+                let moved = false;
+                for (let i = 0; i < allLabels.length - 1; i++) {
+                    for (let j = i + 1; j < allLabels.length; j++) {
+                        if (Math.abs(allLabels[i].endX - allLabels[j].endX) < LABEL_WIDTH * 0.8) {
+                            const diff = allLabels[j].currentY - allLabels[i].currentY;
+                            if (Math.abs(diff) < LABEL_HEIGHT) {
+                                const overlap = LABEL_HEIGHT - Math.abs(diff);
+                                if (diff >= 0) { allLabels[i].currentY -= overlap/2; allLabels[j].currentY += overlap/2; } 
+                                else { allLabels[i].currentY += overlap/2; allLabels[j].currentY -= overlap/2; }
+                                moved = true;
+                            }
+                        }
+                    }
+                }
+                // HARD CLAMP: The lowest nation rests EXACTLY on the 0 line!
+                allLabels.forEach(l => {
+                    if (l.currentY > gridBottomY) { l.currentY = gridBottomY; moved = true; }
+                    if (l.currentY < pad.top) { l.currentY = pad.top; moved = true; }
+                });
+                if (!moved) break;
             }
 
             const labelPositions = {};
-            let maxLabelY = gridBottomY;
-            activeLabels.forEach(el => {
-                labelPositions[el.id] = el.currentY;
-                if (el.currentY > maxLabelY) maxLabelY = el.currentY;
-            });
-            const dynamicHeight = maxLabelY + LABEL_HEIGHT + 10;
+            allLabels.forEach(el => labelPositions[el.id] = el.currentY);
+            const dynamicHeight = gridBottomY + pad.bottom; // Eliminates empty space entirely
 
             const sortedLines = [...lines].sort((a, b) => {
                 const aH = a.code === selectedCode || a.code === hoveredCode, bH = b.code === selectedCode || b.code === hoveredCode;
                 if (aH && !bH) return 1; if (!aH && bH) return -1;
-                const aL = activeLabels.find(l => l.id === a.code), bL = activeLabels.find(l => l.id === b.code);
+                const aL = allLabels.find(l => l.id === a.code), bL = allLabels.find(l => l.id === b.code);
                 return bL.actualVal - aL.actualVal;
             });
 
             return (
                 <div className="w-full">
-                    {/* Synchronized Toolbar */}
                     <div className="flex flex-wrap gap-4 items-center justify-between mb-6 bg-royal-900/40 p-2.5 rounded-xl border border-royal-800">
                         <div className="flex items-center gap-4 flex-wrap">
                             <div className="flex items-center gap-1.5 bg-royal-950 p-1.5 rounded-lg border border-royal-800">
@@ -1999,7 +1875,6 @@
                     
                     <div className="w-full bg-royal-900/50 rounded-xl border border-royal-700 pb-2 relative overflow-x-auto select-none custom-scrollbar">
                         <svg viewBox={`0 0 ${width} ${dynamicHeight}`} style={{ minWidth: `${width}px`, transition: 'viewBox 0.3s ease' }} className="h-auto overflow-visible font-sans">
-                            {/* Base Grid */}
                             {(() => {
                                 const rawStep = maxPointsVal / (windowSize === 'all' ? 20 : 15);
                                 const mag = Math.pow(10, Math.floor(Math.log10(rawStep || 1)));
@@ -2007,7 +1882,7 @@
                                 const yLines = [0]; for(let v = step; v <= maxPointsVal; v += step) yLines.push(v);
                                 return yLines.map((p, i) => (
                                     <g key={`grid-${i}`}>
-                                        <line x1={pad.left} y1={getY(p)} x2={width - pad.right + 20} y2={getY(p)} stroke={i === 0 ? "#1e4033" : "#13382d"} strokeWidth={i === 0 ? "2.5" : "1"} strokeDasharray={i === 0 ? "none" : "4 4"} />
+                                        <line x1={pad.left} y1={getY(p)} x2={width - pad.right + 20} y2={getY(p)} stroke={p === 0 ? "#1e4033" : "#13382d"} strokeWidth={p === 0 ? "3" : "1"} strokeDasharray={p === 0 ? "none" : "4 4"} />
                                         <text x={pad.left - 15} y={getY(p)} fill="#789e90" fontSize="12" fontWeight="bold" textAnchor="end" alignmentBaseline="middle">{Math.round(p).toLocaleString()}</text>
                                     </g>
                                 ));
@@ -2032,10 +1907,11 @@
                                         {line.segments.map((seg, sIdx) => seg.map((pt, i) => {
                                             const isLastPt = (sIdx === line.segments.length - 1 && i === seg.length - 1);
                                             const shouldShowText = isHighlighted && (historyData.length <= 15 || i % 2 === 0 || isLastPt);
-                                            const rSize = isHighlighted ? "4" : "2.5";
+                                            const isSolidDebut = pt.isDebut && sIdx === 0 && i === 0;
+                                            
                                             return (
                                                 <g key={`pt-${line.code}-${sIdx}-${i}`} className="group cursor-pointer" onClick={(e) => { e.stopPropagation(); setSelectedCode(line.code === selectedCode ? null : line.code); }} onMouseEnter={() => setHoveredCode(line.code)} onMouseLeave={() => setHoveredCode(null)}>
-                                                    <circle cx={pt.x} cy={pt.y} r={pt.isDebut ? "4" : rSize} fill={pt.isDebut ? line.color : "#051611"} stroke={line.color} strokeWidth={pt.isDebut ? 0 : 2} />
+                                                    <circle cx={pt.x} cy={pt.y} r={isSolidDebut ? (isHighlighted ? "4.5" : "3") : (isHighlighted ? "4" : "2.5")} fill={isSolidDebut ? line.color : "#051611"} stroke={line.color} strokeWidth={isSolidDebut ? 0 : 2} />
                                                     <text x={pt.x} y={pt.y - 12} fill={line.color} fontSize="12" fontWeight="900" textAnchor="middle" stroke="#051611" strokeWidth="4" paintOrder="stroke" className={shouldShowText ? "opacity-100" : "opacity-0 group-hover:opacity-100"}>{Math.round(pt.val).toLocaleString()}</text>
                                                     <circle cx={pt.x} cy={pt.y} r="20" fill="transparent" />
                                                 </g>
@@ -2044,10 +1920,10 @@
                                         
                                         {(Math.abs(adjY - endPt.y) > 2) && <path d={`M ${endPt.x} ${endPt.y} C ${endPt.x + 15} ${endPt.y}, ${endPt.x + 10} ${adjY}, ${endPt.x + 15} ${adjY}`} fill="none" stroke={line.color} strokeWidth="1.5" opacity="0.6" strokeDasharray="4 4" />}
                                         
-                                        <g transform={`translate(${endPt.x + 15}, ${adjY - 12})`} className="cursor-pointer" onClick={(e) => { e.stopPropagation(); onNavigate('nations', null, null, line.code); }} onMouseEnter={() => setHoveredCode(line.code)} onMouseLeave={() => setHoveredCode(null)}>
-                                            <rect x="-4" y="-4" width={120} height={24} rx={12} fill="#051611" fillOpacity={isHighlighted ? "1" : "0.85"} stroke={line.color} strokeWidth={isHighlighted ? 2 : 1} style={{ filter: isHighlighted ? 'drop-shadow(0 0 8px rgba(255,255,255,0.3))' : 'none' }} />
-                                            <text x={10} y={13} fontSize={14}>{getFlag(line.code)}</text>
-                                            <text x={34} y={12} fill="#f8fafc" fontSize={11} fontWeight="bold">{line.code}</text>
+                                        <g transform={`translate(${endPt.x + 15}, ${adjY - 10})`} className="cursor-pointer" onClick={(e) => { e.stopPropagation(); onNavigate('nations', null, null, line.code); }} onMouseEnter={() => setHoveredCode(line.code)} onMouseLeave={() => setHoveredCode(null)}>
+                                            <rect x="-4" y="-4" width={110} height={20} rx={10} fill="#051611" fillOpacity={isHighlighted ? "1" : "0.85"} stroke={line.color} strokeWidth={isHighlighted ? 2 : 1} style={{ filter: isHighlighted ? 'drop-shadow(0 0 8px rgba(255,255,255,0.3))' : 'none' }} />
+                                            <text x={8} y={10} fontSize={12}>{getFlag(line.code)}</text>
+                                            <text x={28} y={9} fill="#f8fafc" fontSize={10} fontWeight="bold">{line.code}</text>
                                         </g>
                                     </g>
                                 );
@@ -2235,14 +2111,7 @@
             if (filteredHistory.length < 1) return null;
 
             const NATION_COLORS = {
-                'USA': '#38bdf8', 'GBR': '#f87171', 'AUS': '#facc15', 'FRA': '#60a5fa',
-                'GER': '#f8fafc', 'ITA': '#60a5fa', 'ESP': '#facc15', 'NED': '#fb923c',
-                'BRA': '#4ade80', 'ARG': '#7dd3fc', 'JPN': '#818cf8', 'CAN': '#ef4444',
-                'CHN': '#f43f5e', 'RUS': '#f87171', 'SWE': '#fde047', 'NOR': '#ef4444',
-                'MEX': '#22c55e', 'KOR': '#38bdf8', 'NZL': '#94a3b8', 'RSA': '#10b981',
-                'SUI': '#ef4444', 'BEL': '#ef4444', 'AUT': '#ef4444', 'POR': '#10b981',
-                'POL': '#f8fafc', 'CZE': '#38bdf8', 'CRO': '#f87171', 'SRB': '#ef4444',
-                'DEN': '#ef4444', 'FIN': '#38bdf8', 'IRL': '#4ade80', 'UKR': '#facc15'
+                'USA': '#38bdf8', 'GBR': '#f87171', 'AUS': '#facc15', 'FRA': '#60a5fa', 'GER': '#f8fafc', 'ITA': '#60a5fa', 'ESP': '#facc15', 'NED': '#fb923c', 'BRA': '#4ade80', 'ARG': '#7dd3fc', 'JPN': '#818cf8', 'CAN': '#ef4444', 'CHN': '#f43f5e', 'RUS': '#f87171', 'SWE': '#fde047', 'NOR': '#ef4444', 'MEX': '#22c55e', 'KOR': '#38bdf8', 'NZL': '#94a3b8', 'RSA': '#10b981', 'SUI': '#ef4444', 'BEL': '#ef4444', 'AUT': '#ef4444', 'POR': '#10b981', 'POL': '#f8fafc', 'CZE': '#38bdf8', 'CRO': '#f87171', 'SRB': '#ef4444', 'DEN': '#ef4444', 'FIN': '#38bdf8', 'IRL': '#4ade80', 'UKR': '#facc15'
             };
             const nationColor = NATION_COLORS[code] || '#facc15';
 
@@ -2252,8 +2121,10 @@
                 if (p && p.nationality === code && !p.retired) activePlayerIds.add(s.id);
             }));
 
-            const width = 1200;
-            const plotHeight = 450;
+            const width = 1300;
+            const LABEL_HEIGHT = 20; 
+            const LABEL_WIDTH = 140;
+            const plotHeight = Math.max(450, activePlayerIds.size * LABEL_HEIGHT * 1.1);
             const pad = { top: 40, right: 180, left: 80, bottom: 40 }; 
             const gridBottomY = pad.top + plotHeight;
 
@@ -2269,7 +2140,6 @@
                         stepTotal += s.pts;
                     }
                 });
-                // Fill in 0s for missing players at this step
                 Array.from(activePlayerIds).forEach(pid => {
                     if (timelines[pid].length === k) timelines[pid].push({ k, val: 0 });
                 });
@@ -2282,8 +2152,6 @@
             const getY = (val) => gridBottomY - (val / Math.max(1, maxPointsVal)) * plotHeight;
 
             const lines = [];
-            
-            // Total Line
             const tSegs = []; let cSeg = [];
             timelines.total.forEach((pt, i) => {
                 const mapped = { ...pt, x: getX(pt.k), y: getY(pt.val), isDot: true, isDebut: pt.val > 0 && (i===0 || timelines.total[i-1].val === 0) };
@@ -2292,7 +2160,6 @@
             if (cSeg.length > 0) tSegs.push(cSeg);
             if (tSegs.length > 0) lines.push({ id: 'total', name: 'National Total', color: nationColor, isTotal: true, paths: tSegs.map(seg => seg.map((pt, i) => `${i===0?'M':'L'} ${pt.x} ${pt.y}`).join(' ')), segments: tSegs });
 
-            // Player Lines
             Array.from(activePlayerIds).forEach(pid => {
                 const p = playersRaw.find(x => x.id === pid);
                 const pSegs = []; let pCSeg = [];
@@ -2304,29 +2171,47 @@
                 if (pSegs.length > 0) lines.push({ id: pid, name: p.name, img: p.imageUrl, color: '#64748b', isTotal: false, paths: pSegs.map(seg => seg.map((pt, i) => `${i===0?'M':'L'} ${pt.x} ${pt.y}`).join(' ')), segments: pSegs });
             });
 
-            // Anchor logic
             const labels = [];
             lines.forEach(line => {
                 const endPt = line.segments[line.segments.length - 1].slice(-1)[0];
                 labels.push({ id: line.id, endX: endPt.x, endY: endPt.y, currentY: endPt.y, line });
             });
             
+            // Floor-Clamped Upward Physics
             labels.sort((a,b) => a.endY - b.endY);
-            for(let i=1; i<labels.length; i++) {
-                labels[i].currentY = Math.max(labels[i].endY, labels[i-1].currentY + 30);
+            for(let iter=0; iter<150; iter++) {
+                let moved = false;
+                for(let i=0; i<labels.length-1; i++) {
+                    for(let j=i+1; j<labels.length; j++) {
+                        if(Math.abs(labels[i].endX - labels[j].endX) < LABEL_WIDTH) {
+                            const diff = labels[j].currentY - labels[i].currentY;
+                            if(Math.abs(diff) < LABEL_HEIGHT) {
+                                const overlap = LABEL_HEIGHT - Math.abs(diff);
+                                if(diff >= 0) { labels[i].currentY -= overlap/2; labels[j].currentY += overlap/2; }
+                                else { labels[i].currentY += overlap/2; labels[j].currentY -= overlap/2; }
+                                moved = true;
+                            }
+                        }
+                    }
+                }
+                labels.forEach(l => {
+                    if (l.currentY > gridBottomY) { l.currentY = gridBottomY; moved = true; }
+                    if (l.currentY < pad.top) { l.currentY = pad.top; moved = true; }
+                });
+                if(!moved) break;
             }
 
             return (
                 <div className="w-full bg-royal-900/50 rounded-2xl border border-royal-800 p-6 shadow-xl mb-8">
                     <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-3"><AnalyticsIcon size={24} className="text-gold-500"/> Internal Progression</h3>
                     <div className="w-full overflow-x-auto custom-scrollbar pb-2">
-                        <svg viewBox={`0 0 ${width} ${pad.top + plotHeight + pad.bottom}`} style={{ minWidth: `${width}px` }} className="h-auto overflow-visible font-sans">
+                        <svg viewBox={`0 0 ${width} ${gridBottomY + pad.bottom}`} style={{ minWidth: `${width}px` }} className="h-auto overflow-visible font-sans">
                             {(() => {
                                 const step = Math.max(100, Math.ceil((maxPointsVal/5)/100)*100);
                                 const yLines = [0]; for(let v=step; v<=maxPointsVal; v+=step) yLines.push(v);
                                 return yLines.map((p, i) => (
                                     <g key={`g-${i}`}>
-                                        <line x1={pad.left} y1={getY(p)} x2={width - pad.right + 20} y2={getY(p)} stroke={i===0?"#1e4033":"#13382d"} strokeWidth={i===0?"2":"1"} strokeDasharray={i===0?"none":"4 4"} />
+                                        <line x1={pad.left} y1={getY(p)} x2={width - pad.right + 20} y2={getY(p)} stroke={i===0?"#1e4033":"#13382d"} strokeWidth={i===0?"3":"1"} strokeDasharray={i===0?"none":"4 4"} />
                                         <text x={pad.left - 15} y={getY(p)} fill="#789e90" fontSize="11" fontWeight="bold" textAnchor="end" alignmentBaseline="middle">{p.toLocaleString()}</text>
                                     </g>
                                 ));
@@ -2341,10 +2226,12 @@
                                 return (
                                     <g key={`o-${line.id}`}>
                                         {line.segments.map((seg, sI) => seg.map((pt, i) => {
-                                            const r = line.isTotal ? 4 : 2;
+                                            const isSolidDebut = pt.isDebut && sI === 0 && i === 0;
+                                            const r = line.isTotal ? 3 : 2;
+                                            const debutR = line.isTotal ? 4 : 3;
                                             return (
                                                 <g key={`d-${line.id}-${sI}-${i}`} className="group cursor-crosshair">
-                                                    <circle cx={pt.x} cy={pt.y} r={pt.isDebut ? r+1 : r} fill={pt.isDebut ? line.color : "#051611"} stroke={line.color} strokeWidth={pt.isDebut ? 0 : 1.5} />
+                                                    <circle cx={pt.x} cy={pt.y} r={isSolidDebut ? debutR : r} fill={isSolidDebut ? line.color : "#051611"} stroke={line.color} strokeWidth={isSolidDebut ? 0 : 1.5} />
                                                     <circle cx={pt.x} cy={pt.y} r="15" fill="transparent" />
                                                     <title>{`${line.name}: ${pt.val.toLocaleString()}`}</title>
                                                 </g>
@@ -2353,11 +2240,11 @@
                                         
                                         {(Math.abs(lObj.currentY - lObj.endY) > 2) && <path d={`M ${lObj.endX} ${lObj.endY} C ${lObj.endX+15} ${lObj.endY}, ${lObj.endX+10} ${lObj.currentY}, ${lObj.endX+20} ${lObj.currentY}`} fill="none" stroke={line.color} strokeWidth="1" opacity="0.4" strokeDasharray="2 2" />}
                                         
-                                        <g transform={`translate(${lObj.endX + 20}, ${lObj.currentY - 12})`} className="cursor-pointer" onClick={() => !line.isTotal && onNavigate('players', line.id)}>
-                                            <rect x="-4" y="-4" width={140} height={24} rx={12} fill="#051611" fillOpacity="0.9" stroke={line.color} strokeWidth={line.isTotal ? 2 : 1} />
-                                            {line.isTotal ? <circle cx="8" cy="8" r="4" fill={line.color} /> : (line.img ? <image href={line.img} x="0" y="0" width={16} height={16} preserveAspectRatio="xMidYMid slice" clipPath={`url(#clip-nat-${line.id})`} /> : <circle cx="8" cy="8" r="8" fill="#1e293b"/>)}
-                                            {line.img && <defs><clipPath id={`clip-nat-${line.id}`}><circle cx="8" cy="8" r="8" /></clipPath></defs>}
-                                            <text x={22} y={12} fill={line.isTotal ? line.color : "#cbd5e1"} fontSize={11} fontWeight="bold">{line.name}</text>
+                                        <g transform={`translate(${lObj.endX + 20}, ${lObj.currentY - 10})`} className="cursor-pointer" onClick={() => !line.isTotal && onNavigate('players', line.id)}>
+                                            <rect x="-4" y="-4" width={140} height={20} rx={10} fill="#051611" fillOpacity="0.9" stroke={line.color} strokeWidth={line.isTotal ? 2 : 1} />
+                                            {line.isTotal ? <circle cx="6" cy="6" r="3" fill={line.color} /> : (line.img ? <image href={line.img} x="0" y="-2" width={14} height={14} preserveAspectRatio="xMidYMid slice" clipPath={`url(#clip-nat-${line.id})`} /> : <circle cx="6" cy="6" r="6" fill="#1e293b"/>)}
+                                            {line.img && <defs><clipPath id={`clip-nat-${line.id}`}><circle cx="7" cy="5" r="7" /></clipPath></defs>}
+                                            <text x={18} y={10} fill={line.isTotal ? line.color : "#cbd5e1"} fontSize={10} fontWeight="bold">{line.name}</text>
                                         </g>
                                     </g>
                                 );
@@ -4509,6 +4396,7 @@
     </script>
 </body>
 </html>
+
 
 
 
