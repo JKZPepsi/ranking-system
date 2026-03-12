@@ -1405,7 +1405,6 @@
             if (historyData.length < 1) return <p className="text-royal-300 text-sm mt-4">Not enough Major+ tournament history to generate a graph.</p>;
 
             // --- DEBUT TRACKER ---
-            // Scans absolute history to find the exact first tournament a player ever played
             const playerDebuts = useMemo(() => {
                 const debuts = {};
                 filteredHistory.forEach(h => {
@@ -1432,8 +1431,6 @@
                 return CHART_PALETTE[Math.abs(hash) % CHART_PALETTE.length];
             };
 
-            const getVal = (s) => type === 'rank' ? s.rank : s.pts;
-
             const includedPlayerIds = new Set();
             let absoluteMaxRank = 12;
 
@@ -1447,29 +1444,21 @@
             const width = 1300;
             const effectiveCutoff = hasCutoff ? cutoff : absoluteMaxRank;
             
-            let plotHeight = 480;
-            if (type === 'rank') {
-                plotHeight = cutoff === 8 ? 400 : cutoff === 12 ? 500 : cutoff === 24 ? 800 : Math.max(600, absoluteMaxRank * 24);
-            } else {
-                plotHeight = cutoff === 8 ? 500 : cutoff === 12 ? 650 : cutoff === 24 ? 900 : 1300;
-            }
+            const LABEL_HEIGHT = isAll ? 22 : 34; 
+            const LABEL_WIDTH = isAll ? 140 : 200;
 
-            const pad = { top: 60, right: isAll ? 200 : 260, left: type === 'rank' ? 60 : 80, bottom: isAll ? 40 : 100 }; 
-            const gridBottomY = pad.top + plotHeight;
-
+            // --- DYNAMIC SCALE ENGINE ---
             let maxPointsVal = 10;
-            
-            // --- DYNAMIC Y-AXIS FLOOR ANCHOR ---
-            // Scales the bottom of the graph exactly to the points of the lowest active player!
-            let minChartVal = 0;
-            if (type === 'points') {
+            let maxActiveVal = 1;
+            let activeCount = 0;
+
+            if (type !== 'rank') {
                 const lastH = historyData[historyData.length - 1];
                 if (lastH && lastH.standings) {
-                    if (hasCutoff) {
-                        const activeStandings = lastH.standings.filter(s => s.rank <= cutoff);
-                        if (activeStandings.length > 0) minChartVal = activeStandings[activeStandings.length - 1].pts;
-                    } else {
-                        minChartVal = lastH.standings[lastH.standings.length - 1].pts;
+                    const activeStandings = lastH.standings.filter(s => !hasCutoff || s.rank <= cutoff);
+                    activeCount = activeStandings.length;
+                    if (activeCount > 0) {
+                        maxActiveVal = activeStandings[0].pts || 1;
                     }
                 }
                 
@@ -1480,19 +1469,37 @@
                         }
                     });
                 });
-                maxPointsVal = Math.ceil(maxPointsVal * 1.05);
+                maxPointsVal = Math.ceil(maxPointsVal * 1.05); // 5% headroom
             }
+
+            let plotHeight = 480;
+            if (type === 'rank') {
+                // Dynamically stretches the canvas based on total players to absolutely prevent overlap
+                plotHeight = cutoff === 8 ? 400 : cutoff === 12 ? 500 : cutoff === 24 ? 800 : Math.max(600, absoluteMaxRank * 26);
+            } else {
+                const basePlotHeight = cutoff === 8 ? 500 : cutoff === 12 ? 650 : cutoff === 24 ? 900 : 1300;
+                const baseScale = basePlotHeight / maxPointsVal;
+                
+                // MATH ANCHOR: Ensures the Y-Axis stretches exactly enough so the 0 line hits the bottom label
+                const requiredScale = activeCount > 0 ? ((activeCount - 0.5) * LABEL_HEIGHT) / maxActiveVal : 0;
+                const finalScale = Math.max(baseScale, requiredScale);
+                plotHeight = maxPointsVal * finalScale;
+            }
+
+            const pad = { top: 60, right: isAll ? 200 : 260, left: type === 'rank' ? 60 : 80, bottom: isAll ? 40 : 100 }; 
+            const gridBottomY = pad.top + plotHeight;
+            const minChartVal = 0; // Hard floor locked to exactly 0
 
             const getX = (i) => historyData.length <= 1 ? (pad.left + (width - pad.left - pad.right) / 2) : pad.left + (i * ((width - pad.left - pad.right) / (historyData.length - 1)));
             const activeEndX = getX(historyData.length - 1);
             
             const getY = (val) => {
                 if (type === 'rank') return pad.top + ((val - 1) / Math.max(1, effectiveCutoff - 1)) * plotHeight;
-                // If a point value is lower than minChartVal, it organically returns a Y coordinate below gridBottomY!
-                return gridBottomY - ((val - minChartVal) / Math.max(1, maxPointsVal - minChartVal)) * plotHeight;
+                return gridBottomY - (val / Math.max(1, maxPointsVal)) * plotHeight;
             };
 
-            const thresholdRaw = historyData.map((h, k) => {
+            const thresholdData = historyData.map((h, k) => {
+                if (!hasCutoff) return { k, x: getX(k), val: 0, y: gridBottomY + 2000 }; 
                 let val = type === 'rank' ? cutoff + 1 : 0;
                 if (type !== 'rank' && h.standings) {
                     const sCut = h.standings.find(s => s.rank === cutoff + 1);
@@ -1500,12 +1507,8 @@
                     else if (h.standings.length >= cutoff + 1) val = h.standings[cutoff].pts;
                     else if (h.standings.length > 0) val = h.standings[h.standings.length - 1].pts;
                 }
-                return val;
+                return { k, x: getX(k), val, y: getY(val) };
             });
-
-            const thresholdData = thresholdRaw.map((val, k) => ({
-                k, x: getX(k), val: isAll ? 0 : val, y: isAll ? gridBottomY + 2000 : getY(val)
-            }));
 
             const lines = [];
             Array.from(includedPlayerIds).forEach(pid => {
@@ -1522,10 +1525,9 @@
                         val = type === 'rank' ? s.rank : s.pts;
                         isIN = !hasCutoff || s.rank <= cutoff;
                     } else {
-                        val = type === 'rank' ? (effectiveCutoff + 5) : (minChartVal - 1000); 
+                        val = type === 'rank' ? (effectiveCutoff + 5) : -1000; 
                     }
                     
-                    // Assign Debut logic
                     const isDebut = s && playerDebuts[pid] === historyData[k].id;
                     timeline.push({ k, x: getX(k), y: getY(val), val, isIN, s, exists: !!s, isDebut });
                 }
@@ -1551,6 +1553,7 @@
                     const next = k < timeline.length - 1 ? timeline[k+1] : null;
 
                     if (isAll) {
+                        // "ALL" MODE: No phantom drop lines! Plop exactly into existence.
                         if (pt.exists) {
                             currentSeg.push({ ...pt, isDot: true });
                         } else if (currentSeg.length > 0) {
@@ -1586,11 +1589,8 @@
             });
 
             // -------------------------------------------------------------
-            // LABEL STACKING
+            // LABEL STACKING & PHYSICS
             // -------------------------------------------------------------
-            const LABEL_HEIGHT = isAll ? 22 : 34; 
-            const LABEL_WIDTH = isAll ? 140 : 200;
-            
             let activeLabels = [];
             let droppedLabels = [];
 
@@ -1609,36 +1609,78 @@
             });
 
             if (type === 'rank') {
+                // Rank Chart: Flawless 1-to-1 match. No offsets.
                 activeLabels.forEach(al => al.currentY = al.endY);
             } else {
-                activeLabels.sort((a, b) => b.actualVal - a.actualVal);
-                if (activeLabels.length > 0) {
-                    activeLabels[0].currentY = activeLabels[0].endY;
-                    for (let i = 1; i < activeLabels.length; i++) {
-                        activeLabels[i].currentY = Math.max(activeLabels[i].endY, activeLabels[i - 1].currentY + LABEL_HEIGHT);
+                // Points Chart: Anchor rightmost column perfectly
+                const rightmost = activeLabels.filter(al => al.endX === activeEndX).sort((a,b) => b.actualVal - a.actualVal);
+                if (rightmost.length > 0) {
+                    rightmost[0].currentY = rightmost[0].endY;
+                    for (let i = 1; i < rightmost.length; i++) {
+                        rightmost[i].currentY = Math.max(rightmost[i].endY, rightmost[i-1].currentY + LABEL_HEIGHT);
                     }
+                }
+                
+                // Fluidly scatter early-enders in "All Time" mode
+                const others = activeLabels.filter(al => al.endX !== activeEndX);
+                for (let iter = 0; iter < 50; iter++) {
+                    let moved = false;
+                    for (let i = 0; i < others.length; i++) {
+                        let el = others[i];
+                        for (let a = 0; a < rightmost.length; a++) {
+                            const act = rightmost[a];
+                            if (Math.abs(el.endX - act.endX) < LABEL_WIDTH) {
+                                const diff = el.currentY - act.currentY;
+                                if (Math.abs(diff) < LABEL_HEIGHT) {
+                                    el.currentY = diff >= 0 ? act.currentY + LABEL_HEIGHT : act.currentY - LABEL_HEIGHT;
+                                    moved = true;
+                                }
+                            }
+                        }
+                        for (let j = i + 1; j < others.length; j++) {
+                            const other = others[j];
+                            if (Math.abs(el.endX - other.endX) < LABEL_WIDTH) {
+                                const diff = other.currentY - el.currentY;
+                                if (Math.abs(diff) < LABEL_HEIGHT) {
+                                    const overlap = LABEL_HEIGHT - Math.abs(diff);
+                                    if (diff >= 0) { el.currentY -= overlap/2; other.currentY += overlap/2; }
+                                    else { el.currentY += overlap/2; other.currentY -= overlap/2; }
+                                    moved = true;
+                                }
+                            }
+                        }
+                    }
+                    if (!moved) break;
                 }
             }
 
-            const lowestActiveY = activeLabels.length > 0 ? activeLabels[activeLabels.length - 1].currentY : 0;
+            let lowestRightmostY = 0;
+            if (hasCutoff) {
+                if (type === 'points') {
+                    const rightmost = activeLabels.filter(al => al.endX === activeEndX);
+                    if (rightmost.length > 0) lowestRightmostY = rightmost[rightmost.length - 1].currentY;
+                } else {
+                    const rightmost = activeLabels.filter(al => al.endX === activeEndX).sort((a,b) => a.actualVal - b.actualVal);
+                    if (rightmost.length > 0) lowestRightmostY = rightmost[rightmost.length - 1].currentY;
+                }
+            }
 
-            if (droppedLabels.length > 0) {
+            if (hasCutoff && droppedLabels.length > 0) {
                 droppedLabels.forEach(el => {
+                    const ratio = historyData.length <= 1 ? 0 : (el.endX - pad.left) / (width - pad.left - pad.right);
+                    const exactK = ratio * (historyData.length - 1);
+                    const lowerK = Math.floor(exactK);
+                    const upperK = Math.ceil(exactK);
+                    
                     let threshY = el.endY;
-                    if (hasCutoff) {
-                        const ratio = historyData.length <= 1 ? 0 : (el.endX - pad.left) / (width - pad.left - pad.right);
-                        const exactK = ratio * (historyData.length - 1);
-                        const lowerK = Math.floor(exactK);
-                        const upperK = Math.ceil(exactK);
-                        if (lowerK >= 0 && upperK < thresholdData.length) {
-                            const t = exactK - lowerK;
-                            threshY = thresholdData[lowerK].y + t * (thresholdData[upperK].y - thresholdData[lowerK].y);
-                        }
+                    if (lowerK >= 0 && upperK < thresholdData.length) {
+                        const t = exactK - lowerK;
+                        threshY = thresholdData[lowerK].y + t * (thresholdData[upperK].y - thresholdData[lowerK].y);
                     }
                     
-                    el.minY = hasCutoff ? (threshY + 16) : (lowestActiveY + LABEL_HEIGHT + 10); 
-                    if (hasCutoff && el.endX > activeEndX - 190 && activeLabels.length > 0) {
-                        el.minY = Math.max(el.minY, lowestActiveY + LABEL_HEIGHT + 10);
+                    el.minY = threshY + 16; 
+                    if (el.endX > activeEndX - 190 && activeLabels.length > 0) {
+                        el.minY = Math.max(el.minY, lowestRightmostY + LABEL_HEIGHT + 10);
                     }
                     el.currentY = Math.max(el.endY + 16, el.minY);
                 });
@@ -1676,9 +1718,9 @@
             const labelPositions = {};
             let maxLabelY = gridBottomY;
 
-            // Ensures the canvas fully stretches to cover anything that drops naturally below the floor
             lines.forEach(l => l.segments.forEach(seg => seg.forEach(pt => { if (pt.y > maxLabelY) maxLabelY = pt.y; })));
             if (hasCutoff) thresholdData.forEach(pt => { if (pt.y > maxLabelY) maxLabelY = pt.y; });
+            
             allLabels.forEach(el => {
                 labelPositions[el.id] = el.currentY;
                 const isHighlighted = el.id === selectedLineId || el.id === hoveredLineId;
@@ -1706,6 +1748,18 @@
             });
 
             const skipText = historyData.length > 15;
+
+            const gridLines = [];
+            if (type === 'rank') {
+                if (isAll) {
+                    const step = effectiveCutoff > 30 ? 5 : 2;
+                    for (let i = 1; i <= effectiveCutoff; i += step) gridLines.push(i);
+                    if (!gridLines.includes(1)) gridLines.unshift(1);
+                    if (!gridLines.includes(effectiveCutoff)) gridLines.push(effectiveCutoff);
+                } else {
+                    for (let i = 1; i <= cutoff; i++) gridLines.push(i);
+                }
+            }
 
             return (
                 <div className="w-full" id={`snb-chart-${type}`}>
@@ -1801,45 +1855,30 @@
 
                             {type === 'rank' ? (
                                 <>
-                                    {/* For Ranks, draw standard gridlines up to cutoff */}
-                                    {(() => {
-                                        const rLines = [];
-                                        if (isAll) {
-                                            const step = effectiveCutoff > 30 ? 5 : 2;
-                                            for (let i = 1; i <= effectiveCutoff; i += step) rLines.push(i);
-                                            if (!rLines.includes(1)) rLines.unshift(1);
-                                        } else {
-                                            for (let i = 1; i <= cutoff; i++) rLines.push(i);
-                                        }
-                                        return rLines.map((r, i) => {
-                                            const yPos = pad.top + ((r - 1) / Math.max(1, effectiveCutoff - 1)) * plotHeight;
-                                            return (
-                                                <g key={`grid-${i}`}>
-                                                    <line x1={pad.left} y1={yPos} x2={width - pad.right + 20} y2={yPos} stroke="#13382d" strokeWidth="1" strokeDasharray="4 4" />
-                                                    <text x={pad.left - 15} y={yPos} fill="#789e90" fontSize="12" fontWeight="bold" textAnchor="end" alignmentBaseline="middle">#{r}</text>
-                                                </g>
-                                            );
-                                        });
-                                    })()}
+                                    {gridLines.map((r, i) => {
+                                        const yPos = pad.top + ((r - 1) / Math.max(1, effectiveCutoff - 1)) * plotHeight;
+                                        return (
+                                            <g key={`grid-${i}`}>
+                                                <line x1={pad.left} y1={yPos} x2={width - pad.right + 20} y2={yPos} stroke="#13382d" strokeWidth="1" strokeDasharray="4 4" />
+                                                <text x={pad.left - 15} y={yPos} fill="#789e90" fontSize="12" fontWeight="bold" textAnchor="end" alignmentBaseline="middle">#{r}</text>
+                                            </g>
+                                        );
+                                    })}
                                 </>
                             ) : (
                                 <>
-                                    {/* For Points, explicitly draw the Baseline representing minChartVal, then dash lines upwards */}
                                     {(() => {
                                         const tickCount = isAll ? 20 : 15;
-                                        const rawStep = (maxPointsVal - minChartVal) / tickCount;
+                                        const rawStep = maxPointsVal / tickCount;
                                         const mag = Math.pow(10, Math.floor(Math.log10(rawStep || 1)));
                                         const step = Math.max(10, Math.ceil(rawStep / mag) * mag);
                                         
-                                        const yLines = [minChartVal]; 
-                                        for(let v = Math.ceil(minChartVal / step) * step; v <= maxPointsVal; v += step) {
-                                            if (v - minChartVal > step * 0.2) yLines.push(v);
-                                        }
+                                        const yLines = [0]; 
+                                        for(let v = step; v <= maxPointsVal; v += step) yLines.push(v);
                                         
                                         return yLines.map((p, i) => (
                                             <g key={`grid-${i}`}>
-                                                {/* Thick solid line for the exact floor, thin dashed lines for regular steps */}
-                                                <line x1={pad.left} y1={getY(p)} x2={width - pad.right + 20} y2={getY(p)} stroke={i === 0 ? "#1e4033" : "#13382d"} strokeWidth={i === 0 ? "2" : "1"} strokeDasharray={i === 0 ? "none" : "4 4"} />
+                                                <line x1={pad.left} y1={getY(p)} x2={width - pad.right + 20} y2={getY(p)} stroke={i === 0 ? "#1e4033" : "#13382d"} strokeWidth={i === 0 ? "2.5" : "1"} strokeDasharray={i === 0 ? "none" : "4 4"} />
                                                 <text x={pad.left - 15} y={getY(p)} fill="#789e90" fontSize="12" fontWeight="bold" textAnchor="end" alignmentBaseline="middle">{Math.round(p).toLocaleString()}</text>
                                             </g>
                                         ));
@@ -1886,8 +1925,8 @@
                                             
                                             const isLastPt = (sIdx === line.segments.length - 1 && i === seg.length - 1);
                                             const shouldShowText = isHighlighted && (!skipText || i % 2 === 0 || isLastPt);
-
-                                            // Solid Debut point coloring
+                                            
+                                            // SOLID DEBUT DOT LOGIC
                                             const dotFill = pt.isDebut ? line.color : "#051611";
 
                                             return (
@@ -1902,9 +1941,8 @@
                                                         {type === 'rank' ? `#${pt.val}` : Math.round(pt.val).toLocaleString()}
                                                     </text>
 
-                                                    {/* Generous hover zone to trigger highlight instantly */}
-                                                    <circle cx={pt.x} cy={pt.y} r="25" fill="transparent" />
-                                                    <title>{`${pt.s?.h?.tournamentName || 'Tournament'}\n${line.player.name}\nRank: #${pt.s?.rank}\nPoints: ${pt.s?.pts.toLocaleString()}`}</title>
+                                                    <circle cx={pt.x} cy={pt.y} r="20" fill="transparent" />
+                                                    <title>{`${pt.s?.h?.tournamentName || 'Tournament'}\n${line.player.name}\nRank: #${pt.s?.rank}\nPoints: ${pt.s?.pts.toLocaleString()}${pt.isDebut ? ' (Tour Debut)' : ''}`}</title>
                                                 </g>
                                             );
                                         }))}
@@ -4371,6 +4409,7 @@
     </script>
 </body>
 </html>
+
 
 
 
