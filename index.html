@@ -1400,8 +1400,9 @@
             });
 
             const width = 1200;
-            const height = type === 'rank' ? 750 : 700; 
-            const pad = { top: 60, right: 260, bottom: 160, left: type === 'rank' ? 60 : 80 }; 
+            // Base grid height (the SVG canvas itself will stretch further if needed)
+            const height = type === 'rank' ? 700 : 650; 
+            const pad = { top: 60, right: 260, bottom: 100, left: type === 'rank' ? 60 : 80 }; 
 
             let maxPointsVal = 10;
             historyData.forEach(h => { 
@@ -1492,18 +1493,16 @@
                 if (segments.length > 0) lines.push({ player, segments, color: getDistinctColor(player.id) });
             });
 
-            // BUG FIX: Uses getX(pt.k) to properly render the dashed line across the screen!
             const thresholdPath = thresholdData.map((pt, i) => `${i === 0 ? 'M' : 'L'} ${getX(pt.k)} ${pt.y}`).join(' ');
-            const dropZonePath = `${thresholdPath} L ${getX(historyData.length - 1)} ${height} L ${getX(0)} ${height} Z`;
-
+            
             lines.forEach(line => {
                 line.paths = line.segments.map(seg => seg.map((pt, i) => `${i === 0 ? 'M' : 'L'} ${pt.x} ${pt.y}`).join(' '));
             });
 
             // -------------------------------------------------------------
-            // MASTER LABEL POSITIONING SYSTEM (Strict Stacking & No Overlaps)
+            // PRECISION ANCHOR LABEL SYSTEM
             // -------------------------------------------------------------
-            const LABEL_HEIGHT = 44; 
+            const LABEL_HEIGHT = 38; // Tighter padding for points stack
             
             let activeLabels = [];
             let droppedLabels = [];
@@ -1517,7 +1516,7 @@
                     id: line.player.id, 
                     endX: endPt.x, 
                     endY: endPt.y, 
-                    currentY: endPt.y, // Default start
+                    currentY: endPt.y, 
                     actualVal: endPt.val,
                     isDropped,
                     name: line.player.name
@@ -1527,45 +1526,52 @@
                 else activeLabels.push(labelObj);
             });
 
-            // 1. STRICT STACKING FOR ACTIVE PLAYERS
-            // Sort from best to worst (Rank 1 top, Rank 12 bottom)
-            activeLabels.sort((a, b) => {
-                if (type === 'points') return b.actualVal - a.actualVal;
-                return a.actualVal - b.actualVal;
-            });
-
-            if (activeLabels.length > 0) {
-                // #1 player ALWAYS gets their exact perfect Y coordinate without offset
-                activeLabels[0].currentY = activeLabels[0].endY;
-                
-                // Everyone else is pushed down precisely to avoid overlapping the person above them
-                for (let i = 1; i < activeLabels.length; i++) {
-                    const prevY = activeLabels[i - 1].currentY;
-                    const targetY = activeLabels[i].endY;
-                    activeLabels[i].currentY = Math.max(targetY, prevY + LABEL_HEIGHT + 2);
+            // 1. ACTIVE PLAYERS
+            if (type === 'rank') {
+                // Rank Chart: Zero artificial offsets. They sit exactly on their lines.
+                activeLabels.forEach(al => al.currentY = al.endY);
+            } else {
+                // Points Chart: Hard-anchor #1, cascade downwards strictly if colliding
+                activeLabels.sort((a, b) => b.actualVal - a.actualVal);
+                if (activeLabels.length > 0) {
+                    activeLabels[0].currentY = activeLabels[0].endY;
+                    for (let i = 1; i < activeLabels.length; i++) {
+                        const targetY = activeLabels[i].endY;
+                        const minAllowedY = activeLabels[i - 1].currentY + LABEL_HEIGHT;
+                        activeLabels[i].currentY = Math.max(targetY, minAllowedY);
+                    }
                 }
             }
 
-            // 2. PHYSICS PLACEMENT FOR DROPPED PLAYERS
-            // Push them below the red line AND below the lowest active player
-            const lowestActiveY = activeLabels.length > 0 ? activeLabels[activeLabels.length - 1].currentY : 0;
-            
+            // 2. DROPPED PLAYERS (Free Floating, bounded only by the red line)
             droppedLabels.forEach(el => {
-                const thresholdY = thresholdData[Math.floor(el.endX / ((width - pad.left - pad.right) / (historyData.length - 1))) || 0]?.y || el.endY;
-                const minY = Math.max(thresholdY + 30, lowestActiveY + LABEL_HEIGHT + 10);
-                el.currentY = Math.max(el.endY + 30, minY);
+                // Interpolate the exact red line Y-coordinate at this player's X-coordinate
+                const ratio = (el.endX - pad.left) / (width - pad.left - pad.right);
+                const exactK = ratio * (historyData.length - 1);
+                const lowerK = Math.floor(exactK);
+                const upperK = Math.ceil(exactK);
+                
+                let threshY = el.endY;
+                if (lowerK >= 0 && upperK < thresholdData.length) {
+                    const t0 = thresholdData[lowerK];
+                    const t1 = thresholdData[upperK];
+                    const t = exactK - lowerK;
+                    threshY = t0.y + t * (t1.y - t0.y);
+                }
+                
+                el.minY = threshY + 20; // Ceiling is perfectly beneath the red dashed line!
+                el.currentY = Math.max(el.endY + 20, el.minY);
             });
 
-            // Anti-overlap sweeper specifically for the dropped pool
+            // 3. COLLISION SWEEPER (Only for Dropped players pushing against each other)
             for (let iter = 0; iter < 50; iter++) {
                 let moved = false;
                 for (let i = 0; i < droppedLabels.length - 1; i++) {
                     for (let j = i + 1; j < droppedLabels.length; j++) {
-                        // If they dropped at similar horizontal locations
                         if (Math.abs(droppedLabels[i].endX - droppedLabels[j].endX) < 220) {
                             const diff = droppedLabels[j].currentY - droppedLabels[i].currentY;
-                            if (Math.abs(diff) < LABEL_HEIGHT + 4) {
-                                const overlap = LABEL_HEIGHT + 4 - Math.abs(diff);
+                            if (Math.abs(diff) < LABEL_HEIGHT + 2) {
+                                const overlap = LABEL_HEIGHT + 2 - Math.abs(diff);
                                 if (diff >= 0) {
                                     droppedLabels[j].currentY += overlap / 2;
                                     droppedLabels[i].currentY -= overlap / 2;
@@ -1579,18 +1585,27 @@
                     }
                 }
                 
-                // Re-enforce the minimum Y floor after physics
+                // Enforce the red line ceiling
                 droppedLabels.forEach(el => {
-                    const minY = Math.max(el.endY + 30, lowestActiveY + LABEL_HEIGHT + 10);
-                    if (el.currentY < minY) { el.currentY = minY; moved = true; }
+                    if (el.currentY < el.minY) { el.currentY = el.minY; moved = true; }
                 });
-                
                 if (!moved) break;
             }
 
             const allLabels = [...activeLabels, ...droppedLabels];
             const labelPositions = {};
-            allLabels.forEach(el => labelPositions[el.id] = el.currentY);
+            let maxLabelY = height;
+
+            allLabels.forEach(el => {
+                labelPositions[el.id] = el.currentY;
+                if (el.currentY > maxLabelY) maxLabelY = el.currentY;
+            });
+
+            // DYNAMIC CANVAS HEIGHT: Stretches infinitely to accommodate dropped labels!
+            const dynamicHeight = Math.max(height, maxLabelY + 50);
+            
+            // Re-calculate the drop zone box to fill the new dynamic depth
+            const dropZonePath = `${thresholdPath} L ${getX(historyData.length - 1)} ${dynamicHeight} L ${getX(0)} ${dynamicHeight} Z`;
 
             const sortedLines = [...lines].sort((a, b) => {
                 const aHigh = a.player.id === selectedLineId || a.player.id === hoveredLineId;
@@ -1609,7 +1624,6 @@
                 return bLabel.actualVal - aLabel.actualVal;
             });
 
-            // SMART TEXT CROWDING (Skips points if too many nodes on screen)
             const skipText = historyData.length > 15;
 
             return (
@@ -1626,7 +1640,8 @@
                     </div>
                     
                     <div className="w-full bg-royal-900/50 rounded-xl border border-royal-700 pb-2 relative overflow-hidden select-none">
-                        <svg viewBox={`0 0 ${width} ${height}`} className="w-full h-auto overflow-visible font-sans">
+                        {/* Dynamic Height applied directly to viewBox */}
+                        <svg viewBox={`0 0 ${width} ${dynamicHeight}`} className="w-full h-auto overflow-visible font-sans">
                             <defs>
                                 {lines.map(line => (
                                     <clipPath id={`clip-${type}-${line.player.id}`} key={`clip-${line.player.id}`}>
@@ -1635,7 +1650,6 @@
                                 ))}
                             </defs>
 
-                            {/* THE RED ZONE: Clean dashed line matching the player line width, NO dots. */}
                             <g className="threshold-layer">
                                 <path d={dropZonePath} fill="#000000" opacity="0.3" />
                                 <path d={thresholdPath} fill="none" stroke="#ef4444" strokeWidth="2.5" strokeDasharray="8 6" opacity="0.7" />
@@ -1648,7 +1662,6 @@
                                 </text>
                             </g>
 
-                            {/* Standard Gridlines */}
                             {type === 'rank' ? (
                                 <>
                                     {[...Array(12)].map((_, i) => {
@@ -1676,7 +1689,6 @@
                                 })()
                             )}
                             
-                            {/* Player Lines */}
                             {sortedLines.map((line) => {
                                 const isHighlighted = selectedLineId === line.player.id || hoveredLineId === line.player.id;
                                 const isFaded = (selectedLineId || hoveredLineId) && !isHighlighted;
@@ -1696,7 +1708,6 @@
                                 ));
                             })}
                             
-                            {/* Dots and Labels */}
                             {sortedLines.map((line) => {
                                 const isHighlighted = selectedLineId === line.player.id || hoveredLineId === line.player.id;
                                 const isFaded = (selectedLineId || hoveredLineId) && !isHighlighted;
@@ -1710,18 +1721,15 @@
 
                                 return (
                                     <g key={`overlay-${line.player.id}`} style={{ transition: 'opacity 0.2s ease' }} opacity={isFaded ? 0.2 : 1}>
-                                        {/* SLEEK, SMALLER DOTS */}
                                         {line.segments.map((seg, sIdx) => seg.map((pt, i) => {
                                             if (!pt.isDot) return null;
                                             
-                                            // SMART CROWDING TEXT: Skip nodes if too dense, but ALWAYS show the last dot!
                                             const isLastPt = (sIdx === line.segments.length - 1 && i === seg.length - 1);
                                             const shouldShowText = isHighlighted && (!skipText || i % 2 === 0 || isLastPt);
 
                                             return (
                                                 <g key={`pt-${line.player.id}-${sIdx}-${i}`} className="group cursor-pointer" 
                                                    onClick={(e) => { e.stopPropagation(); setSelectedLineId(line.player.id === selectedLineId ? null : line.player.id); }}>
-                                                    {/* Radius shrunk to 2.5 (matches line width) */}
                                                     <circle cx={pt.x} cy={pt.y} r={isHighlighted ? "4" : "2.5"} fill="#051611" stroke={line.color} strokeWidth={isHighlighted ? 3 : 1.5} style={{ transition: 'r 0.2s ease, stroke-width 0.2s ease' }} />
                                                     
                                                     <text x={pt.x} y={pt.y - 12} fill={line.color} fontSize="12" fontWeight="900" textAnchor="middle" stroke="#051611" strokeWidth="4" paintOrder="stroke" className={shouldShowText ? "opacity-100" : "opacity-0 group-hover:opacity-100"} style={{ transition: 'opacity 0.2s ease' }}>
@@ -1734,12 +1742,10 @@
                                             );
                                         }))}
 
-                                        {/* Curved Dotted Connecting Line */}
                                         {(Math.abs(adjY - endY) > 2 || isDropped) && (
                                             <path d={`M ${endX} ${endY} C ${endX + 15} ${endY}, ${endX + 10} ${adjY}, ${endX + 25} ${adjY}`} fill="none" stroke={line.color} strokeWidth="1.5" opacity="0.6" strokeDasharray="4 4" />
                                         )}
 
-                                        {/* Interactive Profile Label */}
                                         <g 
                                             transform={`translate(${endX + 25}, ${adjY - 14})`} 
                                             className="cursor-pointer"
@@ -4159,6 +4165,7 @@
     </script>
 </body>
 </html>
+
 
 
 
