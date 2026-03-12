@@ -1369,13 +1369,40 @@
             );
         }
 
+        // --- GLOBAL CHART SYNC STATE ---
+        const __snbSharedChartState = { windowSize: 20, offset: 0, showDropped: false, cutoff: 12 };
+        const __snbChartListeners = new Set();
+        const updateSnbChartState = (updates) => {
+            Object.assign(__snbSharedChartState, updates);
+            __snbChartListeners.forEach(l => l());
+        };
+
         function TopPlayersChart({ globalHistory, playersRaw, type, onNavigate }) {
-            const [range, setRange] = useState(10);
+            const [, setTick] = useState(0);
             const [selectedLineId, setSelectedLineId] = useState(null);
             const [hoveredLineId, setHoveredLineId] = useState(null);
+
+            // Subscribe to global sync state
+            useEffect(() => {
+                const l = () => setTick(t => t + 1);
+                __snbChartListeners.add(l);
+                return () => __snbChartListeners.delete(l);
+            }, []);
+
+            const { windowSize, offset, showDropped, cutoff } = __snbSharedChartState;
+            const hasCutoff = cutoff !== 'all';
             
             const filteredHistory = globalHistory.filter(h => h.isMajorPlus);
-            const historyData = filteredHistory.slice(range === 'all' ? 0 : -range);
+            const N = filteredHistory.length;
+
+            // Safe Pagination Math
+            const maxOffset = windowSize === 'all' ? 0 : Math.max(0, N - windowSize);
+            const safeOffset = Math.min(offset, maxOffset);
+            const endIndex = N - safeOffset;
+            const startIndex = windowSize === 'all' ? 0 : Math.max(0, endIndex - windowSize);
+            
+            const historyData = filteredHistory.slice(startIndex, endIndex);
+
             if (historyData.length < 1) return <p className="text-royal-300 text-sm mt-4">Not enough Major+ tournament history to generate a graph.</p>;
 
             const CHART_PALETTE = [
@@ -1395,43 +1422,58 @@
             const getVal = (s) => type === 'rank' ? s.rank : s.pts;
 
             const includedPlayerIds = new Set();
+            let absoluteMaxRank = 12;
+
             historyData.forEach(h => {
-                if (h.standings) h.standings.forEach(s => { if (s.rank <= 12) includedPlayerIds.add(s.id); });
+                if (h.standings) h.standings.forEach(s => { 
+                    if (!hasCutoff || s.rank <= cutoff) includedPlayerIds.add(s.id); 
+                    if (s.rank > absoluteMaxRank) absoluteMaxRank = s.rank;
+                });
             });
 
+            // Dynamic Scaling based on the selected Cutoff
             const width = 1200;
-            // Base grid height (the SVG canvas itself will stretch further if needed)
-            const height = type === 'rank' ? 700 : 650; 
-            const pad = { top: 60, right: 260, bottom: 100, left: type === 'rank' ? 60 : 80 }; 
+            const effectiveCutoff = hasCutoff ? cutoff : absoluteMaxRank;
+            
+            let plotHeight = 480;
+            if (type === 'rank') {
+                plotHeight = cutoff === 8 ? 400 : cutoff === 12 ? 500 : cutoff === 24 ? 800 : 1200;
+            } else {
+                plotHeight = cutoff === 8 ? 400 : cutoff === 12 ? 480 : cutoff === 24 ? 600 : 800;
+            }
+
+            const pad = { top: 60, right: 260, left: type === 'rank' ? 60 : 80 }; 
+            const gridBottomY = pad.top + plotHeight;
 
             let maxPointsVal = 10;
             historyData.forEach(h => { 
                 if (h.standings) h.standings.forEach(s => { 
-                    if (includedPlayerIds.has(s.id) && s.rank <= 12 && getVal(s) > maxPointsVal) maxPointsVal = getVal(s);
+                    if (includedPlayerIds.has(s.id) && (!hasCutoff || s.rank <= cutoff) && getVal(s) > maxPointsVal) maxPointsVal = getVal(s);
                 });
             });
             if (type !== 'rank') maxPointsVal = Math.ceil(maxPointsVal * 1.05);
 
-            const getX = (i) => historyData.length === 1 ? (pad.left + (width - pad.left - pad.right) / 2) : pad.left + (i * ((width - pad.left - pad.right) / (historyData.length - 1)));
+            const getX = (i) => historyData.length <= 1 ? (pad.left + (width - pad.left - pad.right) / 2) : pad.left + (i * ((width - pad.left - pad.right) / (historyData.length - 1)));
+            const activeEndX = getX(historyData.length - 1);
             
             const getY = (val) => {
-                if (type === 'rank') return pad.top + ((val - 1) / 12) * (height - pad.top - pad.bottom);
-                return height - pad.bottom - ((val - 0) / (maxPointsVal - 0)) * (height - pad.top - pad.bottom);
+                if (type === 'rank') return pad.top + ((val - 1) / Math.max(1, effectiveCutoff - 1)) * plotHeight;
+                return gridBottomY - ((val - 0) / maxPointsVal) * plotHeight;
             };
 
             const thresholdData = historyData.map((h, k) => {
-                let val = type === 'rank' ? 13 : 0;
+                if (!hasCutoff) return { k, val: 0, y: height + 2000 }; // Throw red line off screen if 'All' is selected
+                let val = type === 'rank' ? cutoff + 1 : 0;
                 if (type !== 'rank' && h.standings) {
-                    const s13 = h.standings.find(s => s.rank === 13);
-                    if (s13) val = s13.pts;
-                    else if (h.standings.length >= 13) val = h.standings[12].pts;
+                    const sCut = h.standings.find(s => s.rank === cutoff + 1);
+                    if (sCut) val = sCut.pts;
+                    else if (h.standings.length >= cutoff + 1) val = h.standings[cutoff].pts;
                     else if (h.standings.length > 0) val = h.standings[h.standings.length - 1].pts;
                 }
                 return { k, val, y: getY(val) };
             });
 
             const lines = [];
-            
             Array.from(includedPlayerIds).forEach(pid => {
                 const player = playersRaw.find(p => p.id === pid);
                 if (!player) return;
@@ -1439,12 +1481,12 @@
                 const timeline = [];
                 for (let k = 0; k < historyData.length; k++) {
                     const s = historyData[k].standings?.find(st => st.id === pid);
-                    let val = type === 'rank' ? 25 : 0; 
+                    let val = type === 'rank' ? effectiveCutoff + 5 : 0; 
                     let isIN = false;
                     
                     if (s) {
                         val = type === 'rank' ? s.rank : s.pts;
-                        isIN = s.rank <= 12;
+                        isIN = !hasCutoff || s.rank <= cutoff;
                     } else if (k > 0) {
                         val = timeline[k-1].val; 
                     }
@@ -1471,20 +1513,22 @@
                     const prev = k > 0 ? timeline[k-1] : null;
                     const next = k < timeline.length - 1 ? timeline[k+1] : null;
 
-                    if (pt.isIN) {
-                        if (prev && !prev.isIN) {
-                            const I = computeIntersection(prev, pt, thresholdData[k-1], thresholdData[k]);
-                            if (I) currentSeg.push(I);
-                        }
-                        
+                    if (!hasCutoff) {
                         currentSeg.push({ ...pt, isDot: true });
-                        
-                        if (next && !next.isIN) {
-                            const I = computeIntersection(pt, next, thresholdData[k], thresholdData[k+1]);
-                            if (I) {
-                                currentSeg.push(I);
-                                segments.push(currentSeg);
-                                currentSeg = [];
+                    } else {
+                        if (pt.isIN) {
+                            if (prev && !prev.isIN) {
+                                const I = computeIntersection(prev, pt, thresholdData[k-1], thresholdData[k]);
+                                if (I) currentSeg.push(I);
+                            }
+                            currentSeg.push({ ...pt, isDot: true });
+                            if (next && !next.isIN) {
+                                const I = computeIntersection(pt, next, thresholdData[k], thresholdData[k+1]);
+                                if (I) {
+                                    currentSeg.push(I);
+                                    segments.push(currentSeg);
+                                    currentSeg = [];
+                                }
                             }
                         }
                     }
@@ -1493,16 +1537,17 @@
                 if (segments.length > 0) lines.push({ player, segments, color: getDistinctColor(player.id) });
             });
 
-            const thresholdPath = thresholdData.map((pt, i) => `${i === 0 ? 'M' : 'L'} ${getX(pt.k)} ${pt.y}`).join(' ');
-            
+            const thresholdPath = thresholdData.map((pt, i) => `${i === 0 ? 'M' : 'L'} ${pt.x} ${pt.y}`).join(' ');
+
             lines.forEach(line => {
                 line.paths = line.segments.map(seg => seg.map((pt, i) => `${i === 0 ? 'M' : 'L'} ${pt.x} ${pt.y}`).join(' '));
             });
 
             // -------------------------------------------------------------
-            // PRECISION ANCHOR LABEL SYSTEM
+            // PRECISION ANCHOR & FLUID COLLISION SYSTEM
             // -------------------------------------------------------------
-            const LABEL_HEIGHT = 38; // Tighter padding for points stack
+            const LABEL_HEIGHT = 32; 
+            const LABEL_WIDTH = 200;
             
             let activeLabels = [];
             let droppedLabels = [];
@@ -1510,101 +1555,96 @@
             lines.forEach(line => {
                 const lastSeg = line.segments[line.segments.length - 1];
                 const endPt = lastSeg[lastSeg.length - 1];
-                const isDropped = endPt.isIntersection || endPt.k < historyData.length - 1;
+                const isDropped = hasCutoff && (endPt.isIntersection || endPt.k < historyData.length - 1);
                 
                 const labelObj = { 
-                    id: line.player.id, 
-                    endX: endPt.x, 
-                    endY: endPt.y, 
-                    currentY: endPt.y, 
-                    actualVal: endPt.val,
-                    isDropped,
-                    name: line.player.name
+                    id: line.player.id, endX: endPt.x, endY: endPt.y, currentY: endPt.y, 
+                    actualVal: endPt.val, isDropped, name: line.player.name
                 };
 
                 if (isDropped) droppedLabels.push(labelObj);
                 else activeLabels.push(labelObj);
             });
 
-            // 1. ACTIVE PLAYERS
+            // 1. ACTIVE PLAYERS (Locked in place)
             if (type === 'rank') {
-                // Rank Chart: Zero artificial offsets. They sit exactly on their lines.
                 activeLabels.forEach(al => al.currentY = al.endY);
             } else {
-                // Points Chart: Hard-anchor #1, cascade downwards strictly if colliding
                 activeLabels.sort((a, b) => b.actualVal - a.actualVal);
                 if (activeLabels.length > 0) {
                     activeLabels[0].currentY = activeLabels[0].endY;
                     for (let i = 1; i < activeLabels.length; i++) {
-                        const targetY = activeLabels[i].endY;
-                        const minAllowedY = activeLabels[i - 1].currentY + LABEL_HEIGHT;
-                        activeLabels[i].currentY = Math.max(targetY, minAllowedY);
+                        activeLabels[i].currentY = Math.max(activeLabels[i].endY, activeLabels[i - 1].currentY + LABEL_HEIGHT);
                     }
                 }
             }
 
-            // 2. DROPPED PLAYERS (Free Floating, bounded only by the red line)
-            droppedLabels.forEach(el => {
-                // Interpolate the exact red line Y-coordinate at this player's X-coordinate
-                const ratio = (el.endX - pad.left) / (width - pad.left - pad.right);
-                const exactK = ratio * (historyData.length - 1);
-                const lowerK = Math.floor(exactK);
-                const upperK = Math.ceil(exactK);
-                
-                let threshY = el.endY;
-                if (lowerK >= 0 && upperK < thresholdData.length) {
-                    const t0 = thresholdData[lowerK];
-                    const t1 = thresholdData[upperK];
-                    const t = exactK - lowerK;
-                    threshY = t0.y + t * (t1.y - t0.y);
-                }
-                
-                el.minY = threshY + 20; // Ceiling is perfectly beneath the red dashed line!
-                el.currentY = Math.max(el.endY + 20, el.minY);
-            });
+            const lowestActiveY = activeLabels.length > 0 ? activeLabels[activeLabels.length - 1].currentY : 0;
 
-            // 3. COLLISION SWEEPER (Only for Dropped players pushing against each other)
-            for (let iter = 0; iter < 50; iter++) {
-                let moved = false;
-                for (let i = 0; i < droppedLabels.length - 1; i++) {
-                    for (let j = i + 1; j < droppedLabels.length; j++) {
-                        if (Math.abs(droppedLabels[i].endX - droppedLabels[j].endX) < 220) {
-                            const diff = droppedLabels[j].currentY - droppedLabels[i].currentY;
-                            if (Math.abs(diff) < LABEL_HEIGHT + 2) {
-                                const overlap = LABEL_HEIGHT + 2 - Math.abs(diff);
-                                if (diff >= 0) {
-                                    droppedLabels[j].currentY += overlap / 2;
-                                    droppedLabels[i].currentY -= overlap / 2;
-                                } else {
-                                    droppedLabels[j].currentY -= overlap / 2;
-                                    droppedLabels[i].currentY += overlap / 2;
+            // 2. DROPPED PLAYERS (Fluid floating beneath red line)
+            if (hasCutoff) {
+                droppedLabels.forEach(el => {
+                    const ratio = historyData.length <= 1 ? 0 : (el.endX - pad.left) / (width - pad.left - pad.right);
+                    const exactK = ratio * (historyData.length - 1);
+                    const lowerK = Math.floor(exactK);
+                    const upperK = Math.ceil(exactK);
+                    
+                    let threshY = el.endY;
+                    if (lowerK >= 0 && upperK < thresholdData.length) {
+                        const t = exactK - lowerK;
+                        threshY = thresholdData[lowerK].y + t * (thresholdData[upperK].y - thresholdData[lowerK].y);
+                    }
+                    
+                    el.minY = threshY + 16; 
+                    if (el.endX > activeEndX - 190 && activeLabels.length > 0) {
+                        el.minY = Math.max(el.minY, lowestActiveY + LABEL_HEIGHT + 10);
+                    }
+                    el.currentY = Math.max(el.endY + 16, el.minY);
+                });
+
+                for (let iter = 0; iter < 50; iter++) {
+                    let moved = false;
+                    for (let i = 0; i < droppedLabels.length; i++) {
+                        let el = droppedLabels[i];
+                        for (let a = 0; a < activeLabels.length; a++) {
+                            const act = activeLabels[a];
+                            if (Math.abs(el.endX - act.endX) < LABEL_WIDTH) {
+                                if (el.currentY >= act.currentY && el.currentY - act.currentY < LABEL_HEIGHT) {
+                                    el.currentY = act.currentY + LABEL_HEIGHT;
+                                    moved = true;
                                 }
-                                moved = true;
                             }
                         }
+                        for (let j = 0; j < droppedLabels.length; j++) {
+                            if (i === j) continue;
+                            const other = droppedLabels[j];
+                            if (Math.abs(el.endX - other.endX) < LABEL_WIDTH) {
+                                if (el.currentY >= other.currentY && el.currentY - other.currentY < LABEL_HEIGHT) {
+                                    el.currentY = other.currentY + LABEL_HEIGHT;
+                                    moved = true;
+                                }
+                            }
+                        }
+                        if (el.currentY < el.minY) { el.currentY = el.minY; moved = true; }
                     }
+                    if (!moved) break;
                 }
-                
-                // Enforce the red line ceiling
-                droppedLabels.forEach(el => {
-                    if (el.currentY < el.minY) { el.currentY = el.minY; moved = true; }
-                });
-                if (!moved) break;
             }
 
             const allLabels = [...activeLabels, ...droppedLabels];
             const labelPositions = {};
-            let maxLabelY = height;
+            let maxLabelY = gridBottomY;
 
             allLabels.forEach(el => {
                 labelPositions[el.id] = el.currentY;
-                if (el.currentY > maxLabelY) maxLabelY = el.currentY;
+                const isHighlighted = el.id === selectedLineId || el.id === hoveredLineId;
+                if (!el.isDropped || showDropped || isHighlighted) {
+                    if (el.currentY > maxLabelY) maxLabelY = el.currentY;
+                }
             });
 
-            // DYNAMIC CANVAS HEIGHT: Stretches infinitely to accommodate dropped labels!
-            const dynamicHeight = Math.max(height, maxLabelY + 50);
-            
-            // Re-calculate the drop zone box to fill the new dynamic depth
+            // Dynamic Canvas hugging the exact lowest rendered element
+            const dynamicHeight = maxLabelY + LABEL_HEIGHT + 10;
             const dropZonePath = `${thresholdPath} L ${getX(historyData.length - 1)} ${dynamicHeight} L ${getX(0)} ${dynamicHeight} Z`;
 
             const sortedLines = [...lines].sort((a, b) => {
@@ -1616,32 +1656,103 @@
                 const aLabel = allLabels.find(l => l.id === a.player.id);
                 const bLabel = allLabels.find(l => l.id === b.player.id);
                 if (!aLabel || !bLabel) return 0;
-
                 if (aLabel.isDropped && !bLabel.isDropped) return -1;
                 if (!aLabel.isDropped && bLabel.isDropped) return 1;
-                
                 if (type === 'points') return aLabel.actualVal - bLabel.actualVal; 
                 return bLabel.actualVal - aLabel.actualVal;
             });
 
             const skipText = historyData.length > 15;
 
+            // Generate Gridlines dynamically based on Cutoff
+            const gridLines = [];
+            if (type === 'rank') {
+                if (cutoff === 'all') {
+                    const step = effectiveCutoff > 30 ? 5 : 2;
+                    for (let i = 1; i <= effectiveCutoff; i += step) gridLines.push(i);
+                    if (!gridLines.includes(1)) gridLines.unshift(1);
+                } else {
+                    for (let i = 1; i <= cutoff; i++) gridLines.push(i);
+                }
+            }
+
             return (
-                <div className="w-full">
-                    <div className="flex justify-between items-center mb-6">
-                        <div className="flex gap-2">
-                            <button onClick={() => setRange(10)} className={`px-4 py-1.5 rounded-lg text-sm font-bold transition-colors ${range === 10 ? 'bg-gold-500 text-royal-950' : 'bg-royal-800 text-royal-300 hover:text-white'}`}>Last 10</button>
-                            <button onClick={() => setRange(20)} className={`px-4 py-1.5 rounded-lg text-sm font-bold transition-colors ${range === 20 ? 'bg-gold-500 text-royal-950' : 'bg-royal-800 text-royal-300 hover:text-white'}`}>Last 20</button>
-                            <button onClick={() => setRange('all')} className={`px-4 py-1.5 rounded-lg text-sm font-bold transition-colors ${range === 'all' ? 'bg-gold-500 text-royal-950' : 'bg-royal-800 text-royal-300 hover:text-white'}`}>All Time</button>
+                <div className="w-full" id={`snb-chart-${type}`}>
+                    {/* UNIVERSAL SYNC TOOLBAR */}
+                    <div className="flex flex-wrap gap-4 items-center justify-between mb-6 bg-royal-900/40 p-2.5 rounded-xl border border-royal-800">
+                        <div className="flex items-center gap-4 flex-wrap">
+                            
+                            {/* Window Toggle */}
+                            <div className="flex items-center gap-1.5 bg-royal-950 p-1.5 rounded-lg border border-royal-800">
+                                <span className="text-[10px] text-royal-400 uppercase tracking-widest font-bold px-2 hidden sm:block">Window</span>
+                                {[10, 20, 50, 'all'].map(ws => (
+                                    <button 
+                                        key={ws}
+                                        onClick={() => updateSnbChartState({ windowSize: ws, offset: 0 })}
+                                        className={`px-3 py-1 rounded text-xs font-bold transition-all ${windowSize === ws ? 'bg-gold-500 text-royal-950 shadow-sm' : 'bg-transparent text-royal-400 hover:text-white hover:bg-royal-800'}`}
+                                    >
+                                        {ws === 'all' ? 'All Time' : ws}
+                                    </button>
+                                ))}
+                            </div>
+
+                            {/* Pagination Controls */}
+                            {windowSize !== 'all' && (
+                                <div className="flex items-center gap-2 bg-royal-950 p-1.5 rounded-lg border border-royal-800">
+                                    <button 
+                                        onClick={() => updateSnbChartState({ offset: Math.min(maxOffset, safeOffset + windowSize) })}
+                                        disabled={safeOffset >= maxOffset}
+                                        className="p-1 hover:bg-royal-800 text-royal-400 hover:text-white rounded disabled:opacity-30 transition-colors"
+                                    >
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
+                                    </button>
+                                    <span className="text-xs font-bold text-royal-300 w-28 text-center tabular-nums">
+                                        {startIndex + 1} - {endIndex} of {N}
+                                    </span>
+                                    <button 
+                                        onClick={() => updateSnbChartState({ offset: Math.max(0, safeOffset - windowSize) })}
+                                        disabled={safeOffset <= 0}
+                                        className="p-1 hover:bg-royal-800 text-royal-400 hover:text-white rounded disabled:opacity-30 transition-colors"
+                                    >
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                                    </button>
+                                </div>
+                            )}
+                            
+                            <div className="w-px h-6 bg-royal-700 hidden lg:block"></div>
+
+                            {/* Variable Cutoff Toggle */}
+                            <div className="flex items-center gap-1.5 bg-royal-950 p-1.5 rounded-lg border border-royal-800">
+                                <span className="text-[10px] text-royal-400 uppercase tracking-widest font-bold px-2 hidden sm:block">Cutoff</span>
+                                {[8, 12, 24, 'all'].map(c => (
+                                    <button 
+                                        key={c}
+                                        onClick={() => updateSnbChartState({ cutoff: c })}
+                                        className={`px-3 py-1 rounded text-xs font-bold transition-all ${cutoff === c ? 'bg-purple-500 text-white shadow-sm' : 'bg-transparent text-royal-400 hover:text-white hover:bg-royal-800'}`}
+                                    >
+                                        {c === 'all' ? 'All' : `Top ${c}`}
+                                    </button>
+                                ))}
+                            </div>
+
+                            {/* Show/Hide Dropped */}
+                            {hasCutoff && (
+                                <button 
+                                    onClick={() => updateSnbChartState({ showDropped: !showDropped })} 
+                                    className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all border shadow-sm ${showDropped ? 'bg-royal-800 border-royal-600 text-white' : 'bg-royal-950 border-royal-800 text-royal-400 hover:text-royal-300'}`}
+                                >
+                                    {showDropped ? 'Hide Dropped' : 'Show Dropped'}
+                                </button>
+                            )}
                         </div>
+
                         {selectedLineId && (
-                            <button onClick={() => setSelectedLineId(null)} className="text-sm font-medium text-gold-500 hover:text-white px-3 py-1 bg-royal-800 rounded-md border border-royal-700 transition-colors">Clear Selection</button>
+                            <button onClick={() => setSelectedLineId(null)} className="text-xs font-medium text-gold-500 hover:text-white px-4 py-1.5 bg-royal-800 rounded-md border border-royal-700 transition-colors">Clear Selection</button>
                         )}
                     </div>
                     
                     <div className="w-full bg-royal-900/50 rounded-xl border border-royal-700 pb-2 relative overflow-hidden select-none">
-                        {/* Dynamic Height applied directly to viewBox */}
-                        <svg viewBox={`0 0 ${width} ${dynamicHeight}`} className="w-full h-auto overflow-visible font-sans">
+                        <svg viewBox={`0 0 ${width} ${dynamicHeight}`} className="w-full h-auto overflow-visible font-sans" style={{ transition: 'viewBox 0.3s ease' }}>
                             <defs>
                                 {lines.map(line => (
                                     <clipPath id={`clip-${type}-${line.player.id}`} key={`clip-${line.player.id}`}>
@@ -1650,23 +1761,24 @@
                                 ))}
                             </defs>
 
-                            <g className="threshold-layer">
-                                <path d={dropZonePath} fill="#000000" opacity="0.3" />
-                                <path d={thresholdPath} fill="none" stroke="#ef4444" strokeWidth="2.5" strokeDasharray="8 6" opacity="0.7" />
-                                
-                                <text x={width - pad.right + 10} y={thresholdData[thresholdData.length - 1].y} fill="#ef4444" fontSize="12" fontWeight="bold" alignmentBaseline="middle" opacity="0.8">
-                                    Top 12 Cutoff
-                                </text>
-                                <text x={pad.left - 15} y={thresholdData[0].y} fill="#ef4444" fontSize="12" fontWeight="bold" textAnchor="end" alignmentBaseline="middle" opacity="0.8">
-                                    {type === 'rank' ? 'Drop' : 'Top 12'}
-                                </text>
-                            </g>
+                            {hasCutoff && (
+                                <g className="threshold-layer">
+                                    <path d={dropZonePath} fill="#000000" opacity="0.3" style={{ transition: 'd 0.3s ease' }} />
+                                    <path d={thresholdPath} fill="none" stroke="#ef4444" strokeWidth="2.5" strokeDasharray="8 6" opacity="0.7" />
+                                    
+                                    <text x={width - pad.right + 10} y={thresholdData[thresholdData.length - 1].y} fill="#ef4444" fontSize="12" fontWeight="bold" alignmentBaseline="middle" opacity="0.8">
+                                        Top {cutoff} Cutoff
+                                    </text>
+                                    <text x={pad.left - 15} y={thresholdData[0].y} fill="#ef4444" fontSize="12" fontWeight="bold" textAnchor="end" alignmentBaseline="middle" opacity="0.8">
+                                        {type === 'rank' ? 'Drop' : `Top ${cutoff}`}
+                                    </text>
+                                </g>
+                            )}
 
                             {type === 'rank' ? (
                                 <>
-                                    {[...Array(12)].map((_, i) => {
-                                        const r = i + 1;
-                                        const yPos = pad.top + (i / 12) * (height - pad.top - pad.bottom);
+                                    {gridLines.map((r, i) => {
+                                        const yPos = pad.top + ((r - 1) / Math.max(1, effectiveCutoff - 1)) * plotHeight;
                                         return (
                                             <g key={`grid-${i}`}>
                                                 <line x1={pad.left} y1={yPos} x2={width - pad.right + 20} y2={yPos} stroke="#13382d" strokeWidth="1" strokeDasharray="4 4" />
@@ -1717,7 +1829,9 @@
                                 const endX = endPt.x;
                                 const endY = endPt.y;
                                 const adjY = labelPositions[line.player.id];
-                                const isDropped = endPt.isIntersection || endPt.k < historyData.length - 1;
+                                const isDropped = hasCutoff && (endPt.isIntersection || endPt.k < historyData.length - 1);
+
+                                const shouldShowLabel = !isDropped || showDropped || isHighlighted;
 
                                 return (
                                     <g key={`overlay-${line.player.id}`} style={{ transition: 'opacity 0.2s ease' }} opacity={isFaded ? 0.2 : 1}>
@@ -1742,25 +1856,28 @@
                                             );
                                         }))}
 
-                                        {(Math.abs(adjY - endY) > 2 || isDropped) && (
-                                            <path d={`M ${endX} ${endY} C ${endX + 15} ${endY}, ${endX + 10} ${adjY}, ${endX + 25} ${adjY}`} fill="none" stroke={line.color} strokeWidth="1.5" opacity="0.6" strokeDasharray="4 4" />
+                                        {shouldShowLabel && (Math.abs(adjY - endY) > 2 || isDropped) && (
+                                            <path d={`M ${endX} ${endY} C ${endX + 15} ${endY}, ${endX + 10} ${adjY}, ${endX + 25} ${adjY}`} fill="none" stroke={line.color} strokeWidth="1.5" opacity="0.6" strokeDasharray="4 4" style={{ transition: 'opacity 0.3s ease' }} />
                                         )}
 
-                                        <g 
-                                            transform={`translate(${endX + 25}, ${adjY - 14})`} 
-                                            className="cursor-pointer"
-                                            onClick={(e) => { e.stopPropagation(); onNavigate('players', line.player.id); }}
-                                            onMouseEnter={() => setHoveredLineId(line.player.id)}
-                                            onMouseLeave={() => setHoveredLineId(null)}
-                                        >
-                                            <rect x="-4" y="-4" width="180" height="36" rx="18" fill="#051611" fillOpacity={isHighlighted ? "1" : (isDropped ? "0.6" : "0.85")} stroke={line.color} strokeWidth={isHighlighted ? 2 : 1} style={{ filter: isHighlighted ? 'drop-shadow(0 0 8px rgba(255,255,255,0.3))' : 'drop-shadow(0 4px 6px rgba(0,0,0,0.5))' }} />
-                                            {line.player.imageUrl ? (
-                                                <image href={line.player.imageUrl} x="0" y="0" width="28" height="28" clipPath={`url(#clip-${type}-${line.player.id})`} preserveAspectRatio="xMidYMid slice" style={{ filter: isDropped && !isHighlighted ? 'grayscale(0.7)' : 'none' }} />
-                                            ) : (
-                                                <circle cx="14" cy="14" r="14" fill="#0a241c" />
-                                            )}
-                                            <text x="36" y="19" fill={isDropped && !isHighlighted ? "#94a3b8" : "#f8fafc"} fontSize="14" fontWeight="bold" style={{ textShadow: "0px 2px 4px black" }}>{line.player.name}</text>
-                                        </g>
+                                        {shouldShowLabel && (
+                                            <g 
+                                                transform={`translate(${endX + 25}, ${adjY - 14})`} 
+                                                className="cursor-pointer"
+                                                style={{ transition: 'opacity 0.3s ease, transform 0.3s ease' }}
+                                                onClick={(e) => { e.stopPropagation(); onNavigate('players', line.player.id); }}
+                                                onMouseEnter={() => setHoveredLineId(line.player.id)}
+                                                onMouseLeave={() => setHoveredLineId(null)}
+                                            >
+                                                <rect x="-4" y="-4" width="180" height="36" rx="18" fill="#051611" fillOpacity={isHighlighted ? "1" : (isDropped ? "0.6" : "0.85")} stroke={line.color} strokeWidth={isHighlighted ? 2 : 1} style={{ filter: isHighlighted ? 'drop-shadow(0 0 8px rgba(255,255,255,0.3))' : 'drop-shadow(0 4px 6px rgba(0,0,0,0.5))' }} />
+                                                {line.player.imageUrl ? (
+                                                    <image href={line.player.imageUrl} x="0" y="0" width="28" height="28" clipPath={`url(#clip-${type}-${line.player.id})`} preserveAspectRatio="xMidYMid slice" style={{ filter: isDropped && !isHighlighted ? 'grayscale(0.7)' : 'none' }} />
+                                                ) : (
+                                                    <circle cx="14" cy="14" r="14" fill="#0a241c" />
+                                                )}
+                                                <text x="36" y="19" fill={isDropped && !isHighlighted ? "#94a3b8" : "#f8fafc"} fontSize="14" fontWeight="bold" style={{ textShadow: "0px 2px 4px black" }}>{line.player.name}</text>
+                                            </g>
+                                        )}
                                     </g>
                                 );
                             })}
@@ -1966,22 +2083,56 @@
             );
         }
 
+        function FloatingChartNav() {
+            return (
+                <div className="fixed left-4 top-1/2 -translate-y-1/2 flex flex-col gap-3 z-50 bg-royal-950/90 backdrop-blur-md p-3 rounded-2xl border border-royal-800 shadow-[0_10px_30px_rgba(0,0,0,0.8)] hidden xl:flex">
+                    <div className="text-[10px] text-royal-400 uppercase tracking-widest font-bold text-center pb-2 border-b border-royal-800 mb-1">Jump</div>
+                    
+                    <button onClick={() => document.getElementById('snb-chart-wrapper-rank')?.scrollIntoView({behavior: 'smooth', block: 'start'})} className="p-3 bg-royal-900 hover:bg-gold-500 hover:text-royal-950 text-royal-200 rounded-xl transition-all hover:scale-110 group flex flex-col items-center gap-1 shadow-inner">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"></polyline><polyline points="16 7 22 7 22 13"></polyline></svg>
+                        <span className="text-[10px] font-black uppercase tracking-wider mt-1">Rank</span>
+                    </button>
+                    
+                    <button onClick={() => document.getElementById('snb-chart-wrapper-points')?.scrollIntoView({behavior: 'smooth', block: 'start'})} className="p-3 bg-royal-900 hover:bg-gold-500 hover:text-royal-950 text-royal-200 rounded-xl transition-all hover:scale-110 group flex flex-col items-center gap-1 shadow-inner">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>
+                        <span className="text-[10px] font-black uppercase tracking-wider mt-1">Points</span>
+                    </button>
+                </div>
+            );
+        }
+
         function AnalyticsView({ playersRaw, tournaments, players, onNavigate }) {
             const globalHistory = useMemo(() => getGlobalHistory(playersRaw, tournaments), [playersRaw, tournaments]);
+            const [, setTick] = useState(0);
+
+            // Subscribe to the global chart state so the titles dynamically update!
+            useEffect(() => {
+                const l = () => setTick(t => t + 1);
+                __snbChartListeners.add(l);
+                return () => __snbChartListeners.delete(l);
+            }, []);
+
+            const currentCutoff = typeof __snbSharedChartState !== 'undefined' ? __snbSharedChartState.cutoff : 12;
+            const titlePrefix = currentCutoff === 'all' ? 'All-Time' : `Top ${currentCutoff}`;
 
             return (
-                <div className="max-w-[1400px] mx-auto space-y-8 pb-20">
-                    <header className="mb-4">
+                <div className="max-w-[1400px] mx-auto space-y-8 pb-20 relative">
+                    {/* INJECTED FLOATING SIDEBAR */}
+                    <FloatingChartNav />
+
+                    <header className="mb-4 pl-0 xl:pl-4">
                         <h1 className="text-3xl font-bold text-white flex items-center gap-3"><AnalyticsIcon size={32} className="text-gold-500"/> Global Analytics</h1>
                         <p className="text-royal-300 mt-2">Click or hover on any line or profile picture to isolate their trajectory. Official Rankings only update after Major+ events.</p>
                     </header>
 
-                    <div className="bg-royal-900 p-6 rounded-2xl border border-royal-800 shadow-xl">
-                        <h2 className="text-2xl font-bold text-white flex items-center gap-3 mb-6"><AnalyticsIcon size={28} className="text-gold-500"/> Top 12 Rank Progression</h2>
+                    {/* Notice the ID tags added here so the sidebar links can jump right to them! */}
+                    <div id="snb-chart-wrapper-rank" className="bg-royal-900 p-6 rounded-2xl border border-royal-800 shadow-xl scroll-mt-8">
+                        <h2 className="text-2xl font-bold text-white flex items-center gap-3 mb-6"><AnalyticsIcon size={28} className="text-gold-500"/> {titlePrefix} Rank Progression</h2>
                         <TopPlayersChart globalHistory={globalHistory} playersRaw={playersRaw} type="rank" onNavigate={onNavigate} />
                     </div>
-                    <div className="bg-royal-900 p-6 rounded-2xl border border-royal-800 shadow-xl">
-                        <h2 className="text-2xl font-bold text-white flex items-center gap-3 mb-6"><AnalyticsIcon size={28} className="text-gold-500"/> Top 12 Points Progression</h2>
+                    
+                    <div id="snb-chart-wrapper-points" className="bg-royal-900 p-6 rounded-2xl border border-royal-800 shadow-xl scroll-mt-8">
+                        <h2 className="text-2xl font-bold text-white flex items-center gap-3 mb-6"><AnalyticsIcon size={28} className="text-gold-500"/> {titlePrefix} Points Progression</h2>
                         <TopPlayersChart globalHistory={globalHistory} playersRaw={playersRaw} type="points" onNavigate={onNavigate} />
                     </div>
                 </div>
@@ -4165,6 +4316,7 @@
     </script>
 </body>
 </html>
+
 
 
 
