@@ -1378,7 +1378,6 @@
             const historyData = filteredHistory.slice(range === 'all' ? 0 : -range);
             if (historyData.length < 1) return <p className="text-royal-300 text-sm mt-4">Not enough Major+ tournament history to generate a graph.</p>;
 
-            // INJECTED: 24-Color Highly Distinct Palette for maximum line variety
             const CHART_PALETTE = [
                 "#facc15", "#38bdf8", "#f472b6", "#4ade80", "#fb923c",
                 "#a78bfa", "#2dd4bf", "#f87171", "#818cf8", "#e879f9",
@@ -1490,70 +1489,89 @@
                     }
                 }
                 if (currentSeg.length > 0) segments.push(currentSeg);
-                if (segments.length > 0) lines.push({ player, segments, color: getDistinctColor(player.id) }); // USING NEW PALETTE
+                if (segments.length > 0) lines.push({ player, segments, color: getDistinctColor(player.id) });
             });
 
-            const thresholdPath = thresholdData.map((pt, i) => `${i === 0 ? 'M' : 'L'} ${pt.x} ${pt.y}`).join(' ');
+            // BUG FIX: Uses getX(pt.k) to properly render the dashed line across the screen!
+            const thresholdPath = thresholdData.map((pt, i) => `${i === 0 ? 'M' : 'L'} ${getX(pt.k)} ${pt.y}`).join(' ');
             const dropZonePath = `${thresholdPath} L ${getX(historyData.length - 1)} ${height} L ${getX(0)} ${height} Z`;
 
             lines.forEach(line => {
                 line.paths = line.segments.map(seg => seg.map((pt, i) => `${i === 0 ? 'M' : 'L'} ${pt.x} ${pt.y}`).join(' '));
             });
 
-            const endLabels = lines.map(line => {
+            // -------------------------------------------------------------
+            // MASTER LABEL POSITIONING SYSTEM (Strict Stacking & No Overlaps)
+            // -------------------------------------------------------------
+            const LABEL_HEIGHT = 44; 
+            
+            let activeLabels = [];
+            let droppedLabels = [];
+
+            lines.forEach(line => {
                 const lastSeg = line.segments[line.segments.length - 1];
                 const endPt = lastSeg[lastSeg.length - 1];
+                const isDropped = endPt.isIntersection || endPt.k < historyData.length - 1;
                 
-                let targetY = endPt.y;
-                const isDropped = endPt.isIntersection;
-                
-                if (isDropped) targetY = endPt.y + 40;
-                
-                return { 
-                    id: line.player.id, targetY, currentY: targetY, 
-                    endX: endPt.x, endY: endPt.y, 
-                    sortVal: isDropped ? (type === 'points' ? -1 : 999) : endPt.val,
-                    isDropped
+                const labelObj = { 
+                    id: line.player.id, 
+                    endX: endPt.x, 
+                    endY: endPt.y, 
+                    currentY: endPt.y, // Default start
+                    actualVal: endPt.val,
+                    isDropped,
+                    name: line.player.name
                 };
+
+                if (isDropped) droppedLabels.push(labelObj);
+                else activeLabels.push(labelObj);
             });
 
-            endLabels.sort((a, b) => {
-                if (a.isDropped && !b.isDropped) return 1;
-                if (!a.isDropped && b.isDropped) return -1;
-                if (type === 'points') return b.sortVal - a.sortVal;
-                return a.sortVal - b.sortVal;
+            // 1. STRICT STACKING FOR ACTIVE PLAYERS
+            // Sort from best to worst (Rank 1 top, Rank 12 bottom)
+            activeLabels.sort((a, b) => {
+                if (type === 'points') return b.actualVal - a.actualVal;
+                return a.actualVal - b.actualVal;
             });
 
-            // Master Collision Sweeper
-            const LABEL_HEIGHT = 44; 
-            const LABEL_WIDTH = 200; 
-            
-            for (let iter = 0; iter < 100; iter++) {
-                let moved = false;
+            if (activeLabels.length > 0) {
+                // #1 player ALWAYS gets their exact perfect Y coordinate without offset
+                activeLabels[0].currentY = activeLabels[0].endY;
                 
-                // Phase 1: Ensure dropped labels never float up into the active lines
-                for (let i = 0; i < endLabels.length; i++) {
-                    if (endLabels[i].isDropped) {
-                        const minY = endLabels[i].endY + 25;
-                        if (endLabels[i].currentY < minY) {
-                            endLabels[i].currentY = minY;
-                            moved = true;
-                        }
-                    }
+                // Everyone else is pushed down precisely to avoid overlapping the person above them
+                for (let i = 1; i < activeLabels.length; i++) {
+                    const prevY = activeLabels[i - 1].currentY;
+                    const targetY = activeLabels[i].endY;
+                    activeLabels[i].currentY = Math.max(targetY, prevY + LABEL_HEIGHT + 2);
                 }
-                
-                // Phase 2: Physics repulsion if labels overlap
-                for (let i = 0; i < endLabels.length - 1; i++) {
-                    for (let j = i + 1; j < endLabels.length; j++) {
-                        if (Math.abs(endLabels[i].endX - endLabels[j].endX) < LABEL_WIDTH) {
-                            const diff = endLabels[j].currentY - endLabels[i].currentY;
-                            if (Math.abs(diff) < LABEL_HEIGHT) {
-                                const overlap = LABEL_HEIGHT - Math.abs(diff) + 2;
-                                if (endLabels[j].isDropped && !endLabels[i].isDropped) endLabels[j].currentY += overlap;
-                                else if (!endLabels[j].isDropped && endLabels[i].isDropped) endLabels[i].currentY += overlap;
-                                else { 
-                                    if (diff >= 0) { endLabels[i].currentY -= overlap / 2; endLabels[j].currentY += overlap / 2; }
-                                    else { endLabels[i].currentY += overlap / 2; endLabels[j].currentY -= overlap / 2; }
+            }
+
+            // 2. PHYSICS PLACEMENT FOR DROPPED PLAYERS
+            // Push them below the red line AND below the lowest active player
+            const lowestActiveY = activeLabels.length > 0 ? activeLabels[activeLabels.length - 1].currentY : 0;
+            
+            droppedLabels.forEach(el => {
+                const thresholdY = thresholdData[Math.floor(el.endX / ((width - pad.left - pad.right) / (historyData.length - 1))) || 0]?.y || el.endY;
+                const minY = Math.max(thresholdY + 30, lowestActiveY + LABEL_HEIGHT + 10);
+                el.currentY = Math.max(el.endY + 30, minY);
+            });
+
+            // Anti-overlap sweeper specifically for the dropped pool
+            for (let iter = 0; iter < 50; iter++) {
+                let moved = false;
+                for (let i = 0; i < droppedLabels.length - 1; i++) {
+                    for (let j = i + 1; j < droppedLabels.length; j++) {
+                        // If they dropped at similar horizontal locations
+                        if (Math.abs(droppedLabels[i].endX - droppedLabels[j].endX) < 220) {
+                            const diff = droppedLabels[j].currentY - droppedLabels[i].currentY;
+                            if (Math.abs(diff) < LABEL_HEIGHT + 4) {
+                                const overlap = LABEL_HEIGHT + 4 - Math.abs(diff);
+                                if (diff >= 0) {
+                                    droppedLabels[j].currentY += overlap / 2;
+                                    droppedLabels[i].currentY -= overlap / 2;
+                                } else {
+                                    droppedLabels[j].currentY -= overlap / 2;
+                                    droppedLabels[i].currentY += overlap / 2;
                                 }
                                 moved = true;
                             }
@@ -1561,29 +1579,18 @@
                     }
                 }
                 
+                // Re-enforce the minimum Y floor after physics
+                droppedLabels.forEach(el => {
+                    const minY = Math.max(el.endY + 30, lowestActiveY + LABEL_HEIGHT + 10);
+                    if (el.currentY < minY) { el.currentY = minY; moved = true; }
+                });
+                
                 if (!moved) break;
             }
 
-            // Phase 3: STRICT STACKING FOR ACTIVE PLAYERS (Fixes #1 and #2 overlapping!)
-            const activeLabels = endLabels.filter(el => !el.isDropped).sort((a, b) => a.currentY - b.currentY);
-            for (let i = 1; i < activeLabels.length; i++) {
-                if (activeLabels[i].currentY - activeLabels[i-1].currentY < LABEL_HEIGHT) {
-                    activeLabels[i].currentY = activeLabels[i-1].currentY + LABEL_HEIGHT;
-                }
-            }
-            // Ensure strict stacking didn't push anyone off the bottom of the screen
-            const maxActiveY = height - 20;
-            if (activeLabels.length > 0 && activeLabels[activeLabels.length - 1].currentY > maxActiveY) {
-                const shift = activeLabels[activeLabels.length - 1].currentY - maxActiveY;
-                activeLabels.forEach(el => el.currentY -= shift);
-            }
-            
+            const allLabels = [...activeLabels, ...droppedLabels];
             const labelPositions = {};
-            endLabels.forEach(el => {
-                if (el.currentY < 20) el.currentY = 20; 
-                if (el.currentY > height - 20) el.currentY = height - 20;
-                labelPositions[el.id] = el.currentY;
-            });
+            allLabels.forEach(el => labelPositions[el.id] = el.currentY);
 
             const sortedLines = [...lines].sort((a, b) => {
                 const aHigh = a.player.id === selectedLineId || a.player.id === hoveredLineId;
@@ -1591,20 +1598,19 @@
                 if (aHigh && !bHigh) return 1;
                 if (!aHigh && bHigh) return -1;
                 
-                const aLabel = endLabels.find(l => l.id === a.player.id);
-                const bLabel = endLabels.find(l => l.id === b.player.id);
+                const aLabel = allLabels.find(l => l.id === a.player.id);
+                const bLabel = allLabels.find(l => l.id === b.player.id);
                 if (!aLabel || !bLabel) return 0;
 
                 if (aLabel.isDropped && !bLabel.isDropped) return -1;
                 if (!aLabel.isDropped && bLabel.isDropped) return 1;
                 
-                if (aLabel.isDropped && bLabel.isDropped) {
-                    if (Math.abs(aLabel.endX - bLabel.endX) > 1) return aLabel.endX - bLabel.endX; 
-                }
-                
                 if (type === 'points') return aLabel.actualVal - bLabel.actualVal; 
                 return bLabel.actualVal - aLabel.actualVal;
             });
+
+            // SMART TEXT CROWDING (Skips points if too many nodes on screen)
+            const skipText = historyData.length > 15;
 
             return (
                 <div className="w-full">
@@ -1700,20 +1706,25 @@
                                 const endX = endPt.x;
                                 const endY = endPt.y;
                                 const adjY = labelPositions[line.player.id];
-                                const isDropped = endPt.isIntersection;
+                                const isDropped = endPt.isIntersection || endPt.k < historyData.length - 1;
 
                                 return (
                                     <g key={`overlay-${line.player.id}`} style={{ transition: 'opacity 0.2s ease' }} opacity={isFaded ? 0.2 : 1}>
                                         {/* SLEEK, SMALLER DOTS */}
                                         {line.segments.map((seg, sIdx) => seg.map((pt, i) => {
                                             if (!pt.isDot) return null;
+                                            
+                                            // SMART CROWDING TEXT: Skip nodes if too dense, but ALWAYS show the last dot!
+                                            const isLastPt = (sIdx === line.segments.length - 1 && i === seg.length - 1);
+                                            const shouldShowText = isHighlighted && (!skipText || i % 2 === 0 || isLastPt);
+
                                             return (
                                                 <g key={`pt-${line.player.id}-${sIdx}-${i}`} className="group cursor-pointer" 
                                                    onClick={(e) => { e.stopPropagation(); setSelectedLineId(line.player.id === selectedLineId ? null : line.player.id); }}>
-                                                    {/* Radius shrunk to 2 (matches line width) */}
-                                                    <circle cx={pt.x} cy={pt.y} r={isHighlighted ? "4" : "2"} fill="#051611" stroke={line.color} strokeWidth={isHighlighted ? 3 : 1.5} style={{ transition: 'r 0.2s ease, stroke-width 0.2s ease' }} />
+                                                    {/* Radius shrunk to 2.5 (matches line width) */}
+                                                    <circle cx={pt.x} cy={pt.y} r={isHighlighted ? "4" : "2.5"} fill="#051611" stroke={line.color} strokeWidth={isHighlighted ? 3 : 1.5} style={{ transition: 'r 0.2s ease, stroke-width 0.2s ease' }} />
                                                     
-                                                    <text x={pt.x} y={pt.y - 15} fill={line.color} fontSize="12" fontWeight="900" textAnchor="middle" stroke="#051611" strokeWidth="4" paintOrder="stroke" className={isHighlighted ? "opacity-100" : "opacity-0 group-hover:opacity-100"} style={{ transition: 'opacity 0.2s ease' }}>
+                                                    <text x={pt.x} y={pt.y - 12} fill={line.color} fontSize="12" fontWeight="900" textAnchor="middle" stroke="#051611" strokeWidth="4" paintOrder="stroke" className={shouldShowText ? "opacity-100" : "opacity-0 group-hover:opacity-100"} style={{ transition: 'opacity 0.2s ease' }}>
                                                         {type === 'rank' ? `#${pt.val}` : Math.round(pt.val).toLocaleString()}
                                                     </text>
 
@@ -4148,6 +4159,7 @@
     </script>
 </body>
 </html>
+
 
 
 
