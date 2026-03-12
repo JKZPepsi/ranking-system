@@ -2115,7 +2115,6 @@
         }
 
         function NationsView({ players, playersRaw, tournaments, onNavigate }) {
-            // Bulletproof fallback in case playersRaw isn't passed down initially
             const safePlayers = playersRaw || players || [];
             const globalHistory = useMemo(() => getGlobalHistory(safePlayers, tournaments), [safePlayers, tournaments]);
             
@@ -2151,13 +2150,14 @@
             return (
                 <div className="max-w-[1400px] mx-auto space-y-8 pb-20">
                     <header className="mb-4">
-                        <h1 className="text-3xl font-bold text-white flex items-center gap-3"><Globe size={32} className="text-blue-400"/> Global Nations</h1>
+                        {/* FIXED: Replaced Globe with NationsIcon */}
+                        <h1 className="text-3xl font-bold text-white flex items-center gap-3"><NationsIcon size={32} className="text-blue-400"/> Global Nations</h1>
                         <p className="text-royal-300 mt-2">The arms race for international dominance. Only active players contribute to the current National Points total.</p>
                     </header>
 
                     <div className="bg-royal-900 p-6 rounded-2xl border border-royal-800 shadow-xl mb-8">
-                        <h2 className="text-2xl font-bold text-white flex items-center gap-3 mb-6"><TrendingUp size={28} className="text-emerald-400"/> Top Nations Trajectory</h2>
-                        {/* THE FIX: Passing safePlayers into the chart */}
+                        {/* FIXED: Replaced TrendingUp with AnalyticsIcon */}
+                        <h2 className="text-2xl font-bold text-white flex items-center gap-3 mb-6"><AnalyticsIcon size={28} className="text-emerald-400"/> Top Nations Trajectory</h2>
                         <TopNationsChart globalHistory={globalHistory} playersRaw={safePlayers} onNavigate={onNavigate} />
                     </div>
 
@@ -4509,6 +4509,7 @@
     </script>
 </body>
 </html>
+
 
 
 
