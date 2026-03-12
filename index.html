@@ -2180,13 +2180,196 @@
             );
         }
 
-        function NationProfile({ code, players, onBack, onNavigate }) {
+        function NationAchievements({ code, players, tournaments }) {
+            const titles = { grand_slam: 0, finals: 0, masters_1000: 0, masters_500: 0, masters_250: 0 };
+            tournaments.forEach(t => {
+                if (t.status === 'completed' && t.bracket) {
+                    let b = []; try { b = typeof t.bracket === 'string' ? JSON.parse(t.bracket) : t.bracket; } catch(e){}
+                    const finalMatch = b[1]?.[0] || b[b.length-1]?.[0];
+                    if (finalMatch?.winner) {
+                        const winner = players.find(p => p.id === finalMatch.winner);
+                        if (winner && (winner.nationality || 'UNK') === code) titles[t.tier || 'masters_250']++;
+                    }
+                }
+            });
+
+            const total = Object.values(titles).reduce((a,b) => a+b, 0);
+            if (total === 0) return null;
+
+            return (
+                <div className="mt-8 bg-royal-900/50 p-6 rounded-2xl border border-royal-800 shadow-xl">
+                    <h3 className="text-xl font-bold text-white mb-4 flex items-center gap-3"><Trophy size={24} className="text-gold-500"/> National Trophy Cabinet</h3>
+                    <div className="flex flex-wrap gap-4">
+                        {titles.grand_slam > 0 && <div className="flex items-center gap-2 bg-royal-950/80 px-4 py-2.5 rounded-xl border border-gold-500/50 shadow-sm"><Trophy size={18} className="text-gold-500"/> <span className="font-bold text-white text-sm">{titles.grand_slam}x Grand Slams</span></div>}
+                        {titles.finals > 0 && <div className="flex items-center gap-2 bg-royal-950/80 px-4 py-2.5 rounded-xl border border-blue-400/50 shadow-sm"><Trophy size={18} className="text-blue-400"/> <span className="font-bold text-white text-sm">{titles.finals}x Tour Finals</span></div>}
+                        {titles.masters_1000 > 0 && <div className="flex items-center gap-2 bg-royal-950/80 px-4 py-2.5 rounded-xl border border-purple-400/50 shadow-sm"><Medal size={18} className="text-purple-400"/> <span className="font-bold text-white text-sm">{titles.masters_1000}x Masters 1000</span></div>}
+                        {titles.masters_500 > 0 && <div className="flex items-center gap-2 bg-royal-950/80 px-4 py-2.5 rounded-xl border border-emerald-400/50 shadow-sm"><Medal size={18} className="text-emerald-400"/> <span className="font-bold text-white text-sm">{titles.masters_500}x Masters 500</span></div>}
+                        {titles.masters_250 > 0 && <div className="flex items-center gap-2 bg-royal-950/80 px-4 py-2.5 rounded-xl border border-orange-400/50 shadow-sm"><Medal size={18} className="text-orange-400"/> <span className="font-bold text-white text-sm">{titles.masters_250}x Masters 250</span></div>}
+                    </div>
+                </div>
+            );
+        }
+
+        function NationPointsChart({ code, globalHistory, playersRaw, onNavigate }) {
+            const filteredHistory = globalHistory.filter(h => h.isMajorPlus);
+            if (filteredHistory.length < 1) return null;
+
+            const NATION_COLORS = {
+                'USA': '#38bdf8', 'GBR': '#f87171', 'AUS': '#facc15', 'FRA': '#60a5fa',
+                'GER': '#f8fafc', 'ITA': '#60a5fa', 'ESP': '#facc15', 'NED': '#fb923c',
+                'BRA': '#4ade80', 'ARG': '#7dd3fc', 'JPN': '#818cf8', 'CAN': '#ef4444',
+                'CHN': '#f43f5e', 'RUS': '#f87171', 'SWE': '#fde047', 'NOR': '#ef4444',
+                'MEX': '#22c55e', 'KOR': '#38bdf8', 'NZL': '#94a3b8', 'RSA': '#10b981',
+                'SUI': '#ef4444', 'BEL': '#ef4444', 'AUT': '#ef4444', 'POR': '#10b981',
+                'POL': '#f8fafc', 'CZE': '#38bdf8', 'CRO': '#f87171', 'SRB': '#ef4444',
+                'DEN': '#ef4444', 'FIN': '#38bdf8', 'IRL': '#4ade80', 'UKR': '#facc15'
+            };
+            const nationColor = NATION_COLORS[code] || '#facc15';
+
+            const activePlayerIds = new Set();
+            filteredHistory.forEach(h => h.standings?.forEach(s => {
+                const p = playersRaw.find(x => x.id === s.id);
+                if (p && p.nationality === code && !p.retired) activePlayerIds.add(s.id);
+            }));
+
+            const width = 1200;
+            const plotHeight = 450;
+            const pad = { top: 40, right: 180, left: 80, bottom: 40 }; 
+            const gridBottomY = pad.top + plotHeight;
+
+            let maxPointsVal = 10;
+            const timelines = { total: [] };
+            Array.from(activePlayerIds).forEach(pid => timelines[pid] = []);
+
+            for (let k = 0; k < filteredHistory.length; k++) {
+                let stepTotal = 0;
+                filteredHistory[k].standings?.forEach(s => {
+                    if (activePlayerIds.has(s.id)) {
+                        timelines[s.id].push({ k, val: s.pts });
+                        stepTotal += s.pts;
+                    }
+                });
+                // Fill in 0s for missing players at this step
+                Array.from(activePlayerIds).forEach(pid => {
+                    if (timelines[pid].length === k) timelines[pid].push({ k, val: 0 });
+                });
+                timelines.total.push({ k, val: stepTotal });
+                if (stepTotal > maxPointsVal) maxPointsVal = stepTotal;
+            }
+            maxPointsVal = Math.ceil(maxPointsVal * 1.05);
+
+            const getX = (i) => filteredHistory.length <= 1 ? (pad.left + (width - pad.left - pad.right) / 2) : pad.left + (i * ((width - pad.left - pad.right) / (filteredHistory.length - 1)));
+            const getY = (val) => gridBottomY - (val / Math.max(1, maxPointsVal)) * plotHeight;
+
+            const lines = [];
+            
+            // Total Line
+            const tSegs = []; let cSeg = [];
+            timelines.total.forEach((pt, i) => {
+                const mapped = { ...pt, x: getX(pt.k), y: getY(pt.val), isDot: true, isDebut: pt.val > 0 && (i===0 || timelines.total[i-1].val === 0) };
+                if (pt.val > 0) cSeg.push(mapped); else if (cSeg.length > 0) { tSegs.push(cSeg); cSeg = []; }
+            });
+            if (cSeg.length > 0) tSegs.push(cSeg);
+            if (tSegs.length > 0) lines.push({ id: 'total', name: 'National Total', color: nationColor, isTotal: true, paths: tSegs.map(seg => seg.map((pt, i) => `${i===0?'M':'L'} ${pt.x} ${pt.y}`).join(' ')), segments: tSegs });
+
+            // Player Lines
+            Array.from(activePlayerIds).forEach(pid => {
+                const p = playersRaw.find(x => x.id === pid);
+                const pSegs = []; let pCSeg = [];
+                timelines[pid].forEach((pt, i) => {
+                    const mapped = { ...pt, x: getX(pt.k), y: getY(pt.val), isDot: true, isDebut: pt.val > 0 && (i===0 || timelines[pid][i-1].val === 0) };
+                    if (pt.val > 0) pCSeg.push(mapped); else if (pCSeg.length > 0) { pSegs.push(pCSeg); pCSeg = []; }
+                });
+                if (pCSeg.length > 0) pSegs.push(pCSeg);
+                if (pSegs.length > 0) lines.push({ id: pid, name: p.name, img: p.imageUrl, color: '#64748b', isTotal: false, paths: pSegs.map(seg => seg.map((pt, i) => `${i===0?'M':'L'} ${pt.x} ${pt.y}`).join(' ')), segments: pSegs });
+            });
+
+            // Anchor logic
+            const labels = [];
+            lines.forEach(line => {
+                const endPt = line.segments[line.segments.length - 1].slice(-1)[0];
+                labels.push({ id: line.id, endX: endPt.x, endY: endPt.y, currentY: endPt.y, line });
+            });
+            
+            labels.sort((a,b) => a.endY - b.endY);
+            for(let i=1; i<labels.length; i++) {
+                labels[i].currentY = Math.max(labels[i].endY, labels[i-1].currentY + 30);
+            }
+
+            return (
+                <div className="w-full bg-royal-900/50 rounded-2xl border border-royal-800 p-6 shadow-xl mb-8">
+                    <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-3"><AnalyticsIcon size={24} className="text-gold-500"/> Internal Progression</h3>
+                    <div className="w-full overflow-x-auto custom-scrollbar pb-2">
+                        <svg viewBox={`0 0 ${width} ${pad.top + plotHeight + pad.bottom}`} style={{ minWidth: `${width}px` }} className="h-auto overflow-visible font-sans">
+                            {(() => {
+                                const step = Math.max(100, Math.ceil((maxPointsVal/5)/100)*100);
+                                const yLines = [0]; for(let v=step; v<=maxPointsVal; v+=step) yLines.push(v);
+                                return yLines.map((p, i) => (
+                                    <g key={`g-${i}`}>
+                                        <line x1={pad.left} y1={getY(p)} x2={width - pad.right + 20} y2={getY(p)} stroke={i===0?"#1e4033":"#13382d"} strokeWidth={i===0?"2":"1"} strokeDasharray={i===0?"none":"4 4"} />
+                                        <text x={pad.left - 15} y={getY(p)} fill="#789e90" fontSize="11" fontWeight="bold" textAnchor="end" alignmentBaseline="middle">{p.toLocaleString()}</text>
+                                    </g>
+                                ));
+                            })()}
+
+                            {lines.map(line => line.paths.map((pStr, pIdx) => (
+                                <path key={`p-${line.id}-${pIdx}`} d={pStr} fill="none" stroke={line.color} strokeWidth={line.isTotal ? 4 : 1.5} opacity={line.isTotal ? 1 : 0.6} strokeLinejoin="round" />
+                            )))}
+
+                            {lines.map(line => {
+                                const lObj = labels.find(l => l.id === line.id);
+                                return (
+                                    <g key={`o-${line.id}`}>
+                                        {line.segments.map((seg, sI) => seg.map((pt, i) => {
+                                            const r = line.isTotal ? 4 : 2;
+                                            return (
+                                                <g key={`d-${line.id}-${sI}-${i}`} className="group cursor-crosshair">
+                                                    <circle cx={pt.x} cy={pt.y} r={pt.isDebut ? r+1 : r} fill={pt.isDebut ? line.color : "#051611"} stroke={line.color} strokeWidth={pt.isDebut ? 0 : 1.5} />
+                                                    <circle cx={pt.x} cy={pt.y} r="15" fill="transparent" />
+                                                    <title>{`${line.name}: ${pt.val.toLocaleString()}`}</title>
+                                                </g>
+                                            );
+                                        }))}
+                                        
+                                        {(Math.abs(lObj.currentY - lObj.endY) > 2) && <path d={`M ${lObj.endX} ${lObj.endY} C ${lObj.endX+15} ${lObj.endY}, ${lObj.endX+10} ${lObj.currentY}, ${lObj.endX+20} ${lObj.currentY}`} fill="none" stroke={line.color} strokeWidth="1" opacity="0.4" strokeDasharray="2 2" />}
+                                        
+                                        <g transform={`translate(${lObj.endX + 20}, ${lObj.currentY - 12})`} className="cursor-pointer" onClick={() => !line.isTotal && onNavigate('players', line.id)}>
+                                            <rect x="-4" y="-4" width={140} height={24} rx={12} fill="#051611" fillOpacity="0.9" stroke={line.color} strokeWidth={line.isTotal ? 2 : 1} />
+                                            {line.isTotal ? <circle cx="8" cy="8" r="4" fill={line.color} /> : (line.img ? <image href={line.img} x="0" y="0" width={16} height={16} preserveAspectRatio="xMidYMid slice" clipPath={`url(#clip-nat-${line.id})`} /> : <circle cx="8" cy="8" r="8" fill="#1e293b"/>)}
+                                            {line.img && <defs><clipPath id={`clip-nat-${line.id}`}><circle cx="8" cy="8" r="8" /></clipPath></defs>}
+                                            <text x={22} y={12} fill={line.isTotal ? line.color : "#cbd5e1"} fontSize={11} fontWeight="bold">{line.name}</text>
+                                        </g>
+                                    </g>
+                                );
+                            })}
+                        </svg>
+                    </div>
+                </div>
+            );
+        }
+        
+        function NationProfile({ code, players, onBack, onNavigate, playersRaw, tournaments }) {
             const { active, retired } = useMemo(() => {
                 const natPlayers = players.filter(p => (p.nationality || 'UNK') === code);
                 const activeList = natPlayers.filter(p => !p.retired).sort((a,b) => b.points - a.points || b.totalPoints - a.totalPoints);
-                const retiredList = natPlayers.filter(p => p.retired).sort((a,b) => (b.points || 0) - (a.points || 0));
+                
+                const globalHist = (tournaments && playersRaw) ? getGlobalHistory(playersRaw, tournaments) : [];
+                const retiredList = natPlayers.filter(p => p.retired).map(p => {
+                    let peakRank = 9999, peakPoints = 0;
+                    globalHist.forEach(h => {
+                        const s = h.standings?.find(st => st.id === p.id);
+                        if (s) {
+                            if (s.rank > 0 && s.rank < peakRank) peakRank = s.rank;
+                            if (s.pts > peakPoints) peakPoints = s.pts;
+                        }
+                    });
+                    if (peakRank === 9999) peakRank = p.rank || '-';
+                    if (peakPoints === 0) peakPoints = p.points || 0;
+                    return { ...p, peakRank, peakPoints };
+                }).sort((a,b) => b.peakPoints - a.peakPoints);
+
                 return { active: activeList, retired: retiredList };
-            }, [players, code]);
+            }, [players, code, playersRaw, tournaments]);
 
             const stats = useMemo(() => {
                 let points = 0, bonusPoints = 0, wins = 0, losses = 0, titles = 0;
@@ -2196,19 +2379,23 @@
                 });
                 active.forEach(p => titles += p.recentTournaments?.filter(t => t.result === 'Winner').length || 0);
                 retired.forEach(p => titles += p.recentTournaments?.filter(t => t.result === 'Winner').length || 0);
-                return { points, bonusPoints, wins, losses, titles, players: active.length };
+
+                return { points, bonusPoints, wins, losses, titles, activeCount: active.length, retiredCount: retired.length };
             }, [active, retired]);
 
             return (
                 <div className="max-w-5xl mx-auto space-y-6 pb-20">
                     <button onClick={onBack} className="flex items-center gap-2 text-royal-200 hover:text-white"><ArrowLeft size={16}/> Back to Nations</button>
                     
-                    <div className="bg-royal-900 rounded-2xl p-8 border border-royal-800 flex flex-col md:flex-row gap-8 relative shadow-lg items-center md:items-start">
-                        <div className="text-8xl">{getFlag(code)}</div>
+                    <div className="bg-royal-900 rounded-2xl p-8 border border-royal-800 flex flex-col md:flex-row gap-8 relative shadow-lg items-center md:items-start mb-8">
+                        <div className="text-8xl drop-shadow-lg">{getFlag(code)}</div>
                         <div className="flex-1 text-center md:text-left">
                             <h1 className="text-4xl font-bold text-white mb-6">{getCountryName(code)}</h1>
                             <div className="flex flex-wrap justify-center md:justify-start gap-4">
-                                <div className="bg-royal-950/50 border border-royal-800 p-4 rounded-lg text-center min-w-[100px]"><div className="text-royal-200 font-bold uppercase text-xs tracking-widest mb-1">Active Players</div><div className="text-2xl font-black text-white">{stats.players}</div></div>
+                                <div className="bg-royal-950/50 border border-royal-800 p-4 rounded-lg text-center min-w-[100px]">
+                                    <div className="text-royal-200 font-bold uppercase text-xs tracking-widest mb-1">Players</div>
+                                    <div className="text-2xl font-black text-white">{stats.activeCount} <span className="text-sm font-medium text-royal-400 block -mt-1">+{stats.retiredCount} Ret.</span></div>
+                                </div>
                                 <div className="bg-royal-950/50 border border-royal-800 p-4 rounded-lg text-center min-w-[100px]"><div className="text-royal-200 font-bold uppercase text-xs tracking-widest mb-1">Active Pts</div><div className="text-2xl font-black text-gold-500">{stats.points.toLocaleString()} {stats.bonusPoints > 0 && <span className="text-emerald-400 text-sm ml-1">+{stats.bonusPoints}</span>}</div></div>
                                 <div className="bg-royal-950/50 border border-royal-800 p-4 rounded-lg text-center min-w-[100px]"><div className="text-royal-200 font-bold uppercase text-xs tracking-widest mb-1">All-Time Titles</div><div className="text-2xl font-black text-gold-400">{stats.titles}</div></div>
                                 <div className="bg-royal-950/50 border border-royal-800 p-4 rounded-lg text-center min-w-[100px]"><div className="text-royal-200 font-bold uppercase text-xs tracking-widest mb-1">Active W-L</div><div className="text-2xl font-black text-white">{stats.wins}-{stats.losses}</div></div>
@@ -2216,43 +2403,44 @@
                         </div>
                     </div>
 
+                    {/* NEW: Nation-Specific Progression Chart */}
+                    <NationPointsChart code={code} globalHistory={getGlobalHistory(playersRaw, tournaments)} playersRaw={playersRaw} onNavigate={onNavigate} />
+
                     <h2 className="text-2xl font-bold text-white mb-4 mt-8 flex items-center gap-2"><PlayersIcon size={24} className="text-gold-500"/> National Roster</h2>
                     <div className="bg-royal-900 rounded-xl border border-royal-800 overflow-hidden shadow-xl">
                         <div className="overflow-x-auto">
                             <table className="w-full text-left border-collapse">
                                 <thead>
-                                    <tr className="bg-royal-950/50 text-royal-200 text-sm uppercase tracking-wider">
+                                    <tr className="bg-royal-950/80 text-royal-200 text-sm uppercase tracking-wider border-b border-royal-800">
                                         <th className="p-4 font-semibold w-16 text-center">Nat. Rank</th>
                                         <th className="p-4 font-semibold w-16 text-center">Global Rank</th>
                                         <th className="p-4 font-semibold">Player</th>
-                                        <th className="p-4 font-semibold">Points</th>
+                                        <th className="p-4 font-semibold text-right">Points</th>
                                         <th className="p-4 font-semibold text-center">W-L</th>
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-royal-800">
-                                    {/* ACTIVE PLAYERS */}
                                     {active.map((player, idx) => (
                                         <tr key={player.id} onClick={() => onNavigate('players', player.id)} className="hover:bg-royal-800/50 transition-colors cursor-pointer group">
-                                            <td className="p-4 text-center font-bold text-white">{idx + 1}</td>
-                                            <td className="p-4 text-center font-bold text-royal-400">#{player.rank}</td>
+                                            <td className="p-4 text-center font-bold text-white text-lg">{idx + 1}</td>
+                                            <td className="p-4 text-center font-bold text-royal-400 text-lg">#{player.rank}</td>
                                             <td className="p-4 font-medium text-white flex items-center gap-3">
                                                 <div className="w-10 h-10 rounded-full overflow-hidden border border-royal-700 bg-black shrink-0">
                                                     <PlayerMedia url={player.imageUrl || (player.images ? player.images[0] : '')} className="w-full h-full" />
                                                 </div>
-                                                <div className="group-hover:text-gold-500 transition-colors">{player.name}</div>
+                                                <div className="group-hover:text-gold-500 font-bold text-lg transition-colors">{player.name}</div>
                                             </td>
-                                            <td className="p-4 font-bold text-gold-500">
+                                            <td className="p-4 font-bold text-gold-500 text-right text-lg">
                                                 {player.points.toLocaleString()}
                                                 {player.bonusPoints > 0 && <span className="text-emerald-400 text-xs ml-1 font-bold">+{player.bonusPoints}</span>}
                                             </td>
-                                            <td className="p-4 text-center text-royal-200">{player.stats.wins} - {player.stats.losses}</td>
+                                            <td className="p-4 text-center text-royal-200 font-medium">{player.stats.wins} - {player.stats.losses}</td>
                                         </tr>
                                     ))}
 
-                                    {/* HALL OF FAME SEPARATOR & RETIRED PLAYERS */}
                                     {retired.length > 0 && (
                                         <>
-                                            <tr className="bg-royal-950/90 border-t-2 border-royal-700">
+                                            <tr className="bg-royal-950/90 border-t-4 border-royal-800">
                                                 <td colSpan="5" className="p-4 text-center">
                                                     <div className="inline-flex items-center gap-3">
                                                         <div className="h-px w-16 bg-royal-700"></div>
@@ -2264,22 +2452,25 @@
                                                 </td>
                                             </tr>
                                             {retired.map((player) => (
-                                                <tr key={player.id} onClick={() => onNavigate('players', player.id)} className="hover:bg-royal-800/50 transition-colors cursor-pointer group opacity-80 hover:opacity-100 bg-black/20">
-                                                    <td className="p-4 text-center font-bold text-royal-500">-</td>
-                                                    <td className="p-4 text-center font-bold text-royal-500">-</td>
+                                                <tr key={player.id} onClick={() => onNavigate('players', player.id)} className="hover:bg-royal-800/50 cursor-pointer transition-colors group opacity-80 hover:opacity-100 bg-black/20">
+                                                    <td className="p-4 text-center font-bold text-royal-500 text-lg">-</td>
+                                                    <td className="p-4 text-center">
+                                                        <div className="text-[10px] text-royal-500 uppercase font-bold tracking-widest leading-tight mb-0.5">Peak<br/>Rank</div>
+                                                        <div className="font-bold text-royal-400 group-hover:text-white">#{player.peakRank}</div>
+                                                    </td>
                                                     <td className="p-4 font-medium text-white flex items-center gap-3">
                                                         <div className="w-10 h-10 rounded-full overflow-hidden border border-royal-700 bg-black shrink-0 relative">
                                                             <PlayerMedia url={player.imageUrl || (player.images ? player.images[0] : '')} className="w-full h-full" />
                                                             <div className="absolute inset-0 bg-black/40 backdrop-grayscale-[0.5]"></div>
                                                         </div>
-                                                        <div className="group-hover:text-gold-500 transition-colors flex items-center gap-2">
+                                                        <div className="group-hover:text-gold-400 font-bold text-lg text-royal-200 transition-colors flex items-center gap-2">
                                                             {player.name}
                                                             <span className="text-[9px] bg-[#be123c]/20 text-[#fb7185] px-1.5 py-0.5 rounded uppercase tracking-wider border border-[#be123c]/30 shrink-0">Retired</span>
                                                         </div>
                                                     </td>
-                                                    <td className="p-4 font-bold text-royal-300">
-                                                        <span className="text-[10px] text-royal-500 uppercase tracking-widest mr-2">Peak</span>
-                                                        {(player.points || 0).toLocaleString()}
+                                                    <td className="p-4 font-bold text-royal-300 text-right text-lg">
+                                                        <div className="text-[10px] text-royal-500 uppercase font-bold tracking-widest mb-0.5">Peak Pts</div>
+                                                        {player.peakPoints.toLocaleString()}
                                                     </td>
                                                     <td className="p-4 text-center text-royal-500 font-medium">{player.stats.wins} - {player.stats.losses}</td>
                                                 </tr>
@@ -2290,6 +2481,9 @@
                             </table>
                         </div>
                     </div>
+
+                    {/* NEW: Compact Achievements Component */}
+                    <NationAchievements code={code} players={players} tournaments={tournaments} />
                 </div>
             );
         }
@@ -4291,6 +4485,7 @@
     </script>
 </body>
 </html>
+
 
 
 
