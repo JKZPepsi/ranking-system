@@ -1404,6 +1404,19 @@
 
             if (historyData.length < 1) return <p className="text-royal-300 text-sm mt-4">Not enough Major+ tournament history to generate a graph.</p>;
 
+            // Pre-calculate the absolute first tournament each player ever appeared in for the Debut Dot feature
+            const playerDebuts = useMemo(() => {
+                const debuts = {};
+                filteredHistory.forEach(h => {
+                    if (h.standings) {
+                        h.standings.forEach(s => {
+                            if (!debuts[s.id]) debuts[s.id] = h.id;
+                        });
+                    }
+                });
+                return debuts;
+            }, [filteredHistory]);
+
             const CHART_PALETTE = [
                 "#facc15", "#38bdf8", "#f472b6", "#4ade80", "#fb923c",
                 "#a78bfa", "#2dd4bf", "#f87171", "#818cf8", "#e879f9",
@@ -1433,7 +1446,6 @@
             const width = 1300;
             const effectiveCutoff = hasCutoff ? cutoff : absoluteMaxRank;
             
-            // MATH SCALING: 'All' mode automatically sets height based on total players to perfectly fit small labels
             let plotHeight = 480;
             if (type === 'rank') {
                 plotHeight = cutoff === 8 ? 400 : cutoff === 12 ? 500 : cutoff === 24 ? 800 : Math.max(600, absoluteMaxRank * 24);
@@ -1470,15 +1482,15 @@
                 maxPointsVal = Math.ceil(maxPointsVal * 1.05);
             }
 
-            // DYNAMIC POINTS CHART FLOOR: Math ensures the red cutoff line sits exactly at the bottom of the chart!
+            // EXACT FLOOR ANCHOR: Base of chart is precisely mapped to the lowest required value
             let minChartVal = 0;
             if (type === 'points') {
                 if (hasCutoff) {
-                    const minThresh = Math.min(...thresholdRaw);
-                    minChartVal = Math.max(0, minThresh - (maxPointsVal - minThresh) * 0.08); // Tight 8% padding
+                    minChartVal = Math.min(...thresholdRaw); // Exactly anchors to the lowest cutoff threshold
                 } else {
-                    minChartVal = Math.max(0, minPointsValRaw - (maxPointsVal - minPointsValRaw) * 0.05);
+                    minChartVal = minPointsValRaw === Infinity ? 0 : minPointsValRaw; // Exactly anchors to lowest player
                 }
+                if (!isFinite(minChartVal)) minChartVal = 0;
             }
 
             const getX = (i) => historyData.length <= 1 ? (pad.left + (width - pad.left - pad.right) / 2) : pad.left + (i * ((width - pad.left - pad.right) / (historyData.length - 1)));
@@ -1510,7 +1522,11 @@
                     } else {
                         val = type === 'rank' ? (effectiveCutoff + 5) : (minChartVal - 1000); 
                     }
-                    timeline.push({ k, x: getX(k), y: getY(val), val, isIN, s, exists: !!s });
+                    
+                    // Identifies if this is the absolute first major tournament this player has ever played
+                    const isDebut = s && playerDebuts[pid] === historyData[k].id;
+
+                    timeline.push({ k, x: getX(k), y: getY(val), val, isIN, s, exists: !!s, isDebut });
                 }
 
                 const segments = [];
@@ -1534,7 +1550,6 @@
                     const next = k < timeline.length - 1 ? timeline[k+1] : null;
 
                     if (isAll) {
-                        // FIX: In "All" mode, only draw lines when the player actually exists (no weird drop lines)
                         if (pt.exists) {
                             currentSeg.push({ ...pt, isDot: true });
                         } else if (currentSeg.length > 0) {
@@ -1569,10 +1584,7 @@
                 line.paths = line.segments.map(seg => seg.map((pt, i) => `${i === 0 ? 'M' : 'L'} ${pt.x} ${pt.y}`).join(' '));
             });
 
-            // -------------------------------------------------------------
-            // COMPACT MODE & PRECISION ANCHOR LABEL SYSTEM
-            // -------------------------------------------------------------
-            const LABEL_HEIGHT = isAll ? 22 : 34; // Shrinks dramatically for "All"
+            const LABEL_HEIGHT = isAll ? 22 : 34; 
             const LABEL_WIDTH = isAll ? 140 : 200;
             
             let activeLabels = [];
@@ -1668,7 +1680,6 @@
                 }
             });
 
-            // Reduced Dead Space Abyss! Canvas dynamically hugs the exact bottom.
             const dynamicHeight = maxLabelY + LABEL_HEIGHT + 10;
             const dropZonePath = `${thresholdPath} L ${getX(historyData.length - 1)} ${dynamicHeight} L ${getX(0)} ${dynamicHeight} Z`;
 
@@ -1689,7 +1700,6 @@
 
             const skipText = historyData.length > 15;
 
-            // Clean Gridlines generated dynamically across the newly scaled axis
             const gridLines = [];
             if (type === 'rank') {
                 if (isAll) {
@@ -1864,6 +1874,9 @@
                                             
                                             const isLastPt = (sIdx === line.segments.length - 1 && i === seg.length - 1);
                                             const shouldShowText = isHighlighted && (!skipText || i % 2 === 0 || isLastPt);
+                                            
+                                            // SOLID DEBUT DOT LOGIC
+                                            const dotFill = pt.isDebut ? line.color : "#051611";
 
                                             return (
                                                 <g key={`pt-${line.player.id}-${sIdx}-${i}`} className="group cursor-pointer" 
@@ -1871,7 +1884,7 @@
                                                    onMouseEnter={() => setHoveredLineId(line.player.id)}
                                                    onMouseLeave={() => setHoveredLineId(null)}>
                                                     
-                                                    <circle cx={pt.x} cy={pt.y} r={isHighlighted ? (isAll ? "3" : "4") : (isAll ? "1.5" : "2.5")} fill="#051611" stroke={line.color} strokeWidth={isHighlighted ? 3 : 1.5} style={{ transition: 'r 0.2s ease, stroke-width 0.2s ease' }} />
+                                                    <circle cx={pt.x} cy={pt.y} r={isHighlighted ? (isAll ? "3" : "4") : (isAll ? "1.5" : "2.5")} fill={dotFill} stroke={line.color} strokeWidth={isHighlighted ? 3 : 1.5} style={{ transition: 'r 0.2s ease, stroke-width 0.2s ease' }} />
                                                     
                                                     <text x={pt.x} y={pt.y - 12} fill={line.color} fontSize="12" fontWeight="900" textAnchor="middle" stroke="#051611" strokeWidth="4" paintOrder="stroke" className={shouldShowText ? "opacity-100" : "opacity-0 group-hover:opacity-100"} style={{ transition: 'opacity 0.2s ease' }}>
                                                         {type === 'rank' ? `#${pt.val}` : Math.round(pt.val).toLocaleString()}
@@ -4345,6 +4358,7 @@
     </script>
 </body>
 </html>
+
 
 
 
