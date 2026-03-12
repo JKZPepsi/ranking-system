@@ -1382,7 +1382,6 @@
             const [selectedLineId, setSelectedLineId] = useState(null);
             const [hoveredLineId, setHoveredLineId] = useState(null);
 
-            // Subscribe to global sync state
             useEffect(() => {
                 const l = () => setTick(t => t + 1);
                 __snbChartListeners.add(l);
@@ -1391,11 +1390,11 @@
 
             const { windowSize, offset, showDropped, cutoff } = __snbSharedChartState;
             const hasCutoff = cutoff !== 'all';
+            const isAll = !hasCutoff;
             
             const filteredHistory = globalHistory.filter(h => h.isMajorPlus);
             const N = filteredHistory.length;
 
-            // Safe Pagination Math
             const maxOffset = windowSize === 'all' ? 0 : Math.max(0, N - windowSize);
             const safeOffset = Math.min(offset, maxOffset);
             const endIndex = N - safeOffset;
@@ -1431,41 +1430,24 @@
                 });
             });
 
-            // Expanded Width for extra horizontal breathing room
             const width = 1300;
             const effectiveCutoff = hasCutoff ? cutoff : absoluteMaxRank;
             
-            // INCREASED POINTS PLOT HEIGHT: Fixes steep lines and cramped spacing!
+            // MATH SCALING: 'All' mode automatically sets height based on total players to perfectly fit small labels
             let plotHeight = 480;
             if (type === 'rank') {
-                plotHeight = cutoff === 8 ? 400 : cutoff === 12 ? 500 : cutoff === 24 ? 800 : 1200;
+                plotHeight = cutoff === 8 ? 400 : cutoff === 12 ? 500 : cutoff === 24 ? 800 : Math.max(600, absoluteMaxRank * 24);
             } else {
                 plotHeight = cutoff === 8 ? 500 : cutoff === 12 ? 650 : cutoff === 24 ? 900 : 1300;
             }
 
-            const pad = { top: 60, right: 260, left: type === 'rank' ? 60 : 80 }; 
+            const pad = { top: 60, right: isAll ? 200 : 260, left: type === 'rank' ? 60 : 80, bottom: isAll ? 40 : 100 }; 
             const gridBottomY = pad.top + plotHeight;
 
             let maxPointsVal = 10;
-            historyData.forEach(h => { 
-                if (h.standings) h.standings.forEach(s => { 
-                    if (includedPlayerIds.has(s.id) && (!hasCutoff || s.rank <= cutoff) && getVal(s) > maxPointsVal) maxPointsVal = getVal(s);
-                });
-            });
-            if (type !== 'rank') maxPointsVal = Math.ceil(maxPointsVal * 1.05);
+            let minPointsValRaw = Infinity;
 
-            const getX = (i) => historyData.length <= 1 ? (pad.left + (width - pad.left - pad.right) / 2) : pad.left + (i * ((width - pad.left - pad.right) / (historyData.length - 1)));
-            const activeEndX = getX(historyData.length - 1);
-            
-            const getY = (val) => {
-                if (type === 'rank') return pad.top + ((val - 1) / Math.max(1, effectiveCutoff - 1)) * plotHeight;
-                return gridBottomY - ((val - 0) / maxPointsVal) * plotHeight;
-            };
-
-            // BUG FIX: Added x: getX(k) so the red dashed line renders properly across the screen!
-            const thresholdData = historyData.map((h, k) => {
-                if (!hasCutoff) return { k, x: getX(k), val: 0, y: gridBottomY + 2000 }; 
-                
+            const thresholdRaw = historyData.map((h, k) => {
                 let val = type === 'rank' ? cutoff + 1 : 0;
                 if (type !== 'rank' && h.standings) {
                     const sCut = h.standings.find(s => s.rank === cutoff + 1);
@@ -1473,8 +1455,43 @@
                     else if (h.standings.length >= cutoff + 1) val = h.standings[cutoff].pts;
                     else if (h.standings.length > 0) val = h.standings[h.standings.length - 1].pts;
                 }
-                return { k, x: getX(k), val, y: getY(val) };
+                return val;
             });
+
+            if (type !== 'rank') {
+                historyData.forEach(h => { 
+                    if (h.standings) h.standings.forEach(s => { 
+                        if (includedPlayerIds.has(s.id) && (!hasCutoff || s.rank <= cutoff)) {
+                            if (s.pts > maxPointsVal) maxPointsVal = s.pts;
+                            if (s.pts < minPointsValRaw) minPointsValRaw = s.pts;
+                        }
+                    });
+                });
+                maxPointsVal = Math.ceil(maxPointsVal * 1.05);
+            }
+
+            // DYNAMIC POINTS CHART FLOOR: Math ensures the red cutoff line sits exactly at the bottom of the chart!
+            let minChartVal = 0;
+            if (type === 'points') {
+                if (hasCutoff) {
+                    const minThresh = Math.min(...thresholdRaw);
+                    minChartVal = Math.max(0, minThresh - (maxPointsVal - minThresh) * 0.08); // Tight 8% padding
+                } else {
+                    minChartVal = Math.max(0, minPointsValRaw - (maxPointsVal - minPointsValRaw) * 0.05);
+                }
+            }
+
+            const getX = (i) => historyData.length <= 1 ? (pad.left + (width - pad.left - pad.right) / 2) : pad.left + (i * ((width - pad.left - pad.right) / (historyData.length - 1)));
+            const activeEndX = getX(historyData.length - 1);
+            
+            const getY = (val) => {
+                if (type === 'rank') return pad.top + ((val - 1) / Math.max(1, effectiveCutoff - 1)) * plotHeight;
+                return gridBottomY - ((val - minChartVal) / Math.max(1, maxPointsVal - minChartVal)) * plotHeight;
+            };
+
+            const thresholdData = thresholdRaw.map((val, k) => ({
+                k, x: getX(k), val: isAll ? 0 : val, y: isAll ? gridBottomY + 2000 : getY(val)
+            }));
 
             const lines = [];
             Array.from(includedPlayerIds).forEach(pid => {
@@ -1484,16 +1501,16 @@
                 const timeline = [];
                 for (let k = 0; k < historyData.length; k++) {
                     const s = historyData[k].standings?.find(st => st.id === pid);
-                    let val = type === 'rank' ? effectiveCutoff + 5 : 0; 
+                    let val; 
                     let isIN = false;
                     
                     if (s) {
                         val = type === 'rank' ? s.rank : s.pts;
                         isIN = !hasCutoff || s.rank <= cutoff;
-                    } else if (k > 0) {
-                        val = timeline[k-1].val; 
+                    } else {
+                        val = type === 'rank' ? (effectiveCutoff + 5) : (minChartVal - 1000); 
                     }
-                    timeline.push({ k, x: getX(k), y: getY(val), val, isIN, s });
+                    timeline.push({ k, x: getX(k), y: getY(val), val, isIN, s, exists: !!s });
                 }
 
                 const segments = [];
@@ -1516,8 +1533,14 @@
                     const prev = k > 0 ? timeline[k-1] : null;
                     const next = k < timeline.length - 1 ? timeline[k+1] : null;
 
-                    if (!hasCutoff) {
-                        currentSeg.push({ ...pt, isDot: true });
+                    if (isAll) {
+                        // FIX: In "All" mode, only draw lines when the player actually exists (no weird drop lines)
+                        if (pt.exists) {
+                            currentSeg.push({ ...pt, isDot: true });
+                        } else if (currentSeg.length > 0) {
+                            segments.push(currentSeg);
+                            currentSeg = [];
+                        }
                     } else {
                         if (pt.isIN) {
                             if (prev && !prev.isIN) {
@@ -1547,10 +1570,10 @@
             });
 
             // -------------------------------------------------------------
-            // PRECISION ANCHOR & FLUID COLLISION SYSTEM
+            // COMPACT MODE & PRECISION ANCHOR LABEL SYSTEM
             // -------------------------------------------------------------
-            const LABEL_HEIGHT = 34; 
-            const LABEL_WIDTH = 200;
+            const LABEL_HEIGHT = isAll ? 22 : 34; // Shrinks dramatically for "All"
+            const LABEL_WIDTH = isAll ? 140 : 200;
             
             let activeLabels = [];
             let droppedLabels = [];
@@ -1558,7 +1581,7 @@
             lines.forEach(line => {
                 const lastSeg = line.segments[line.segments.length - 1];
                 const endPt = lastSeg[lastSeg.length - 1];
-                const isDropped = hasCutoff && (endPt.isIntersection || endPt.k < historyData.length - 1);
+                const isDropped = hasCutoff ? (endPt.isIntersection || endPt.k < historyData.length - 1) : (!endPt.exists || endPt.k < historyData.length - 1);
                 
                 const labelObj = { 
                     id: line.player.id, endX: endPt.x, endY: endPt.y, currentY: endPt.y, 
@@ -1569,7 +1592,6 @@
                 else activeLabels.push(labelObj);
             });
 
-            // 1. ACTIVE PLAYERS (Locked in place)
             if (type === 'rank') {
                 activeLabels.forEach(al => al.currentY = al.endY);
             } else {
@@ -1584,22 +1606,22 @@
 
             const lowestActiveY = activeLabels.length > 0 ? activeLabels[activeLabels.length - 1].currentY : 0;
 
-            // 2. DROPPED PLAYERS (Fluid floating beneath red line)
-            if (hasCutoff) {
+            if (droppedLabels.length > 0) {
                 droppedLabels.forEach(el => {
-                    const ratio = historyData.length <= 1 ? 0 : (el.endX - pad.left) / (width - pad.left - pad.right);
-                    const exactK = ratio * (historyData.length - 1);
-                    const lowerK = Math.floor(exactK);
-                    const upperK = Math.ceil(exactK);
-                    
                     let threshY = el.endY;
-                    if (lowerK >= 0 && upperK < thresholdData.length) {
-                        const t = exactK - lowerK;
-                        threshY = thresholdData[lowerK].y + t * (thresholdData[upperK].y - thresholdData[lowerK].y);
+                    if (hasCutoff) {
+                        const ratio = historyData.length <= 1 ? 0 : (el.endX - pad.left) / (width - pad.left - pad.right);
+                        const exactK = ratio * (historyData.length - 1);
+                        const lowerK = Math.floor(exactK);
+                        const upperK = Math.ceil(exactK);
+                        if (lowerK >= 0 && upperK < thresholdData.length) {
+                            const t = exactK - lowerK;
+                            threshY = thresholdData[lowerK].y + t * (thresholdData[upperK].y - thresholdData[lowerK].y);
+                        }
                     }
                     
-                    el.minY = threshY + 16; 
-                    if (el.endX > activeEndX - 190 && activeLabels.length > 0) {
+                    el.minY = hasCutoff ? (threshY + 16) : (lowestActiveY + LABEL_HEIGHT + 10); 
+                    if (hasCutoff && el.endX > activeEndX - 190 && activeLabels.length > 0) {
                         el.minY = Math.max(el.minY, lowestActiveY + LABEL_HEIGHT + 10);
                     }
                     el.currentY = Math.max(el.endY + 16, el.minY);
@@ -1646,6 +1668,7 @@
                 }
             });
 
+            // Reduced Dead Space Abyss! Canvas dynamically hugs the exact bottom.
             const dynamicHeight = maxLabelY + LABEL_HEIGHT + 10;
             const dropZonePath = `${thresholdPath} L ${getX(historyData.length - 1)} ${dynamicHeight} L ${getX(0)} ${dynamicHeight} Z`;
 
@@ -1666,9 +1689,10 @@
 
             const skipText = historyData.length > 15;
 
+            // Clean Gridlines generated dynamically across the newly scaled axis
             const gridLines = [];
             if (type === 'rank') {
-                if (cutoff === 'all') {
+                if (isAll) {
                     const step = effectiveCutoff > 30 ? 5 : 2;
                     for (let i = 1; i <= effectiveCutoff; i += step) gridLines.push(i);
                     if (!gridLines.includes(1)) gridLines.unshift(1);
@@ -1694,7 +1718,7 @@
                                 ))}
                             </div>
 
-                            {windowSize !== 'all' && (
+                            {!isAll && windowSize !== 'all' && (
                                 <div className="flex items-center gap-2 bg-royal-950 p-1.5 rounded-lg border border-royal-800">
                                     <button 
                                         onClick={() => updateSnbChartState({ offset: Math.min(maxOffset, safeOffset + windowSize) })}
@@ -1751,7 +1775,7 @@
                             <defs>
                                 {lines.map(line => (
                                     <clipPath id={`clip-${type}-${line.player.id}`} key={`clip-${line.player.id}`}>
-                                        <circle cx="14" cy="14" r="14" />
+                                        <circle cx={isAll ? "9" : "14"} cy={isAll ? "9" : "14"} r={isAll ? "9" : "14"} />
                                     </clipPath>
                                 ))}
                             </defs>
@@ -1784,9 +1808,14 @@
                                 </>
                             ) : (
                                 (() => {
-                                    const step = Math.max(10, Math.ceil(maxPointsVal / 15)); 
+                                    const tickCount = isAll ? 20 : 15;
+                                    const rawStep = (maxPointsVal - minChartVal) / tickCount;
+                                    const mag = Math.pow(10, Math.floor(Math.log10(rawStep || 1)));
+                                    const step = Math.max(10, Math.ceil(rawStep / mag) * mag);
+                                    
                                     const yLines = [];
-                                    for(let v = 0; v <= maxPointsVal; v += step) yLines.push(v);
+                                    for(let v = Math.ceil(minChartVal / step) * step; v <= maxPointsVal; v += step) yLines.push(v);
+                                    
                                     return yLines.map((p, i) => (
                                         <g key={`grid-${i}`}>
                                             <line x1={pad.left} y1={getY(p)} x2={width - pad.right + 20} y2={getY(p)} stroke="#13382d" strokeWidth="1" strokeDasharray="4 4" />
@@ -1803,7 +1832,7 @@
                                     <path 
                                         key={`path-${line.player.id}-${pIdx}`} 
                                         d={pStr} fill="none" stroke={line.color} 
-                                        strokeWidth={isHighlighted ? 5 : 2.5} 
+                                        strokeWidth={isHighlighted ? 5 : (isAll ? 1.5 : 2.5)} 
                                         opacity={isFaded ? 0.15 : 0.9} 
                                         strokeLinejoin="round" strokeLinecap="round" 
                                         style={{ transition: 'stroke-width 0.2s ease, opacity 0.2s ease' }}
@@ -1824,7 +1853,7 @@
                                 const endX = endPt.x;
                                 const endY = endPt.y;
                                 const adjY = labelPositions[line.player.id];
-                                const isDropped = hasCutoff && (endPt.isIntersection || endPt.k < historyData.length - 1);
+                                const isDropped = hasCutoff ? (endPt.isIntersection || endPt.k < historyData.length - 1) : (!endPt.exists || endPt.k < historyData.length - 1);
 
                                 const shouldShowLabel = !isDropped || showDropped || isHighlighted;
 
@@ -1841,38 +1870,41 @@
                                                    onClick={(e) => { e.stopPropagation(); setSelectedLineId(line.player.id === selectedLineId ? null : line.player.id); }}
                                                    onMouseEnter={() => setHoveredLineId(line.player.id)}
                                                    onMouseLeave={() => setHoveredLineId(null)}>
-                                                    <circle cx={pt.x} cy={pt.y} r={isHighlighted ? "4" : "2.5"} fill="#051611" stroke={line.color} strokeWidth={isHighlighted ? 3 : 1.5} style={{ transition: 'r 0.2s ease, stroke-width 0.2s ease' }} />
+                                                    
+                                                    <circle cx={pt.x} cy={pt.y} r={isHighlighted ? (isAll ? "3" : "4") : (isAll ? "1.5" : "2.5")} fill="#051611" stroke={line.color} strokeWidth={isHighlighted ? 3 : 1.5} style={{ transition: 'r 0.2s ease, stroke-width 0.2s ease' }} />
                                                     
                                                     <text x={pt.x} y={pt.y - 12} fill={line.color} fontSize="12" fontWeight="900" textAnchor="middle" stroke="#051611" strokeWidth="4" paintOrder="stroke" className={shouldShowText ? "opacity-100" : "opacity-0 group-hover:opacity-100"} style={{ transition: 'opacity 0.2s ease' }}>
                                                         {type === 'rank' ? `#${pt.val}` : Math.round(pt.val).toLocaleString()}
                                                     </text>
 
-                                                    <circle cx={pt.x} cy={pt.y} r="25" fill="transparent" />
+                                                    <circle cx={pt.x} cy={pt.y} r="20" fill="transparent" />
                                                     <title>{`${pt.s?.h?.tournamentName || 'Tournament'}\n${line.player.name}\nRank: #${pt.s?.rank}\nPoints: ${pt.s?.pts.toLocaleString()}`}</title>
                                                 </g>
                                             );
                                         }))}
 
                                         {shouldShowLabel && (Math.abs(adjY - endY) > 2 || isDropped) && (
-                                            <path d={`M ${endX} ${endY} C ${endX + 15} ${endY}, ${endX + 10} ${adjY}, ${endX + 25} ${adjY}`} fill="none" stroke={line.color} strokeWidth="1.5" opacity="0.6" strokeDasharray="4 4" style={{ transition: 'opacity 0.3s ease' }} />
+                                            <path d={`M ${endX} ${endY} C ${endX + 15} ${endY}, ${endX + 10} ${adjY}, ${endX + (isAll ? 15 : 25)} ${adjY}`} fill="none" stroke={line.color} strokeWidth="1.5" opacity="0.6" strokeDasharray="4 4" style={{ transition: 'opacity 0.3s ease' }} />
                                         )}
 
                                         {shouldShowLabel && (
                                             <g 
-                                                transform={`translate(${endX + 25}, ${adjY - 14})`} 
+                                                transform={`translate(${endX + (isAll ? 15 : 25)}, ${adjY - (isAll ? 10 : 14)})`} 
                                                 className="cursor-pointer"
                                                 style={{ transition: 'opacity 0.3s ease, transform 0.3s ease' }}
                                                 onClick={(e) => { e.stopPropagation(); onNavigate('players', line.player.id); }}
                                                 onMouseEnter={() => setHoveredLineId(line.player.id)}
                                                 onMouseLeave={() => setHoveredLineId(null)}
                                             >
-                                                <rect x="-4" y="-4" width="180" height="36" rx="18" fill="#051611" fillOpacity={isHighlighted ? "1" : (isDropped ? "0.6" : "0.85")} stroke={line.color} strokeWidth={isHighlighted ? 2 : 1} style={{ filter: isHighlighted ? 'drop-shadow(0 0 8px rgba(255,255,255,0.3))' : 'drop-shadow(0 4px 6px rgba(0,0,0,0.5))' }} />
+                                                <rect x="-4" y="-4" width={isAll ? 140 : 180} height={isAll ? 24 : 36} rx={isAll ? 12 : 18} fill="#051611" fillOpacity={isHighlighted ? "1" : (isDropped ? "0.6" : "0.85")} stroke={line.color} strokeWidth={isHighlighted ? 2 : 1} style={{ filter: isHighlighted ? 'drop-shadow(0 0 8px rgba(255,255,255,0.3))' : 'drop-shadow(0 4px 6px rgba(0,0,0,0.5))' }} />
+                                                
                                                 {line.player.imageUrl ? (
-                                                    <image href={line.player.imageUrl} x="0" y="0" width="28" height="28" clipPath={`url(#clip-${type}-${line.player.id})`} preserveAspectRatio="xMidYMid slice" style={{ filter: isDropped && !isHighlighted ? 'grayscale(0.7)' : 'none' }} />
+                                                    <image href={line.player.imageUrl} x="0" y="0" width={isAll ? 18 : 28} height={isAll ? 18 : 28} clipPath={`url(#clip-${type}-${line.player.id})`} preserveAspectRatio="xMidYMid slice" style={{ filter: isDropped && !isHighlighted ? 'grayscale(0.7)' : 'none' }} />
                                                 ) : (
-                                                    <circle cx="14" cy="14" r="14" fill="#0a241c" />
+                                                    <circle cx={isAll ? 9 : 14} cy={isAll ? 9 : 14} r={isAll ? 9 : 14} fill="#0a241c" />
                                                 )}
-                                                <text x="36" y="19" fill={isDropped && !isHighlighted ? "#94a3b8" : "#f8fafc"} fontSize="14" fontWeight="bold" style={{ textShadow: "0px 2px 4px black" }}>{line.player.name}</text>
+                                                
+                                                <text x={isAll ? 26 : 36} y={isAll ? 13 : 19} fill={isDropped && !isHighlighted ? "#94a3b8" : "#f8fafc"} fontSize={isAll ? 10 : 14} fontWeight="bold" style={{ textShadow: "0px 2px 4px black" }}>{line.player.name}</text>
                                             </g>
                                         )}
                                     </g>
@@ -4313,6 +4345,7 @@
     </script>
 </body>
 </html>
+
 
 
 
