@@ -1404,7 +1404,8 @@
 
             if (historyData.length < 1) return <p className="text-royal-300 text-sm mt-4">Not enough Major+ tournament history to generate a graph.</p>;
 
-            // Pre-calculate the absolute first tournament each player ever appeared in for the Debut Dot feature
+            // --- DEBUT TRACKER ---
+            // Scans absolute history to find the exact first tournament a player ever played
             const playerDebuts = useMemo(() => {
                 const debuts = {};
                 filteredHistory.forEach(h => {
@@ -1457,7 +1458,39 @@
             const gridBottomY = pad.top + plotHeight;
 
             let maxPointsVal = 10;
-            let minPointsValRaw = Infinity;
+            
+            // --- DYNAMIC Y-AXIS FLOOR ANCHOR ---
+            // Scales the bottom of the graph exactly to the points of the lowest active player!
+            let minChartVal = 0;
+            if (type === 'points') {
+                const lastH = historyData[historyData.length - 1];
+                if (lastH && lastH.standings) {
+                    if (hasCutoff) {
+                        const activeStandings = lastH.standings.filter(s => s.rank <= cutoff);
+                        if (activeStandings.length > 0) minChartVal = activeStandings[activeStandings.length - 1].pts;
+                    } else {
+                        minChartVal = lastH.standings[lastH.standings.length - 1].pts;
+                    }
+                }
+                
+                historyData.forEach(h => { 
+                    if (h.standings) h.standings.forEach(s => { 
+                        if (includedPlayerIds.has(s.id) && (!hasCutoff || s.rank <= cutoff)) {
+                            if (s.pts > maxPointsVal) maxPointsVal = s.pts;
+                        }
+                    });
+                });
+                maxPointsVal = Math.ceil(maxPointsVal * 1.05);
+            }
+
+            const getX = (i) => historyData.length <= 1 ? (pad.left + (width - pad.left - pad.right) / 2) : pad.left + (i * ((width - pad.left - pad.right) / (historyData.length - 1)));
+            const activeEndX = getX(historyData.length - 1);
+            
+            const getY = (val) => {
+                if (type === 'rank') return pad.top + ((val - 1) / Math.max(1, effectiveCutoff - 1)) * plotHeight;
+                // If a point value is lower than minChartVal, it organically returns a Y coordinate below gridBottomY!
+                return gridBottomY - ((val - minChartVal) / Math.max(1, maxPointsVal - minChartVal)) * plotHeight;
+            };
 
             const thresholdRaw = historyData.map((h, k) => {
                 let val = type === 'rank' ? cutoff + 1 : 0;
@@ -1469,37 +1502,6 @@
                 }
                 return val;
             });
-
-            if (type !== 'rank') {
-                historyData.forEach(h => { 
-                    if (h.standings) h.standings.forEach(s => { 
-                        if (includedPlayerIds.has(s.id) && (!hasCutoff || s.rank <= cutoff)) {
-                            if (s.pts > maxPointsVal) maxPointsVal = s.pts;
-                            if (s.pts < minPointsValRaw) minPointsValRaw = s.pts;
-                        }
-                    });
-                });
-                maxPointsVal = Math.ceil(maxPointsVal * 1.05);
-            }
-
-            // EXACT FLOOR ANCHOR: Base of chart is precisely mapped to the lowest required value
-            let minChartVal = 0;
-            if (type === 'points') {
-                if (hasCutoff) {
-                    minChartVal = Math.min(...thresholdRaw); // Exactly anchors to the lowest cutoff threshold
-                } else {
-                    minChartVal = minPointsValRaw === Infinity ? 0 : minPointsValRaw; // Exactly anchors to lowest player
-                }
-                if (!isFinite(minChartVal)) minChartVal = 0;
-            }
-
-            const getX = (i) => historyData.length <= 1 ? (pad.left + (width - pad.left - pad.right) / 2) : pad.left + (i * ((width - pad.left - pad.right) / (historyData.length - 1)));
-            const activeEndX = getX(historyData.length - 1);
-            
-            const getY = (val) => {
-                if (type === 'rank') return pad.top + ((val - 1) / Math.max(1, effectiveCutoff - 1)) * plotHeight;
-                return gridBottomY - ((val - minChartVal) / Math.max(1, maxPointsVal - minChartVal)) * plotHeight;
-            };
 
             const thresholdData = thresholdRaw.map((val, k) => ({
                 k, x: getX(k), val: isAll ? 0 : val, y: isAll ? gridBottomY + 2000 : getY(val)
@@ -1523,9 +1525,8 @@
                         val = type === 'rank' ? (effectiveCutoff + 5) : (minChartVal - 1000); 
                     }
                     
-                    // Identifies if this is the absolute first major tournament this player has ever played
+                    // Assign Debut logic
                     const isDebut = s && playerDebuts[pid] === historyData[k].id;
-
                     timeline.push({ k, x: getX(k), y: getY(val), val, isIN, s, exists: !!s, isDebut });
                 }
 
@@ -1584,6 +1585,9 @@
                 line.paths = line.segments.map(seg => seg.map((pt, i) => `${i === 0 ? 'M' : 'L'} ${pt.x} ${pt.y}`).join(' '));
             });
 
+            // -------------------------------------------------------------
+            // LABEL STACKING
+            // -------------------------------------------------------------
             const LABEL_HEIGHT = isAll ? 22 : 34; 
             const LABEL_WIDTH = isAll ? 140 : 200;
             
@@ -1672,6 +1676,9 @@
             const labelPositions = {};
             let maxLabelY = gridBottomY;
 
+            // Ensures the canvas fully stretches to cover anything that drops naturally below the floor
+            lines.forEach(l => l.segments.forEach(seg => seg.forEach(pt => { if (pt.y > maxLabelY) maxLabelY = pt.y; })));
+            if (hasCutoff) thresholdData.forEach(pt => { if (pt.y > maxLabelY) maxLabelY = pt.y; });
             allLabels.forEach(el => {
                 labelPositions[el.id] = el.currentY;
                 const isHighlighted = el.id === selectedLineId || el.id === hoveredLineId;
@@ -1699,17 +1706,6 @@
             });
 
             const skipText = historyData.length > 15;
-
-            const gridLines = [];
-            if (type === 'rank') {
-                if (isAll) {
-                    const step = effectiveCutoff > 30 ? 5 : 2;
-                    for (let i = 1; i <= effectiveCutoff; i += step) gridLines.push(i);
-                    if (!gridLines.includes(1)) gridLines.unshift(1);
-                } else {
-                    for (let i = 1; i <= cutoff; i++) gridLines.push(i);
-                }
-            }
 
             return (
                 <div className="w-full" id={`snb-chart-${type}`}>
@@ -1794,7 +1790,6 @@
                                 <g className="threshold-layer">
                                     <path d={dropZonePath} fill="#000000" opacity="0.3" style={{ transition: 'd 0.3s ease' }} />
                                     <path d={thresholdPath} fill="none" stroke="#ef4444" strokeWidth="2.5" strokeDasharray="8 6" opacity="0.7" />
-                                    
                                     <text x={width - pad.right + 10} y={thresholdData[thresholdData.length - 1].y} fill="#ef4444" fontSize="12" fontWeight="bold" alignmentBaseline="middle" opacity="0.8">
                                         Top {cutoff} Cutoff
                                     </text>
@@ -1806,33 +1801,50 @@
 
                             {type === 'rank' ? (
                                 <>
-                                    {gridLines.map((r, i) => {
-                                        const yPos = pad.top + ((r - 1) / Math.max(1, effectiveCutoff - 1)) * plotHeight;
-                                        return (
-                                            <g key={`grid-${i}`}>
-                                                <line x1={pad.left} y1={yPos} x2={width - pad.right + 20} y2={yPos} stroke="#13382d" strokeWidth="1" strokeDasharray="4 4" />
-                                                <text x={pad.left - 15} y={yPos} fill="#789e90" fontSize="12" fontWeight="bold" textAnchor="end" alignmentBaseline="middle">#{r}</text>
-                                            </g>
-                                        );
-                                    })}
+                                    {/* For Ranks, draw standard gridlines up to cutoff */}
+                                    {(() => {
+                                        const rLines = [];
+                                        if (isAll) {
+                                            const step = effectiveCutoff > 30 ? 5 : 2;
+                                            for (let i = 1; i <= effectiveCutoff; i += step) rLines.push(i);
+                                            if (!rLines.includes(1)) rLines.unshift(1);
+                                        } else {
+                                            for (let i = 1; i <= cutoff; i++) rLines.push(i);
+                                        }
+                                        return rLines.map((r, i) => {
+                                            const yPos = pad.top + ((r - 1) / Math.max(1, effectiveCutoff - 1)) * plotHeight;
+                                            return (
+                                                <g key={`grid-${i}`}>
+                                                    <line x1={pad.left} y1={yPos} x2={width - pad.right + 20} y2={yPos} stroke="#13382d" strokeWidth="1" strokeDasharray="4 4" />
+                                                    <text x={pad.left - 15} y={yPos} fill="#789e90" fontSize="12" fontWeight="bold" textAnchor="end" alignmentBaseline="middle">#{r}</text>
+                                                </g>
+                                            );
+                                        });
+                                    })()}
                                 </>
                             ) : (
-                                (() => {
-                                    const tickCount = isAll ? 20 : 15;
-                                    const rawStep = (maxPointsVal - minChartVal) / tickCount;
-                                    const mag = Math.pow(10, Math.floor(Math.log10(rawStep || 1)));
-                                    const step = Math.max(10, Math.ceil(rawStep / mag) * mag);
-                                    
-                                    const yLines = [];
-                                    for(let v = Math.ceil(minChartVal / step) * step; v <= maxPointsVal; v += step) yLines.push(v);
-                                    
-                                    return yLines.map((p, i) => (
-                                        <g key={`grid-${i}`}>
-                                            <line x1={pad.left} y1={getY(p)} x2={width - pad.right + 20} y2={getY(p)} stroke="#13382d" strokeWidth="1" strokeDasharray="4 4" />
-                                            <text x={pad.left - 15} y={getY(p)} fill="#789e90" fontSize="12" fontWeight="bold" textAnchor="end" alignmentBaseline="middle">{p.toLocaleString()}</text>
-                                        </g>
-                                    ));
-                                })()
+                                <>
+                                    {/* For Points, explicitly draw the Baseline representing minChartVal, then dash lines upwards */}
+                                    {(() => {
+                                        const tickCount = isAll ? 20 : 15;
+                                        const rawStep = (maxPointsVal - minChartVal) / tickCount;
+                                        const mag = Math.pow(10, Math.floor(Math.log10(rawStep || 1)));
+                                        const step = Math.max(10, Math.ceil(rawStep / mag) * mag);
+                                        
+                                        const yLines = [minChartVal]; 
+                                        for(let v = Math.ceil(minChartVal / step) * step; v <= maxPointsVal; v += step) {
+                                            if (v - minChartVal > step * 0.2) yLines.push(v);
+                                        }
+                                        
+                                        return yLines.map((p, i) => (
+                                            <g key={`grid-${i}`}>
+                                                {/* Thick solid line for the exact floor, thin dashed lines for regular steps */}
+                                                <line x1={pad.left} y1={getY(p)} x2={width - pad.right + 20} y2={getY(p)} stroke={i === 0 ? "#1e4033" : "#13382d"} strokeWidth={i === 0 ? "2" : "1"} strokeDasharray={i === 0 ? "none" : "4 4"} />
+                                                <text x={pad.left - 15} y={getY(p)} fill="#789e90" fontSize="12" fontWeight="bold" textAnchor="end" alignmentBaseline="middle">{Math.round(p).toLocaleString()}</text>
+                                            </g>
+                                        ));
+                                    })()}
+                                </>
                             )}
                             
                             {sortedLines.map((line) => {
@@ -1874,8 +1886,8 @@
                                             
                                             const isLastPt = (sIdx === line.segments.length - 1 && i === seg.length - 1);
                                             const shouldShowText = isHighlighted && (!skipText || i % 2 === 0 || isLastPt);
-                                            
-                                            // SOLID DEBUT DOT LOGIC
+
+                                            // Solid Debut point coloring
                                             const dotFill = pt.isDebut ? line.color : "#051611";
 
                                             return (
@@ -1890,7 +1902,8 @@
                                                         {type === 'rank' ? `#${pt.val}` : Math.round(pt.val).toLocaleString()}
                                                     </text>
 
-                                                    <circle cx={pt.x} cy={pt.y} r="20" fill="transparent" />
+                                                    {/* Generous hover zone to trigger highlight instantly */}
+                                                    <circle cx={pt.x} cy={pt.y} r="25" fill="transparent" />
                                                     <title>{`${pt.s?.h?.tournamentName || 'Tournament'}\n${line.player.name}\nRank: #${pt.s?.rank}\nPoints: ${pt.s?.pts.toLocaleString()}`}</title>
                                                 </g>
                                             );
@@ -4358,6 +4371,7 @@
     </script>
 </body>
 </html>
+
 
 
 
