@@ -1780,7 +1780,6 @@
             });
             maxPointsVal = Math.ceil(maxPointsVal * 1.05);
 
-            // Absolute Nation Debuts (Scanning entire history to find exact first entry)
             const nationDebuts = {};
             Array.from(nationCodes).forEach(code => {
                 for (let i = 0; i < allHistory.length; i++) {
@@ -1822,27 +1821,28 @@
                 }
             });
 
-            // --- STRICT RANK ORDERING PHYSICS ---
+            // --- BI-DIRECTIONAL CASCADE PHYSICS ---
             const labels = [];
             lines.forEach(line => {
                 const endPt = line.segments[line.segments.length - 1].slice(-1)[0];
                 labels.push({ id: line.code, endX: endPt.x, endY: endPt.y, actualVal: endPt.val, line });
             });
 
-            // 1. Sort precisely by points descending
             labels.sort((a, b) => b.actualVal - a.actualVal);
 
-            // 2. Cascade down seamlessly
             if (labels.length > 0) {
+                // 1. Cascade Down
                 labels[0].currentY = labels[0].endY;
                 for (let i = 1; i < labels.length; i++) {
                     labels[i].currentY = Math.max(labels[i].endY, labels[i-1].currentY + LABEL_GAP);
                 }
 
-                // 3. Absolute Floor Clamp (If bottom label hangs below 0, push entire stack up)
-                const overflow = labels[labels.length - 1].currentY - gridBottomY;
-                if (overflow > 0) {
-                    labels.forEach(l => l.currentY -= overflow);
+                // 2. Cascade Up (Only triggers if the bottom overflows the 0 line!)
+                if (labels[labels.length - 1].currentY > gridBottomY) {
+                    labels[labels.length - 1].currentY = gridBottomY;
+                    for (let i = labels.length - 2; i >= 0; i--) {
+                        labels[i].currentY = Math.min(labels[i].currentY, labels[i+1].currentY - LABEL_GAP);
+                    }
                 }
             }
 
@@ -1878,7 +1878,6 @@
                     </div>
                     
                     <div className="w-full bg-royal-900/50 rounded-xl border border-royal-700 pb-2 relative overflow-x-auto select-none custom-scrollbar" onClick={() => setSelectedCode(null)}>
-                        {/* Fluid minimal width to avoid extreme scrolling on desktop */}
                         <svg viewBox={`0 0 ${width} ${gridBottomY + pad.bottom}`} style={{ minWidth: `800px`, transition: 'viewBox 0.3s ease' }} className="w-full h-auto overflow-visible font-sans">
                             {(() => {
                                 const rawStep = maxPointsVal / (windowSize === 'all' ? 20 : 15);
@@ -1912,7 +1911,6 @@
                                             const isLastPt = (sIdx === line.segments.length - 1 && i === seg.length - 1);
                                             const shouldShowText = isHighlighted && (historyData.length <= 15 || i % 2 === 0 || isLastPt);
                                             
-                                            // DOT LOGIC: Clean Hollow Rings vs Solid Debuts
                                             const isSolidDebut = pt.isDebut && sIdx === 0 && i === 0;
                                             const rSize = isHighlighted ? "3" : "2";
                                             const debutR = isHighlighted ? "4.5" : "3.5";
@@ -2120,7 +2118,6 @@
             const [selectedId, setSelectedId] = useState(null);
             const [hoveredId, setHoveredId] = useState(null);
 
-            // Hook into the global time window state
             useEffect(() => {
                 const l = () => setTick(t => t + 1);
                 __snbChartListeners.add(l);
@@ -2144,7 +2141,6 @@
             };
             const nationColor = NATION_COLORS[code] || '#facc15';
 
-            // Find absolute debut tournaments for solid dot styling
             const playerDebuts = {};
             allHistory.forEach(h => h.standings?.forEach(s => { if (!playerDebuts[s.id]) playerDebuts[s.id] = h.id; }));
 
@@ -2155,7 +2151,6 @@
             }));
 
             const width = 1200;
-            // Tighter gap allows partial overlap but guarantees mathematical ordering
             const LABEL_GAP = 18; 
             const plotHeight = Math.max(450, activePlayerIds.size * LABEL_GAP * 1.5);
             const pad = { top: 40, right: 180, left: 80, bottom: 40 }; 
@@ -2186,7 +2181,6 @@
 
             const lines = [];
             
-            // Generate Total Line
             const tSegs = []; let cSeg = [];
             timelines.total.forEach((pt, i) => {
                 const mapped = { ...pt, x: getX(pt.k), y: getY(pt.val), isDot: true };
@@ -2195,7 +2189,6 @@
             if (cSeg.length > 0) tSegs.push(cSeg);
             if (tSegs.length > 0) lines.push({ id: 'total', name: 'National Total', color: nationColor, isTotal: true, paths: tSegs.map(seg => seg.map((pt, i) => `${i===0?'M':'L'} ${pt.x} ${pt.y}`).join(' ')), segments: tSegs });
 
-            // Generate Player Lines
             Array.from(activePlayerIds).forEach(pid => {
                 const p = playersRaw.find(x => x.id === pid);
                 const pSegs = []; let pCSeg = [];
@@ -2208,27 +2201,28 @@
                 if (pSegs.length > 0) lines.push({ id: pid, name: p.name, img: p.imageUrl, color: nationColor, isTotal: false, paths: pSegs.map(seg => seg.map((pt, i) => `${i===0?'M':'L'} ${pt.x} ${pt.y}`).join(' ')), segments: pSegs });
             });
 
-            // --- NEW STRICT RANK ORDERING PHYSICS ---
+            // --- BI-DIRECTIONAL CASCADE PHYSICS ---
             const labels = [];
             lines.forEach(line => {
                 const endPt = line.segments[line.segments.length - 1].slice(-1)[0];
                 labels.push({ id: line.id, endX: endPt.x, endY: endPt.y, actualVal: endPt.val, line });
             });
             
-            // 1. Sort strictly by points value descending (Highest points first)
             labels.sort((a,b) => b.actualVal - a.actualVal);
 
-            // 2. Cascade down: Force every label to sit exactly beneath the one above it
             if (labels.length > 0) {
+                // 1. Cascade Down
                 labels[0].currentY = labels[0].endY;
                 for (let i = 1; i < labels.length; i++) {
                     labels[i].currentY = Math.max(labels[i].endY, labels[i-1].currentY + LABEL_GAP);
                 }
 
-                // 3. Base Clamp: If the cascade pushed labels below the zero line, push the whole block up!
-                const overflow = labels[labels.length - 1].currentY - gridBottomY;
-                if (overflow > 0) {
-                    labels.forEach(l => l.currentY -= overflow);
+                // 2. Cascade Up (Only if the bottom label breaches the floor)
+                if (labels[labels.length - 1].currentY > gridBottomY) {
+                    labels[labels.length - 1].currentY = gridBottomY;
+                    for (let i = labels.length - 2; i >= 0; i--) {
+                        labels[i].currentY = Math.min(labels[i].currentY, labels[i+1].currentY - LABEL_GAP);
+                    }
                 }
             }
 
@@ -2244,7 +2238,6 @@
                     <div className="flex flex-wrap justify-between items-center mb-6 gap-4">
                         <h3 className="text-xl font-bold text-white flex items-center gap-3"><AnalyticsIcon size={24} className="text-gold-500"/> Internal Progression</h3>
                         
-                        {/* New Window Control Toolbar */}
                         <div className="flex items-center gap-4 flex-wrap">
                             <div className="flex items-center gap-1.5 bg-royal-950 p-1.5 rounded-lg border border-royal-800">
                                 <span className="text-[10px] text-royal-400 uppercase tracking-widest font-bold px-2 hidden sm:block">Window</span>
@@ -2265,9 +2258,7 @@
                     </div>
                     
                     <div className="w-full overflow-x-auto custom-scrollbar pb-2" onClick={() => setSelectedId(null)}>
-                        {/* Shrunk minWidth to 800px so it fits most monitors without scrolling, but maintains readability on mobile */}
                         <svg viewBox={`0 0 ${width} ${gridBottomY + pad.bottom}`} style={{ minWidth: `800px` }} className="w-full h-auto overflow-visible font-sans">
-                            {/* Y-Axis Gridlines */}
                             {(() => {
                                 const step = Math.max(100, Math.ceil((maxPointsVal/5)/100)*100);
                                 const yLines = [0]; for(let v=step; v<=maxPointsVal; v+=step) yLines.push(v);
@@ -2279,7 +2270,6 @@
                                 ));
                             })()}
 
-                            {/* Paths */}
                             {sortedLines.map(line => {
                                 const isHighlighted = selectedId === line.id || hoveredId === line.id;
                                 const isFaded = (selectedId || hoveredId) && !isHighlighted;
@@ -2288,7 +2278,6 @@
                                 ));
                             })}
 
-                            {/* Dots and Labels */}
                             {sortedLines.map(line => {
                                 const lObj = labels.find(l => l.id === line.id);
                                 const isHighlighted = selectedId === line.id || hoveredId === line.id;
@@ -2304,7 +2293,6 @@
 
                                             return (
                                                 <g key={`d-${line.id}-${sI}-${i}`} className="group cursor-pointer" onClick={(e) => { e.stopPropagation(); setSelectedId(line.id === selectedId ? null : line.id); }} onMouseEnter={() => setHoveredId(line.id)} onMouseLeave={() => setHoveredId(null)}>
-                                                    {/* True hollow rings vs solid debuts */}
                                                     <circle cx={pt.x} cy={pt.y} r={isSolidDebut ? debutR : r} fill={isSolidDebut ? line.color : "#051611"} stroke={line.color} strokeWidth={isSolidDebut ? 0 : sWidth} />
                                                     <circle cx={pt.x} cy={pt.y} r="20" fill="transparent" />
                                                     <title>{`${line.name}: ${pt.val.toLocaleString()}`}</title>
@@ -2316,8 +2304,9 @@
                                         
                                         <g transform={`translate(${lObj.endX + 20}, ${lObj.currentY - 10})`} className="cursor-pointer" onClick={(e) => { if (!line.isTotal) { e.stopPropagation(); onNavigate('players', line.id); } }} onMouseEnter={() => setHoveredId(line.id)} onMouseLeave={() => setHoveredId(null)}>
                                             <rect x="-4" y="-4" width={140} height={20} rx={10} fill="#051611" fillOpacity="0.9" stroke={line.color} strokeWidth={line.isTotal || isHighlighted ? 2 : 1} />
-                                            {line.isTotal ? <circle cx="6" cy="6" r="3" fill={line.color} /> : (line.line.img ? <image href={line.line.img} x="0" y="-2" width={14} height={14} preserveAspectRatio="xMidYMid slice" clipPath={`url(#clip-nat-${line.id})`} /> : <circle cx="6" cy="6" r="6" fill="#1e293b"/>)}
-                                            {line.line.img && <defs><clipPath id={`clip-nat-${line.id}`}><circle cx="7" cy="5" r="7" /></clipPath></defs>}
+                                            {/* THE TYPO FIX: line.img instead of line.line.img */}
+                                            {line.isTotal ? <circle cx="6" cy="6" r="3" fill={line.color} /> : (line.img ? <image href={line.img} x="0" y="-2" width={14} height={14} preserveAspectRatio="xMidYMid slice" clipPath={`url(#clip-nat-${line.id})`} /> : <circle cx="6" cy="6" r="6" fill="#1e293b"/>)}
+                                            {line.img && <defs><clipPath id={`clip-nat-${line.id}`}><circle cx="7" cy="5" r="7" /></clipPath></defs>}
                                             <text x={18} y={10} fill={line.isTotal ? line.color : (isHighlighted ? "#ffffff" : "#cbd5e1")} fontSize={10} fontWeight="bold">{line.name}</text>
                                         </g>
                                     </g>
@@ -4513,6 +4502,7 @@
     </script>
 </body>
 </html>
+
 
 
 
