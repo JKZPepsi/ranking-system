@@ -1428,11 +1428,10 @@
                 if (s.rank > absoluteMaxRank) absoluteMaxRank = s.rank;
             }));
 
-            const width = 1300;
+            const width = 1200;
             const effectiveCutoff = hasCutoff ? cutoff : absoluteMaxRank;
             
-            const LABEL_HEIGHT = isAll ? 20 : 32; 
-            const LABEL_WIDTH = isAll ? 130 : 200;
+            const LABEL_GAP = isAll ? 20 : 32; 
 
             let maxPointsVal = 10;
             if (type !== 'rank') {
@@ -1442,18 +1441,16 @@
                 maxPointsVal = Math.ceil(maxPointsVal * 1.05);
             }
 
-            // Ensures the grid physically stretches so labels fit cleanly INSIDE the lines
             let plotHeight = 480;
             if (type === 'rank') {
-                plotHeight = isAll ? Math.max(600, includedPlayerIds.size * LABEL_HEIGHT * 1.1) : (cutoff === 8 ? 400 : cutoff === 12 ? 500 : 800);
+                plotHeight = isAll ? Math.max(600, includedPlayerIds.size * LABEL_GAP * 1.1) : (cutoff === 8 ? 400 : cutoff === 12 ? 500 : 800);
             } else {
                 const baseHeight = cutoff === 8 ? 500 : cutoff === 12 ? 650 : cutoff === 24 ? 900 : 1100;
-                plotHeight = isAll ? Math.max(baseHeight, includedPlayerIds.size * LABEL_HEIGHT * 1.1) : baseHeight;
+                plotHeight = isAll ? Math.max(baseHeight, includedPlayerIds.size * LABEL_GAP * 1.1) : baseHeight;
             }
 
             const pad = { top: 60, right: isAll ? 150 : 260, left: type === 'rank' ? 60 : 80, bottom: isAll ? 40 : 100 }; 
             const gridBottomY = pad.top + plotHeight;
-            const minChartVal = 0; // True Zero Floor
 
             const getX = (i) => historyData.length <= 1 ? (pad.left + (width - pad.left - pad.right) / 2) : pad.left + (i * ((width - pad.left - pad.right) / (historyData.length - 1)));
             const getY = (val) => {
@@ -1513,49 +1510,54 @@
                 }
             });
 
-            // -------------------------------------------------------------
-            // NEW FLOOR-CLAMPED UPWARD PHYSICS (Zero Overlaps, Zero Dangling)
-            // -------------------------------------------------------------
-            const allLabels = [];
+            // --- BI-DIRECTIONAL CASCADE PHYSICS (PER COLUMN) ---
+            const labels = [];
             lines.forEach(line => {
                 const endPt = line.segments[line.segments.length - 1].slice(-1)[0];
-                const isDropped = hasCutoff && (endPt.isIntersection || endPt.k < historyData.length - 1);
-                allLabels.push({ id: line.player.id, endX: endPt.x, endY: endPt.y, currentY: endPt.y, actualVal: endPt.val, isDropped, name: line.player.name });
+                const isDropped = hasCutoff ? (endPt.isIntersection || endPt.k < historyData.length - 1) : (!endPt.exists || endPt.k < historyData.length - 1);
+                labels.push({ id: line.player.id, endX: endPt.x, endY: endPt.y, actualVal: endPt.val, isDropped, name: line.player.name });
             });
 
-            if (type === 'rank') {
-                allLabels.sort((a,b) => a.actualVal - b.actualVal);
-            } else {
-                allLabels.sort((a,b) => b.actualVal - a.actualVal);
-            }
+            // Group by X position to cleanly handle drop-outs without shifting
+            const columns = [];
+            labels.forEach(l => {
+                let placed = false;
+                for (let c of columns) {
+                    if (Math.abs(c.x - l.endX) < 10) {
+                        c.labels.push(l);
+                        placed = true;
+                        break;
+                    }
+                }
+                if (!placed) columns.push({ x: l.endX, labels: [l] });
+            });
 
-            for (let iter = 0; iter < 150; iter++) {
-                let moved = false;
-                for (let i = 0; i < allLabels.length - 1; i++) {
-                    for (let j = i + 1; j < allLabels.length; j++) {
-                        if (Math.abs(allLabels[i].endX - allLabels[j].endX) < LABEL_WIDTH * 0.8) {
-                            const diff = allLabels[j].currentY - allLabels[i].currentY;
-                            if (Math.abs(diff) < LABEL_HEIGHT) {
-                                const overlap = LABEL_HEIGHT - Math.abs(diff);
-                                if (diff >= 0) { allLabels[i].currentY -= overlap/2; allLabels[j].currentY += overlap/2; } 
-                                else { allLabels[i].currentY += overlap/2; allLabels[j].currentY -= overlap/2; }
-                                moved = true;
-                            }
+            columns.forEach(col => {
+                const colLabels = col.labels;
+                // 1. Strict mathematical sorting
+                colLabels.sort((a,b) => type === 'rank' ? a.actualVal - b.actualVal : b.actualVal - a.actualVal);
+
+                if (colLabels.length > 0) {
+                    // 2. Cascade Down
+                    colLabels[0].currentY = colLabels[0].endY;
+                    for (let i = 1; i < colLabels.length; i++) {
+                        colLabels[i].currentY = Math.max(colLabels[i].endY, colLabels[i-1].currentY + LABEL_GAP);
+                    }
+
+                    // 3. Cascade Up (Floor Clamp without flying off the top)
+                    if (colLabels[colLabels.length - 1].currentY > gridBottomY) {
+                        colLabels[colLabels.length - 1].currentY = gridBottomY;
+                        for (let i = colLabels.length - 2; i >= 0; i--) {
+                            colLabels[i].currentY = Math.min(colLabels[i].currentY, colLabels[i+1].currentY - LABEL_GAP);
                         }
                     }
                 }
-                // HARD FLOOR CLAMP: Pushes everything UPWARDS from the 0 line!
-                allLabels.forEach(l => {
-                    if (l.currentY > gridBottomY) { l.currentY = gridBottomY; moved = true; }
-                    if (l.currentY < pad.top) { l.currentY = pad.top; moved = true; }
-                });
-                if (!moved) break;
-            }
+            });
 
             const labelPositions = {};
-            allLabels.forEach(el => labelPositions[el.id] = el.currentY);
+            labels.forEach(el => labelPositions[el.id] = el.currentY);
 
-            // Tightly fits around the grid, no more empty space below!
+            // Fits tightly without massive blank gaps
             const dynamicHeight = gridBottomY + pad.bottom;
             const thresholdPath = thresholdData.map((pt, i) => `${i === 0 ? 'M' : 'L'} ${pt.x} ${pt.y}`).join(' ');
             const dropZonePath = `${thresholdPath} L ${getX(historyData.length - 1)} ${gridBottomY} L ${getX(0)} ${gridBottomY} Z`;
@@ -1563,7 +1565,7 @@
             const sortedLines = [...lines].sort((a, b) => {
                 const aH = a.player.id === selectedLineId || a.player.id === hoveredLineId, bH = b.player.id === selectedLineId || b.player.id === hoveredLineId;
                 if (aH && !bH) return 1; if (!aH && bH) return -1;
-                const aL = allLabels.find(l => l.id === a.player.id), bL = allLabels.find(l => l.id === b.player.id);
+                const aL = labels.find(l => l.id === a.player.id), bL = labels.find(l => l.id === b.player.id);
                 if (!aL || !bL) return 0;
                 if (aL.isDropped && !bL.isDropped) return -1; if (!aL.isDropped && bL.isDropped) return 1;
                 return type === 'points' ? aL.actualVal - bL.actualVal : bL.actualVal - aL.actualVal;
@@ -1610,7 +1612,7 @@
                     </div>
                     
                     <div className="w-full bg-royal-900/50 rounded-xl border border-royal-700 pb-2 relative overflow-x-auto select-none custom-scrollbar" onClick={() => setSelectedLineId(null)}>
-                        <svg viewBox={`0 0 ${width} ${dynamicHeight}`} style={{ minWidth: `${width}px`, transition: 'viewBox 0.3s ease' }} className="h-auto overflow-visible font-sans">
+                        <svg viewBox={`0 0 ${width} ${dynamicHeight}`} style={{ minWidth: `800px`, transition: 'viewBox 0.3s ease' }} className="w-full h-auto overflow-visible font-sans">
                             <defs>
                                 {lines.map(line => (
                                     <clipPath id={`clip-${type}-${line.player.id}`} key={`clip-${line.player.id}`}>
@@ -1658,7 +1660,7 @@
                                 })()
                             )}
                             
-                            {/* LINES */}
+                            {/* PATHS */}
                             {sortedLines.map((line) => {
                                 const isHighlighted = selectedLineId === line.player.id || hoveredLineId === line.player.id;
                                 const isFaded = (selectedLineId || hoveredLineId) && !isHighlighted;
@@ -4387,44 +4389,37 @@
             const handlePlayerSelect = (id) => navigate('players', id);
 
             if (loading) return (
-                <div className="min-h-screen flex items-center justify-center bg-royal-950 w-full relative selection:bg-transparent">
-                    <div className="flex flex-col items-center gap-10" style={{ animation: 'snb-fade-in 0.8s cubic-bezier(0.16, 1, 0.3, 1)' }}>
+                <div className="min-h-screen flex items-center justify-center bg-royal-950 w-full selection:bg-transparent">
+                    <div className="flex flex-col items-center gap-6" style={{ animation: 'snb-luxury-reveal 1.5s cubic-bezier(0.22, 1, 0.36, 1) forwards' }}>
                         
-                        {/* Pristine Logo with an ultra-soft, breathing backdrop */}
-                        <div className="relative flex items-center justify-center">
-                            <div className="absolute w-24 h-24 bg-gold-500/20 rounded-full blur-2xl" style={{ animation: 'snb-pulse-glow 3s cubic-bezier(0.4, 0, 0.2, 1) infinite' }}></div>
-                            <SnbLogo size={56} className="text-gold-500 relative z-10" />
-                        </div>
+                        {/* Flat, crisp logo. Zero glow. Breathing opacity. */}
+                        <SnbLogo size={42} className="text-gold-500/70" style={{ animation: 'snb-breath 3s ease-in-out infinite' }} />
                         
-                        {/* Fluid, dynamic expanding/contracting SVG spinner (Apple OS style) */}
-                        <div className="relative flex items-center justify-center">
-                            <svg className="w-7 h-7" viewBox="0 0 32 32" fill="none" style={{ animation: 'snb-rotate 2s linear infinite' }}>
-                                {/* Background Track */}
-                                <circle cx="16" cy="16" r="12" className="stroke-royal-800/30" strokeWidth="3" />
-                                {/* Dynamic Fluid Stroke */}
-                                <circle cx="16" cy="16" r="12" className="stroke-gold-500 drop-shadow-[0_0_2px_rgba(234,179,8,0.5)]" strokeWidth="3" strokeLinecap="round" style={{ animation: 'snb-dash 1.5s ease-in-out infinite' }} />
-                            </svg>
+                        {/* Wide tracking, tiny font, muted color. The hallmark of premium UI. */}
+                        <div className="flex flex-col items-center gap-2 mt-2">
+                            <span className="text-royal-400 text-[10px] font-medium tracking-[0.4em] uppercase" style={{ animation: 'snb-breath 3s ease-in-out infinite 0.5s' }}>
+                                SNB Tour
+                            </span>
+                            {/* An ultra-thin, almost invisible loading line */}
+                            <div className="w-12 h-[1px] bg-royal-900 mt-2 overflow-hidden">
+                                <div className="w-full h-full bg-gold-500/40" style={{ animation: 'snb-slide 2s cubic-bezier(0.65, 0, 0.35, 1) infinite' }}></div>
+                            </div>
                         </div>
 
                     </div>
 
-                    {/* Highly refined native iOS-style animation curves */}
                     <style dangerouslySetInnerHTML={{__html: `
-                        @keyframes snb-fade-in {
-                            0% { opacity: 0; transform: translateY(12px) scale(0.98); }
-                            100% { opacity: 1; transform: translateY(0) scale(1); }
+                        @keyframes snb-luxury-reveal {
+                            0% { opacity: 0; filter: blur(2px); transform: translateY(4px); }
+                            100% { opacity: 1; filter: blur(0px); transform: translateY(0); }
                         }
-                        @keyframes snb-pulse-glow {
-                            0%, 100% { opacity: 0.15; transform: scale(0.8); }
-                            50% { opacity: 0.35; transform: scale(1.15); }
+                        @keyframes snb-breath {
+                            0%, 100% { opacity: 0.3; }
+                            50% { opacity: 0.8; }
                         }
-                        @keyframes snb-rotate {
-                            100% { transform: rotate(360deg); }
-                        }
-                        @keyframes snb-dash {
-                            0% { stroke-dasharray: 1, 75; stroke-dashoffset: 0; }
-                            50% { stroke-dasharray: 50, 75; stroke-dashoffset: -15; }
-                            100% { stroke-dasharray: 50, 75; stroke-dashoffset: -75; }
+                        @keyframes snb-slide {
+                            0% { transform: translateX(-101%); }
+                            100% { transform: translateX(101%); }
                         }
                     `}} />
                 </div>
@@ -4502,6 +4497,7 @@
     </script>
 </body>
 </html>
+
 
 
 
