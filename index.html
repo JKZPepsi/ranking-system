@@ -1400,7 +1400,7 @@
                 return () => __snbChartListeners.delete(l);
             }, []);
 
-            const { windowSize, offset, showDropped, cutoff } = __snbSharedChartState;
+            const { windowSize, offset, showDropped, cutoff, layoutMode } = __snbSharedChartState;
             const hasCutoff = cutoff !== 'all';
             const isAll = !hasCutoff;
             
@@ -1421,15 +1421,9 @@
                 return debuts;
             }, [filteredHistory]);
 
-            const CHART_PALETTE = [
-                "#facc15", "#38bdf8", "#f472b6", "#4ade80", "#fb923c", "#a78bfa", "#2dd4bf", "#f87171", 
-                "#818cf8", "#e879f9", "#34d399", "#fbbf24", "#60a5fa", "#a3e635", "#f43f5e", "#c084fc", 
-                "#22d3ee", "#fcd34d", "#10b981", "#8b5cf6", "#fdba74", "#67e8f9", "#d9f99d", "#fda4af"
-            ];
-            
+            const CHART_PALETTE = ["#facc15", "#38bdf8", "#f472b6", "#4ade80", "#fb923c", "#a78bfa", "#2dd4bf", "#f87171", "#818cf8", "#e879f9", "#34d399", "#fbbf24", "#60a5fa", "#a3e635", "#f43f5e", "#c084fc", "#22d3ee", "#fcd34d", "#10b981", "#8b5cf6", "#fdba74", "#67e8f9", "#d9f99d", "#fda4af"];
             const getDistinctColor = (id) => {
-                let hash = 0;
-                for (let i = 0; i < id.length; i++) hash = id.charCodeAt(i) + ((hash << 5) - hash);
+                let hash = 0; for (let i = 0; i < id.length; i++) hash = id.charCodeAt(i) + ((hash << 5) - hash);
                 return CHART_PALETTE[Math.abs(hash) % CHART_PALETTE.length];
             };
 
@@ -1440,10 +1434,17 @@
                 if (s.rank > absoluteMaxRank) absoluteMaxRank = s.rank;
             }));
 
+            // --- PROPORTIONAL LABEL SCALING ---
+            const cConf = {
+                8: { gap: 36, font: 14, img: 26, rectH: 34, rectW: 160, ptR: 4, debutR: 5.5, stroke: 2.5 },
+                12: { gap: 30, font: 12, img: 22, rectH: 28, rectW: 140, ptR: 3.5, debutR: 5, stroke: 2 },
+                24: { gap: 24, font: 11, img: 18, rectH: 24, rectW: 130, ptR: 2.5, debutR: 4, stroke: 1.5 },
+                'all': { gap: 18, font: 9, img: 14, rectH: 18, rectW: 110, ptR: 1.5, debutR: 3, stroke: 1.2 }
+            }[cutoff] || { gap: 18, font: 9, img: 14, rectH: 18, rectW: 110, ptR: 1.5, debutR: 3, stroke: 1.2 };
+
+            const LABEL_GAP = cConf.gap;
             const width = 1200;
             const effectiveCutoff = hasCutoff ? cutoff : absoluteMaxRank;
-            
-            const LABEL_GAP = isAll ? 20 : 32; 
 
             let maxPointsVal = 10;
             if (type !== 'rank') {
@@ -1453,15 +1454,22 @@
                 maxPointsVal = Math.ceil(maxPointsVal * 1.05);
             }
 
-            let plotHeight = 480;
-            if (type === 'rank') {
-                plotHeight = isAll ? Math.max(600, includedPlayerIds.size * LABEL_GAP * 1.1) : (cutoff === 8 ? 400 : cutoff === 12 ? 500 : 800);
+            // --- LAYOUT ENGINE TOGGLE ---
+            let plotHeight;
+            if (layoutMode === 'extended') {
+                // Massively expanded Y-Axis to prevent offset ties
+                plotHeight = Math.max(1200, includedPlayerIds.size * cConf.gap * 2.5); 
             } else {
-                const baseHeight = cutoff === 8 ? 500 : cutoff === 12 ? 650 : cutoff === 24 ? 900 : 1100;
-                plotHeight = isAll ? Math.max(baseHeight, includedPlayerIds.size * LABEL_GAP * 1.1) : baseHeight;
+                // Taller Compact Mode
+                if (type === 'rank') {
+                    plotHeight = isAll ? Math.max(700, includedPlayerIds.size * cConf.gap * 0.5) : (cutoff === 8 ? 450 : cutoff === 12 ? 550 : 850);
+                } else {
+                    const baseHeight = cutoff === 8 ? 550 : cutoff === 12 ? 700 : cutoff === 24 ? 950 : 1200;
+                    plotHeight = isAll ? Math.max(baseHeight, includedPlayerIds.size * cConf.gap * 0.5) : baseHeight;
+                }
             }
 
-            const pad = { top: 60, right: isAll ? 150 : 260, left: type === 'rank' ? 60 : 80, bottom: isAll ? 40 : 100 }; 
+            const pad = { top: 60, right: isAll ? 130 : 200, left: type === 'rank' ? 60 : 80, bottom: isAll ? 40 : 100 }; 
             const gridBottomY = pad.top + plotHeight;
 
             const getX = (i) => historyData.length <= 1 ? (pad.left + (width - pad.left - pad.right) / 2) : pad.left + (i * ((width - pad.left - pad.right) / (historyData.length - 1)));
@@ -1482,9 +1490,6 @@
                 return { k, x: getX(k), val, y: getY(val) };
             });
 
-            // -------------------------------------------------------------
-            // OPTION 2: VISUAL GHOSTING PATH ENGINE
-            // -------------------------------------------------------------
             const lines = [];
             Array.from(includedPlayerIds).forEach(pid => {
                 const player = playersRaw.find(p => p.id === pid);
@@ -1509,9 +1514,7 @@
 
                 for (let k = 0; k < timeline.length; k++) {
                     const pt = timeline[k], prev = k > 0 ? timeline[k-1] : null, next = k < timeline.length - 1 ? timeline[k+1] : null;
-                    
                     if (!pt.exists) {
-                        // VISUAL GHOSTING: If they didn't play, slice the line immediately. No drop tail.
                         if (currentSeg.length > 0) { segments.push(currentSeg); currentSeg = []; }
                     } else {
                         if (isAll) {
@@ -1519,13 +1522,11 @@
                         } else {
                             const inCutoff = pt.s.rank <= cutoff;
                             if (inCutoff) {
-                                // Draw natural intersection UP from below the cutoff
                                 if (prev && prev.exists && prev.s.rank > cutoff) {
                                     const I = getIntersect(prev, pt, thresholdData[k-1], thresholdData[k]); 
                                     if (I) currentSeg.push(I);
                                 }
                                 currentSeg.push({ ...pt, isDot: true });
-                                // Draw natural intersection DOWN if falling below cutoff
                                 if (next && next.exists && next.s.rank > cutoff) {
                                     const I = getIntersect(pt, next, thresholdData[k], thresholdData[k+1]); 
                                     if (I) { currentSeg.push(I); segments.push(currentSeg); currentSeg = []; }
@@ -1543,7 +1544,6 @@
                 }
             });
 
-            // --- BI-DIRECTIONAL CASCADE PHYSICS (PER COLUMN) ---
             const labels = [];
             lines.forEach(line => {
                 if (!line.segments.length) return;
@@ -1561,24 +1561,24 @@
                 if (!placed) columns.push({ x: l.endX, labels: [l] });
             });
 
+            // Compact mode allows tags to overlap slightly for space. Extended strictly prevents overlap.
+            const physicsGap = layoutMode === 'extended' ? cConf.gap : cConf.gap * 0.4; 
+
             columns.forEach(col => {
                 const colLabels = col.labels;
                 colLabels.sort((a,b) => type === 'rank' ? a.actualVal - b.actualVal : b.actualVal - a.actualVal);
-
                 if (colLabels.length > 0) {
                     colLabels[0].currentY = colLabels[0].endY;
-                    for (let i = 1; i < colLabels.length; i++) colLabels[i].currentY = Math.max(colLabels[i].endY, colLabels[i-1].currentY + LABEL_GAP);
-
+                    for (let i = 1; i < colLabels.length; i++) colLabels[i].currentY = Math.max(colLabels[i].endY, colLabels[i-1].currentY + physicsGap);
                     if (colLabels[colLabels.length - 1].currentY > gridBottomY) {
                         colLabels[colLabels.length - 1].currentY = gridBottomY;
-                        for (let i = colLabels.length - 2; i >= 0; i--) colLabels[i].currentY = Math.min(colLabels[i].currentY, colLabels[i+1].currentY - LABEL_GAP);
+                        for (let i = colLabels.length - 2; i >= 0; i--) colLabels[i].currentY = Math.min(colLabels[i].currentY, colLabels[i+1].currentY - physicsGap);
                     }
                 }
             });
 
             const labelPositions = {};
             labels.forEach(el => labelPositions[el.id] = el.currentY);
-
             const dynamicHeight = gridBottomY + pad.bottom;
             const thresholdPath = thresholdData.map((pt, i) => `${i === 0 ? 'M' : 'L'} ${pt.x} ${pt.y}`).join(' ');
             const dropZonePath = `${thresholdPath} L ${getX(historyData.length - 1)} ${gridBottomY} L ${getX(0)} ${gridBottomY} Z`;
@@ -1622,6 +1622,11 @@
                                     </button>
                                 ))}
                             </div>
+                            <div className="w-px h-6 bg-royal-700 hidden lg:block"></div>
+                            <div className="flex items-center gap-1.5 bg-royal-950 p-1.5 rounded-lg border border-royal-800">
+                                <button onClick={() => updateSnbChartState({ layoutMode: 'compact' })} className={`px-3 py-1 rounded text-xs font-bold transition-all ${layoutMode === 'compact' ? 'bg-sky-500 text-white shadow-sm' : 'bg-transparent text-royal-400 hover:text-white hover:bg-royal-800'}`}>Compact Mode</button>
+                                <button onClick={() => updateSnbChartState({ layoutMode: 'extended' })} className={`px-3 py-1 rounded text-xs font-bold transition-all ${layoutMode === 'extended' ? 'bg-sky-500 text-white shadow-sm' : 'bg-transparent text-royal-400 hover:text-white hover:bg-royal-800'}`}>Extended Mode</button>
+                            </div>
                             {hasCutoff && (
                                 <button onClick={() => updateSnbChartState({ showDropped: !showDropped })} 
                                     className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all border shadow-sm ${showDropped ? 'bg-royal-800 border-royal-600 text-white' : 'bg-royal-950 border-royal-800 text-royal-400 hover:text-royal-300'}`}>
@@ -1637,7 +1642,7 @@
                             <defs>
                                 {lines.map(line => (
                                     <clipPath id={`clip-${type}-${line.player.id}`} key={`clip-${line.player.id}`}>
-                                        <circle cx={isAll ? "8" : "14"} cy={isAll ? "6" : "14"} r={isAll ? "8" : "14"} />
+                                        <circle cx={4 + cConf.img/2} cy="0" r={cConf.img/2} />
                                     </clipPath>
                                 ))}
                             </defs>
@@ -1651,7 +1656,6 @@
                                 </g>
                             )}
 
-                            {/* GRIDLINES */}
                             {type === 'rank' ? (
                                 (() => {
                                     const rLines = [];
@@ -1681,16 +1685,14 @@
                                 })()
                             )}
                             
-                            {/* PATHS */}
                             {sortedLines.map((line) => {
                                 const isHighlighted = selectedLineId === line.player.id || hoveredLineId === line.player.id;
                                 const isFaded = (selectedLineId || hoveredLineId) && !isHighlighted;
                                 return line.paths.map((pStr, pIdx) => (
-                                    <path key={`path-${line.player.id}-${pIdx}`} d={pStr} fill="none" stroke={line.color} strokeWidth={isHighlighted ? 4 : (isAll ? 1.2 : 2)} opacity={isFaded ? 0.15 : 0.9} strokeLinejoin="round" strokeLinecap="round" className="cursor-pointer" onClick={(e) => { e.stopPropagation(); setSelectedLineId(line.player.id === selectedLineId ? null : line.player.id); }} onMouseEnter={() => setHoveredLineId(line.player.id)} onMouseLeave={() => setHoveredLineId(null)} />
+                                    <path key={`path-${line.player.id}-${pIdx}`} d={pStr} fill="none" stroke={line.color} strokeWidth={isHighlighted ? cConf.stroke * 1.5 : cConf.stroke} opacity={isFaded ? 0.15 : 0.9} strokeLinejoin="round" strokeLinecap="round" className="cursor-pointer" onClick={(e) => { e.stopPropagation(); setSelectedLineId(line.player.id === selectedLineId ? null : line.player.id); }} onMouseEnter={() => setHoveredLineId(line.player.id)} onMouseLeave={() => setHoveredLineId(null)} />
                                 ));
                             })}
                             
-                            {/* DOTS & LABELS */}
                             {sortedLines.map((line) => {
                                 const isHighlighted = selectedLineId === line.player.id || hoveredLineId === line.player.id;
                                 const isFaded = (selectedLineId || hoveredLineId) && !isHighlighted;
@@ -1706,34 +1708,32 @@
                                             const isLastPt = (sIdx === line.segments.length - 1 && i === seg.length - 1);
                                             const shouldShowText = isHighlighted && (historyData.length <= 15 || i % 2 === 0 || isLastPt);
                                             
-                                            // DOT LOGIC: Clean Hollow Rings vs Solid Debuts
                                             const isSolidDebut = pt.isDebut && sIdx === 0 && i === 0;
-                                            const rSize = isHighlighted ? (isAll ? "3" : "4") : (isAll ? "1.5" : "2.5");
+                                            const rSize = isHighlighted ? cConf.ptR * 1.5 : cConf.ptR;
                                             const sWidth = isHighlighted ? 2.5 : 1.5;
-                                            const debutR = isHighlighted ? "4.5" : (isAll ? "3" : "3.5");
+                                            const debutR = isHighlighted ? cConf.debutR * 1.5 : cConf.debutR;
 
                                             return (
                                                 <g key={`pt-${line.player.id}-${sIdx}-${i}`} className="group cursor-pointer" onClick={(e) => { e.stopPropagation(); setSelectedLineId(line.player.id === selectedLineId ? null : line.player.id); }} onMouseEnter={() => setHoveredLineId(line.player.id)} onMouseLeave={() => setHoveredLineId(null)}>
-                                                    
                                                     <circle cx={pt.x} cy={pt.y} r={isSolidDebut ? debutR : rSize} fill={isSolidDebut ? line.color : "#051611"} stroke={line.color} strokeWidth={isSolidDebut ? 0 : sWidth} style={{ transition: 'r 0.2s ease, stroke-width 0.2s ease' }} />
-                                                    
                                                     <text x={pt.x} y={pt.y - 12} fill={line.color} fontSize="12" fontWeight="900" textAnchor="middle" stroke="#051611" strokeWidth="4" paintOrder="stroke" className={shouldShowText ? "opacity-100" : "opacity-0 group-hover:opacity-100"}>{type === 'rank' ? `#${pt.val}` : Math.round(pt.val).toLocaleString()}</text>
                                                     <circle cx={pt.x} cy={pt.y} r="20" fill="transparent" />
                                                 </g>
                                             );
                                         }))}
 
-                                        {shouldShowLabel && (Math.abs(adjY - endPt.y) > 2 || isDropped) && (
-                                            <path d={`M ${endPt.x} ${endPt.y} C ${endPt.x + 15} ${endPt.y}, ${endPt.x + 10} ${adjY}, ${endPt.x + (isAll ? 10 : 25)} ${adjY}`} fill="none" stroke={line.color} strokeWidth="1.5" opacity="0.6" strokeDasharray="4 4" style={{ transition: 'opacity 0.3s ease' }} />
+                                        {/* HIDE THE DASHED LINE IF IN EXTENDED MODE */}
+                                        {shouldShowLabel && layoutMode !== 'extended' && (Math.abs(adjY - endPt.y) > 2 || isDropped) && (
+                                            <path d={`M ${endPt.x} ${endPt.y} C ${endPt.x + 15} ${endPt.y}, ${endPt.x + 10} ${adjY}, ${endPt.x + (isAll ? 10 : 20)} ${adjY}`} fill="none" stroke={line.color} strokeWidth="1.5" opacity="0.6" strokeDasharray="4 4" style={{ transition: 'opacity 0.3s ease' }} />
                                         )}
 
                                         {shouldShowLabel && (
-                                            <g transform={`translate(${endPt.x + (isAll ? 10 : 25)}, ${adjY - (isAll ? 10 : 14)})`} className="cursor-pointer" style={{ transition: 'opacity 0.3s ease, transform 0.3s ease' }} onClick={(e) => { e.stopPropagation(); onNavigate('players', line.player.id); }} onMouseEnter={() => setHoveredLineId(line.player.id)} onMouseLeave={() => setHoveredLineId(null)}>
-                                                <rect x="-4" y="-4" width={isAll ? 120 : 180} height={isAll ? 20 : 36} rx={isAll ? 10 : 18} fill="#051611" fillOpacity={isHighlighted ? "1" : (isDropped ? "0.6" : "0.85")} stroke={line.color} strokeWidth={isHighlighted ? 2 : 1} style={{ filter: isHighlighted ? 'drop-shadow(0 0 8px rgba(255,255,255,0.3))' : 'drop-shadow(0 4px 6px rgba(0,0,0,0.5))' }} />
+                                            <g transform={`translate(${endPt.x + (isAll ? 10 : 20)}, ${adjY})`} className="cursor-pointer" style={{ transition: 'opacity 0.3s ease, transform 0.3s ease' }} onClick={(e) => { e.stopPropagation(); onNavigate('players', line.player.id); }} onMouseEnter={() => setHoveredLineId(line.player.id)} onMouseLeave={() => setHoveredLineId(null)}>
+                                                <rect x="0" y={-cConf.rectH/2} width={cConf.rectW} height={cConf.rectH} rx={cConf.rectH/2} fill="#051611" fillOpacity={isHighlighted ? "1" : (isDropped ? "0.6" : "0.85")} stroke={line.color} strokeWidth={isHighlighted ? 2 : 1} style={{ filter: isHighlighted ? 'drop-shadow(0 0 8px rgba(255,255,255,0.3))' : 'drop-shadow(0 4px 6px rgba(0,0,0,0.5))' }} />
                                                 {line.player.imageUrl ? (
-                                                    <image href={line.player.imageUrl} x="0" y={isAll ? -2 : 0} width={isAll ? 14 : 28} height={isAll ? 14 : 28} clipPath={`url(#clip-${type}-${line.player.id})`} preserveAspectRatio="xMidYMid slice" style={{ filter: isDropped && !isHighlighted ? 'grayscale(0.7)' : 'none' }} />
-                                                ) : ( <circle cx={isAll ? 7 : 14} cy={isAll ? 6 : 14} r={isAll ? 7 : 14} fill="#0a241c" /> )}
-                                                <text x={isAll ? 18 : 36} y={isAll ? 10 : 19} fill={isDropped && !isHighlighted ? "#94a3b8" : "#f8fafc"} fontSize={isAll ? 9 : 14} fontWeight="bold" style={{ textShadow: "0px 2px 4px black" }}>{line.player.name}</text>
+                                                    <image href={line.player.imageUrl} x="4" y={-cConf.img/2} width={cConf.img} height={cConf.img} clipPath={`url(#clip-${type}-${line.player.id})`} preserveAspectRatio="xMidYMid slice" style={{ filter: isDropped && !isHighlighted ? 'grayscale(0.7)' : 'none' }} />
+                                                ) : ( <circle cx={4 + cConf.img/2} cy="0" r={cConf.img/2} fill="#0a241c" /> )}
+                                                <text x={4 + cConf.img + 6} y={cConf.font * 0.35} fill={isDropped && !isHighlighted ? "#94a3b8" : "#f8fafc"} fontSize={cConf.font} fontWeight="bold" style={{ textShadow: "0px 2px 4px black" }}>{line.player.name}</text>
                                             </g>
                                         )}
                                     </g>
@@ -1744,7 +1744,7 @@
                 </div>
             );
         }
-        
+
         function TopNationsChart({ globalHistory, playersRaw, onNavigate }) {
             const [, setTick] = useState(0);
             const [selectedCode, setSelectedCode] = useState(null);
@@ -1756,7 +1756,7 @@
                 return () => __snbChartListeners.delete(l);
             }, []);
 
-            const { windowSize, offset } = __snbSharedChartState;
+            const { windowSize, offset, layoutMode } = __snbSharedChartState;
             const allHistory = globalHistory.filter(h => h.isMajorPlus);
             const N = allHistory.length;
 
@@ -1781,8 +1781,11 @@
             playersRaw.forEach(p => { if (p.nationality) nationCodes.add(p.nationality); });
 
             const width = 1200;
-            const LABEL_GAP = 24; 
-            const plotHeight = Math.max(500, nationCodes.size * LABEL_GAP * 1.2);
+            const cConf = { gap: 24, font: 12, rectH: 28, rectW: 100, ptR: 3, debutR: 4, stroke: 2 };
+            
+            // LAYOUT ENGINE TOGGLE
+            let plotHeight = layoutMode === 'extended' ? Math.max(800, nationCodes.size * cConf.gap * 2.5) : 550;
+            
             const pad = { top: 40, right: 140, left: 80, bottom: 40 }; 
             const gridBottomY = pad.top + plotHeight;
 
@@ -1844,7 +1847,7 @@
                 }
             });
 
-            // --- BI-DIRECTIONAL CASCADE PHYSICS ---
+            // BI-DIRECTIONAL CASCADE PHYSICS
             const labels = [];
             lines.forEach(line => {
                 const endPt = line.segments[line.segments.length - 1].slice(-1)[0];
@@ -1853,18 +1856,17 @@
 
             labels.sort((a, b) => b.actualVal - a.actualVal);
 
+            const physicsGap = layoutMode === 'extended' ? cConf.gap : cConf.gap * 0.4;
+
             if (labels.length > 0) {
-                // 1. Cascade Down
                 labels[0].currentY = labels[0].endY;
                 for (let i = 1; i < labels.length; i++) {
-                    labels[i].currentY = Math.max(labels[i].endY, labels[i-1].currentY + LABEL_GAP);
+                    labels[i].currentY = Math.max(labels[i].endY, labels[i-1].currentY + physicsGap);
                 }
-
-                // 2. Cascade Up (Only triggers if the bottom overflows the 0 line!)
                 if (labels[labels.length - 1].currentY > gridBottomY) {
                     labels[labels.length - 1].currentY = gridBottomY;
                     for (let i = labels.length - 2; i >= 0; i--) {
-                        labels[i].currentY = Math.min(labels[i].currentY, labels[i+1].currentY - LABEL_GAP);
+                        labels[i].currentY = Math.min(labels[i].currentY, labels[i+1].currentY - physicsGap);
                     }
                 }
             }
@@ -1896,6 +1898,11 @@
                                     <button onClick={() => updateSnbChartState({ offset: Math.max(0, safeOffset - windowSize) })} disabled={safeOffset <= 0} className="p-1 hover:bg-royal-800 text-royal-400 hover:text-white rounded disabled:opacity-30 transition-colors"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg></button>
                                 </div>
                             )}
+                            <div className="w-px h-6 bg-royal-700 hidden lg:block"></div>
+                            <div className="flex items-center gap-1.5 bg-royal-950 p-1.5 rounded-lg border border-royal-800">
+                                <button onClick={() => updateSnbChartState({ layoutMode: 'compact' })} className={`px-3 py-1 rounded text-xs font-bold transition-all ${layoutMode === 'compact' ? 'bg-sky-500 text-white shadow-sm' : 'bg-transparent text-royal-400 hover:text-white hover:bg-royal-800'}`}>Compact Mode</button>
+                                <button onClick={() => updateSnbChartState({ layoutMode: 'extended' })} className={`px-3 py-1 rounded text-xs font-bold transition-all ${layoutMode === 'extended' ? 'bg-sky-500 text-white shadow-sm' : 'bg-transparent text-royal-400 hover:text-white hover:bg-royal-800'}`}>Extended Mode</button>
+                            </div>
                         </div>
                         {selectedCode && <button onClick={() => setSelectedCode(null)} className="text-xs font-medium text-gold-500 hover:text-white px-4 py-1.5 bg-royal-800 rounded-md border border-royal-700 transition-colors">Clear Selection</button>}
                     </div>
@@ -1919,7 +1926,7 @@
                                 const isHighlighted = selectedCode === line.code || hoveredCode === line.code;
                                 const isFaded = (selectedCode || hoveredCode) && !isHighlighted;
                                 return line.paths.map((pStr, pIdx) => (
-                                    <path key={`path-${line.code}-${pIdx}`} d={pStr} fill="none" stroke={line.color} strokeWidth={isHighlighted ? 4 : 2} opacity={isFaded ? 0.15 : 0.9} strokeLinejoin="round" strokeLinecap="round" className="cursor-pointer" onClick={(e) => { e.stopPropagation(); setSelectedCode(line.code === selectedCode ? null : line.code); }} onMouseEnter={() => setHoveredCode(line.code)} onMouseLeave={() => setHoveredCode(null)} />
+                                    <path key={`path-${line.code}-${pIdx}`} d={pStr} fill="none" stroke={line.color} strokeWidth={isHighlighted ? cConf.stroke * 2 : cConf.stroke} opacity={isFaded ? 0.15 : 0.9} strokeLinejoin="round" strokeLinecap="round" className="cursor-pointer" onClick={(e) => { e.stopPropagation(); setSelectedCode(line.code === selectedCode ? null : line.code); }} onMouseEnter={() => setHoveredCode(line.code)} onMouseLeave={() => setHoveredCode(null)} />
                                 ));
                             })}
                             
@@ -1935,8 +1942,8 @@
                                             const shouldShowText = isHighlighted && (historyData.length <= 15 || i % 2 === 0 || isLastPt);
                                             
                                             const isSolidDebut = pt.isDebut && sIdx === 0 && i === 0;
-                                            const rSize = isHighlighted ? "3" : "2";
-                                            const debutR = isHighlighted ? "4.5" : "3.5";
+                                            const rSize = isHighlighted ? cConf.ptR * 1.5 : cConf.ptR;
+                                            const debutR = isHighlighted ? cConf.debutR * 1.5 : cConf.debutR;
                                             const sWidth = isHighlighted ? 2.5 : 1.5;
                                             
                                             return (
@@ -1948,12 +1955,12 @@
                                             );
                                         }))}
                                         
-                                        {(Math.abs(lObj.currentY - lObj.endY) > 2) && <path d={`M ${lObj.endX} ${lObj.endY} C ${lObj.endX + 15} ${lObj.endY}, ${lObj.endX + 10} ${lObj.currentY}, ${lObj.endX + 20} ${lObj.currentY}`} fill="none" stroke={line.color} strokeWidth="1.5" opacity="0.4" strokeDasharray="2 2" />}
+                                        {layoutMode !== 'extended' && (Math.abs(lObj.currentY - lObj.endY) > 2) && <path d={`M ${lObj.endX} ${lObj.endY} C ${lObj.endX + 15} ${lObj.endY}, ${lObj.endX + 10} ${lObj.currentY}, ${lObj.endX + 20} ${lObj.currentY}`} fill="none" stroke={line.color} strokeWidth="1.5" opacity="0.4" strokeDasharray="2 2" />}
                                         
-                                        <g transform={`translate(${lObj.endX + 20}, ${lObj.currentY - 11})`} className="cursor-pointer" onClick={(e) => { e.stopPropagation(); onNavigate('nations', null, null, line.code); }} onMouseEnter={() => setHoveredCode(line.code)} onMouseLeave={() => setHoveredCode(null)}>
-                                            <rect x="-4" y="-4" width={110} height={22} rx={11} fill="#051611" fillOpacity="0.9" stroke={line.color} strokeWidth={isHighlighted ? 2 : 1} style={{ filter: isHighlighted ? 'drop-shadow(0 0 8px rgba(255,255,255,0.3))' : 'none' }} />
-                                            <text x={8} y={11} fontSize={13}>{getFlag(line.code)}</text>
-                                            <text x={30} y={10} fill={isHighlighted ? "#ffffff" : "#cbd5e1"} fontSize={10} fontWeight="bold">{line.code}</text>
+                                        <g transform={`translate(${lObj.endX + 20}, ${lObj.currentY})`} className="cursor-pointer" onClick={(e) => { e.stopPropagation(); onNavigate('nations', null, null, line.code); }} onMouseEnter={() => setHoveredCode(line.code)} onMouseLeave={() => setHoveredCode(null)}>
+                                            <rect x="0" y={-cConf.rectH/2} width={cConf.rectW} height={cConf.rectH} rx={cConf.rectH/2} fill="#051611" fillOpacity="0.9" stroke={line.color} strokeWidth={isHighlighted ? 2 : 1} style={{ filter: isHighlighted ? 'drop-shadow(0 0 8px rgba(255,255,255,0.3))' : 'none' }} />
+                                            <text x={10} y={cConf.font * 0.35} fontSize={cConf.font + 1}>{getFlag(line.code)}</text>
+                                            <text x={32} y={cConf.font * 0.35} fill={isHighlighted ? "#ffffff" : "#cbd5e1"} fontSize={cConf.font} fontWeight="bold">{line.code}</text>
                                         </g>
                                     </g>
                                 );
@@ -1963,6 +1970,7 @@
                 </div>
             );
         }
+    
 
         function FloatingChartNav() {
             return (
@@ -2150,67 +2158,215 @@
         }
 
         function NationAchievements({ code, players, tournaments }) {
-            const getTierStyles = (tier) => {
-                switch(tier) {
-                    case 'grand_slam': return { color: 'bg-gold-500', text: 'text-gold-500', label: 'Grand Slam' };
-                    case 'finals': return { color: 'bg-blue-400', text: 'text-blue-400', label: 'Tour Finals' };
-                    case 'masters_1000': return { color: 'bg-purple-400', text: 'text-purple-400', label: 'Masters 1000' };
-                    case 'masters_500': return { color: 'bg-emerald-400', text: 'text-emerald-400', label: 'Masters 500' };
-                    case 'masters_250': return { color: 'bg-orange-400', text: 'text-orange-400', label: 'Masters 250' };
-                    default: return { color: 'bg-royal-500', text: 'text-royal-500', label: 'Tournament' };
-                }
-            };
-
-            const titles = [];
+            const list = [];
             tournaments.forEach(t => {
-                if (t.status === 'completed' && t.bracket) {
-                    let b = []; try { b = typeof t.bracket === 'string' ? JSON.parse(t.bracket) : t.bracket; } catch(e){}
-                    const finalMatch = b[1]?.[0] || b[b.length-1]?.[0];
-                    if (finalMatch?.winner) {
-                        const winner = players.find(p => p.id === finalMatch.winner);
-                        if (winner && (winner.nationality || 'UNK') === code) {
-                            titles.push({ tournament: t, winner: winner });
-                        }
+                if (t.status !== 'completed' || !t.bracket) return;
+                const tTier = getTournamentTier(t);
+                
+                // ONLY count Grand Slams, Majors, and Finals
+                if (tTier !== 'grand_slam' && tTier !== 'major' && tTier !== 'finals') return;
+
+                let b = []; try { b = typeof t.bracket === 'string' ? JSON.parse(t.bracket) : t.bracket; } catch(e){}
+                const finalMatch = b[1]?.[0] || b[b.length-1]?.[0];
+                
+                if (finalMatch?.winner) {
+                    const winner = players.find(p => p.id === finalMatch.winner);
+                    if (winner && (winner.nationality || 'UNK') === code) {
+                        list.push({
+                            tournamentId: t.id,
+                            tournamentName: t.name,
+                            tier: tTier,
+                            result: 'Winner',
+                            date: t.completedAt || t.createdAt,
+                            hostCountry: t.hostCountry,
+                            winner: winner
+                        });
                     }
                 }
             });
 
-            if (titles.length === 0) return null;
-
-            // Reverse to show the most recent titles first
-            titles.reverse();
+            if (list.length === 0) return null;
+            
+            // Sort by most recent
+            list.sort((a,b) => (b.date || 0) - (a.date || 0));
 
             return (
-                <div className="mt-8 bg-royal-900/50 p-6 rounded-2xl border border-royal-800 shadow-xl">
-                    <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-3"><Trophy size={24} className="text-gold-500"/> National Trophy Cabinet</h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                        {titles.map((title, idx) => {
-                            const styles = getTierStyles(title.tournament.tier);
-                            return (
-                                <div key={idx} className="bg-royal-950/80 p-4 rounded-xl border border-royal-800 shadow-sm flex items-center gap-4 relative overflow-hidden group hover:border-royal-600 transition-colors cursor-default">
-                                    {/* Left Accent Bar */}
-                                    <div className={`absolute top-0 left-0 w-1 h-full ${styles.color}`}></div>
-                                    
-                                    <div className="flex-1 pl-2">
-                                        <div className={`text-[10px] font-bold tracking-widest uppercase mb-1 ${styles.text}`}>{styles.label}</div>
-                                        <div className="text-white font-bold text-lg leading-tight mb-1 truncate pr-2">{title.tournament.name}</div>
-                                        <div className="text-royal-300 text-sm flex items-center gap-1.5">
-                                            <Trophy size={13} className="text-gold-500" />
-                                            <span className="font-semibold text-gold-400 truncate">{title.winner.name}</span>
-                                        </div>
-                                    </div>
-                                    
-                                    {/* Winner Avatar */}
-                                    <div className="w-12 h-12 rounded-full overflow-hidden border border-royal-700 shrink-0 bg-black group-hover:scale-105 transition-transform shadow-md">
-                                        <PlayerMedia url={title.winner.imageUrl || (title.winner.images ? title.winner.images[0] : '')} className="w-full h-full object-cover" />
-                                    </div>
-                                </div>
-                            );
-                        })}
+                <div id="nation-trophies" className="bg-royal-900 p-6 rounded-xl border border-royal-800 shadow-md scroll-mt-8 mt-8">
+                    <h2 className="text-xl font-bold text-white flex items-center gap-2 mb-6"><Trophy size={24} className="text-gold-500"/> Major Achievements</h2>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                        {list.map((ach, i) => (
+                            <div key={i} onClick={() => window.history.pushState(null, '', '') /* Optional navigation trigger */} className="bg-royal-950/50 p-4 rounded-xl border border-royal-800 flex flex-col items-center text-center cursor-pointer hover:border-gold-500/50 hover:bg-royal-900 transition-all group hover:-translate-y-1 hover:shadow-lg hover:shadow-gold-500/10">
+                                <DynamicTrophy tier={ach.tier} result={ach.result} country={ach.hostCountry} size={48} className="mb-3 transition-transform group-hover:scale-110" />
+                                <span className={`text-[10px] uppercase font-bold tracking-widest px-2 py-0.5 rounded mb-2 ${TOURNAMENT_TIERS[ach.tier]?.bg || ''} ${TOURNAMENT_TIERS[ach.tier]?.color || ''}`}>{TOURNAMENT_TIERS[ach.tier].name}</span>
+                                <div className="font-bold text-white text-lg group-hover:text-gold-500 transition-colors">{ach.winner.name}</div>
+                                <div className="text-sm text-royal-300 mt-1">{ach.tournamentName}</div>
+                            </div>
+                        ))}
                     </div>
                 </div>
             );
         }
+
+        function NationProfile({ code, players, onBack, onNavigate, playersRaw, tournaments }) {
+            const { active, retired } = useMemo(() => {
+                const natPlayers = players.filter(p => (p.nationality || 'UNK') === code);
+                const activeList = natPlayers.filter(p => !p.retired).sort((a,b) => b.points - a.points || b.totalPoints - a.totalPoints);
+                
+                const globalHist = (tournaments && playersRaw) ? getGlobalHistory(playersRaw, tournaments) : [];
+                const retiredList = natPlayers.filter(p => p.retired).map(p => {
+                    let peakRank = 9999, peakPoints = 0;
+                    globalHist.forEach(h => {
+                        const s = h.standings?.find(st => st.id === p.id);
+                        if (s) {
+                            if (s.rank > 0 && s.rank < peakRank) peakRank = s.rank;
+                            if (s.pts > peakPoints) peakPoints = s.pts;
+                        }
+                    });
+                    if (peakRank === 9999) peakRank = p.rank || '-';
+                    if (peakPoints === 0) peakPoints = p.points || 0;
+                    return { ...p, peakRank, peakPoints };
+                }).sort((a,b) => b.peakPoints - a.peakPoints);
+
+                return { active: activeList, retired: retiredList };
+            }, [players, code, playersRaw, tournaments]);
+
+            const stats = useMemo(() => {
+                let points = 0, bonusPoints = 0, wins = 0, losses = 0, titles = 0;
+                active.forEach(p => {
+                    points += (p.points || 0); bonusPoints += (p.bonusPoints || 0);
+                    wins += (p.stats?.wins || 0); losses += (p.stats?.losses || 0);
+                });
+                
+                tournaments.forEach(t => {
+                    if (t.status === 'completed' && t.bracket) {
+                        let b = []; try { b = typeof t.bracket === 'string' ? JSON.parse(t.bracket) : t.bracket; } catch(e){}
+                        const finalMatch = b[1]?.[0] || b[b.length-1]?.[0];
+                        if (finalMatch?.winner) {
+                            const winner = players.find(p => p.id === finalMatch.winner);
+                            if (winner && (winner.nationality || 'UNK') === code) titles++;
+                        }
+                    }
+                });
+
+                return { points, bonusPoints, wins, losses, titles, activeCount: active.length, retiredCount: retired.length };
+            }, [active, retired, tournaments, players, code]);
+
+            return (
+                <div className="max-w-7xl mx-auto pb-20 relative flex gap-8 items-start">
+                    
+                    <FloatingNationNav />
+
+                    <div className="flex-1 min-w-0 xl:pl-4 space-y-6">
+                        <button onClick={onBack} className="flex items-center gap-2 text-royal-200 hover:text-white"><ArrowLeft size={16}/> Back to Nations</button>
+                        
+                        <div id="nation-overview" className="bg-royal-900 rounded-2xl p-8 border border-royal-800 flex flex-col md:flex-row gap-8 relative shadow-lg items-center md:items-start mb-8 scroll-mt-8">
+                            <div className="text-8xl drop-shadow-lg">{getFlag(code)}</div>
+                            <div className="flex-1 text-center md:text-left">
+                                <h1 className="text-4xl font-bold text-white mb-6">{getCountryName(code)}</h1>
+                                <div className="flex flex-wrap justify-center md:justify-start gap-4">
+                                    <div className="bg-royal-950/50 border border-royal-800 p-4 rounded-lg text-center min-w-[100px]">
+                                        <div className="text-royal-200 font-bold uppercase text-xs tracking-widest mb-1">Players</div>
+                                        <div className="text-2xl font-black text-white">{stats.activeCount} <span className="text-sm font-medium text-royal-400 block -mt-1">+{stats.retiredCount} Ret.</span></div>
+                                    </div>
+                                    <div className="bg-royal-950/50 border border-royal-800 p-4 rounded-lg text-center min-w-[100px]"><div className="text-royal-200 font-bold uppercase text-xs tracking-widest mb-1">Active Pts</div><div className="text-2xl font-black text-gold-500">{stats.points.toLocaleString()} {stats.bonusPoints > 0 && <span className="text-emerald-400 text-sm ml-1">+{stats.bonusPoints}</span>}</div></div>
+                                    <div className="bg-royal-950/50 border border-royal-800 p-4 rounded-lg text-center min-w-[100px]"><div className="text-royal-200 font-bold uppercase text-xs tracking-widest mb-1">All-Time Titles</div><div className="text-2xl font-black text-gold-400">{stats.titles}</div></div>
+                                    <div className="bg-royal-950/50 border border-royal-800 p-4 rounded-lg text-center min-w-[100px]"><div className="text-royal-200 font-bold uppercase text-xs tracking-widest mb-1">Active W-L</div><div className="text-2xl font-black text-white">{stats.wins}-{stats.losses}</div></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <NationPointsChart code={code} globalHistory={getGlobalHistory(playersRaw, tournaments)} playersRaw={playersRaw} onNavigate={onNavigate} />
+
+                        <div id="nation-roster" className="scroll-mt-8">
+                            <h2 className="text-2xl font-bold text-white mb-4 mt-8 flex items-center gap-2"><PlayersIcon size={24} className="text-gold-500"/> National Roster</h2>
+                            <div className="bg-royal-900 rounded-xl border border-royal-800 overflow-hidden shadow-xl">
+                                <div className="overflow-x-auto">
+                                    {/* 1:1 CLONE OF THE GLOBAL RANKINGS TABLE */}
+                                    <table className="w-full text-left border-collapse">
+                                        <thead>
+                                            <tr className="bg-royal-950/50 text-royal-200 text-sm uppercase tracking-wider border-b border-royal-800">
+                                                <th className="p-4 font-semibold w-16 text-center">Nat</th>
+                                                <th className="p-4 font-semibold w-16 text-center">Glb</th>
+                                                <th className="p-4 font-semibold">Player</th>
+                                                <th className="p-4 font-semibold">Points</th>
+                                                <th className="p-4 font-semibold text-center">W-L</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody className="divide-y divide-royal-800">
+                                            {active.map((player, idx) => (
+                                                <tr key={player.id} onClick={() => onNavigate('players', player.id)} className="hover:bg-royal-800/50 transition-colors cursor-pointer group">
+                                                    <td className="p-4 text-center font-bold text-royal-400">{idx + 1}</td>
+                                                    <td className="p-4 text-center font-bold text-royal-500 text-sm">#{player.rank}</td>
+                                                    <td className="p-4 font-medium text-white flex items-center gap-3">
+                                                        <div className="w-10 h-10 rounded-full overflow-hidden border border-royal-700 bg-black shrink-0">
+                                                            <PlayerMedia url={player.imageUrl || (player.images ? player.images[0] : '')} className="w-full h-full" />
+                                                        </div>
+                                                        <div>
+                                                            <div className="group-hover:text-gold-500 transition-colors">{player.name}</div>
+                                                        </div>
+                                                    </td>
+                                                    <td className="p-4 font-bold text-gold-500">
+                                                        {player.points.toLocaleString()}
+                                                        {player.bonusPoints > 0 && <span className="text-emerald-400 text-xs ml-1 font-bold">+{player.bonusPoints}</span>}
+                                                    </td>
+                                                    <td className="p-4 text-center text-royal-200">{player.stats.wins} - {player.stats.losses}</td>
+                                                </tr>
+                                            ))}
+
+                                            {retired.length > 0 && (
+                                                <>
+                                                    <tr className="bg-royal-950/90 border-t-2 border-royal-700">
+                                                        <td colSpan="5" className="p-4 text-center">
+                                                            <div className="inline-flex items-center gap-3">
+                                                                <div className="h-px w-16 bg-royal-700"></div>
+                                                                <span className="text-royal-400 font-bold uppercase tracking-widest text-sm flex items-center gap-2">
+                                                                    <Trophy size={16} className="text-royal-500" /> Hall of Fame
+                                                                </span>
+                                                                <div className="h-px w-16 bg-royal-700"></div>
+                                                            </div>
+                                                        </td>
+                                                    </tr>
+                                                    {retired.map((player) => (
+                                                        <tr key={player.id} onClick={() => onNavigate('players', player.id)} className="hover:bg-royal-800/50 transition-colors cursor-pointer group opacity-80 hover:opacity-100 bg-black/20">
+                                                            <td className="p-4 text-center font-bold text-royal-600">-</td>
+                                                            <td className="p-4 text-center">
+                                                                <div className="text-[10px] text-royal-500 uppercase font-bold tracking-widest leading-tight mb-0.5">Peak Rnk</div>
+                                                                <div className="font-bold text-royal-400 group-hover:text-white">#{player.peakRank}</div>
+                                                            </td>
+                                                            <td className="p-4 font-medium text-white flex items-center gap-3">
+                                                                <div className="w-10 h-10 rounded-full overflow-hidden border border-royal-700 bg-black shrink-0 relative">
+                                                                    <PlayerMedia url={player.imageUrl || (player.images ? player.images[0] : '')} className="w-full h-full" />
+                                                                    <div className="absolute inset-0 bg-black/40 backdrop-grayscale-[0.5]"></div>
+                                                                </div>
+                                                                <div>
+                                                                    <div className="group-hover:text-gold-500 transition-colors flex items-center gap-2">
+                                                                        {player.name}
+                                                                        <span className="text-[9px] bg-[#be123c]/20 text-[#fb7185] px-1.5 py-0.5 rounded uppercase tracking-wider border border-[#be123c]/30 shrink-0">Retired</span>
+                                                                    </div>
+                                                                </div>
+                                                            </td>
+                                                            <td className="p-4 font-bold text-royal-300">
+                                                                <div className="text-[10px] text-royal-500 uppercase font-bold tracking-widest mb-0.5">Peak Pts</div>
+                                                                {player.peakPoints.toLocaleString()}
+                                                            </td>
+                                                            <td className="p-4 text-center text-royal-500 font-medium">{player.stats.wins} - {player.stats.losses}</td>
+                                                        </tr>
+                                                    ))}
+                                                </>
+                                            )}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+
+                        <NationAchievements code={code} players={players} tournaments={tournaments} />
+                    </div>
+                </div>
+            );
+        }
+
+        
         function NationPointsChart({ code, globalHistory, playersRaw, onNavigate }) {
             const [, setTick] = useState(0);
             const [selectedId, setSelectedId] = useState(null);
@@ -2446,153 +2602,6 @@
                                 );
                             })}
                         </svg>
-                    </div>
-                </div>
-            );
-        }
-
-        function NationProfile({ code, players, onBack, onNavigate, playersRaw, tournaments }) {
-            const { active, retired } = useMemo(() => {
-                const natPlayers = players.filter(p => (p.nationality || 'UNK') === code);
-                const activeList = natPlayers.filter(p => !p.retired).sort((a,b) => b.points - a.points || b.totalPoints - a.totalPoints);
-                
-                const globalHist = (tournaments && playersRaw) ? getGlobalHistory(playersRaw, tournaments) : [];
-                const retiredList = natPlayers.filter(p => p.retired).map(p => {
-                    let peakRank = 9999, peakPoints = 0;
-                    globalHist.forEach(h => {
-                        const s = h.standings?.find(st => st.id === p.id);
-                        if (s) {
-                            if (s.rank > 0 && s.rank < peakRank) peakRank = s.rank;
-                            if (s.pts > peakPoints) peakPoints = s.pts;
-                        }
-                    });
-                    if (peakRank === 9999) peakRank = p.rank || '-';
-                    if (peakPoints === 0) peakPoints = p.points || 0;
-                    return { ...p, peakRank, peakPoints };
-                }).sort((a,b) => b.peakPoints - a.peakPoints);
-
-                return { active: activeList, retired: retiredList };
-            }, [players, code, playersRaw, tournaments]);
-
-            const stats = useMemo(() => {
-                let points = 0, bonusPoints = 0, wins = 0, losses = 0, titles = 0;
-                active.forEach(p => {
-                    points += (p.points || 0); bonusPoints += (p.bonusPoints || 0);
-                    wins += (p.stats?.wins || 0); losses += (p.stats?.losses || 0);
-                });
-                active.forEach(p => titles += p.recentTournaments?.filter(t => t.result === 'Winner').length || 0);
-                retired.forEach(p => titles += p.recentTournaments?.filter(t => t.result === 'Winner').length || 0);
-
-                return { points, bonusPoints, wins, losses, titles, activeCount: active.length, retiredCount: retired.length };
-            }, [active, retired]);
-
-            return (
-                <div className="max-w-7xl mx-auto pb-20 relative flex gap-8 items-start">
-                    
-                    <FloatingNationNav />
-
-                    <div className="flex-1 min-w-0 xl:pl-4 space-y-6">
-                        <button onClick={onBack} className="flex items-center gap-2 text-royal-200 hover:text-white"><ArrowLeft size={16}/> Back to Nations</button>
-                        
-                        <div id="nation-overview" className="bg-royal-900 rounded-2xl p-8 border border-royal-800 flex flex-col md:flex-row gap-8 relative shadow-lg items-center md:items-start mb-8 scroll-mt-8">
-                            <div className="text-8xl drop-shadow-lg">{getFlag(code)}</div>
-                            <div className="flex-1 text-center md:text-left">
-                                <h1 className="text-4xl font-bold text-white mb-6">{getCountryName(code)}</h1>
-                                <div className="flex flex-wrap justify-center md:justify-start gap-4">
-                                    <div className="bg-royal-950/50 border border-royal-800 p-4 rounded-lg text-center min-w-[100px]">
-                                        <div className="text-royal-200 font-bold uppercase text-xs tracking-widest mb-1">Players</div>
-                                        <div className="text-2xl font-black text-white">{stats.activeCount} <span className="text-sm font-medium text-royal-400 block -mt-1">+{stats.retiredCount} Ret.</span></div>
-                                    </div>
-                                    <div className="bg-royal-950/50 border border-royal-800 p-4 rounded-lg text-center min-w-[100px]"><div className="text-royal-200 font-bold uppercase text-xs tracking-widest mb-1">Active Pts</div><div className="text-2xl font-black text-gold-500">{stats.points.toLocaleString()} {stats.bonusPoints > 0 && <span className="text-emerald-400 text-sm ml-1">+{stats.bonusPoints}</span>}</div></div>
-                                    <div className="bg-royal-950/50 border border-royal-800 p-4 rounded-lg text-center min-w-[100px]"><div className="text-royal-200 font-bold uppercase text-xs tracking-widest mb-1">All-Time Titles</div><div className="text-2xl font-black text-gold-400">{stats.titles}</div></div>
-                                    <div className="bg-royal-950/50 border border-royal-800 p-4 rounded-lg text-center min-w-[100px]"><div className="text-royal-200 font-bold uppercase text-xs tracking-widest mb-1">Active W-L</div><div className="text-2xl font-black text-white">{stats.wins}-{stats.losses}</div></div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <NationPointsChart code={code} globalHistory={getGlobalHistory(playersRaw, tournaments)} playersRaw={playersRaw} onNavigate={onNavigate} />
-
-                        <div id="nation-roster" className="scroll-mt-8">
-                            <h2 className="text-2xl font-bold text-white mb-4 mt-8 flex items-center gap-2"><PlayersIcon size={24} className="text-gold-500"/> National Roster</h2>
-                            <div className="bg-royal-900 rounded-xl border border-royal-800 overflow-hidden shadow-xl">
-                                <div className="overflow-x-auto">
-                                    <table className="w-full text-left border-collapse">
-                                        <thead>
-                                            <tr className="bg-royal-950/80 text-royal-200 text-sm uppercase tracking-wider border-b border-royal-800">
-                                                <th className="p-4 font-semibold w-16 text-center">Nat. Rank</th>
-                                                <th className="p-4 font-semibold w-16 text-center">Global Rank</th>
-                                                <th className="p-4 font-semibold">Player</th>
-                                                <th className="p-4 font-semibold text-right">Points</th>
-                                                <th className="p-4 font-semibold text-center">W-L</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody className="divide-y divide-royal-800">
-                                            {active.map((player, idx) => (
-                                                <tr key={player.id} onClick={() => onNavigate('players', player.id)} className="hover:bg-royal-800/50 transition-colors cursor-pointer group">
-                                                    <td className="p-4 text-center font-bold text-white text-lg">{idx + 1}</td>
-                                                    <td className="p-4 text-center font-bold text-royal-400 text-lg">#{player.rank}</td>
-                                                    <td className="p-4 font-medium text-white flex items-center gap-3">
-                                                        <div className="w-10 h-10 rounded-full overflow-hidden border border-royal-700 bg-black shrink-0">
-                                                            <PlayerMedia url={player.imageUrl || (player.images ? player.images[0] : '')} className="w-full h-full" />
-                                                        </div>
-                                                        <div className="group-hover:text-gold-500 font-bold text-lg transition-colors">{player.name}</div>
-                                                    </td>
-                                                    <td className="p-4 font-bold text-gold-500 text-right text-lg">
-                                                        {player.points.toLocaleString()}
-                                                        {player.bonusPoints > 0 && <span className="text-emerald-400 text-xs ml-1 font-bold">+{player.bonusPoints}</span>}
-                                                    </td>
-                                                    <td className="p-4 text-center text-royal-200 font-medium">{player.stats.wins} - {player.stats.losses}</td>
-                                                </tr>
-                                            ))}
-
-                                            {retired.length > 0 && (
-                                                <>
-                                                    <tr className="bg-royal-950/90 border-t-4 border-royal-800">
-                                                        <td colSpan="5" className="p-4 text-center">
-                                                            <div className="inline-flex items-center gap-3">
-                                                                <div className="h-px w-16 bg-royal-700"></div>
-                                                                <span className="text-royal-400 font-bold uppercase tracking-widest text-sm flex items-center gap-2">
-                                                                    <Trophy size={16} className="text-royal-500" /> Hall of Fame
-                                                                </span>
-                                                                <div className="h-px w-16 bg-royal-700"></div>
-                                                            </div>
-                                                        </td>
-                                                    </tr>
-                                                    {retired.map((player) => (
-                                                        <tr key={player.id} onClick={() => onNavigate('players', player.id)} className="hover:bg-royal-800/50 cursor-pointer transition-colors group opacity-80 hover:opacity-100 bg-black/20">
-                                                            <td className="p-4 text-center font-bold text-royal-500 text-lg">-</td>
-                                                            <td className="p-4 text-center">
-                                                                <div className="text-[10px] text-royal-500 uppercase font-bold tracking-widest leading-tight mb-0.5">Peak<br/>Rank</div>
-                                                                <div className="font-bold text-royal-400 group-hover:text-white">#{player.peakRank}</div>
-                                                            </td>
-                                                            <td className="p-4 font-medium text-white flex items-center gap-3">
-                                                                <div className="w-10 h-10 rounded-full overflow-hidden border border-royal-700 bg-black shrink-0 relative">
-                                                                    <PlayerMedia url={player.imageUrl || (player.images ? player.images[0] : '')} className="w-full h-full" />
-                                                                    <div className="absolute inset-0 bg-black/40 backdrop-grayscale-[0.5]"></div>
-                                                                </div>
-                                                                <div className="group-hover:text-gold-400 font-bold text-lg text-royal-200 transition-colors flex items-center gap-2">
-                                                                    {player.name}
-                                                                    <span className="text-[9px] bg-[#be123c]/20 text-[#fb7185] px-1.5 py-0.5 rounded uppercase tracking-wider border border-[#be123c]/30 shrink-0">Retired</span>
-                                                                </div>
-                                                            </td>
-                                                            <td className="p-4 font-bold text-royal-300 text-right text-lg">
-                                                                <div className="text-[10px] text-royal-500 uppercase font-bold tracking-widest mb-0.5">Peak Pts</div>
-                                                                {player.peakPoints.toLocaleString()}
-                                                            </td>
-                                                            <td className="p-4 text-center text-royal-500 font-medium">{player.stats.wins} - {player.stats.losses}</td>
-                                                        </tr>
-                                                    ))}
-                                                </>
-                                            )}
-                                        </tbody>
-                                    </table>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div id="nation-trophies" className="scroll-mt-8">
-                            <NationAchievements code={code} players={players} tournaments={tournaments} />
-                        </div>
                     </div>
                 </div>
             );
