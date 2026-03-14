@@ -3019,6 +3019,45 @@
             );
         }
 
+        function FloatingPlayerNav({ hasGallery }) {
+            const scrollToSection = (id) => {
+                const el = document.getElementById(id);
+                if (el) {
+                    const y = el.getBoundingClientRect().top + window.scrollY - 20;
+                    window.scrollTo({top: y, behavior: 'smooth'});
+                }
+            };
+            return (
+                <div className="fixed left-4 top-1/2 -translate-y-1/2 flex flex-col gap-3 z-50 bg-royal-950/90 backdrop-blur-md p-3 rounded-2xl border border-royal-800 shadow-[0_10px_30px_rgba(0,0,0,0.8)] hidden xl:flex w-24">
+                    <div className="text-[10px] text-royal-400 uppercase tracking-widest font-bold text-center pb-2 border-b border-royal-800 w-full mb-1">Jump</div>
+                    
+                    {hasGallery && (
+                        <button onClick={() => scrollToSection('player-gallery')} className="p-3 w-full bg-royal-900 hover:bg-gold-500 hover:text-royal-950 text-royal-200 rounded-xl transition-all hover:scale-110 group flex flex-col items-center justify-center gap-1.5 shadow-inner">
+                            <GalleryIcon size={24}/>
+                            <span className="text-[9px] font-black uppercase tracking-wider text-center">Gallery</span>
+                        </button>
+                    )}
+                    
+                    <button onClick={() => scrollToSection('player-achievements')} className="p-3 w-full bg-royal-900 hover:bg-gold-500 hover:text-royal-950 text-royal-200 rounded-xl transition-all hover:scale-110 group flex flex-col items-center justify-center gap-1.5 shadow-inner">
+                        <Trophy size={24}/>
+                        <span className="text-[9px] font-black uppercase tracking-wider text-center">Trophies</span>
+                    </button>
+                    
+                    <button onClick={() => scrollToSection('player-charts')} className="p-3 w-full bg-royal-900 hover:bg-gold-500 hover:text-royal-950 text-royal-200 rounded-xl transition-all hover:scale-110 group flex flex-col items-center justify-center gap-1.5 shadow-inner">
+                        <AnalyticsIcon size={24}/>
+                        <span className="text-[9px] font-black uppercase tracking-wider text-center">Charts</span>
+                    </button>
+                    
+                    <div className="mt-2 pt-4 border-t border-royal-800 w-full">
+                        <button onClick={() => window.scrollTo({top: 0, behavior: 'smooth'})} className="p-3 w-full bg-royal-900 hover:bg-gold-500 hover:text-royal-950 text-gold-500 rounded-xl transition-all hover:scale-110 group flex flex-col items-center justify-center gap-1.5 shadow-inner">
+                            <ArrowUpIcon size={20}/>
+                            <span className="text-[9px] font-black uppercase tracking-wider text-center">Top</span>
+                        </button>
+                    </div>
+                </div>
+            );
+        }
+
         function PlayerProfile({ player, players, playersRaw, onBack, tournaments, db, appId, onNavigate }) {
             const [isEditing, setIsEditing] = useState(false);
             const [editName, setEditName] = useState('');
@@ -3205,7 +3244,7 @@
 
             return (
                 <div className="max-w-6xl mx-auto pb-20 relative">
-                    {/* INJECTED FLOATING SIDEBAR */}
+                    {/* INJECTED BLOCKY FLOATING SIDEBAR */}
                     {!isEditing && <FloatingPlayerNav hasGallery={player.images?.length > 1} />}
 
                     <div className="mb-6 xl:pl-4">
