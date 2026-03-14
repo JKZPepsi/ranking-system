@@ -1988,7 +1988,7 @@
             );
         }
 
-        function FloatingPlayerNav({ hasGallery }) {
+        function FloatingNationNav() {
             const scrollToSection = (id) => {
                 const el = document.getElementById(id);
                 if (el) {
@@ -1997,18 +1997,29 @@
                 }
             };
             return (
-                <div className="fixed left-4 top-1/2 -translate-y-1/2 flex flex-col gap-1 z-50 bg-royal-950/90 backdrop-blur-md p-3 rounded-2xl border border-royal-800 shadow-[0_10px_30px_rgba(0,0,0,0.8)] hidden xl:flex w-44">
-                    <div className="text-[10px] text-royal-400 uppercase tracking-widest font-bold px-2 pb-2 border-b border-royal-800 mb-2">Sections</div>
-                    <button onClick={() => scrollToSection('player-overview')} className="w-full flex items-center gap-3 px-3 py-2.5 text-xs font-bold text-royal-300 hover:text-white hover:bg-royal-800 rounded-lg transition-colors border-l-2 border-transparent hover:border-gold-500 text-left"><UserCircle size={14}/> Overview</button>
-                    <button onClick={() => scrollToSection('player-tournaments')} className="w-full flex items-center gap-3 px-3 py-2.5 text-xs font-bold text-royal-300 hover:text-white hover:bg-royal-800 rounded-lg transition-colors border-l-2 border-transparent hover:border-gold-500 text-left"><Star size={14}/> Tournaments</button>
-                    <button onClick={() => scrollToSection('player-matches')} className="w-full flex items-center gap-3 px-3 py-2.5 text-xs font-bold text-royal-300 hover:text-white hover:bg-royal-800 rounded-lg transition-colors border-l-2 border-transparent hover:border-gold-500 text-left"><History size={14}/> Match History</button>
-                    <button onClick={() => scrollToSection('player-h2h')} className="w-full flex items-center gap-3 px-3 py-2.5 text-xs font-bold text-royal-300 hover:text-white hover:bg-royal-800 rounded-lg transition-colors border-l-2 border-transparent hover:border-gold-500 text-left"><PlayersIcon size={14}/> Head-to-Head</button>
-                    {hasGallery && <button onClick={() => scrollToSection('player-gallery')} className="w-full flex items-center gap-3 px-3 py-2.5 text-xs font-bold text-royal-300 hover:text-white hover:bg-royal-800 rounded-lg transition-colors border-l-2 border-transparent hover:border-gold-500 text-left"><GalleryIcon size={14}/> Gallery</button>}
-                    <button onClick={() => scrollToSection('player-achievements')} className="w-full flex items-center gap-3 px-3 py-2.5 text-xs font-bold text-royal-300 hover:text-white hover:bg-royal-800 rounded-lg transition-colors border-l-2 border-transparent hover:border-gold-500 text-left"><Trophy size={14}/> Achievements</button>
-                    <button onClick={() => scrollToSection('player-charts')} className="w-full flex items-center gap-3 px-3 py-2.5 text-xs font-bold text-royal-300 hover:text-white hover:bg-royal-800 rounded-lg transition-colors border-l-2 border-transparent hover:border-gold-500 text-left"><AnalyticsIcon size={14}/> Analytics</button>
+                <div className="fixed left-4 top-1/2 -translate-y-1/2 flex flex-col gap-3 z-50 bg-royal-950/90 backdrop-blur-md p-3 rounded-2xl border border-royal-800 shadow-[0_10px_30px_rgba(0,0,0,0.8)] hidden xl:flex w-24">
+                    <div className="text-[10px] text-royal-400 uppercase tracking-widest font-bold text-center pb-2 border-b border-royal-800 w-full mb-1">Jump</div>
                     
-                    <div className="mt-2 pt-3 border-t border-royal-800">
-                        <button onClick={() => window.scrollTo({top: 0, behavior: 'smooth'})} className="w-full flex items-center justify-center gap-2 px-3 py-2.5 text-xs font-bold text-gold-500 hover:text-white bg-royal-950/50 hover:bg-royal-800 border border-royal-800 rounded-lg transition-colors shadow-sm"><ArrowUpIcon size={14}/> Back to Top</button>
+                    <button onClick={() => scrollToSection('nation-chart')} className="p-3 w-full bg-royal-900 hover:bg-gold-500 hover:text-royal-950 text-royal-200 rounded-xl transition-all hover:scale-110 group flex flex-col items-center justify-center gap-1.5 shadow-inner">
+                        <AnalyticsIcon size={24}/>
+                        <span className="text-[9px] font-black uppercase tracking-wider text-center">Chart</span>
+                    </button>
+                    
+                    <button onClick={() => scrollToSection('nation-roster')} className="p-3 w-full bg-royal-900 hover:bg-gold-500 hover:text-royal-950 text-royal-200 rounded-xl transition-all hover:scale-110 group flex flex-col items-center justify-center gap-1.5 shadow-inner">
+                        <PlayersIcon size={24}/>
+                        <span className="text-[9px] font-black uppercase tracking-wider text-center">Roster</span>
+                    </button>
+                    
+                    <button onClick={() => scrollToSection('nation-trophies')} className="p-3 w-full bg-royal-900 hover:bg-gold-500 hover:text-royal-950 text-royal-200 rounded-xl transition-all hover:scale-110 group flex flex-col items-center justify-center gap-1.5 shadow-inner">
+                        <Trophy size={24}/>
+                        <span className="text-[9px] font-black uppercase tracking-wider text-center">Trophies</span>
+                    </button>
+                    
+                    <div className="mt-2 pt-4 border-t border-royal-800 w-full">
+                        <button onClick={() => window.scrollTo({top: 0, behavior: 'smooth'})} className="p-3 w-full bg-royal-900 hover:bg-gold-500 hover:text-royal-950 text-gold-500 rounded-xl transition-all hover:scale-110 group flex flex-col items-center justify-center gap-1.5 shadow-inner">
+                            <ArrowUpIcon size={20}/>
+                            <span className="text-[9px] font-black uppercase tracking-wider text-center">Top</span>
+                        </button>
                     </div>
                 </div>
             );
@@ -2211,7 +2222,7 @@
                 return () => __snbChartListeners.delete(l);
             }, []);
 
-            const { windowSize, offset } = __snbSharedChartState;
+            const { windowSize, offset, layoutMode, showDropped } = __snbSharedChartState;
             const allHistory = globalHistory.filter(h => h.isMajorPlus);
             const N = allHistory.length;
 
@@ -2231,31 +2242,33 @@
             const playerDebuts = {};
             allHistory.forEach(h => h.standings?.forEach(s => { if (!playerDebuts[s.id]) playerDebuts[s.id] = h.id; }));
 
-            const activePlayerIds = new Set();
+            // NEW: Gather ALL players from this nation (Active AND Retired) who appear in this window
+            const allNationPlayerIds = new Set();
             historyData.forEach(h => h.standings?.forEach(s => {
                 const p = playersRaw.find(x => x.id === s.id);
-                if (p && p.nationality === code && !p.retired) activePlayerIds.add(s.id);
+                if (p && p.nationality === code) allNationPlayerIds.add(s.id);
             }));
 
             const width = 1200;
             const LABEL_GAP = 18; 
-            const plotHeight = Math.max(450, activePlayerIds.size * LABEL_GAP * 1.5);
+            
+            let plotHeight = layoutMode === 'extended' ? Math.max(450, allNationPlayerIds.size * LABEL_GAP * 1.8) : 350;
             const pad = { top: 40, right: 180, left: 80, bottom: 40 }; 
             const gridBottomY = pad.top + plotHeight;
 
             let maxPointsVal = 10;
             const timelines = { total: [] };
-            Array.from(activePlayerIds).forEach(pid => timelines[pid] = []);
+            Array.from(allNationPlayerIds).forEach(pid => timelines[pid] = []);
 
             for (let k = 0; k < historyData.length; k++) {
                 let stepTotal = 0;
                 historyData[k].standings?.forEach(s => {
-                    if (activePlayerIds.has(s.id)) {
+                    if (allNationPlayerIds.has(s.id)) {
                         timelines[s.id].push({ k, val: s.pts });
                         stepTotal += s.pts;
                     }
                 });
-                Array.from(activePlayerIds).forEach(pid => {
+                Array.from(allNationPlayerIds).forEach(pid => {
                     if (timelines[pid].length === k) timelines[pid].push({ k, val: 0 });
                 });
                 timelines.total.push({ k, val: stepTotal });
@@ -2276,52 +2289,70 @@
             if (cSeg.length > 0) tSegs.push(cSeg);
             if (tSegs.length > 0) lines.push({ id: 'total', name: 'National Total', color: nationColor, isTotal: true, paths: tSegs.map(seg => seg.map((pt, i) => `${i===0?'M':'L'} ${pt.x} ${pt.y}`).join(' ')), segments: tSegs });
 
-            Array.from(activePlayerIds).forEach(pid => {
+            Array.from(allNationPlayerIds).forEach(pid => {
                 const p = playersRaw.find(x => x.id === pid);
                 const pSegs = []; let pCSeg = [];
                 timelines[pid].forEach((pt, i) => {
                     const isDebut = pt.val > 0 && playerDebuts[pid] === historyData[pt.k].id;
                     const mapped = { ...pt, x: getX(pt.k), y: getY(pt.val), isDot: true, isDebut };
+                    
+                    // Visual Ghosting
                     if (pt.val > 0) pCSeg.push(mapped); else if (pCSeg.length > 0) { pSegs.push(pCSeg); pCSeg = []; }
                 });
                 if (pCSeg.length > 0) pSegs.push(pCSeg);
-                if (pSegs.length > 0) lines.push({ id: pid, name: p.name, img: p.imageUrl, color: nationColor, isTotal: false, paths: pSegs.map(seg => seg.map((pt, i) => `${i===0?'M':'L'} ${pt.x} ${pt.y}`).join(' ')), segments: pSegs });
+                if (pSegs.length > 0) lines.push({ id: pid, name: p.name, img: p.imageUrl, color: nationColor, isTotal: false, paths: pSegs.map(seg => seg.map((pt, i) => `${i===0?'M':'L'} ${pt.x} ${pt.y}`).join(' ')), segments: pSegs, retired: !!p.retired });
             });
 
-            // --- BI-DIRECTIONAL CASCADE PHYSICS ---
+            // --- COLUMN-BASED CASCADE PHYSICS (Allows drops mid-chart without overlapping) ---
             const labels = [];
             lines.forEach(line => {
                 const endPt = line.segments[line.segments.length - 1].slice(-1)[0];
-                labels.push({ id: line.id, endX: endPt.x, endY: endPt.y, actualVal: endPt.val, line });
+                const isDropped = !line.isTotal && endPt.k < historyData.length - 1;
+                labels.push({ id: line.id, endX: endPt.x, endY: endPt.y, actualVal: endPt.val, isDropped, line });
             });
             
-            labels.sort((a,b) => b.actualVal - a.actualVal);
-
-            if (labels.length > 0) {
-                // 1. Cascade Down
-                labels[0].currentY = labels[0].endY;
-                for (let i = 1; i < labels.length; i++) {
-                    labels[i].currentY = Math.max(labels[i].endY, labels[i-1].currentY + LABEL_GAP);
+            const columns = [];
+            labels.forEach(l => {
+                let placed = false;
+                for (let c of columns) {
+                    if (Math.abs(c.x - l.endX) < 10) { c.labels.push(l); placed = true; break; }
                 }
+                if (!placed) columns.push({ x: l.endX, labels: [l] });
+            });
 
-                // 2. Cascade Up (Only if the bottom label breaches the floor)
-                if (labels[labels.length - 1].currentY > gridBottomY) {
-                    labels[labels.length - 1].currentY = gridBottomY;
-                    for (let i = labels.length - 2; i >= 0; i--) {
-                        labels[i].currentY = Math.min(labels[i].currentY, labels[i+1].currentY - LABEL_GAP);
+            const physicsGap = layoutMode === 'extended' ? LABEL_GAP : LABEL_GAP * 0.5;
+
+            columns.forEach(col => {
+                const colLabels = col.labels;
+                colLabels.sort((a,b) => b.actualVal - a.actualVal);
+
+                if (colLabels.length > 0) {
+                    colLabels[0].currentY = colLabels[0].endY;
+                    for (let i = 1; i < colLabels.length; i++) {
+                        colLabels[i].currentY = Math.max(colLabels[i].endY, colLabels[i-1].currentY + physicsGap);
+                    }
+                    if (colLabels[colLabels.length - 1].currentY > gridBottomY) {
+                        colLabels[colLabels.length - 1].currentY = gridBottomY;
+                        for (let i = colLabels.length - 2; i >= 0; i--) {
+                            colLabels[i].currentY = Math.min(colLabels[i].currentY, colLabels[i+1].currentY - physicsGap);
+                        }
                     }
                 }
-            }
+            });
+
+            const labelPositions = {};
+            labels.forEach(el => labelPositions[el.id] = el.currentY);
 
             const sortedLines = [...lines].sort((a, b) => {
                 const aH = a.id === selectedId || a.id === hoveredId, bH = b.id === selectedId || b.id === hoveredId;
                 if (aH && !bH) return 1; if (!aH && bH) return -1;
                 const aL = labels.find(l => l.id === a.id), bL = labels.find(l => l.id === b.id);
+                if (aL.isDropped && !bL.isDropped) return -1; if (!aL.isDropped && bL.isDropped) return 1;
                 return bL.actualVal - aL.actualVal;
             });
 
             return (
-                <div className="w-full bg-royal-900/50 rounded-2xl border border-royal-800 p-6 shadow-xl mb-8">
+                <div className="w-full bg-royal-900/50 rounded-2xl border border-royal-800 p-6 shadow-xl mb-8" id="nation-chart">
                     <div className="flex flex-wrap justify-between items-center mb-6 gap-4">
                         <h3 className="text-xl font-bold text-white flex items-center gap-3"><AnalyticsIcon size={24} className="text-gold-500"/> Internal Progression</h3>
                         
@@ -2341,13 +2372,24 @@
                                     <button onClick={() => updateSnbChartState({ offset: Math.max(0, safeOffset - windowSize) })} disabled={safeOffset <= 0} className="p-1 hover:bg-royal-800 text-royal-400 hover:text-white rounded disabled:opacity-30 transition-colors"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg></button>
                                 </div>
                             )}
+                            <div className="w-px h-6 bg-royal-700 hidden lg:block"></div>
+                            <div className="flex items-center gap-1.5 bg-royal-950 p-1.5 rounded-lg border border-royal-800">
+                                <button onClick={() => updateSnbChartState({ layoutMode: 'compact' })} className={`px-3 py-1 rounded text-xs font-bold transition-all ${layoutMode === 'compact' ? 'bg-sky-500 text-white shadow-sm' : 'bg-transparent text-royal-400 hover:text-white hover:bg-royal-800'}`}>Compact</button>
+                                <button onClick={() => updateSnbChartState({ layoutMode: 'extended' })} className={`px-3 py-1 rounded text-xs font-bold transition-all ${layoutMode === 'extended' ? 'bg-sky-500 text-white shadow-sm' : 'bg-transparent text-royal-400 hover:text-white hover:bg-royal-800'}`}>Extended</button>
+                            </div>
+                            <button onClick={() => updateSnbChartState({ showDropped: !showDropped })} 
+                                className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all border shadow-sm ${showDropped ? 'bg-royal-800 border-royal-600 text-white' : 'bg-royal-950 border-royal-800 text-royal-400 hover:text-royal-300'}`}>
+                                {showDropped ? 'Hide Dropped' : 'Show Dropped'}
+                            </button>
                         </div>
                     </div>
                     
                     <div className="w-full overflow-x-auto custom-scrollbar pb-2" onClick={() => setSelectedId(null)}>
-                        <svg viewBox={`0 0 ${width} ${gridBottomY + pad.bottom}`} style={{ minWidth: `800px` }} className="w-full h-auto overflow-visible font-sans">
+                        <svg viewBox={`0 0 ${width} ${gridBottomY + pad.bottom}`} style={{ minWidth: `800px`, transition: 'viewBox 0.3s ease' }} className="w-full h-auto overflow-visible font-sans">
                             {(() => {
-                                const step = Math.max(100, Math.ceil((maxPointsVal/5)/100)*100);
+                                const rawStep = maxPointsVal / 12;
+                                const mag = Math.pow(10, Math.floor(Math.log10(rawStep || 1)));
+                                const step = Math.max(100, Math.ceil(rawStep / mag) * mag);
                                 const yLines = [0]; for(let v=step; v<=maxPointsVal; v+=step) yLines.push(v);
                                 return yLines.map((p, i) => (
                                     <g key={`g-${i}`}>
@@ -2369,6 +2411,7 @@
                                 const lObj = labels.find(l => l.id === line.id);
                                 const isHighlighted = selectedId === line.id || hoveredId === line.id;
                                 const isFaded = (selectedId || hoveredId) && !isHighlighted;
+                                const shouldShowLabel = !lObj.isDropped || showDropped || isHighlighted;
 
                                 return (
                                     <g key={`o-${line.id}`} opacity={isFaded ? 0.2 : 1} style={{ transition: 'opacity 0.2s ease' }}>
@@ -2387,15 +2430,18 @@
                                             );
                                         }))}
                                         
-                                        {(Math.abs(lObj.currentY - lObj.endY) > 2) && <path d={`M ${lObj.endX} ${lObj.endY} C ${lObj.endX+15} ${lObj.endY}, ${lObj.endX+10} ${lObj.currentY}, ${lObj.endX+20} ${lObj.currentY}`} fill="none" stroke={line.color} strokeWidth="1" opacity="0.4" strokeDasharray="2 2" />}
+                                        {shouldShowLabel && (Math.abs(lObj.currentY - lObj.endY) > 2 || lObj.isDropped) && <path d={`M ${lObj.endX} ${lObj.endY} C ${lObj.endX+15} ${lObj.endY}, ${lObj.endX+10} ${lObj.currentY}, ${lObj.endX+20} ${lObj.currentY}`} fill="none" stroke={line.color} strokeWidth="1.5" opacity="0.5" strokeDasharray="3 3" />}
                                         
-                                        <g transform={`translate(${lObj.endX + 20}, ${lObj.currentY - 10})`} className="cursor-pointer" onClick={(e) => { if (!line.isTotal) { e.stopPropagation(); onNavigate('players', line.id); } }} onMouseEnter={() => setHoveredId(line.id)} onMouseLeave={() => setHoveredId(null)}>
-                                            <rect x="-4" y="-4" width={140} height={20} rx={10} fill="#051611" fillOpacity="0.9" stroke={line.color} strokeWidth={line.isTotal || isHighlighted ? 2 : 1} />
-                                            {/* THE TYPO FIX: line.img instead of line.line.img */}
-                                            {line.isTotal ? <circle cx="6" cy="6" r="3" fill={line.color} /> : (line.img ? <image href={line.img} x="0" y="-2" width={14} height={14} preserveAspectRatio="xMidYMid slice" clipPath={`url(#clip-nat-${line.id})`} /> : <circle cx="6" cy="6" r="6" fill="#1e293b"/>)}
-                                            {line.img && <defs><clipPath id={`clip-nat-${line.id}`}><circle cx="7" cy="5" r="7" /></clipPath></defs>}
-                                            <text x={18} y={10} fill={line.isTotal ? line.color : (isHighlighted ? "#ffffff" : "#cbd5e1")} fontSize={10} fontWeight="bold">{line.name}</text>
-                                        </g>
+                                        {shouldShowLabel && (
+                                            <g transform={`translate(${lObj.endX + 20}, ${lObj.currentY})`} className="cursor-pointer" onClick={(e) => { if (!line.isTotal) { e.stopPropagation(); onNavigate('players', line.id); } }} onMouseEnter={() => setHoveredId(line.id)} onMouseLeave={() => setHoveredId(null)}>
+                                                <rect x="0" y={-10} width={140} height={20} rx={10} fill="#051611" fillOpacity={isHighlighted ? "1" : (lObj.isDropped ? "0.6" : "0.9")} stroke={line.color} strokeWidth={line.isTotal || isHighlighted ? 2 : 1} style={{ filter: isHighlighted ? 'drop-shadow(0 0 8px rgba(255,255,255,0.3))' : 'none' }} />
+                                                
+                                                {line.isTotal ? <circle cx="10" cy="0" r="3" fill={line.color} /> : (line.img ? <image href={line.img} x="4" y="-7" width={14} height={14} preserveAspectRatio="xMidYMid slice" clipPath={`url(#clip-nat-${line.id})`} style={{ filter: lObj.isDropped && !isHighlighted ? 'grayscale(0.7)' : 'none' }} /> : <circle cx="10" cy="0" r="6" fill="#1e293b"/>)}
+                                                {line.img && <defs><clipPath id={`clip-nat-${line.id}`}><circle cx="11" cy="0" r="7" /></clipPath></defs>}
+                                                
+                                                <text x={24} y={3} fill={line.isTotal ? line.color : (lObj.isDropped && !isHighlighted ? "#94a3b8" : "#ffffff")} fontSize={10} fontWeight="bold">{line.name}</text>
+                                            </g>
+                                        )}
                                     </g>
                                 );
                             })}
@@ -2404,7 +2450,7 @@
                 </div>
             );
         }
-        
+
         function NationProfile({ code, players, onBack, onNavigate, playersRaw, tournaments }) {
             const { active, retired } = useMemo(() => {
                 const natPlayers = players.filter(p => (p.nationality || 'UNK') === code);
@@ -2441,106 +2487,113 @@
             }, [active, retired]);
 
             return (
-                <div className="max-w-5xl mx-auto space-y-6 pb-20">
-                    <button onClick={onBack} className="flex items-center gap-2 text-royal-200 hover:text-white"><ArrowLeft size={16}/> Back to Nations</button>
+                <div className="max-w-7xl mx-auto pb-20 relative flex gap-8 items-start">
                     
-                    <div className="bg-royal-900 rounded-2xl p-8 border border-royal-800 flex flex-col md:flex-row gap-8 relative shadow-lg items-center md:items-start mb-8">
-                        <div className="text-8xl drop-shadow-lg">{getFlag(code)}</div>
-                        <div className="flex-1 text-center md:text-left">
-                            <h1 className="text-4xl font-bold text-white mb-6">{getCountryName(code)}</h1>
-                            <div className="flex flex-wrap justify-center md:justify-start gap-4">
-                                <div className="bg-royal-950/50 border border-royal-800 p-4 rounded-lg text-center min-w-[100px]">
-                                    <div className="text-royal-200 font-bold uppercase text-xs tracking-widest mb-1">Players</div>
-                                    <div className="text-2xl font-black text-white">{stats.activeCount} <span className="text-sm font-medium text-royal-400 block -mt-1">+{stats.retiredCount} Ret.</span></div>
+                    <FloatingNationNav />
+
+                    <div className="flex-1 min-w-0 xl:pl-4 space-y-6">
+                        <button onClick={onBack} className="flex items-center gap-2 text-royal-200 hover:text-white"><ArrowLeft size={16}/> Back to Nations</button>
+                        
+                        <div id="nation-overview" className="bg-royal-900 rounded-2xl p-8 border border-royal-800 flex flex-col md:flex-row gap-8 relative shadow-lg items-center md:items-start mb-8 scroll-mt-8">
+                            <div className="text-8xl drop-shadow-lg">{getFlag(code)}</div>
+                            <div className="flex-1 text-center md:text-left">
+                                <h1 className="text-4xl font-bold text-white mb-6">{getCountryName(code)}</h1>
+                                <div className="flex flex-wrap justify-center md:justify-start gap-4">
+                                    <div className="bg-royal-950/50 border border-royal-800 p-4 rounded-lg text-center min-w-[100px]">
+                                        <div className="text-royal-200 font-bold uppercase text-xs tracking-widest mb-1">Players</div>
+                                        <div className="text-2xl font-black text-white">{stats.activeCount} <span className="text-sm font-medium text-royal-400 block -mt-1">+{stats.retiredCount} Ret.</span></div>
+                                    </div>
+                                    <div className="bg-royal-950/50 border border-royal-800 p-4 rounded-lg text-center min-w-[100px]"><div className="text-royal-200 font-bold uppercase text-xs tracking-widest mb-1">Active Pts</div><div className="text-2xl font-black text-gold-500">{stats.points.toLocaleString()} {stats.bonusPoints > 0 && <span className="text-emerald-400 text-sm ml-1">+{stats.bonusPoints}</span>}</div></div>
+                                    <div className="bg-royal-950/50 border border-royal-800 p-4 rounded-lg text-center min-w-[100px]"><div className="text-royal-200 font-bold uppercase text-xs tracking-widest mb-1">All-Time Titles</div><div className="text-2xl font-black text-gold-400">{stats.titles}</div></div>
+                                    <div className="bg-royal-950/50 border border-royal-800 p-4 rounded-lg text-center min-w-[100px]"><div className="text-royal-200 font-bold uppercase text-xs tracking-widest mb-1">Active W-L</div><div className="text-2xl font-black text-white">{stats.wins}-{stats.losses}</div></div>
                                 </div>
-                                <div className="bg-royal-950/50 border border-royal-800 p-4 rounded-lg text-center min-w-[100px]"><div className="text-royal-200 font-bold uppercase text-xs tracking-widest mb-1">Active Pts</div><div className="text-2xl font-black text-gold-500">{stats.points.toLocaleString()} {stats.bonusPoints > 0 && <span className="text-emerald-400 text-sm ml-1">+{stats.bonusPoints}</span>}</div></div>
-                                <div className="bg-royal-950/50 border border-royal-800 p-4 rounded-lg text-center min-w-[100px]"><div className="text-royal-200 font-bold uppercase text-xs tracking-widest mb-1">All-Time Titles</div><div className="text-2xl font-black text-gold-400">{stats.titles}</div></div>
-                                <div className="bg-royal-950/50 border border-royal-800 p-4 rounded-lg text-center min-w-[100px]"><div className="text-royal-200 font-bold uppercase text-xs tracking-widest mb-1">Active W-L</div><div className="text-2xl font-black text-white">{stats.wins}-{stats.losses}</div></div>
                             </div>
                         </div>
-                    </div>
 
-                    {/* NEW: Nation-Specific Progression Chart */}
-                    <NationPointsChart code={code} globalHistory={getGlobalHistory(playersRaw, tournaments)} playersRaw={playersRaw} onNavigate={onNavigate} />
+                        <NationPointsChart code={code} globalHistory={getGlobalHistory(playersRaw, tournaments)} playersRaw={playersRaw} onNavigate={onNavigate} />
 
-                    <h2 className="text-2xl font-bold text-white mb-4 mt-8 flex items-center gap-2"><PlayersIcon size={24} className="text-gold-500"/> National Roster</h2>
-                    <div className="bg-royal-900 rounded-xl border border-royal-800 overflow-hidden shadow-xl">
-                        <div className="overflow-x-auto">
-                            <table className="w-full text-left border-collapse">
-                                <thead>
-                                    <tr className="bg-royal-950/80 text-royal-200 text-sm uppercase tracking-wider border-b border-royal-800">
-                                        <th className="p-4 font-semibold w-16 text-center">Nat. Rank</th>
-                                        <th className="p-4 font-semibold w-16 text-center">Global Rank</th>
-                                        <th className="p-4 font-semibold">Player</th>
-                                        <th className="p-4 font-semibold text-right">Points</th>
-                                        <th className="p-4 font-semibold text-center">W-L</th>
-                                    </tr>
-                                </thead>
-                                <tbody className="divide-y divide-royal-800">
-                                    {active.map((player, idx) => (
-                                        <tr key={player.id} onClick={() => onNavigate('players', player.id)} className="hover:bg-royal-800/50 transition-colors cursor-pointer group">
-                                            <td className="p-4 text-center font-bold text-white text-lg">{idx + 1}</td>
-                                            <td className="p-4 text-center font-bold text-royal-400 text-lg">#{player.rank}</td>
-                                            <td className="p-4 font-medium text-white flex items-center gap-3">
-                                                <div className="w-10 h-10 rounded-full overflow-hidden border border-royal-700 bg-black shrink-0">
-                                                    <PlayerMedia url={player.imageUrl || (player.images ? player.images[0] : '')} className="w-full h-full" />
-                                                </div>
-                                                <div className="group-hover:text-gold-500 font-bold text-lg transition-colors">{player.name}</div>
-                                            </td>
-                                            <td className="p-4 font-bold text-gold-500 text-right text-lg">
-                                                {player.points.toLocaleString()}
-                                                {player.bonusPoints > 0 && <span className="text-emerald-400 text-xs ml-1 font-bold">+{player.bonusPoints}</span>}
-                                            </td>
-                                            <td className="p-4 text-center text-royal-200 font-medium">{player.stats.wins} - {player.stats.losses}</td>
-                                        </tr>
-                                    ))}
-
-                                    {retired.length > 0 && (
-                                        <>
-                                            <tr className="bg-royal-950/90 border-t-4 border-royal-800">
-                                                <td colSpan="5" className="p-4 text-center">
-                                                    <div className="inline-flex items-center gap-3">
-                                                        <div className="h-px w-16 bg-royal-700"></div>
-                                                        <span className="text-royal-400 font-bold uppercase tracking-widest text-sm flex items-center gap-2">
-                                                            <Trophy size={16} className="text-royal-500" /> Hall of Fame
-                                                        </span>
-                                                        <div className="h-px w-16 bg-royal-700"></div>
-                                                    </div>
-                                                </td>
+                        <div id="nation-roster" className="scroll-mt-8">
+                            <h2 className="text-2xl font-bold text-white mb-4 mt-8 flex items-center gap-2"><PlayersIcon size={24} className="text-gold-500"/> National Roster</h2>
+                            <div className="bg-royal-900 rounded-xl border border-royal-800 overflow-hidden shadow-xl">
+                                <div className="overflow-x-auto">
+                                    <table className="w-full text-left border-collapse">
+                                        <thead>
+                                            <tr className="bg-royal-950/80 text-royal-200 text-sm uppercase tracking-wider border-b border-royal-800">
+                                                <th className="p-4 font-semibold w-16 text-center">Nat. Rank</th>
+                                                <th className="p-4 font-semibold w-16 text-center">Global Rank</th>
+                                                <th className="p-4 font-semibold">Player</th>
+                                                <th className="p-4 font-semibold text-right">Points</th>
+                                                <th className="p-4 font-semibold text-center">W-L</th>
                                             </tr>
-                                            {retired.map((player) => (
-                                                <tr key={player.id} onClick={() => onNavigate('players', player.id)} className="hover:bg-royal-800/50 cursor-pointer transition-colors group opacity-80 hover:opacity-100 bg-black/20">
-                                                    <td className="p-4 text-center font-bold text-royal-500 text-lg">-</td>
-                                                    <td className="p-4 text-center">
-                                                        <div className="text-[10px] text-royal-500 uppercase font-bold tracking-widest leading-tight mb-0.5">Peak<br/>Rank</div>
-                                                        <div className="font-bold text-royal-400 group-hover:text-white">#{player.peakRank}</div>
-                                                    </td>
+                                        </thead>
+                                        <tbody className="divide-y divide-royal-800">
+                                            {active.map((player, idx) => (
+                                                <tr key={player.id} onClick={() => onNavigate('players', player.id)} className="hover:bg-royal-800/50 transition-colors cursor-pointer group">
+                                                    <td className="p-4 text-center font-bold text-white text-lg">{idx + 1}</td>
+                                                    <td className="p-4 text-center font-bold text-royal-400 text-lg">#{player.rank}</td>
                                                     <td className="p-4 font-medium text-white flex items-center gap-3">
-                                                        <div className="w-10 h-10 rounded-full overflow-hidden border border-royal-700 bg-black shrink-0 relative">
+                                                        <div className="w-10 h-10 rounded-full overflow-hidden border border-royal-700 bg-black shrink-0">
                                                             <PlayerMedia url={player.imageUrl || (player.images ? player.images[0] : '')} className="w-full h-full" />
-                                                            <div className="absolute inset-0 bg-black/40 backdrop-grayscale-[0.5]"></div>
                                                         </div>
-                                                        <div className="group-hover:text-gold-400 font-bold text-lg text-royal-200 transition-colors flex items-center gap-2">
-                                                            {player.name}
-                                                            <span className="text-[9px] bg-[#be123c]/20 text-[#fb7185] px-1.5 py-0.5 rounded uppercase tracking-wider border border-[#be123c]/30 shrink-0">Retired</span>
-                                                        </div>
+                                                        <div className="group-hover:text-gold-500 font-bold text-lg transition-colors">{player.name}</div>
                                                     </td>
-                                                    <td className="p-4 font-bold text-royal-300 text-right text-lg">
-                                                        <div className="text-[10px] text-royal-500 uppercase font-bold tracking-widest mb-0.5">Peak Pts</div>
-                                                        {player.peakPoints.toLocaleString()}
+                                                    <td className="p-4 font-bold text-gold-500 text-right text-lg">
+                                                        {player.points.toLocaleString()}
+                                                        {player.bonusPoints > 0 && <span className="text-emerald-400 text-xs ml-1 font-bold">+{player.bonusPoints}</span>}
                                                     </td>
-                                                    <td className="p-4 text-center text-royal-500 font-medium">{player.stats.wins} - {player.stats.losses}</td>
+                                                    <td className="p-4 text-center text-royal-200 font-medium">{player.stats.wins} - {player.stats.losses}</td>
                                                 </tr>
                                             ))}
-                                        </>
-                                    )}
-                                </tbody>
-                            </table>
+
+                                            {retired.length > 0 && (
+                                                <>
+                                                    <tr className="bg-royal-950/90 border-t-4 border-royal-800">
+                                                        <td colSpan="5" className="p-4 text-center">
+                                                            <div className="inline-flex items-center gap-3">
+                                                                <div className="h-px w-16 bg-royal-700"></div>
+                                                                <span className="text-royal-400 font-bold uppercase tracking-widest text-sm flex items-center gap-2">
+                                                                    <Trophy size={16} className="text-royal-500" /> Hall of Fame
+                                                                </span>
+                                                                <div className="h-px w-16 bg-royal-700"></div>
+                                                            </div>
+                                                        </td>
+                                                    </tr>
+                                                    {retired.map((player) => (
+                                                        <tr key={player.id} onClick={() => onNavigate('players', player.id)} className="hover:bg-royal-800/50 cursor-pointer transition-colors group opacity-80 hover:opacity-100 bg-black/20">
+                                                            <td className="p-4 text-center font-bold text-royal-500 text-lg">-</td>
+                                                            <td className="p-4 text-center">
+                                                                <div className="text-[10px] text-royal-500 uppercase font-bold tracking-widest leading-tight mb-0.5">Peak<br/>Rank</div>
+                                                                <div className="font-bold text-royal-400 group-hover:text-white">#{player.peakRank}</div>
+                                                            </td>
+                                                            <td className="p-4 font-medium text-white flex items-center gap-3">
+                                                                <div className="w-10 h-10 rounded-full overflow-hidden border border-royal-700 bg-black shrink-0 relative">
+                                                                    <PlayerMedia url={player.imageUrl || (player.images ? player.images[0] : '')} className="w-full h-full" />
+                                                                    <div className="absolute inset-0 bg-black/40 backdrop-grayscale-[0.5]"></div>
+                                                                </div>
+                                                                <div className="group-hover:text-gold-400 font-bold text-lg text-royal-200 transition-colors flex items-center gap-2">
+                                                                    {player.name}
+                                                                    <span className="text-[9px] bg-[#be123c]/20 text-[#fb7185] px-1.5 py-0.5 rounded uppercase tracking-wider border border-[#be123c]/30 shrink-0">Retired</span>
+                                                                </div>
+                                                            </td>
+                                                            <td className="p-4 font-bold text-royal-300 text-right text-lg">
+                                                                <div className="text-[10px] text-royal-500 uppercase font-bold tracking-widest mb-0.5">Peak Pts</div>
+                                                                {player.peakPoints.toLocaleString()}
+                                                            </td>
+                                                            <td className="p-4 text-center text-royal-500 font-medium">{player.stats.wins} - {player.stats.losses}</td>
+                                                        </tr>
+                                                    ))}
+                                                </>
+                                            )}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div id="nation-trophies" className="scroll-mt-8">
+                            <NationAchievements code={code} players={players} tournaments={tournaments} />
                         </div>
                     </div>
-
-                    {/* NEW: Compact Achievements Component */}
-                    <NationAchievements code={code} players={players} tournaments={tournaments} />
                 </div>
             );
         }
