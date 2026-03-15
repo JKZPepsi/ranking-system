@@ -856,60 +856,95 @@
             return CHART_COLORS[Math.abs(hash) % CHART_COLORS.length];
         };
 
-        function PlayerMedia({ url, className, onClick, alt }) {
+        function PlayerMedia({ url, className = "", onClick, alt }) {
+            const [isLoading, setIsLoading] = useState(true);
+
+            // Reset loading state if the URL changes (e.g., clicking next in carousel)
+            useEffect(() => {
+                setIsLoading(true);
+            }, [url]);
+
             if (!url) return <div className={`bg-royal-800 flex items-center justify-center ${className}`}><span className="text-royal-500 text-xs font-bold">TBD</span></div>;
             
             let processedUrl = url.trim();
-            const isIframeString = processedUrl.startsWith('<iframe') || processedUrl.startsWith('<blockquote');
-
-            if (isIframeString) {
-                return (
-                    <div 
-                        className={`w-full h-full flex items-center justify-center bg-black overflow-hidden [&>iframe]:w-full [&>iframe]:h-full [&>iframe]:border-0 ${className}`} 
-                        dangerouslySetInnerHTML={{ __html: processedUrl }} 
-                        onClick={onClick}
-                    />
-                );
-            }
-
             const lowerUrl = processedUrl.toLowerCase();
 
-            // 1. YouTube & Shorts Auto-Convert (Autoplay, Muted, Looped, No Controls, Invisible Shield)
+            const handleLoad = () => setIsLoading(false);
+
+            // The Smooth Gold Loading Spinner
+            const loadingOverlay = (
+                <div className={`absolute inset-0 flex items-center justify-center bg-royal-950 transition-opacity duration-500 z-0 ${isLoading ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
+                    <svg className="w-6 h-6 text-gold-500 animate-spin opacity-50" viewBox="0 0 24 24" fill="none">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                </div>
+            );
+
+            // We separate the wrapper classes from the inner media classes so the loader stays perfectly centered
+            const wrapperClass = `relative overflow-hidden ${className.replace('object-cover', '').trim()}`;
+            const innerClass = "absolute inset-0 w-full h-full object-cover z-10";
+
+            // 1. YouTube & Shorts
             const ytMatch = processedUrl.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=|shorts\/))((\w|-){11})/);
             if (ytMatch && ytMatch[1]) {
                 const vid = ytMatch[1];
-                // Append all the magic parameters to strip the UI and force muted autoplay
                 const ytEmbedUrl = `https://www.youtube.com/embed/${vid}?autoplay=1&mute=1&controls=0&rel=0&showinfo=0&loop=1&playlist=${vid}&playsinline=1&modestbranding=1`;
                 return (
-                    <div className={`relative w-full h-full overflow-hidden bg-black ${className}`} onClick={onClick}>
-                        {/* Invisible shield to stop YouTube from stealing the click, allowing card navigation */}
-                        <div className="absolute inset-0 z-10 cursor-pointer"></div>
-                        {/* We scale it up slightly to push the forced YouTube watermarks out of the visible frame */}
-                        <iframe 
-                            src={ytEmbedUrl} 
-                            className="w-full h-full border-0 pointer-events-none scale-[1.35]" 
-                            allow="autoplay; encrypted-media"
-                        ></iframe>
+                    <div className={wrapperClass} onClick={onClick}>
+                        {loadingOverlay}
+                        <div className="absolute inset-0 z-20 cursor-pointer"></div>
+                        <iframe onLoad={handleLoad} src={ytEmbedUrl} className="absolute inset-0 w-full h-full border-0 pointer-events-none scale-[1.35] z-10" allow="autoplay; encrypted-media"></iframe>
                     </div>
                 );
             }
 
-            // 2. Native Video Formats (Now explicitly catches Reddit's format=mp4 trickery)
+            // 2. TikTok Auto-Convert
+            const ttMatch = processedUrl.match(/video\/(\d+)/i) || processedUrl.match(/data-video-id="(\d+)"/i);
+            if (ttMatch && ttMatch[1]) {
+                const ttId = ttMatch[1];
+                const ttEmbedUrl = `https://www.tiktok.com/embed/v2/${ttId}`;
+                return (
+                    <div className={wrapperClass} onClick={onClick}>
+                        {loadingOverlay}
+                        <iframe onLoad={handleLoad} src={ttEmbedUrl} className={`${innerClass} border-0`} allowFullScreen></iframe>
+                    </div>
+                );
+            }
+
+            // 3. Raw HTML Embed Code
+            const isIframeString = processedUrl.startsWith('<iframe') || processedUrl.startsWith('<blockquote');
+            if (isIframeString) {
+                return (
+                    <div className={wrapperClass} onClick={onClick}>
+                        <div className={`absolute inset-0 z-10 flex items-center justify-center bg-black [&>iframe]:w-full [&>iframe]:h-full [&>iframe]:border-0`} dangerouslySetInnerHTML={{ __html: processedUrl }} />
+                    </div>
+                );
+            }
+
+            // 4. Native Video Formats (MP4, GIFv, Reddit format=mp4)
             const isVideo = lowerUrl.includes('.mp4') || lowerUrl.includes('format=mp4') || lowerUrl.includes('.webm') || lowerUrl.includes('.mov') || processedUrl.match(/\.(mp4|webm|ogg|mov)(\?.*)?$/i);
             if (isVideo) {
                 return (
-                    <video src={processedUrl} className={className} autoPlay loop muted playsInline onClick={onClick} style={{ objectFit: 'cover' }} />
+                    <div className={wrapperClass} onClick={onClick}>
+                        {loadingOverlay}
+                        <video src={processedUrl} className={innerClass} autoPlay loop muted playsInline onLoadedData={handleLoad} />
+                    </div>
                 );
             }
             
-            // 3. Standard Images
+            // 5. Standard Images
             return (
-                <img src={processedUrl} className={className} loading="lazy" decoding="async" onClick={onClick} alt={alt || "Media"} style={{ objectFit: 'cover' }}
-                    onError={(e) => {
-                        e.target.onerror = null; 
-                        e.target.src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100%25' height='100%25'%3E%3Crect width='100%25' height='100%25' fill='%231e293b'/%3E%3Ctext x='50%25' y='50%25' fill='%2364748b' font-family='sans-serif' font-size='14' text-anchor='middle' dy='.3em'%3EInvalid Link%3C/text%3E%3C/svg%3E";
-                    }}
-                />
+                <div className={wrapperClass} onClick={onClick}>
+                    {loadingOverlay}
+                    <img src={processedUrl} className={innerClass} loading="lazy" decoding="async" onLoad={handleLoad} alt={alt || "Media"} 
+                        onError={(e) => {
+                            handleLoad();
+                            e.target.onerror = null; 
+                            e.target.src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100%25' height='100%25'%3E%3Crect width='100%25' height='100%25' fill='%231e293b'/%3E%3Ctext x='50%25' y='50%25' fill='%2364748b' font-family='sans-serif' font-size='14' text-anchor='middle' dy='.3em'%3EInvalid Link%3C/text%3E%3C/svg%3E";
+                        }}
+                    />
+                </div>
             );
         }
         
@@ -4014,9 +4049,9 @@
                                             )}
                                             {imgs.length > 1 && (
                                                 <>
-                                                    <button onClick={() => setIIdx(prev => (prev === 0 ? imgs.length-1 : prev-1))} className="absolute left-2 top-1/2 -translate-y-1/2 bg-black/60 hover:bg-black p-2 rounded-full text-white opacity-0 group-hover:opacity-100 transition-opacity"><ChevronLeft size={20}/></button>
-                                                    <button onClick={() => setIIdx(prev => (prev === imgs.length-1 ? 0 : prev+1))} className="absolute right-2 top-1/2 -translate-y-1/2 bg-black/60 hover:bg-black p-2 rounded-full text-white opacity-0 group-hover:opacity-100 transition-opacity"><ChevronRight size={20}/></button>
-                                                    <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5 bg-black/40 px-2 py-1 rounded-full">{imgs.map((_, i) => <div key={i} className={`w-2 h-2 rounded-full ${i === iIdx ? '' : 'bg-white/40'}`} style={{ backgroundColor: i === iIdx ? tierConf.hex : undefined }} />)}</div>
+                                                    <button onClick={() => setIIdx(prev => (prev === 0 ? imgs.length-1 : prev-1))} className="absolute left-2 top-1/2 -translate-y-1/2 bg-black/60 hover:bg-black p-2 rounded-full text-white opacity-0 group-hover:opacity-100 transition-opacity z-30"><ChevronLeft size={20}/></button>
+                                                    <button onClick={() => setIIdx(prev => (prev === imgs.length-1 ? 0 : prev+1))} className="absolute right-2 top-1/2 -translate-y-1/2 bg-black/60 hover:bg-black p-2 rounded-full text-white opacity-0 group-hover:opacity-100 transition-opacity z-30"><ChevronRight size={20}/></button>
+                                                    <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5 bg-black/40 px-2 py-1 rounded-full z-30">{imgs.map((_, i) => <div key={i} className={`w-2 h-2 rounded-full ${i === iIdx ? '' : 'bg-white/40'}`} style={{ backgroundColor: i === iIdx ? tierConf.hex : undefined }} />)}</div>
                                                 </>
                                             )}
                                         </div>
