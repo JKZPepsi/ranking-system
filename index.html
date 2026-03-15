@@ -1441,6 +1441,14 @@
             __snbChartListeners.forEach(l => l());
         };
 
+        // --- GLOBAL CHART SYNC STATE ---
+        const __snbSharedChartState = { windowSize: 10, offset: 0, showDropped: false, cutoff: 12, layoutMode: 'compact' };
+        const __snbChartListeners = new Set();
+        const updateSnbChartState = (updates) => {
+            Object.assign(__snbSharedChartState, updates);
+            __snbChartListeners.forEach(l => l());
+        };
+
         function TopPlayersChart({ globalHistory, playersRaw, type, onNavigate }) {
             const [, setTick] = useState(0);
             const [selectedLineId, setSelectedLineId] = useState(null);
@@ -1486,13 +1494,13 @@
                 if (s.rank > absoluteMaxRank) absoluteMaxRank = s.rank;
             }));
 
-            // --- PROPORTIONAL LABEL SCALING ---
+            // --- PROPORTIONAL LABEL SCALING (Sleeker sizing to prevent arbitrary overlap) ---
             const cConf = {
-                8: { gap: 36, font: 14, img: 26, rectH: 34, rectW: 160, ptR: 4, debutR: 5.5, stroke: 2.5 },
-                12: { gap: 30, font: 12, img: 22, rectH: 28, rectW: 140, ptR: 3.5, debutR: 5, stroke: 2 },
-                24: { gap: 24, font: 11, img: 18, rectH: 24, rectW: 130, ptR: 2.5, debutR: 4, stroke: 1.5 },
-                'all': { gap: 18, font: 9, img: 14, rectH: 18, rectW: 110, ptR: 1.5, debutR: 3, stroke: 1.2 }
-            }[cutoff] || { gap: 18, font: 9, img: 14, rectH: 18, rectW: 110, ptR: 1.5, debutR: 3, stroke: 1.2 };
+                8: { gap: 28, font: 12, img: 20, rectH: 26, rectW: 140, ptR: 3.5, debutR: 4.5, stroke: 2 },
+                12: { gap: 24, font: 11, img: 18, rectH: 22, rectW: 125, ptR: 3, debutR: 4, stroke: 1.5 },
+                24: { gap: 20, font: 10, img: 16, rectH: 18, rectW: 110, ptR: 2, debutR: 3, stroke: 1.2 },
+                'all': { gap: 16, font: 9, img: 12, rectH: 14, rectW: 100, ptR: 1.5, debutR: 2.5, stroke: 1 }
+            }[cutoff] || { gap: 16, font: 9, img: 12, rectH: 14, rectW: 100, ptR: 1.5, debutR: 2.5, stroke: 1 };
 
             const LABEL_GAP = cConf.gap;
             const width = 1200;
@@ -1506,18 +1514,19 @@
                 maxPointsVal = Math.ceil(maxPointsVal * 1.05);
             }
 
-            // --- LAYOUT ENGINE TOGGLE ---
-            let plotHeight;
-            if (layoutMode === 'extended') {
-                // Massively expanded Y-Axis to prevent offset ties
+            // --- LAYOUT ENGINE ---
+            let plotHeight = 480;
+            const isExtendedMode = layoutMode === 'extended' && type === 'points' && isAll;
+
+            if (isExtendedMode) {
+                // Massively expanded Y-Axis to prevent offset ties (Only when explicitly toggled in All-Time Points)
                 plotHeight = Math.max(1200, includedPlayerIds.size * cConf.gap * 2.5); 
             } else {
-                // Taller Compact Mode
                 if (type === 'rank') {
-                    plotHeight = isAll ? Math.max(700, includedPlayerIds.size * cConf.gap * 0.5) : (cutoff === 8 ? 450 : cutoff === 12 ? 550 : 850);
+                    plotHeight = isAll ? Math.max(600, includedPlayerIds.size * cConf.gap * 0.8) : (cutoff === 8 ? 400 : cutoff === 12 ? 500 : 800);
                 } else {
-                    const baseHeight = cutoff === 8 ? 550 : cutoff === 12 ? 700 : cutoff === 24 ? 950 : 1200;
-                    plotHeight = isAll ? Math.max(baseHeight, includedPlayerIds.size * cConf.gap * 0.5) : baseHeight;
+                    const baseHeight = cutoff === 8 ? 500 : cutoff === 12 ? 650 : cutoff === 24 ? 900 : 1100;
+                    plotHeight = isAll ? Math.max(baseHeight, includedPlayerIds.size * cConf.gap * 0.8) : baseHeight;
                 }
             }
 
@@ -1547,11 +1556,19 @@
                 const player = playersRaw.find(p => p.id === pid);
                 if (!player) return;
 
+                const lastActivityDate = player.recentTournaments?.[0]?.date || 0;
                 const timeline = [];
+                
                 for (let k = 0; k < historyData.length; k++) {
-                    const s = historyData[k].standings?.find(st => st.id === pid);
+                    const h = historyData[k];
+                    const s = h.standings?.find(st => st.id === pid);
+                    
+                    // RETIRED SNIP LOGIC: Stops rendering line past their last actual tournament
+                    const isPastRetirement = player.retired && h.date > lastActivityDate;
+                    const exists = !!s && !isPastRetirement;
+                    
                     let val = s ? (type === 'rank' ? s.rank : s.pts) : (type === 'rank' ? effectiveCutoff + 5 : -1000); 
-                    timeline.push({ k, x: getX(k), y: getY(val), val, s, exists: !!s, isDebut: s && playerDebuts[pid] === historyData[k].id });
+                    timeline.push({ k, x: getX(k), y: getY(val), val, s, exists, isDebut: s && playerDebuts[pid] === h.tournamentId });
                 }
 
                 const segments = [];
@@ -1600,7 +1617,7 @@
             lines.forEach(line => {
                 if (!line.segments.length) return;
                 const endPt = line.segments[line.segments.length - 1].slice(-1)[0];
-                const isDropped = hasCutoff ? (endPt.isIntersection || endPt.k < historyData.length - 1) : (!endPt.exists || endPt.k < historyData.length - 1);
+                const isDropped = line.player.retired || (hasCutoff ? (endPt.isIntersection || endPt.k < historyData.length - 1) : (!endPt.exists || endPt.k < historyData.length - 1));
                 labels.push({ id: line.player.id, endX: endPt.x, endY: endPt.y, actualVal: endPt.val, isDropped, name: line.player.name });
             });
 
@@ -1613,8 +1630,8 @@
                 if (!placed) columns.push({ x: l.endX, labels: [l] });
             });
 
-            // Compact mode allows tags to overlap slightly for space. Extended strictly prevents overlap.
-            const physicsGap = layoutMode === 'extended' ? cConf.gap : cConf.gap * 0.4; 
+            // If in strict extended mode, force 100% gap distance. Otherwise, allow tight 0.5 stacking to save space.
+            const physicsGap = isExtendedMode ? cConf.gap : cConf.gap * 0.5; 
 
             columns.forEach(col => {
                 const colLabels = col.labels;
@@ -1674,11 +1691,18 @@
                                     </button>
                                 ))}
                             </div>
-                            <div className="w-px h-6 bg-royal-700 hidden lg:block"></div>
-                            <div className="flex items-center gap-1.5 bg-royal-950 p-1.5 rounded-lg border border-royal-800">
-                                <button onClick={() => updateSnbChartState({ layoutMode: 'compact' })} className={`px-3 py-1 rounded text-xs font-bold transition-all ${layoutMode === 'compact' ? 'bg-sky-500 text-white shadow-sm' : 'bg-transparent text-royal-400 hover:text-white hover:bg-royal-800'}`}>Compact Mode</button>
-                                <button onClick={() => updateSnbChartState({ layoutMode: 'extended' })} className={`px-3 py-1 rounded text-xs font-bold transition-all ${layoutMode === 'extended' ? 'bg-sky-500 text-white shadow-sm' : 'bg-transparent text-royal-400 hover:text-white hover:bg-royal-800'}`}>Extended Mode</button>
-                            </div>
+                            
+                            {/* SMART TOGGLE: Only appears on Points Progression when set to 'All' */}
+                            {type === 'points' && isAll && (
+                                <>
+                                    <div className="w-px h-6 bg-royal-700 hidden lg:block"></div>
+                                    <div className="flex items-center gap-1.5 bg-royal-950 p-1.5 rounded-lg border border-royal-800">
+                                        <button onClick={() => updateSnbChartState({ layoutMode: 'compact' })} className={`px-3 py-1 rounded text-xs font-bold transition-all ${layoutMode === 'compact' ? 'bg-sky-500 text-white shadow-sm' : 'bg-transparent text-royal-400 hover:text-white hover:bg-royal-800'}`}>Compact</button>
+                                        <button onClick={() => updateSnbChartState({ layoutMode: 'extended' })} className={`px-3 py-1 rounded text-xs font-bold transition-all ${layoutMode === 'extended' ? 'bg-sky-500 text-white shadow-sm' : 'bg-transparent text-royal-400 hover:text-white hover:bg-royal-800'}`}>Extended</button>
+                                    </div>
+                                </>
+                            )}
+                            
                             {hasCutoff && (
                                 <button onClick={() => updateSnbChartState({ showDropped: !showDropped })} 
                                     className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all border shadow-sm ${showDropped ? 'bg-royal-800 border-royal-600 text-white' : 'bg-royal-950 border-royal-800 text-royal-400 hover:text-royal-300'}`}>
@@ -1749,7 +1773,7 @@
                                 const isHighlighted = selectedLineId === line.player.id || hoveredLineId === line.player.id;
                                 const isFaded = (selectedLineId || hoveredLineId) && !isHighlighted;
                                 const endPt = line.segments[line.segments.length - 1].slice(-1)[0];
-                                const isDropped = hasCutoff ? (endPt.isIntersection || endPt.k < historyData.length - 1) : (!endPt.exists || endPt.k < historyData.length - 1);
+                                const isDropped = line.player.retired || (hasCutoff ? (endPt.isIntersection || endPt.k < historyData.length - 1) : (!endPt.exists || endPt.k < historyData.length - 1));
                                 const shouldShowLabel = isAll ? true : (!isDropped || showDropped || isHighlighted);
                                 const adjY = labelPositions[line.player.id];
 
@@ -1775,7 +1799,7 @@
                                         }))}
 
                                         {/* HIDE THE DASHED LINE IF IN EXTENDED MODE */}
-                                        {shouldShowLabel && layoutMode !== 'extended' && (Math.abs(adjY - endPt.y) > 2 || isDropped) && (
+                                        {shouldShowLabel && !isExtendedMode && (Math.abs(adjY - endPt.y) > 2 || isDropped) && (
                                             <path d={`M ${endPt.x} ${endPt.y} C ${endPt.x + 15} ${endPt.y}, ${endPt.x + 10} ${adjY}, ${endPt.x + (isAll ? 10 : 20)} ${adjY}`} fill="none" stroke={line.color} strokeWidth="1.5" opacity="0.6" strokeDasharray="4 4" style={{ transition: 'opacity 0.3s ease' }} />
                                         )}
 
