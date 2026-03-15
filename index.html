@@ -2734,21 +2734,27 @@
                         <HistoricalTournamentSelect tournaments={tournaments} value={asOfId} onChange={setAsOfId} />
                     </header>
 
-                    {/* UPDATED: Greener background (#0a1e17), removed heavy borders, wider minimum width */}
                     <div className="bg-[#0a1e17] rounded-xl shadow-[0_10px_40px_rgba(0,0,0,0.5)] overflow-hidden">
                         <div className="overflow-x-auto custom-scrollbar">
-                            <table className="w-full text-left border-collapse whitespace-nowrap min-w-[1150px]">
+                            <table className="w-full text-left border-collapse whitespace-nowrap min-w-[950px]">
                                 <thead>
                                     <tr className="bg-[#071611] text-royal-400 text-[10px] font-bold uppercase tracking-widest select-none border-b border-royal-800/50">
-                                        <th className="py-4 px-4 w-16 text-center cursor-pointer hover:text-white transition-colors" onClick={() => handleSort('rank')}>Rank <SortIcon column="rank"/></th>
-                                        <th className="py-4 px-6 cursor-pointer hover:text-white transition-colors" onClick={() => handleSort('name')}>Player <SortIcon column="name"/></th>
+                                        <th className="py-4 pl-4 pr-0 w-16 text-center cursor-pointer bg-gray-50 hover:bg-gray-200 text-royal-950 transition-colors" onClick={() => handleSort('rank')}>
+                                            Rank <SortIcon column="rank"/>
+                                        </th>
+                                        <th className="py-4 pr-6 pl-0 relative cursor-pointer hover:text-white transition-colors" onClick={() => handleSort('name')}>
+                                            <div className="absolute inset-y-0 left-0 w-7 bg-gray-50 z-0"></div>
+                                            <div className="relative z-10 flex items-center pl-10">
+                                                Player <SortIcon column="name"/>
+                                            </div>
+                                        </th>
                                         <th className="py-4 px-4 text-center cursor-pointer hover:text-white transition-colors w-28" onClick={() => handleSort('points')}>Points <SortIcon column="points"/></th>
                                         <th className="py-4 px-4 w-20 text-center cursor-pointer hover:text-white transition-colors" onClick={() => handleSort('diff')}>+/- <SortIcon column="diff"/></th>
                                         <th className="py-4 px-4 text-center cursor-pointer hover:text-white transition-colors w-24" onClick={() => handleSort('drop')}>Drop <SortIcon column="drop"/></th>
                                         <th className="py-4 px-4 text-center cursor-pointer hover:text-white transition-colors w-24" onClick={() => handleSort('bonus')}>New <SortIcon column="bonus"/></th>
                                         <th className="py-4 px-4 text-center cursor-pointer hover:text-white transition-colors w-20" onClick={() => handleSort('played')}>Played <SortIcon column="played"/></th>
                                         <th className="py-4 px-4 text-center cursor-pointer hover:text-white transition-colors w-24" onClick={() => handleSort('wl')}>W-L <SortIcon column="wl"/></th>
-                                        <th className="py-4 px-4 text-left cursor-pointer hover:text-white transition-colors pl-8 w-64" onClick={() => handleSort('recent')}>Recent <SortIcon column="recent"/></th>
+                                        <th className="py-4 px-4 text-left cursor-pointer hover:text-white transition-colors pl-8 w-48" onClick={() => handleSort('recent')}>Recent <SortIcon column="recent"/></th>
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-royal-800/30">
@@ -2759,39 +2765,39 @@
                                             const recentT = tournaments.find(t => t.id === recent.tournamentId);
                                             const rFlag = recentT ? getFlag(recentT.hostCountry) : '';
                                             recentDisplay = (
-                                                <div className="flex items-center justify-start gap-2.5 text-sm">
+                                                <div className="flex items-center justify-start gap-2.5 text-sm" title={recent.tournamentName}>
                                                     <span className="font-bold text-white w-6 text-right">{getRecentAbbr(recent.result)}</span>
                                                     <span className="text-royal-600 font-black">-</span>
-                                                    {rFlag && <span className="text-base leading-none" title={recentT?.hostCountry}>{rFlag}</span>}
-                                                    <span className="truncate max-w-[160px] text-royal-200 font-medium">{recent.tournamentName}</span>
+                                                    {rFlag && <span className="text-base leading-none">{rFlag}</span>}
+                                                    <span className="truncate max-w-[100px] text-royal-200 font-medium">{recent.tournamentName}</span>
                                                 </div>
                                             );
                                         }
 
                                         return (
                                             <tr key={player.id} onClick={() => onSelectPlayer(player.id)} className="hover:bg-[#0d261d] transition-colors cursor-pointer group bg-[#0a1e17]">
-                                                {/* Stark White Rank Block */}
-                                                <td className="py-2 px-4 text-center font-black text-royal-950 text-3xl tabular-nums bg-gray-50 border-r border-royal-800/30">
+                                                <td className="py-2 pl-4 pr-0 text-center font-black text-royal-950 text-3xl tabular-nums bg-gray-50 group-hover:bg-gray-100 transition-colors">
                                                     {player.currentRank}
                                                 </td>
-                                                
-                                                <td className="py-3 px-6 flex items-center gap-4">
-                                                    <div className="w-12 h-12 rounded-full overflow-hidden border-2 border-[#1a4538] bg-black shrink-0 relative shadow-md">
-                                                        <PlayerMedia url={player.imageUrl || (player.images ? player.images[0] : '')} className="w-full h-full" />
-                                                    </div>
-                                                    <div className="flex flex-col justify-center">
-                                                        <div className="group-hover:text-gold-400 transition-colors font-bold text-lg text-white leading-tight tracking-wide">{player.name}</div>
-                                                        <div className="flex items-center gap-1.5 text-[11px] font-bold text-royal-400 uppercase tracking-widest mt-0.5">
-                                                            <span className="text-sm leading-none drop-shadow-sm">{getFlag(player.nationality)}</span> {player.nationality}
+                                                <td className="py-2 pr-6 pl-0 relative">
+                                                    {/* Overlapping Background Div */}
+                                                    <div className="absolute inset-y-0 left-0 w-7 bg-gray-50 group-hover:bg-gray-100 transition-colors z-0"></div>
+                                                    
+                                                    <div className="relative z-10 flex items-center gap-4">
+                                                        <div className="w-14 h-14 rounded-full overflow-hidden border-[3px] border-[#059669] bg-black shrink-0 relative shadow-md">
+                                                            <PlayerMedia url={player.imageUrl || (player.images ? player.images[0] : '')} className="w-full h-full" />
+                                                        </div>
+                                                        <div className="flex flex-col justify-center">
+                                                            <div className="group-hover:text-gold-400 transition-colors font-bold text-lg text-white leading-tight tracking-wide">{player.name}</div>
+                                                            <div className="flex items-center gap-1.5 text-[11px] font-bold text-royal-400 uppercase tracking-widest mt-0.5">
+                                                                <span className="text-sm leading-none drop-shadow-sm">{getFlag(player.nationality)}</span> {player.nationality}
+                                                            </div>
                                                         </div>
                                                     </div>
                                                 </td>
-                                                
                                                 <td className="py-3 px-4 font-black text-gold-500 text-center text-lg tabular-nums">
                                                     {player.points.toLocaleString()}
                                                 </td>
-                                                
-                                                {/* Scaled down auxiliary metrics */}
                                                 <td className="py-3 px-4 text-center font-bold text-sm tabular-nums">
                                                     {player.diff > 0 ? <span className="text-[#10b981]">+{player.diff}</span> : player.diff < 0 ? <span className="text-[#f43f5e]">{player.diff}</span> : <span className="text-royal-600">-</span>}
                                                 </td>
@@ -2829,33 +2835,34 @@
                                             </tr>
                                             {retired.map((player) => (
                                                 <tr key={player.id} onClick={() => onSelectPlayer(player.id)} className="hover:bg-[#0d261d] transition-colors cursor-pointer group opacity-70 hover:opacity-100 bg-[#0a1e17]">
-                                                    <td className="py-2 px-4 text-center font-black text-royal-600 text-3xl tabular-nums bg-[#071611] border-r border-royal-800/30">-</td>
-                                                    
-                                                    <td className="py-3 px-6 flex items-center gap-4">
-                                                        <div className="w-12 h-12 rounded-full overflow-hidden border-2 border-royal-800 bg-black shrink-0 relative">
-                                                            <PlayerMedia url={player.imageUrl || (player.images ? player.images[0] : '')} className="w-full h-full" />
-                                                            <div className="absolute inset-0 bg-black/40 backdrop-grayscale-[0.5]"></div>
-                                                        </div>
-                                                        <div className="flex flex-col justify-center">
-                                                            <div className="group-hover:text-gold-500 transition-colors font-bold text-lg text-royal-300 leading-tight tracking-wide">
-                                                                {player.name}
-                                                                <span className="ml-3 text-[9px] bg-[#be123c]/20 text-[#fb7185] px-1.5 py-0.5 rounded uppercase tracking-wider border border-[#be123c]/30 align-middle">Retired</span>
+                                                    <td className="py-2 pl-4 pr-0 text-center font-black text-royal-600 text-3xl tabular-nums bg-[#071611] group-hover:bg-[#071611] transition-colors">
+                                                        -
+                                                    </td>
+                                                    <td className="py-2 pr-6 pl-0 relative">
+                                                        <div className="absolute inset-y-0 left-0 w-7 bg-[#071611] group-hover:bg-[#071611] transition-colors z-0"></div>
+                                                        <div className="relative z-10 flex items-center gap-4">
+                                                            <div className="w-14 h-14 rounded-full overflow-hidden border-[3px] border-royal-800 bg-black shrink-0 relative">
+                                                                <PlayerMedia url={player.imageUrl || (player.images ? player.images[0] : '')} className="w-full h-full" />
+                                                                <div className="absolute inset-0 bg-black/40 backdrop-grayscale-[0.5]"></div>
                                                             </div>
-                                                            <div className="flex items-center gap-1.5 text-[11px] font-bold text-royal-600 uppercase tracking-widest mt-0.5">
-                                                                <span className="text-sm leading-none drop-shadow-sm grayscale opacity-60">{getFlag(player.nationality)}</span> {player.nationality}
+                                                            <div className="flex flex-col justify-center">
+                                                                <div className="group-hover:text-gold-500 transition-colors font-bold text-lg text-royal-300 leading-tight tracking-wide">
+                                                                    {player.name}
+                                                                    <span className="ml-3 text-[9px] bg-[#be123c]/20 text-[#fb7185] px-1.5 py-0.5 rounded uppercase tracking-wider border border-[#be123c]/30 align-middle">Retired</span>
+                                                                </div>
+                                                                <div className="flex items-center gap-1.5 text-[11px] font-bold text-royal-600 uppercase tracking-widest mt-0.5">
+                                                                    <span className="text-sm leading-none drop-shadow-sm grayscale opacity-60">{getFlag(player.nationality)}</span> {player.nationality}
+                                                                </div>
                                                             </div>
                                                         </div>
                                                     </td>
-
                                                     <td className="py-3 px-4 text-center font-black text-royal-400 tabular-nums">
                                                         <div className="text-[9px] text-royal-600 uppercase tracking-widest mb-0.5">Peak Pts</div>
                                                         <span className="text-lg">{player.peakPoints.toLocaleString()}</span>
                                                     </td>
-
                                                     <td className="py-3 px-4 text-center font-semibold text-royal-700 tabular-nums">-</td>
                                                     <td className="py-3 px-4 text-center text-sm font-semibold text-royal-700 tabular-nums">-</td>
                                                     <td className="py-3 px-4 text-center text-sm font-semibold text-royal-700 tabular-nums">-</td>
-                                                    
                                                     <td className="py-3 px-4 text-center text-sm font-semibold text-royal-500 tabular-nums">{player.stats.totalPlayed}</td>
                                                     <td className="py-3 px-4 text-center text-royal-500 font-semibold text-sm tabular-nums">{player.stats.wins} - {player.stats.losses}</td>
                                                     <td className="py-3 px-4 pl-8 text-left">
@@ -2943,7 +2950,7 @@
                     <FloatingNationNav />
 
                     <div className="flex-1 min-w-0 xl:pl-4 space-y-6">
-                        <button onClick={onBack} className="flex items-center gap-2 text-royal-300 hover:text-white"><ArrowLeft size={16}/> Back to Nations</button>
+                        <button onClick={onBack} className="flex items-center gap-2 text-royal-200 hover:text-white"><ArrowLeft size={16}/> Back to Nations</button>
                         
                         <div id="nation-overview" className="bg-[#0a1e17] rounded-2xl p-8 border border-royal-800 flex flex-col md:flex-row gap-8 relative shadow-lg items-center md:items-start mb-8 scroll-mt-8">
                             <div className="text-8xl drop-shadow-lg">{getFlag(code)}</div>
@@ -2968,19 +2975,22 @@
                             
                             <div className="bg-[#0a1e17] rounded-xl shadow-[0_10px_40px_rgba(0,0,0,0.5)] overflow-hidden">
                                 <div className="overflow-x-auto custom-scrollbar">
-                                    <table className="w-full text-left border-collapse whitespace-nowrap min-w-[1200px]">
+                                    <table className="w-full text-left border-collapse whitespace-nowrap min-w-[1000px]">
                                         <thead>
                                             <tr className="bg-[#071611] text-royal-400 text-[10px] font-bold uppercase tracking-widest select-none border-b border-royal-800/50">
-                                                <th className="py-4 px-4 w-16 text-center">Nat Rnk</th>
-                                                <th className="py-4 px-4 w-16 text-center">Glb Rnk</th>
-                                                <th className="py-4 px-6">Player</th>
-                                                <th className="py-4 px-4 text-center w-28">Points</th>
+                                                <th className="py-4 pl-4 pr-2 w-16 text-center bg-gray-50 text-royal-950">Nat Rnk</th>
+                                                <th className="py-4 pr-0 pl-2 w-16 text-center bg-gray-50 text-royal-950">Glb Rnk</th>
+                                                <th className="py-4 pr-6 pl-0 relative">
+                                                    <div className="absolute inset-y-0 left-0 w-7 bg-gray-50 z-0"></div>
+                                                    <div className="relative z-10 flex items-center pl-10">Player</div>
+                                                </th>
+                                                <th className="py-4 px-4 text-center w-24">Points</th>
                                                 <th className="py-4 px-4 w-20 text-center">+/-</th>
                                                 <th className="py-4 px-4 text-center w-24">Drop</th>
                                                 <th className="py-4 px-4 text-center w-24">New</th>
                                                 <th className="py-4 px-4 text-center w-20">Played</th>
                                                 <th className="py-4 px-4 text-center w-24">W-L</th>
-                                                <th className="py-4 px-4 text-left pl-8 w-64">Recent</th>
+                                                <th className="py-4 px-4 text-left pl-8 w-48">Recent</th>
                                             </tr>
                                         </thead>
                                         <tbody className="divide-y divide-royal-800/30">
@@ -2991,28 +3001,31 @@
                                                     const recentT = tournaments.find(t => t.id === recent.tournamentId);
                                                     const rFlag = recentT ? getFlag(recentT.hostCountry) : '';
                                                     recentDisplay = (
-                                                        <div className="flex items-center justify-start gap-2.5 text-sm">
+                                                        <div className="flex items-center justify-start gap-2.5 text-sm" title={recent.tournamentName}>
                                                             <span className="font-bold text-white w-6 text-right">{getRecentAbbr(recent.result)}</span>
                                                             <span className="text-royal-600 font-black">-</span>
-                                                            {rFlag && <span className="text-base leading-none" title={recentT?.hostCountry}>{rFlag}</span>}
-                                                            <span className="truncate max-w-[160px] text-royal-200 font-medium">{recent.tournamentName}</span>
+                                                            {rFlag && <span className="text-base leading-none">{rFlag}</span>}
+                                                            <span className="truncate max-w-[100px] text-royal-200 font-medium">{recent.tournamentName}</span>
                                                         </div>
                                                     );
                                                 }
 
                                                 return (
                                                     <tr key={player.id} onClick={() => onNavigate('players', player.id)} className="hover:bg-[#0d261d] transition-colors cursor-pointer group bg-[#0a1e17]">
-                                                        <td className="py-2 px-4 text-center font-black text-royal-950 text-3xl tabular-nums bg-gray-50 border-r border-royal-800/30">{player.nationalRank}</td>
-                                                        <td className="py-3 px-4 text-center font-bold text-royal-400 text-lg tabular-nums">#{player.rank}</td>
+                                                        <td className="py-2 pl-4 pr-2 text-center font-black text-royal-950 text-3xl tabular-nums bg-gray-50 group-hover:bg-gray-100 transition-colors">{player.nationalRank}</td>
+                                                        <td className="py-2 pr-0 pl-2 text-center font-bold text-royal-600 text-lg tabular-nums bg-gray-50 group-hover:bg-gray-100 transition-colors">#{player.rank}</td>
                                                         
-                                                        <td className="py-3 px-6 flex items-center gap-4">
-                                                            <div className="w-12 h-12 rounded-full overflow-hidden border-2 border-[#1a4538] bg-black shrink-0 relative shadow-md">
-                                                                <PlayerMedia url={player.imageUrl || (player.images ? player.images[0] : '')} className="w-full h-full" />
-                                                            </div>
-                                                            <div className="flex flex-col justify-center">
-                                                                <div className="group-hover:text-gold-400 transition-colors font-bold text-lg text-white leading-tight tracking-wide">{player.name}</div>
-                                                                <div className="flex items-center gap-1.5 text-[11px] font-bold text-royal-400 uppercase tracking-widest mt-0.5">
-                                                                    <span className="text-sm leading-none drop-shadow-sm">{getFlag(player.nationality)}</span> {player.nationality}
+                                                        <td className="py-2 pr-6 pl-0 relative">
+                                                            <div className="absolute inset-y-0 left-0 w-7 bg-gray-50 group-hover:bg-gray-100 transition-colors z-0"></div>
+                                                            <div className="relative z-10 flex items-center gap-4">
+                                                                <div className="w-14 h-14 rounded-full overflow-hidden border-[3px] border-[#059669] bg-black shrink-0 relative shadow-md">
+                                                                    <PlayerMedia url={player.imageUrl || (player.images ? player.images[0] : '')} className="w-full h-full" />
+                                                                </div>
+                                                                <div className="flex flex-col justify-center">
+                                                                    <div className="group-hover:text-gold-400 transition-colors font-bold text-lg text-white leading-tight tracking-wide">{player.name}</div>
+                                                                    <div className="flex items-center gap-1.5 text-[11px] font-bold text-royal-400 uppercase tracking-widest mt-0.5">
+                                                                        <span className="text-sm leading-none drop-shadow-sm">{getFlag(player.nationality)}</span> {player.nationality}
+                                                                    </div>
                                                                 </div>
                                                             </div>
                                                         </td>
@@ -3063,21 +3076,24 @@
                                                     </tr>
                                                     {retired.map((player) => (
                                                         <tr key={player.id} onClick={() => onNavigate('players', player.id)} className="hover:bg-[#0d261d] transition-colors cursor-pointer group opacity-70 hover:opacity-100 bg-[#0a1e17]">
-                                                            <td className="py-2 px-4 text-center font-black text-royal-600 text-3xl tabular-nums bg-[#071611] border-r border-royal-800/30">-</td>
-                                                            <td className="py-3 px-4 text-center font-bold text-royal-600 text-lg tabular-nums">-</td>
+                                                            <td className="py-2 pl-4 pr-2 text-center font-black text-royal-600 text-3xl tabular-nums bg-[#071611] group-hover:bg-[#071611] transition-colors">-</td>
+                                                            <td className="py-2 pr-0 pl-2 text-center font-bold text-royal-600 text-lg tabular-nums bg-[#071611] group-hover:bg-[#071611] transition-colors">-</td>
                                                             
-                                                            <td className="py-3 px-6 flex items-center gap-4">
-                                                                <div className="w-12 h-12 rounded-full overflow-hidden border-2 border-royal-800 bg-black shrink-0 relative">
-                                                                    <PlayerMedia url={player.imageUrl || (player.images ? player.images[0] : '')} className="w-full h-full" />
-                                                                    <div className="absolute inset-0 bg-black/40 backdrop-grayscale-[0.5]"></div>
-                                                                </div>
-                                                                <div className="flex flex-col justify-center">
-                                                                    <div className="group-hover:text-gold-500 transition-colors font-bold text-lg text-royal-300 leading-tight tracking-wide">
-                                                                        {player.name}
-                                                                        <span className="ml-3 text-[9px] bg-[#be123c]/20 text-[#fb7185] px-1.5 py-0.5 rounded uppercase tracking-wider border border-[#be123c]/30 align-middle">Retired</span>
+                                                            <td className="py-2 pr-6 pl-0 relative">
+                                                                <div className="absolute inset-y-0 left-0 w-7 bg-[#071611] group-hover:bg-[#071611] transition-colors z-0"></div>
+                                                                <div className="relative z-10 flex items-center gap-4">
+                                                                    <div className="w-14 h-14 rounded-full overflow-hidden border-[3px] border-royal-800 bg-black shrink-0 relative">
+                                                                        <PlayerMedia url={player.imageUrl || (player.images ? player.images[0] : '')} className="w-full h-full" />
+                                                                        <div className="absolute inset-0 bg-black/40 backdrop-grayscale-[0.5]"></div>
                                                                     </div>
-                                                                    <div className="flex items-center gap-1.5 text-[11px] font-bold text-royal-600 uppercase tracking-widest mt-0.5">
-                                                                        <span className="text-sm leading-none drop-shadow-sm grayscale opacity-60">{getFlag(player.nationality)}</span> {player.nationality}
+                                                                    <div className="flex flex-col justify-center">
+                                                                        <div className="group-hover:text-gold-500 transition-colors font-bold text-lg text-royal-300 leading-tight tracking-wide">
+                                                                            {player.name}
+                                                                            <span className="ml-3 text-[9px] bg-[#be123c]/20 text-[#fb7185] px-1.5 py-0.5 rounded uppercase tracking-wider border border-[#be123c]/30 align-middle">Retired</span>
+                                                                        </div>
+                                                                        <div className="flex items-center gap-1.5 text-[11px] font-bold text-royal-600 uppercase tracking-widest mt-0.5">
+                                                                            <span className="text-sm leading-none drop-shadow-sm grayscale opacity-60">{getFlag(player.nationality)}</span> {player.nationality}
+                                                                        </div>
                                                                     </div>
                                                                 </div>
                                                             </td>
@@ -3114,6 +3130,8 @@
                 </div>
             );
         }
+
+        
         function PlayersView({ players, onSelectPlayer, db, appId }) {
             const [newPlayerName, setNewPlayerName] = useState('');
             const [newPlayerNationality, setNewPlayerNationality] = useState('');
