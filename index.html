@@ -1434,14 +1434,6 @@
         }
 
         // --- GLOBAL CHART SYNC STATE ---
-        const __snbSharedChartState = { windowSize: 20, offset: 0, showDropped: false, cutoff: 12, layoutMode: 'compact' };
-        const __snbChartListeners = new Set();
-        const updateSnbChartState = (updates) => {
-            Object.assign(__snbSharedChartState, updates);
-            __snbChartListeners.forEach(l => l());
-        };
-
-        // --- GLOBAL CHART SYNC STATE ---
         const __snbSharedChartState = { windowSize: 10, offset: 0, showDropped: false, cutoff: 12, layoutMode: 'compact' };
         const __snbChartListeners = new Set();
         const updateSnbChartState = (updates) => {
