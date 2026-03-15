@@ -2840,6 +2840,10 @@
                     if (sortConfig.key === 'points') { valA = a.points; valB = b.points; }
                     if (sortConfig.key === 'dropping') { valA = a.droppingPoints || 0; valB = b.droppingPoints || 0; }
                     if (sortConfig.key === 'played') { valA = a.stats.totalPlayed; valB = b.stats.totalPlayed; }
+                    if (sortConfig.key === 'wl') { 
+                        valA = a.stats.totalPlayed > 0 ? a.stats.wins / a.stats.totalPlayed : 0; 
+                        valB = b.stats.totalPlayed > 0 ? b.stats.wins / b.stats.totalPlayed : 0; 
+                    }
                     
                     if (valA < valB) return sortConfig.direction === 'asc' ? -1 : 1;
                     if (valA > valB) return sortConfig.direction === 'asc' ? 1 : -1;
@@ -2864,7 +2868,7 @@
             }, [playersRaw, tournaments, asOfId, sortConfig]);
 
             return (
-                <div className="max-w-6xl mx-auto space-y-6 pb-20">
+                <div className="max-w-5xl mx-auto space-y-6 pb-20">
                     <header className="mb-8 flex flex-col md:flex-row md:items-end justify-between gap-6">
                         <div>
                             <h1 className="text-3xl font-bold text-white">SNB Rankings</h1>
@@ -2874,25 +2878,23 @@
                     </header>
                     <div className="bg-royal-900 rounded-xl border border-royal-800 shadow-xl overflow-hidden">
                         <div className="overflow-x-auto pb-4 custom-scrollbar">
-                            <table className="w-full text-left border-collapse whitespace-nowrap min-w-[1000px]">
+                            <table className="w-full text-left border-collapse whitespace-nowrap min-w-[800px]">
                                 <thead>
                                     <tr className="bg-royal-950/60 text-royal-200 text-[11px] uppercase tracking-widest select-none border-b border-royal-800">
                                         <th className="p-4 font-bold w-16 text-center cursor-pointer hover:text-white transition-colors" onClick={() => handleSort('rank')}>Rank <SortIcon column="rank"/></th>
                                         <th className="p-4 font-bold w-16 text-center cursor-pointer hover:text-white transition-colors" onClick={() => handleSort('diff')}>+/- <SortIcon column="diff"/></th>
                                         <th className="p-4 font-bold cursor-pointer hover:text-white transition-colors" onClick={() => handleSort('name')}>Player <SortIcon column="name"/></th>
-                                        <th className="p-4 font-bold text-right cursor-pointer hover:text-white transition-colors" onClick={() => handleSort('points')}>Points <SortIcon column="points"/></th>
-                                        <th className="p-4 font-bold text-center cursor-pointer hover:text-white transition-colors text-royal-400" onClick={() => handleSort('dropping')}>Dropping <SortIcon column="dropping"/></th>
-                                        <th className="p-4 font-bold text-center cursor-pointer hover:text-white transition-colors text-royal-400" onClick={() => handleSort('played')}>Played <SortIcon column="played"/></th>
-                                        <th className="p-4 font-bold text-center">W-L</th>
-                                        <th className="p-4 font-bold">Tour Form</th>
-                                        <th className="p-4 font-bold">Match Form</th>
+                                        <th className="p-4 font-bold text-right cursor-pointer hover:text-white transition-colors w-28" onClick={() => handleSort('points')}>Points <SortIcon column="points"/></th>
+                                        <th className="p-4 font-bold text-center cursor-pointer hover:text-white transition-colors text-royal-400 w-24" onClick={() => handleSort('dropping')}>Dropping <SortIcon column="dropping"/></th>
+                                        <th className="p-4 font-bold text-center cursor-pointer hover:text-white transition-colors text-royal-400 w-24" onClick={() => handleSort('played')}>Played <SortIcon column="played"/></th>
+                                        <th className="p-4 font-bold text-center cursor-pointer hover:text-white transition-colors w-24" onClick={() => handleSort('wl')}>W-L <SortIcon column="wl"/></th>
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-royal-800/50">
                                     {active.map((player) => (
                                         <tr key={player.id} onClick={() => onSelectPlayer(player.id)} className="hover:bg-royal-800/50 transition-colors cursor-pointer group">
-                                            <td className="p-4 text-center font-black text-royal-300 text-lg">{player.currentRank}</td>
-                                            <td className="p-4 text-center font-bold text-sm">
+                                            <td className="p-4 text-center font-bold text-royal-300 text-lg tabular-nums">{player.currentRank}</td>
+                                            <td className="p-4 text-center font-bold text-sm tabular-nums">
                                                 {player.diff > 0 ? <span className="text-[#059669]">+{player.diff}</span> : player.diff < 0 ? <span className="text-[#be123c]">{player.diff}</span> : <span className="text-royal-600">-</span>}
                                             </td>
                                             <td className="p-4 font-medium text-white flex items-center gap-3">
@@ -2900,61 +2902,17 @@
                                                     <PlayerMedia url={player.imageUrl || (player.images ? player.images[0] : '')} className="w-full h-full" />
                                                 </div>
                                                 <div>
-                                                    <div className="group-hover:text-gold-500 transition-colors font-bold text-base flex items-center gap-2">{getFlag(player.nationality)} {player.name}</div>
+                                                    <div className="group-hover:text-gold-500 transition-colors font-semibold text-base flex items-center gap-2">{getFlag(player.nationality)} {player.name}</div>
                                                     <div className="text-[10px] uppercase tracking-widest text-royal-400 font-bold">{getCountryName(player.nationality)}</div>
                                                 </div>
                                             </td>
-                                            <td className="p-4 font-black text-gold-500 text-right text-lg">
+                                            <td className="p-4 font-bold text-gold-500 text-right text-lg tabular-nums">
                                                 {player.points.toLocaleString()}
-                                                {player.bonusPoints > 0 && <span className="text-emerald-400 text-xs ml-1 font-bold">+{player.bonusPoints}</span>}
+                                                {player.bonusPoints > 0 && <span className="text-emerald-400 text-xs ml-1 font-bold tabular-nums">+{player.bonusPoints}</span>}
                                             </td>
-                                            <td className="p-4 text-center font-mono text-sm font-medium text-royal-400 group-hover:text-red-400 transition-colors">{player.droppingPoints > 0 ? `-${player.droppingPoints}` : '-'}</td>
-                                            <td className="p-4 text-center font-mono text-sm font-bold text-royal-200">{player.stats.totalPlayed}</td>
-                                            <td className="p-4 text-center text-royal-200 font-bold text-sm">{player.stats.wins} - {player.stats.losses}</td>
-                                            <td className="p-4">
-                                                <div className="flex gap-1.5">
-                                                    {player.recentTournaments.slice(0, 7).map((t, i) => {
-                                                        let lbl = '';
-                                                        if (t.result === 'Winner') lbl = 'W';
-                                                        else if (t.result === 'Final' || t.result === 'Finalist') lbl = 'F';
-                                                        else if (t.result === 'Semifinals' || t.result === 'Semifinalist') lbl = 'SF';
-                                                        else if (t.result === 'Quarterfinals') lbl = 'QF';
-                                                        else if (t.result === 'Round of 16') lbl = '16';
-                                                        else if (t.result === 'Round of 32') lbl = '32';
-                                                        else if (t.result === 'Round of 64') lbl = '64';
-                                                        else if (t.result === 'Round Robin') lbl = 'RR';
-                                                        
-                                                        const isSFHighlight = (t.result === 'Semifinals' || t.result === 'Semifinalist') && t.totalRounds > 3;
-                                                        const bgClass = t.result === 'Winner' ? 'bg-[#059669] text-[#020b08]' : 
-                                                                        (t.result === 'Final' || t.result === 'Finalist') ? 'bg-gold-500 text-royal-950' : 
-                                                                        isSFHighlight ? 'bg-orange-400 text-orange-950' : 
-                                                                        'bg-royal-700 text-royal-100';
-
-                                                        return (
-                                                            <div key={i} title={`${t.tournamentName} (${t.result})`} className={`w-5 h-5 flex items-center justify-center rounded-sm text-[10px] font-bold ${bgClass}`}>
-                                                                {lbl}
-                                                            </div>
-                                                        );
-                                                    })}
-                                                    {player.recentTournaments.length === 0 && <span className="text-royal-600 text-xs">-</span>}
-                                                </div>
-                                            </td>
-                                            <td className="p-4">
-                                                <div className="flex gap-1.5">
-                                                    {player.recentMatches.slice(0, 7).map((m, i) => (
-                                                        <div key={i} title={`${m.isWin ? 'Win' : 'Loss'} (${m.type === 'lopsided' ? 'Lopsided' : 'Close'})`} 
-                                                            className={`w-5 h-5 flex items-center justify-center rounded-sm text-[10px] font-bold ${
-                                                                m.isWin 
-                                                                    ? (m.type === 'lopsided' ? 'bg-[#059669] text-[#020b08]' : 'bg-[#059669]/20 text-[#059669] border border-[#059669]/50') 
-                                                                    : (m.type === 'lopsided' ? 'bg-[#be123c] text-white' : 'bg-[#be123c]/20 text-[#fb7185] border border-[#be123c]/50')
-                                                            }`}
-                                                        >
-                                                            {m.isWin ? 'W' : 'L'}
-                                                        </div>
-                                                    ))}
-                                                    {player.recentMatches.length === 0 && <span className="text-royal-600 text-xs">-</span>}
-                                                </div>
-                                            </td>
+                                            <td className="p-4 text-center text-sm font-medium text-royal-400 group-hover:text-red-400 transition-colors tabular-nums">{player.droppingPoints > 0 ? `-${player.droppingPoints}` : '-'}</td>
+                                            <td className="p-4 text-center text-sm font-medium text-royal-200 tabular-nums">{player.stats.totalPlayed}</td>
+                                            <td className="p-4 text-center text-royal-200 font-bold text-sm tabular-nums">{player.stats.wins} - {player.stats.losses}</td>
                                         </tr>
                                     ))}
 
@@ -2962,7 +2920,7 @@
                                     {retired.length > 0 && (
                                         <>
                                             <tr className="bg-royal-950/90 border-t-2 border-royal-700">
-                                                <td colSpan="9" className="p-6 text-center">
+                                                <td colSpan="7" className="p-6 text-center">
                                                     <div className="inline-flex items-center gap-4">
                                                         <div className="h-px w-24 bg-royal-700"></div>
                                                         <span className="text-royal-400 font-bold uppercase tracking-widest text-sm flex items-center gap-2">
@@ -2974,29 +2932,28 @@
                                             </tr>
                                             {retired.map((player) => (
                                                 <tr key={player.id} onClick={() => onSelectPlayer(player.id)} className="hover:bg-royal-800/50 transition-colors cursor-pointer group opacity-80 hover:opacity-100 bg-black/20">
-                                                    <td className="p-4 text-center font-bold text-royal-600 text-lg">-</td>
-                                                    <td className="p-4 text-center font-bold text-royal-600">-</td>
+                                                    <td className="p-4 text-center font-bold text-royal-600 text-lg tabular-nums">-</td>
+                                                    <td className="p-4 text-center font-bold text-royal-600 tabular-nums">-</td>
                                                     <td className="p-4 font-medium text-white flex items-center gap-3">
                                                         <div className="w-10 h-10 rounded-full overflow-hidden border border-royal-700 bg-black shrink-0 relative">
                                                             <PlayerMedia url={player.imageUrl || (player.images ? player.images[0] : '')} className="w-full h-full" />
                                                             <div className="absolute inset-0 bg-black/40 backdrop-grayscale-[0.5]"></div>
                                                         </div>
                                                         <div>
-                                                            <div className="group-hover:text-gold-500 transition-colors flex items-center gap-2 font-bold text-base text-royal-200">
+                                                            <div className="group-hover:text-gold-500 transition-colors flex items-center gap-2 font-semibold text-base text-royal-200">
                                                                 {getFlag(player.nationality)} {player.name}
                                                                 <span className="text-[9px] bg-[#be123c]/20 text-[#fb7185] px-1.5 py-0.5 rounded uppercase tracking-wider border border-[#be123c]/30 shrink-0">Retired</span>
                                                             </div>
                                                             <div className="text-[10px] uppercase tracking-widest text-royal-500 font-bold">{getCountryName(player.nationality)}</div>
                                                         </div>
                                                     </td>
-                                                    <td className="p-4 font-bold text-royal-400 text-right">
+                                                    <td className="p-4 font-bold text-royal-400 text-right tabular-nums">
                                                         <div className="text-[9px] text-royal-600 uppercase tracking-widest mb-0.5">Peak Pts</div>
                                                         {player.peakPoints.toLocaleString()}
                                                     </td>
-                                                    <td className="p-4 text-center font-mono text-sm text-royal-600">-</td>
-                                                    <td className="p-4 text-center font-mono text-sm font-bold text-royal-400">{player.stats.totalPlayed}</td>
-                                                    <td className="p-4 text-center text-royal-400 text-sm font-bold">{player.stats.wins} - {player.stats.losses}</td>
-                                                    <td colSpan="2" className="p-4 text-center text-royal-600 font-bold uppercase tracking-widest text-[10px]">- End of Line -</td>
+                                                    <td className="p-4 text-center text-sm text-royal-600 tabular-nums">-</td>
+                                                    <td className="p-4 text-center text-sm font-medium text-royal-400 tabular-nums">{player.stats.totalPlayed}</td>
+                                                    <td className="p-4 text-center text-royal-400 text-sm font-bold tabular-nums">{player.stats.wins} - {player.stats.losses}</td>
                                                 </tr>
                                             ))}
                                         </>
@@ -4207,7 +4164,7 @@
             );
         }
 
-        function TournamentBracket({ tournament, allTournaments = [], players, onBack, db, appId, onNavigate }) {
+function TournamentBracket({ tournament, allTournaments = [], players, onBack, db, appId, onNavigate }) {
             const [resolvingMatch, setResolvingMatch] = useState(null);
             const [showDelete, setShowDelete] = useState(false);
             
@@ -4259,7 +4216,7 @@
 
             return (
                 <div className="h-full flex flex-col pb-20">
-                    <div className="flex justify-between items-start md:items-center mb-6">
+                    <div className="flex justify-between items-start md:items-center mb-6 shrink-0">
                         <div>
                             <button onClick={onBack} className="flex items-center gap-2 text-royal-300 hover:text-white transition-colors mb-2">
                                 <ArrowLeft className="w-4 h-4" /> Back to Tournaments
@@ -4286,24 +4243,24 @@
                             )}
                         </div>
                     </div>
-                    <div className={`flex-1 overflow-auto bg-royal-950/50 border border-royal-800 rounded-xl p-8 min-h-[800px] bracket-container`}>
-                        <div className="flex min-w-max h-full">
+                    <div className={`flex-1 overflow-auto bg-royal-950/50 border border-royal-800 rounded-xl p-8 bracket-container`}>
+                        <div className="flex min-w-max items-stretch" style={{ minHeight: '100%' }}>
                             {parsedBracket.map((round, rIdx) => {
                                 if (!Array.isArray(round)) return null;
                                 const isFinalRound = rIdx === totalRounds - 1;
                                 const finalMatch = isFinalRound ? round[0] : null;
-                                const showHeaderTrophy = isFinalRound && finalMatch && !finalMatch.p1 && !finalMatch.p2;
+                                const showHeaderTrophy = isFinalRound && finalMatch;
                                 
                                 return (
-                                <div key={rIdx} className="flex flex-col w-64 shrink-0 mr-12 h-full">
-                                    <div className="text-center text-royal-400 font-bold text-sm uppercase tracking-wider mb-4 flex flex-col items-center justify-end min-h-[60px]">
+                                <div key={rIdx} className="flex flex-col w-64 shrink-0 mr-12">
+                                    <div className="text-center text-royal-400 font-bold text-sm uppercase tracking-wider mb-4 flex flex-col items-center justify-end min-h-[60px] shrink-0">
                                         {showHeaderTrophy && <DynamicTrophy tier={tierKey} result="Winner" country={tournament.hostCountry} size={48} className="mb-2 drop-shadow-xl opacity-80" />}
                                         <div className="flex items-center justify-center gap-2">
                                             {isFinalRound && !showHeaderTrophy && <Trophy className="w-4 h-4 inline-block mb-0.5 opacity-50" style={{ color: tierConf.hex }} />}
                                             {ROUND_NAMES[rIdx + rOffset]}
                                         </div>
                                     </div>
-                                    <div className="flex-1 flex flex-col">
+                                    <div className="flex-1 flex flex-col justify-around">
                                         {round.map((match, mIdx) => {
                                             if (!match) return null;
                                             const p1 = getPlayer(match.p1), p2 = getPlayer(match.p2);
@@ -4311,7 +4268,7 @@
                                             const isReady = match.p1 && match.p2 && !match.winner && tournament.status !== 'completed' && !isBye;
                                             
                                             return (
-                                                <div key={match.id} className="flex-1 flex flex-col justify-center relative py-2">
+                                                <div key={match.id} className="relative py-2 flex flex-col justify-center" style={{ flex: 1 }}>
                                                     <div onClick={() => handleMatchClick(rIdx, mIdx, match)} 
                                                          className={`relative z-10 border-2 rounded-lg transition-all overflow-hidden ${isReady ? 'cursor-pointer hover:scale-105 z-20' : match.winner ? 'border-royal-800' : 'border-royal-800/30 opacity-40'}`} 
                                                          style={{ 
@@ -4364,7 +4321,8 @@
                                         })}
                                     </div>
                                 </div>
-                            )})}
+                                )
+                            })}
                         </div>
                     </div>
                     <ResolveMatchModal resolvingMatch={resolvingMatch} setResolvingMatch={setResolvingMatch} submitResult={submitResult} handleRandomize={handleRandomize} players={players} allTournaments={allTournaments} tournament={tournament} tierConf={tierConf} onNavigate={onNavigate} />
@@ -4514,7 +4472,7 @@
             );
 
             const finalMatch = knockout[1] ? knockout[1][0] : null;
-            const showHeaderTrophy = finalMatch && !finalMatch.p1 && !finalMatch.p2;
+            const showHeaderTrophy = finalMatch;
 
             return (
                 <div className="h-full flex flex-col pb-20 max-w-6xl mx-auto space-y-8">
@@ -4600,23 +4558,23 @@
                     </div>
 
                     {/* Knockout Stage */}
-                    <div className="border-t border-royal-800 pt-8">
+                    <div className="border-t border-royal-800 pt-8 flex-1 flex flex-col">
                         <h2 className="text-xl font-bold text-white mb-6">Knockout Stage</h2>
-                        <div className="flex min-w-max h-full justify-center">
+                        <div className="flex min-w-max items-stretch justify-center flex-1">
                             {knockout.map((round, rIdx) => {
                                 if (!Array.isArray(round)) return null;
                                 const isFinalRound = rIdx === 1;
                                 
                                 return (
-                                <div key={rIdx} className="flex flex-col w-64 shrink-0 mr-12 h-full">
-                                    <div className="text-center text-royal-400 font-bold text-sm uppercase tracking-wider mb-4 flex flex-col items-center justify-end min-h-[60px]">
+                                <div key={rIdx} className="flex flex-col w-64 shrink-0 mr-12">
+                                    <div className="text-center text-royal-400 font-bold text-sm uppercase tracking-wider mb-4 flex flex-col items-center justify-end min-h-[60px] shrink-0">
                                         {isFinalRound && showHeaderTrophy && <DynamicTrophy tier="finals" result="Winner" country={tournament.hostCountry} size={48} className="mb-2 drop-shadow-xl opacity-80" />}
                                         <div className="flex items-center justify-center gap-2">
                                             {isFinalRound && !showHeaderTrophy && <Trophy className="w-4 h-4 inline-block mb-0.5 opacity-50" style={{ color: tierConf.hex }} />}
                                             {isFinalRound ? 'Championship' : 'Semifinals'}
                                         </div>
                                     </div>
-                                    <div className="flex-1 flex flex-col">
+                                    <div className="flex-1 flex flex-col justify-around">
                                         {round.map((match, mIdx) => {
                                             if (!match) return null;
                                             const p1 = getPlayer(match.p1), p2 = getPlayer(match.p2);
@@ -4624,7 +4582,7 @@
                                             const isReady = match.p1 && match.p2 && !match.winner && tournament.status !== 'completed' && !isBye;
                                             
                                             return (
-                                                <div key={match.id} className="flex-1 flex flex-col justify-center relative py-2">
+                                                <div key={match.id} className="relative py-2 flex flex-col justify-center" style={{ flex: 1 }}>
                                                     <div onClick={() => handleMatchClick(rIdx === 0 ? 'sf' : 'f', mIdx, match)} 
                                                          className={`relative z-10 border-2 rounded-lg transition-all overflow-hidden ${isReady ? 'cursor-pointer hover:scale-105 z-20' : match.winner ? 'border-royal-800' : 'border-royal-800/30 opacity-40'}`} 
                                                          style={{ 
@@ -4677,7 +4635,8 @@
                                         })}
                                     </div>
                                 </div>
-                            )})}
+                                )
+                            })}
                         </div>
                     </div>
                     <ResolveMatchModal resolvingMatch={resolvingMatch} setResolvingMatch={setResolvingMatch} submitResult={submitResult} handleRandomize={handleRandomize} players={players} allTournaments={allTournaments} tournament={tournament} tierConf={tierConf} onNavigate={onNavigate} />
@@ -4826,7 +4785,7 @@
                             </button>
                         </div>
                         <div className="flex-1 pb-2 space-y-0.5">
-                            <button onClick={() => navigateTo('dashboard')} className={`w-full flex items-center gap-3 px-6 py-3 font-medium transition-colors ${activeTab === 'dashboard' ? 'bg-royal-800/50 text-gold-500 border-r-4 border-gold-500' : 'text-royal-300 hover:bg-royal-800 hover:text-royal-100'}`}><DashboardIcon size={20}/>Global Rankings</button>
+                            <button onClick={() => navigateTo('dashboard')} className={`w-full flex items-center gap-3 px-6 py-3 font-medium transition-colors ${activeTab === 'dashboard' ? 'bg-royal-800/50 text-gold-500 border-r-4 border-gold-500' : 'text-royal-300 hover:bg-royal-800 hover:text-royal-100'}`}><DashboardIcon size={20}/>SNB Rankings</button>
                             <button onClick={() => navigateTo('players')} className={`w-full flex items-center gap-3 px-6 py-3 font-medium transition-colors ${activeTab === 'players' ? 'bg-royal-800/50 text-gold-500 border-r-4 border-gold-500' : 'text-royal-300 hover:bg-royal-800 hover:text-royal-100'}`}><PlayersIcon size={20}/>Players</button>
                             <button onClick={() => navigateTo('nations')} className={`w-full flex items-center gap-3 px-6 py-3 font-medium transition-colors ${activeTab === 'nations' ? 'bg-royal-800/50 text-gold-500 border-r-4 border-gold-500' : 'text-royal-300 hover:bg-royal-800 hover:text-royal-100'}`}><NationsIcon size={20}/>Nations</button>
                             <button onClick={() => navigateTo('analytics')} className={`w-full flex items-center gap-3 px-6 py-3 font-medium transition-colors ${activeTab === 'analytics' ? 'bg-royal-800/50 text-gold-500 border-r-4 border-gold-500' : 'text-royal-300 hover:bg-royal-800 hover:text-royal-100'}`}><AnalyticsIcon size={20}/>Analytics</button>
