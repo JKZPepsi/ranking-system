@@ -859,36 +859,46 @@
         function PlayerMedia({ url, className, onClick, alt }) {
             if (!url) return <div className={`bg-royal-800 flex items-center justify-center ${className}`}><span className="text-royal-500 text-xs font-bold">TBD</span></div>;
             
-            // Ultra-smart video detection (handles links with extra ?alt=media query text)
-            const lowerUrl = url.toLowerCase();
-            const isVideo = lowerUrl.includes('.mp4') || lowerUrl.includes('.webm') || lowerUrl.includes('.mov') || url.match(/\.(mp4|webm|ogg|mov)(\?.*)?$/i);
-            
-            if (isVideo) {
+            let processedUrl = url.trim();
+            const isIframeString = processedUrl.startsWith('<iframe') || processedUrl.startsWith('<blockquote');
+
+            // 1. Raw HTML Embed Code (Iframe/Blockquote)
+            if (isIframeString) {
                 return (
-                    <video 
-                        src={url} 
-                        className={className} 
-                        autoPlay 
-                        loop 
-                        muted 
-                        playsInline 
-                        onClick={onClick} 
-                        style={{ objectFit: 'cover' }}
+                    <div 
+                        className={`w-full h-full flex items-center justify-center bg-black overflow-hidden [&>iframe]:w-full [&>iframe]:h-full [&>iframe]:border-0 ${className}`} 
+                        dangerouslySetInnerHTML={{ __html: processedUrl }} 
+                        onClick={onClick}
                     />
                 );
             }
+
+            const lowerUrl = processedUrl.toLowerCase();
+
+            // 2. Auto-Convert Standard YouTube/Shorts Links to Embeds
+            const ytMatch = processedUrl.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=|shorts\/))((\w|-){11})/);
+            if (ytMatch && ytMatch[1]) {
+                const ytEmbedUrl = `https://www.youtube.com/embed/${ytMatch[1]}`;
+                return <iframe src={ytEmbedUrl} className={`w-full h-full border-0 ${className}`} allowFullScreen allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" onClick={onClick}></iframe>;
+            }
+
+            // 3. Explicit Iframe URLs (Vimeo, etc.)
+            if (lowerUrl.includes('vimeo.com/video/')) {
+                return <iframe src={processedUrl} className={`w-full h-full border-0 ${className}`} allowFullScreen onClick={onClick}></iframe>;
+            }
+
+            // 4. Native Video Formats (.mp4, .webm, etc.)
+            const isVideo = lowerUrl.includes('.mp4') || lowerUrl.includes('.webm') || lowerUrl.includes('.mov') || processedUrl.match(/\.(mp4|webm|ogg|mov)(\?.*)?$/i);
+            if (isVideo) {
+                return (
+                    <video src={processedUrl} className={className} autoPlay loop muted playsInline onClick={onClick} style={{ objectFit: 'cover' }} />
+                );
+            }
             
+            // 5. Default to Image
             return (
-                <img 
-                    src={url} 
-                    className={className} 
-                    loading="lazy" 
-                    decoding="async" 
-                    onClick={onClick} 
-                    alt={alt || "Media"} 
-                    style={{ objectFit: 'cover' }}
+                <img src={processedUrl} className={className} loading="lazy" decoding="async" onClick={onClick} alt={alt || "Media"} style={{ objectFit: 'cover' }}
                     onError={(e) => {
-                        // Prevents the ugly ripped paper icon if a link is dead!
                         e.target.onerror = null; 
                         e.target.src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100%25' height='100%25'%3E%3Crect width='100%25' height='100%25' fill='%231e293b'/%3E%3Ctext x='50%25' y='50%25' fill='%2364748b' font-family='sans-serif' font-size='14' text-anchor='middle' dy='.3em'%3EInvalid Link%3C/text%3E%3C/svg%3E";
                     }}
@@ -2972,7 +2982,7 @@
                                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                                     {[0,1,2,3].map(i => (
                                         <div key={i} className="space-y-3">
-                                            <input type="url" placeholder={`Media URL ${i+1}`} className="w-full bg-royal-950 p-2 rounded-lg text-xs text-white border border-royal-700 focus:border-gold-500 transition-colors" value={newPlayerImages[i]} onChange={e => { const ni = [...newPlayerImages]; ni[i] = e.target.value; setNewPlayerImages(ni); }} />
+                                            <input type="text" placeholder={`Link or Embed Code ${i+1}`} className="w-full bg-royal-950 p-2 rounded-lg text-xs text-white border border-royal-700 focus:border-gold-500 transition-colors" value={newPlayerImages[i]} onChange={e => { const ni = [...newPlayerImages]; ni[i] = e.target.value; setNewPlayerImages(ni); }} />
                                             {/* Aspect Ratio Preview Box */}
                                             <div className="w-full aspect-[3/4] bg-black rounded-lg border-2 border-royal-800 overflow-hidden flex items-center justify-center shadow-inner">
                                                 {newPlayerImages[i] ? <PlayerMedia url={newPlayerImages[i]} className="w-full h-full object-cover" /> : <span className="text-royal-700 font-bold text-[10px]">SLOT {i+1}</span>}
@@ -3282,7 +3292,7 @@
                                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                                     {editImages.map((u, i) => (
                                         <div key={i} className="space-y-3">
-                                            <input placeholder={`Media URL ${i+1}`} className="w-full bg-royal-950 p-2 rounded-lg text-xs text-white border border-royal-700 focus:border-gold-500 transition-colors" value={u} onChange={e => { const ni = [...editImages]; ni[i] = e.target.value; setEditImages(ni); }} />
+                                            <input type="text" placeholder={`Link or Embed Code ${i+1}`} className="w-full bg-royal-950 p-2 rounded-lg text-xs text-white border border-royal-700 focus:border-gold-500 transition-colors" value={u} onChange={e => { const ni = [...editImages]; ni[i] = e.target.value; setEditImages(ni); }} />
                                             <div className="w-full aspect-[3/4] bg-black rounded-lg border-2 border-royal-800 overflow-hidden flex items-center justify-center shadow-inner">
                                                 {u ? <PlayerMedia url={u} className="w-full h-full object-cover" /> : <span className="text-royal-700 font-bold text-xs">SLOT {i+1}</span>}
                                             </div>
