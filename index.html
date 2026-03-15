@@ -2311,9 +2311,22 @@
         function NationProfile({ code, players, onBack, onNavigate, playersRaw, tournaments }) {
             const { active, retired } = useMemo(() => {
                 const natPlayers = players.filter(p => (p.nationality || 'UNK') === code);
-                const activeList = natPlayers.filter(p => !p.retired).sort((a,b) => b.points - a.points || b.totalPoints - a.totalPoints);
-                
                 const globalHist = (tournaments && playersRaw) ? getGlobalHistory(playersRaw, tournaments) : [];
+                const prevHist = globalHist.length > 1 ? globalHist[globalHist.length - 2] : null;
+
+                let activeList = natPlayers.filter(p => !p.retired).sort((a,b) => b.points - a.points || b.totalPoints - a.totalPoints);
+                
+                activeList.forEach((p, idx) => {
+                    p.nationalRank = idx + 1;
+                    let diff = 0;
+                    if (prevHist) {
+                        const prevStanding = prevHist.standings.find(s => s.id === p.id);
+                        const prevPoints = prevStanding ? prevStanding.pts : 0;
+                        diff = p.points - prevPoints;
+                    }
+                    p.diff = diff;
+                });
+                
                 const retiredList = natPlayers.filter(p => p.retired).map(p => {
                     let peakRank = 9999, peakPoints = 0;
                     globalHist.forEach(h => {
@@ -2380,44 +2393,90 @@
 
                         <div id="nation-roster" className="scroll-mt-8">
                             <h2 className="text-2xl font-bold text-white mb-4 mt-8 flex items-center gap-2"><PlayersIcon size={24} className="text-gold-500"/> National Roster</h2>
-                            <div className="bg-royal-900 rounded-xl border border-royal-800 overflow-hidden shadow-xl">
-                                <div className="overflow-x-auto">
-                                    {/* 1:1 CLONE OF THE GLOBAL RANKINGS TABLE */}
-                                    <table className="w-full text-left border-collapse">
+                            
+                            <div className="bg-royal-900 rounded-xl border border-royal-800 shadow-xl overflow-hidden">
+                                <div className="overflow-x-auto pb-4 custom-scrollbar">
+                                    <table className="w-full text-left border-collapse whitespace-nowrap min-w-[1100px]">
                                         <thead>
-                                            <tr className="bg-royal-950/50 text-royal-200 text-sm uppercase tracking-wider border-b border-royal-800">
-                                                <th className="p-4 font-semibold w-16 text-center">Nat</th>
-                                                <th className="p-4 font-semibold w-16 text-center">Glb</th>
-                                                <th className="p-4 font-semibold">Player</th>
-                                                <th className="p-4 font-semibold">Points</th>
-                                                <th className="p-4 font-semibold text-center">W-L</th>
+                                            <tr className="bg-royal-950/60 text-royal-200 text-[11px] uppercase tracking-widest select-none border-b border-royal-800">
+                                                <th className="p-4 font-bold w-16 text-center">Nat Rnk</th>
+                                                <th className="p-4 font-bold w-16 text-center">Glb Rnk</th>
+                                                <th className="p-4 font-bold">Player</th>
+                                                <th className="p-4 font-bold text-center w-28">Points</th>
+                                                <th className="p-4 font-bold w-16 text-center">+/-</th>
+                                                <th className="p-4 font-bold text-center text-royal-400 w-24">Dropping</th>
+                                                <th className="p-4 font-bold text-center text-royal-400 w-24">New</th>
+                                                <th className="p-4 font-bold text-center text-royal-400 w-20">Played</th>
+                                                <th className="p-4 font-bold text-center w-24">W-L</th>
+                                                <th className="p-4 font-bold text-center w-48">Recent</th>
                                             </tr>
                                         </thead>
-                                        <tbody className="divide-y divide-royal-800">
-                                            {active.map((player, idx) => (
-                                                <tr key={player.id} onClick={() => onNavigate('players', player.id)} className="hover:bg-royal-800/50 transition-colors cursor-pointer group">
-                                                    <td className="p-4 text-center font-bold text-royal-400">{idx + 1}</td>
-                                                    <td className="p-4 text-center font-bold text-royal-500 text-sm">#{player.rank}</td>
-                                                    <td className="p-4 font-medium text-white flex items-center gap-3">
-                                                        <div className="w-10 h-10 rounded-full overflow-hidden border border-royal-700 bg-black shrink-0">
-                                                            <PlayerMedia url={player.imageUrl || (player.images ? player.images[0] : '')} className="w-full h-full" />
+                                        <tbody className="divide-y divide-royal-800/50">
+                                            {active.map((player) => {
+                                                const recent = player.recentTournaments?.[0];
+                                                let recentDisplay = '-';
+                                                if (recent) {
+                                                    const recentT = tournaments.find(t => t.id === recent.tournamentId);
+                                                    const rFlag = recentT ? getFlag(recentT.hostCountry) : '';
+                                                    recentDisplay = (
+                                                        <div className="flex items-center justify-center gap-1.5 text-sm">
+                                                            {rFlag && <span title={recentT?.hostCountry}>{rFlag}</span>}
+                                                            <span className="truncate max-w-[120px] text-royal-200">{recent.tournamentName}</span>
+                                                            <span className="text-royal-600 font-bold mx-1">•</span>
+                                                            <span className="font-bold text-white">{getRecentAbbr(recent.result)}</span>
                                                         </div>
-                                                        <div>
-                                                            <div className="group-hover:text-gold-500 transition-colors">{player.name}</div>
-                                                        </div>
-                                                    </td>
-                                                    <td className="p-4 font-bold text-gold-500">
-                                                        {player.points.toLocaleString()}
-                                                        {player.bonusPoints > 0 && <span className="text-emerald-400 text-xs ml-1 font-bold">+{player.bonusPoints}</span>}
-                                                    </td>
-                                                    <td className="p-4 text-center text-royal-200">{player.stats.wins} - {player.stats.losses}</td>
-                                                </tr>
-                                            ))}
+                                                    );
+                                                }
+
+                                                return (
+                                                    <tr key={player.id} onClick={() => onNavigate('players', player.id)} className="hover:bg-royal-800/50 transition-colors cursor-pointer group">
+                                                        <td className="p-4 text-center font-bold text-royal-400 text-base tabular-nums">{player.nationalRank}</td>
+                                                        <td className="p-4 text-center font-bold text-white text-base tabular-nums">#{player.rank}</td>
+                                                        
+                                                        <td className="p-4 font-medium text-white flex items-center gap-3">
+                                                            <div className="w-10 h-10 rounded-full overflow-hidden border border-royal-700 bg-black shrink-0">
+                                                                <PlayerMedia url={player.imageUrl || (player.images ? player.images[0] : '')} className="w-full h-full" />
+                                                            </div>
+                                                            <div>
+                                                                <div className="group-hover:text-gold-500 transition-colors font-bold text-base">{player.name}</div>
+                                                            </div>
+                                                        </td>
+
+                                                        <td className="p-4 font-bold text-gold-500 text-center text-base tabular-nums">
+                                                            {player.points.toLocaleString()}
+                                                        </td>
+
+                                                        <td className="p-4 text-center font-bold text-sm tabular-nums">
+                                                            {player.diff > 0 ? <span className="text-[#059669]">+{player.diff}</span> : player.diff < 0 ? <span className="text-[#be123c]">{player.diff}</span> : <span className="text-royal-600">-</span>}
+                                                        </td>
+
+                                                        <td className="p-4 text-center text-sm font-medium text-royal-400 group-hover:text-red-400 transition-colors tabular-nums">
+                                                            {player.droppingPoints > 0 ? `-${player.droppingPoints}` : '-'}
+                                                        </td>
+
+                                                        <td className="p-4 text-center text-sm font-medium tabular-nums">
+                                                            {player.bonusPoints > 0 ? <span className="text-emerald-400">+{player.bonusPoints}</span> : <span className="text-royal-600">-</span>}
+                                                        </td>
+
+                                                        <td className="p-4 text-center text-sm font-medium text-royal-200 tabular-nums">
+                                                            {player.stats.totalPlayed}
+                                                        </td>
+
+                                                        <td className="p-4 text-center text-royal-200 font-bold text-sm tabular-nums">
+                                                            {player.stats.wins} - {player.stats.losses}
+                                                        </td>
+
+                                                        <td className="p-4 text-center">
+                                                            {recentDisplay}
+                                                        </td>
+                                                    </tr>
+                                                );
+                                            })}
 
                                             {retired.length > 0 && (
                                                 <>
                                                     <tr className="bg-royal-950/90 border-t-2 border-royal-700">
-                                                        <td colSpan="5" className="p-4 text-center">
+                                                        <td colSpan="10" className="p-4 text-center">
                                                             <div className="inline-flex items-center gap-3">
                                                                 <div className="h-px w-16 bg-royal-700"></div>
                                                                 <span className="text-royal-400 font-bold uppercase tracking-widest text-sm flex items-center gap-2">
@@ -2429,28 +2488,36 @@
                                                     </tr>
                                                     {retired.map((player) => (
                                                         <tr key={player.id} onClick={() => onNavigate('players', player.id)} className="hover:bg-royal-800/50 transition-colors cursor-pointer group opacity-80 hover:opacity-100 bg-black/20">
-                                                            <td className="p-4 text-center font-bold text-royal-600">-</td>
-                                                            <td className="p-4 text-center">
-                                                                <div className="text-[10px] text-royal-500 uppercase font-bold tracking-widest leading-tight mb-0.5">Peak Rnk</div>
-                                                                <div className="font-bold text-royal-400 group-hover:text-white">#{player.peakRank}</div>
-                                                            </td>
+                                                            <td className="p-4 text-center font-bold text-royal-600 text-base tabular-nums">-</td>
+                                                            <td className="p-4 text-center font-bold text-royal-600 text-base tabular-nums">-</td>
+                                                            
                                                             <td className="p-4 font-medium text-white flex items-center gap-3">
                                                                 <div className="w-10 h-10 rounded-full overflow-hidden border border-royal-700 bg-black shrink-0 relative">
                                                                     <PlayerMedia url={player.imageUrl || (player.images ? player.images[0] : '')} className="w-full h-full" />
                                                                     <div className="absolute inset-0 bg-black/40 backdrop-grayscale-[0.5]"></div>
                                                                 </div>
                                                                 <div>
-                                                                    <div className="group-hover:text-gold-500 transition-colors flex items-center gap-2">
+                                                                    <div className="group-hover:text-gold-500 transition-colors font-bold text-base text-royal-200">
                                                                         {player.name}
-                                                                        <span className="text-[9px] bg-[#be123c]/20 text-[#fb7185] px-1.5 py-0.5 rounded uppercase tracking-wider border border-[#be123c]/30 shrink-0">Retired</span>
+                                                                        <span className="ml-3 text-[9px] bg-[#be123c]/20 text-[#fb7185] px-1.5 py-0.5 rounded uppercase tracking-wider border border-[#be123c]/30 align-middle">Retired</span>
                                                                     </div>
                                                                 </div>
                                                             </td>
-                                                            <td className="p-4 font-bold text-royal-300">
+
+                                                            <td className="p-4 text-center font-bold text-royal-400 tabular-nums">
                                                                 <div className="text-[10px] text-royal-500 uppercase font-bold tracking-widest mb-0.5">Peak Pts</div>
                                                                 {player.peakPoints.toLocaleString()}
                                                             </td>
-                                                            <td className="p-4 text-center text-royal-500 font-medium">{player.stats.wins} - {player.stats.losses}</td>
+
+                                                            <td className="p-4 text-center font-medium text-royal-600 tabular-nums">-</td>
+                                                            <td className="p-4 text-center font-medium text-royal-600 tabular-nums">-</td>
+                                                            <td className="p-4 text-center font-medium text-royal-600 tabular-nums">-</td>
+                                                            <td className="p-4 text-center text-sm font-medium text-royal-400 tabular-nums">{player.stats.totalPlayed}</td>
+                                                            <td className="p-4 text-center text-royal-400 font-bold text-sm tabular-nums">{player.stats.wins} - {player.stats.losses}</td>
+                                                            <td className="p-4 text-center">
+                                                                <div className="text-[10px] text-royal-500 uppercase font-bold tracking-widest mb-0.5">Peak Rnk</div>
+                                                                <span className="text-royal-300 font-bold text-sm">#{player.peakRank}</span>
+                                                            </td>
                                                         </tr>
                                                     ))}
                                                 </>
@@ -2791,6 +2858,17 @@
             );
         }
 
+        const getRecentAbbr = (result) => {
+            const map = {
+                'Winner': 'W', 'Finalist': 'F', 'Final': 'F',
+                'Semifinalist': 'SF', 'Semifinals': 'SF',
+                'Quarterfinals': 'QF', 'Round of 16': 'R16',
+                'Round of 32': 'R32', 'Round of 64': 'R64',
+                'Round Robin': 'RR'
+            };
+            return map[result] || result || '-';
+        };
+        
         function DashboardView({ playersRaw, tournaments, onSelectPlayer, players }) {
             const [asOfId, setAsOfId] = useState('');
             const [sortConfig, setSortConfig] = useState({ key: 'rank', direction: 'asc' });
@@ -2803,7 +2881,6 @@
                 }
             };
 
-            // 1. UPDATED: Only show the sort icon if it's the actively sorted column
             const SortIcon = ({ column }) => {
                 if (sortConfig.key !== column) return null;
                 return <span className="text-gold-500 inline-block w-3 text-center ml-1 text-[10px]">{sortConfig.direction === 'asc' ? '▲' : '▼'}</span>;
@@ -2840,7 +2917,6 @@
                     if (sortConfig.key === 'name') { valA = a.name.toLowerCase(); valB = b.name.toLowerCase(); }
                     if (sortConfig.key === 'points') { valA = a.points; valB = b.points; }
                     if (sortConfig.key === 'dropping') { valA = a.droppingPoints || 0; valB = b.droppingPoints || 0; }
-                    // 2. UPDATED: Added logic for "bonus" (New) and "recent" sorting
                     if (sortConfig.key === 'bonus') { valA = a.bonusPoints || 0; valB = b.bonusPoints || 0; }
                     if (sortConfig.key === 'recent') { valA = a.recentTournaments?.[0]?.result || ''; valB = b.recentTournaments?.[0]?.result || ''; }
                     if (sortConfig.key === 'played') { valA = a.stats.totalPlayed; valB = b.stats.totalPlayed; }
@@ -2872,7 +2948,7 @@
             }, [playersRaw, tournaments, asOfId, sortConfig]);
 
             return (
-                <div className="max-w-6xl mx-auto space-y-6 pb-20">
+                <div className="max-w-5xl mx-auto space-y-6 pb-20">
                     <header className="mb-8 flex flex-col md:flex-row md:items-end justify-between gap-6">
                         <div>
                             <h1 className="text-3xl font-bold text-white">SNB Rankings</h1>
@@ -2881,124 +2957,115 @@
                         <HistoricalTournamentSelect tournaments={tournaments} value={asOfId} onChange={setAsOfId} />
                     </header>
 
-                    {/* 3. UPDATED: Redesigned Table Structure & Styling */}
-                    <div className="bg-royal-900/40 rounded-xl border border-royal-800 shadow-xl overflow-hidden backdrop-blur-sm">
+                    <div className="bg-royal-900 rounded-xl border border-royal-800 shadow-xl overflow-hidden">
                         <div className="overflow-x-auto pb-4 custom-scrollbar">
-                            <table className="w-full text-left border-collapse whitespace-nowrap min-w-[1000px]">
+                            <table className="w-full text-left border-collapse whitespace-nowrap min-w-[1050px]">
                                 <thead>
-                                    <tr className="bg-transparent text-royal-300 text-[11px] font-bold uppercase tracking-widest select-none border-b-2 border-royal-800/80">
-                                        <th className="py-5 px-4 w-16 text-center cursor-pointer hover:text-white transition-colors" onClick={() => handleSort('rank')}>Rank <SortIcon column="rank"/></th>
-                                        <th className="py-5 px-4 cursor-pointer hover:text-white transition-colors" onClick={() => handleSort('name')}>Player <SortIcon column="name"/></th>
-                                        <th className="py-5 px-4 text-center cursor-pointer hover:text-white transition-colors w-28" onClick={() => handleSort('points')}>Points <SortIcon column="points"/></th>
-                                        <th className="py-5 px-4 w-16 text-center cursor-pointer hover:text-white transition-colors" onClick={() => handleSort('diff')}>+/- <SortIcon column="diff"/></th>
-                                        <th className="py-5 px-4 text-center cursor-pointer hover:text-white transition-colors w-24" onClick={() => handleSort('dropping')}>Dropping <SortIcon column="dropping"/></th>
-                                        <th className="py-5 px-4 text-center cursor-pointer hover:text-white transition-colors w-24" onClick={() => handleSort('bonus')}>New <SortIcon column="bonus"/></th>
-                                        <th className="py-5 px-4 text-center cursor-pointer hover:text-white transition-colors w-24" onClick={() => handleSort('played')}>Played <SortIcon column="played"/></th>
-                                        <th className="py-5 px-4 text-center cursor-pointer hover:text-white transition-colors w-24" onClick={() => handleSort('wl')}>W-L <SortIcon column="wl"/></th>
-                                        <th className="py-5 px-4 text-center cursor-pointer hover:text-white transition-colors w-32" onClick={() => handleSort('recent')}>Recent <SortIcon column="recent"/></th>
+                                    <tr className="bg-royal-950/60 text-royal-200 text-[11px] uppercase tracking-widest select-none border-b border-royal-800">
+                                        <th className="p-4 font-bold w-16 text-center cursor-pointer hover:text-white transition-colors" onClick={() => handleSort('rank')}>Rank <SortIcon column="rank"/></th>
+                                        <th className="p-4 font-bold cursor-pointer hover:text-white transition-colors" onClick={() => handleSort('name')}>Player <SortIcon column="name"/></th>
+                                        <th className="p-4 font-bold text-center cursor-pointer hover:text-white transition-colors w-28" onClick={() => handleSort('points')}>Points <SortIcon column="points"/></th>
+                                        <th className="p-4 font-bold w-16 text-center cursor-pointer hover:text-white transition-colors" onClick={() => handleSort('diff')}>+/- <SortIcon column="diff"/></th>
+                                        <th className="p-4 font-bold text-center cursor-pointer hover:text-white transition-colors text-royal-400 w-24" onClick={() => handleSort('dropping')}>Dropping <SortIcon column="dropping"/></th>
+                                        <th className="p-4 font-bold text-center cursor-pointer hover:text-white transition-colors text-royal-400 w-24" onClick={() => handleSort('bonus')}>New <SortIcon column="bonus"/></th>
+                                        <th className="p-4 font-bold text-center cursor-pointer hover:text-white transition-colors text-royal-400 w-20" onClick={() => handleSort('played')}>Played <SortIcon column="played"/></th>
+                                        <th className="p-4 font-bold text-center cursor-pointer hover:text-white transition-colors w-24" onClick={() => handleSort('wl')}>W-L <SortIcon column="wl"/></th>
+                                        <th className="p-4 font-bold text-center cursor-pointer hover:text-white transition-colors w-48" onClick={() => handleSort('recent')}>Recent <SortIcon column="recent"/></th>
                                     </tr>
                                 </thead>
-                                <tbody className="divide-y divide-royal-800/40">
-                                    {active.map((player) => (
-                                        <tr key={player.id} onClick={() => onSelectPlayer(player.id)} className="hover:bg-royal-800/40 transition-colors cursor-pointer group bg-royal-950/20">
-                                            
-                                            {/* Rank */}
-                                            <td className="py-4 px-4 text-center font-black text-white text-xl tabular-nums">{player.currentRank}</td>
-                                            
-                                            {/* Player Flag & Name */}
-                                            <td className="py-4 px-4 font-medium text-white flex items-center gap-4">
-                                                <div className="w-12 h-12 rounded-full overflow-hidden border-2 border-royal-700 bg-black shrink-0 relative shadow-md">
-                                                    <PlayerMedia url={player.imageUrl || (player.images ? player.images[0] : '')} className="w-full h-full" />
+                                <tbody className="divide-y divide-royal-800/50">
+                                    {active.map((player) => {
+                                        const recent = player.recentTournaments?.[0];
+                                        let recentDisplay = '-';
+                                        if (recent) {
+                                            const recentT = tournaments.find(t => t.id === recent.tournamentId);
+                                            const rFlag = recentT ? getFlag(recentT.hostCountry) : '';
+                                            recentDisplay = (
+                                                <div className="flex items-center justify-center gap-1.5 text-sm">
+                                                    {rFlag && <span title={recentT?.hostCountry}>{rFlag}</span>}
+                                                    <span className="truncate max-w-[120px] text-royal-200">{recent.tournamentName}</span>
+                                                    <span className="text-royal-600 font-bold mx-1">•</span>
+                                                    <span className="font-bold text-white">{getRecentAbbr(recent.result)}</span>
                                                 </div>
-                                                <div className="flex items-center gap-3">
-                                                    <span className="text-2xl drop-shadow-md" title={getCountryName(player.nationality)}>{getFlag(player.nationality)}</span>
-                                                    <div className="group-hover:text-gold-500 transition-colors font-bold text-lg">{player.name}</div>
-                                                </div>
-                                            </td>
+                                            );
+                                        }
 
-                                            {/* Points */}
-                                            <td className="py-4 px-4 font-black text-white text-center text-lg tabular-nums">
-                                                {player.points.toLocaleString()}
-                                            </td>
+                                        return (
+                                            <tr key={player.id} onClick={() => onSelectPlayer(player.id)} className="hover:bg-royal-800/50 transition-colors cursor-pointer group">
+                                                <td className="p-4 text-center font-bold text-white text-base tabular-nums">{player.currentRank}</td>
+                                                <td className="p-4 font-medium text-white flex items-center gap-3">
+                                                    <div className="w-10 h-10 rounded-full overflow-hidden border border-royal-700 bg-black shrink-0">
+                                                        <PlayerMedia url={player.imageUrl || (player.images ? player.images[0] : '')} className="w-full h-full" />
+                                                    </div>
+                                                    <div>
+                                                        <div className="group-hover:text-gold-500 transition-colors font-bold text-base flex items-center gap-2">{getFlag(player.nationality)} {player.name}</div>
+                                                    </div>
+                                                </td>
+                                                <td className="p-4 font-bold text-gold-500 text-center text-base tabular-nums">
+                                                    {player.points.toLocaleString()}
+                                                </td>
+                                                <td className="p-4 text-center font-bold text-sm tabular-nums">
+                                                    {player.diff > 0 ? <span className="text-[#059669]">+{player.diff}</span> : player.diff < 0 ? <span className="text-[#be123c]">{player.diff}</span> : <span className="text-royal-600">-</span>}
+                                                </td>
+                                                <td className="p-4 text-center text-sm font-medium text-royal-400 group-hover:text-red-400 transition-colors tabular-nums">
+                                                    {player.droppingPoints > 0 ? `-${player.droppingPoints}` : '-'}
+                                                </td>
+                                                <td className="p-4 text-center text-sm font-medium tabular-nums">
+                                                    {player.bonusPoints > 0 ? <span className="text-emerald-400">+{player.bonusPoints}</span> : <span className="text-royal-600">-</span>}
+                                                </td>
+                                                <td className="p-4 text-center text-sm font-medium text-royal-200 tabular-nums">
+                                                    {player.stats.totalPlayed}
+                                                </td>
+                                                <td className="p-4 text-center text-royal-200 font-bold text-sm tabular-nums">
+                                                    {player.stats.wins} - {player.stats.losses}
+                                                </td>
+                                                <td className="p-4 text-center">
+                                                    {recentDisplay}
+                                                </td>
+                                            </tr>
+                                        );
+                                    })}
 
-                                            {/* +/- */}
-                                            <td className="py-4 px-4 text-center font-bold text-sm tabular-nums">
-                                                {player.diff > 0 ? <span className="text-[#059669]">+{player.diff}</span> : player.diff < 0 ? <span className="text-[#be123c]">{player.diff}</span> : <span className="text-royal-600">-</span>}
-                                            </td>
-
-                                            {/* Dropping */}
-                                            <td className="py-4 px-4 text-center text-sm font-semibold text-royal-400 group-hover:text-red-400 transition-colors tabular-nums">
-                                                {player.droppingPoints > 0 ? `-${player.droppingPoints}` : '-'}
-                                            </td>
-
-                                            {/* New (Bonus) */}
-                                            <td className="py-4 px-4 text-center text-sm font-bold tabular-nums">
-                                                {player.bonusPoints > 0 ? <span className="text-emerald-400">+{player.bonusPoints}</span> : <span className="text-royal-600">-</span>}
-                                            </td>
-
-                                            {/* Played */}
-                                            <td className="py-4 px-4 text-center text-sm font-medium text-royal-300 tabular-nums">
-                                                {player.stats.totalPlayed}
-                                            </td>
-
-                                            {/* W-L */}
-                                            <td className="py-4 px-4 text-center text-royal-200 font-bold text-sm tabular-nums">
-                                                {player.stats.wins} - {player.stats.losses}
-                                            </td>
-
-                                            {/* Recent Result */}
-                                            <td className="py-4 px-4 text-center text-xs font-bold text-royal-400 tracking-wide uppercase">
-                                                {player.recentTournaments?.[0]?.result || '-'}
-                                            </td>
-                                        </tr>
-                                    ))}
-
-                                    {/* 4. UPDATED: Retired Players Section */}
                                     {retired.length > 0 && (
                                         <>
-                                            <tr className="bg-royal-950 border-t-2 border-royal-700">
-                                                <td colSpan="9" className="p-6 text-center">
-                                                    <div className="inline-flex items-center gap-4">
-                                                        <div className="h-px w-24 bg-royal-700"></div>
+                                            <tr className="bg-royal-950/90 border-t-2 border-royal-700">
+                                                <td colSpan="9" className="p-4 text-center">
+                                                    <div className="inline-flex items-center gap-3">
+                                                        <div className="h-px w-16 bg-royal-700"></div>
                                                         <span className="text-royal-400 font-bold uppercase tracking-widest text-sm flex items-center gap-2">
                                                             <Trophy size={16} className="text-royal-500" /> Hall of Fame
                                                         </span>
-                                                        <div className="h-px w-24 bg-royal-700"></div>
+                                                        <div className="h-px w-16 bg-royal-700"></div>
                                                     </div>
                                                 </td>
                                             </tr>
                                             {retired.map((player) => (
-                                                <tr key={player.id} onClick={() => onSelectPlayer(player.id)} className="hover:bg-royal-800/50 transition-colors cursor-pointer group opacity-80 hover:opacity-100 bg-black/40">
-                                                    <td className="py-4 px-4 text-center font-bold text-royal-600 text-lg tabular-nums">-</td>
-                                                    
-                                                    <td className="py-4 px-4 font-medium text-white flex items-center gap-4">
-                                                        <div className="w-12 h-12 rounded-full overflow-hidden border-2 border-royal-700 bg-black shrink-0 relative">
+                                                <tr key={player.id} onClick={() => onSelectPlayer(player.id)} className="hover:bg-royal-800/50 transition-colors cursor-pointer group opacity-80 hover:opacity-100 bg-black/20">
+                                                    <td className="p-4 text-center font-bold text-royal-600 text-base tabular-nums">-</td>
+                                                    <td className="p-4 font-medium text-white flex items-center gap-3">
+                                                        <div className="w-10 h-10 rounded-full overflow-hidden border border-royal-700 bg-black shrink-0 relative">
                                                             <PlayerMedia url={player.imageUrl || (player.images ? player.images[0] : '')} className="w-full h-full" />
                                                             <div className="absolute inset-0 bg-black/40 backdrop-grayscale-[0.5]"></div>
                                                         </div>
-                                                        <div className="flex items-center gap-3">
-                                                            <span className="text-2xl drop-shadow-md grayscale">{getFlag(player.nationality)}</span>
-                                                            <div className="group-hover:text-gold-500 transition-colors font-bold text-lg text-royal-300">
-                                                                {player.name}
-                                                                <span className="ml-3 text-[9px] bg-[#be123c]/20 text-[#fb7185] px-1.5 py-0.5 rounded uppercase tracking-wider border border-[#be123c]/30 align-middle">Retired</span>
+                                                        <div>
+                                                            <div className="group-hover:text-gold-500 transition-colors flex items-center gap-2 font-bold text-base text-royal-200">
+                                                                {getFlag(player.nationality)} {player.name}
+                                                                <span className="text-[9px] bg-[#be123c]/20 text-[#fb7185] px-1.5 py-0.5 rounded uppercase tracking-wider border border-[#be123c]/30 shrink-0">Retired</span>
                                                             </div>
                                                         </div>
                                                     </td>
-
-                                                    <td className="py-4 px-4 text-center font-bold text-royal-400 tabular-nums">
-                                                        <div className="text-[9px] text-royal-600 uppercase tracking-widest mb-0.5">Peak Pts</div>
+                                                    <td className="p-4 text-center font-bold text-royal-400 tabular-nums">
+                                                        <div className="text-[10px] text-royal-500 uppercase font-bold tracking-widest mb-0.5">Peak Pts</div>
                                                         {player.peakPoints.toLocaleString()}
                                                     </td>
-
-                                                    <td className="py-4 px-4 text-center font-bold text-royal-600 tabular-nums">-</td>
-                                                    <td className="py-4 px-4 text-center text-sm text-royal-600 tabular-nums">-</td>
-                                                    <td className="py-4 px-4 text-center text-sm text-royal-600 tabular-nums">-</td>
-                                                    
-                                                    <td className="py-4 px-4 text-center text-sm font-medium text-royal-400 tabular-nums">{player.stats.totalPlayed}</td>
-                                                    <td className="py-4 px-4 text-center text-royal-400 font-bold text-sm tabular-nums">{player.stats.wins} - {player.stats.losses}</td>
-                                                    <td className="py-4 px-4 text-center text-xs font-bold text-royal-600 uppercase tracking-wide">
-                                                        <div className="text-[9px] uppercase tracking-widest mb-0.5">Peak Rnk</div>
-                                                        #{player.peakRank}
+                                                    <td className="p-4 text-center font-medium text-royal-600 tabular-nums">-</td>
+                                                    <td className="p-4 text-center font-medium text-royal-600 tabular-nums">-</td>
+                                                    <td className="p-4 text-center font-medium text-royal-600 tabular-nums">-</td>
+                                                    <td className="p-4 text-center text-sm font-medium text-royal-400 tabular-nums">{player.stats.totalPlayed}</td>
+                                                    <td className="p-4 text-center text-royal-400 font-bold text-sm tabular-nums">{player.stats.wins} - {player.stats.losses}</td>
+                                                    <td className="p-4 text-center">
+                                                        <div className="text-[10px] text-royal-500 uppercase font-bold tracking-widest mb-0.5">Peak Rnk</div>
+                                                        <span className="text-royal-300 font-bold text-sm">#{player.peakRank}</span>
                                                     </td>
                                                 </tr>
                                             ))}
