@@ -2074,23 +2074,27 @@
     
 
         function FloatingChartNav() {
+            const scrollToSection = (id) => document.getElementById(id)?.scrollIntoView({behavior: 'smooth', block: 'start'});
+            const scrollToTop = () => document.querySelector('main .overflow-auto')?.scrollTo({ top: 0, behavior: 'smooth' });
+
             return (
-                <div className="fixed left-4 top-1/2 -translate-y-1/2 flex flex-col gap-3 z-50 bg-royal-950/90 backdrop-blur-md p-3 rounded-2xl border border-royal-800 shadow-[0_10px_30px_rgba(0,0,0,0.8)] hidden xl:flex">
-                    <div className="text-[10px] text-royal-400 uppercase tracking-widest font-bold text-center pb-2 border-b border-royal-800 mb-1">Jump</div>
+                <div className="fixed right-8 top-1/2 -translate-y-1/2 flex flex-col gap-3 z-50 bg-royal-950/90 backdrop-blur-md p-3 rounded-2xl border border-royal-800 shadow-[0_10px_30px_rgba(0,0,0,0.8)] hidden xl:flex w-24">
+                    <div className="text-[10px] text-royal-400 uppercase tracking-widest font-bold text-center pb-2 border-b border-royal-800 w-full mb-1">Jump</div>
                     
-                    <button onClick={() => document.getElementById('snb-chart-wrapper-rank')?.scrollIntoView({behavior: 'smooth', block: 'start'})} className="p-3 bg-royal-900 hover:bg-gold-500 hover:text-royal-950 text-royal-200 rounded-xl transition-all hover:scale-110 group flex flex-col items-center gap-1 shadow-inner">
+                    <button onClick={() => scrollToSection('snb-chart-wrapper-rank')} className="p-3 w-full bg-royal-900 hover:bg-gold-500 hover:text-royal-950 text-royal-200 rounded-xl transition-all hover:scale-110 group flex flex-col items-center justify-center gap-1.5 shadow-inner">
                         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"></polyline><polyline points="16 7 22 7 22 13"></polyline></svg>
-                        <span className="text-[10px] font-black uppercase tracking-wider mt-1">Rank</span>
+                        <span className="text-[9px] font-black uppercase tracking-wider text-center">Rank</span>
                     </button>
                     
-                    <button onClick={() => document.getElementById('snb-chart-wrapper-points')?.scrollIntoView({behavior: 'smooth', block: 'start'})} className="p-3 bg-royal-900 hover:bg-gold-500 hover:text-royal-950 text-royal-200 rounded-xl transition-all hover:scale-110 group flex flex-col items-center gap-1 shadow-inner">
+                    <button onClick={() => scrollToSection('snb-chart-wrapper-points')} className="p-3 w-full bg-royal-900 hover:bg-gold-500 hover:text-royal-950 text-royal-200 rounded-xl transition-all hover:scale-110 group flex flex-col items-center justify-center gap-1.5 shadow-inner">
                         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>
-                        <span className="text-[10px] font-black uppercase tracking-wider mt-1">Points</span>
+                        <span className="text-[9px] font-black uppercase tracking-wider text-center">Points</span>
                     </button>
 
-                    <div className="mt-2 pt-4 border-t border-royal-800">
-                        <button onClick={() => window.scrollTo({top: 0, behavior: 'smooth'})} className="w-full flex flex-col items-center justify-center gap-1 px-3 py-2 text-[10px] uppercase font-bold text-gold-500 hover:text-white bg-royal-950/50 hover:bg-royal-800 border border-royal-800 rounded-lg transition-colors shadow-sm">
-                            <ArrowUpIcon size={16}/> Top
+                    <div className="mt-2 pt-4 border-t border-royal-800 w-full">
+                        <button onClick={scrollToTop} className="p-3 w-full bg-royal-900 hover:bg-gold-500 hover:text-royal-950 text-gold-500 rounded-xl transition-all hover:scale-110 group flex flex-col items-center justify-center gap-1.5 shadow-inner">
+                            <ArrowUpIcon size={20}/>
+                            <span className="text-[9px] font-black uppercase tracking-wider text-center">Top</span>
                         </button>
                     </div>
                 </div>
@@ -2098,15 +2102,11 @@
         }
 
         function FloatingNationNav() {
-            const scrollToSection = (id) => {
-                const el = document.getElementById(id);
-                if (el) {
-                    const y = el.getBoundingClientRect().top + window.scrollY - 20;
-                    window.scrollTo({top: y, behavior: 'smooth'});
-                }
-            };
+            const scrollToSection = (id) => document.getElementById(id)?.scrollIntoView({behavior: 'smooth', block: 'start'});
+            const scrollToTop = () => document.querySelector('main .overflow-auto')?.scrollTo({ top: 0, behavior: 'smooth' });
+            
             return (
-                <div className="fixed left-4 top-1/2 -translate-y-1/2 flex flex-col gap-3 z-50 bg-royal-950/90 backdrop-blur-md p-3 rounded-2xl border border-royal-800 shadow-[0_10px_30px_rgba(0,0,0,0.8)] hidden xl:flex w-24">
+                <div className="fixed right-8 top-1/2 -translate-y-1/2 flex flex-col gap-3 z-50 bg-royal-950/90 backdrop-blur-md p-3 rounded-2xl border border-royal-800 shadow-[0_10px_30px_rgba(0,0,0,0.8)] hidden xl:flex w-24">
                     <div className="text-[10px] text-royal-400 uppercase tracking-widest font-bold text-center pb-2 border-b border-royal-800 w-full mb-1">Jump</div>
                     
                     <button onClick={() => scrollToSection('nation-chart')} className="p-3 w-full bg-royal-900 hover:bg-gold-500 hover:text-royal-950 text-royal-200 rounded-xl transition-all hover:scale-110 group flex flex-col items-center justify-center gap-1.5 shadow-inner">
@@ -2125,7 +2125,7 @@
                     </button>
                     
                     <div className="mt-2 pt-4 border-t border-royal-800 w-full">
-                        <button onClick={() => window.scrollTo({top: 0, behavior: 'smooth'})} className="p-3 w-full bg-royal-900 hover:bg-gold-500 hover:text-royal-950 text-gold-500 rounded-xl transition-all hover:scale-110 group flex flex-col items-center justify-center gap-1.5 shadow-inner">
+                        <button onClick={scrollToTop} className="p-3 w-full bg-royal-900 hover:bg-gold-500 hover:text-royal-950 text-gold-500 rounded-xl transition-all hover:scale-110 group flex flex-col items-center justify-center gap-1.5 shadow-inner">
                             <ArrowUpIcon size={20}/>
                             <span className="text-[9px] font-black uppercase tracking-wider text-center">Top</span>
                         </button>
@@ -2312,7 +2312,9 @@
             const { active, retired } = useMemo(() => {
                 const natPlayers = players.filter(p => (p.nationality || 'UNK') === code);
                 const globalHist = (tournaments && playersRaw) ? getGlobalHistory(playersRaw, tournaments) : [];
-                const prevHist = globalHist.length > 1 ? globalHist[globalHist.length - 2] : null;
+                
+                const majorHist = globalHist.filter(h => h.isMajorPlus);
+                const prevHist = majorHist.length > 1 ? majorHist[majorHist.length - 2] : null;
 
                 let activeList = natPlayers.filter(p => !p.retired).sort((a,b) => b.points - a.points || b.totalPoints - a.totalPoints);
                 
@@ -2323,6 +2325,8 @@
                         const prevStanding = prevHist.standings.find(s => s.id === p.id);
                         const prevPoints = prevStanding ? prevStanding.pts : 0;
                         diff = p.points - prevPoints;
+                    } else {
+                        diff = p.points;
                     }
                     p.diff = diff;
                 });
@@ -2394,24 +2398,24 @@
                         <div id="nation-roster" className="scroll-mt-8">
                             <h2 className="text-2xl font-bold text-white mb-4 mt-8 flex items-center gap-2"><PlayersIcon size={24} className="text-gold-500"/> National Roster</h2>
                             
-                            <div className="bg-royal-900 rounded-xl border border-royal-800 shadow-xl overflow-hidden">
+                            <div className="bg-royal-900/40 rounded-xl border border-royal-800 shadow-xl overflow-hidden backdrop-blur-sm">
                                 <div className="overflow-x-auto pb-4 custom-scrollbar">
-                                    <table className="w-full text-left border-collapse whitespace-nowrap min-w-[1100px]">
+                                    <table className="w-full text-left border-collapse whitespace-nowrap min-w-[1000px]">
                                         <thead>
-                                            <tr className="bg-royal-950/60 text-royal-200 text-[11px] uppercase tracking-widest select-none border-b border-royal-800">
-                                                <th className="p-4 font-bold w-16 text-center">Nat Rnk</th>
-                                                <th className="p-4 font-bold w-16 text-center">Glb Rnk</th>
-                                                <th className="p-4 font-bold">Player</th>
-                                                <th className="p-4 font-bold text-center w-28">Points</th>
-                                                <th className="p-4 font-bold w-16 text-center">+/-</th>
-                                                <th className="p-4 font-bold text-center text-royal-400 w-24">Dropping</th>
-                                                <th className="p-4 font-bold text-center text-royal-400 w-24">New</th>
-                                                <th className="p-4 font-bold text-center text-royal-400 w-20">Played</th>
-                                                <th className="p-4 font-bold text-center w-24">W-L</th>
-                                                <th className="p-4 font-bold text-center w-48">Recent</th>
+                                            <tr className="bg-transparent text-royal-300 text-[11px] font-bold uppercase tracking-widest select-none border-b-2 border-royal-800/80">
+                                                <th className="py-4 px-4 w-16 text-center">Nat Rnk</th>
+                                                <th className="py-4 px-4 w-16 text-center">Glb Rnk</th>
+                                                <th className="py-4 px-4">Player</th>
+                                                <th className="py-4 px-4 text-center w-24">Points</th>
+                                                <th className="py-4 px-4 w-16 text-center">+/-</th>
+                                                <th className="py-4 px-4 text-center w-20">Drop</th>
+                                                <th className="py-4 px-4 text-center w-20">New</th>
+                                                <th className="py-4 px-4 text-center w-20">Played</th>
+                                                <th className="py-4 px-4 text-center w-20">W-L</th>
+                                                <th className="py-4 px-4 text-left pl-8 w-48">Recent</th>
                                             </tr>
                                         </thead>
-                                        <tbody className="divide-y divide-royal-800/50">
+                                        <tbody className="divide-y divide-royal-800/40">
                                             {active.map((player) => {
                                                 const recent = player.recentTournaments?.[0];
                                                 let recentDisplay = '-';
@@ -2419,54 +2423,57 @@
                                                     const recentT = tournaments.find(t => t.id === recent.tournamentId);
                                                     const rFlag = recentT ? getFlag(recentT.hostCountry) : '';
                                                     recentDisplay = (
-                                                        <div className="flex items-center justify-center gap-1.5 text-sm">
-                                                            {rFlag && <span title={recentT?.hostCountry}>{rFlag}</span>}
-                                                            <span className="truncate max-w-[120px] text-royal-200">{recent.tournamentName}</span>
-                                                            <span className="text-royal-600 font-bold mx-1">•</span>
-                                                            <span className="font-bold text-white">{getRecentAbbr(recent.result)}</span>
+                                                        <div className="flex items-center justify-start gap-2 text-base">
+                                                            <span className="font-bold text-white w-8 text-right">{getRecentAbbr(recent.result)}</span>
+                                                            <span className="text-royal-500 text-xs font-black">-</span>
+                                                            {rFlag && <span className="text-lg leading-none" title={recentT?.hostCountry}>{rFlag}</span>}
+                                                            <span className="truncate max-w-[140px] text-royal-200 font-medium">{recent.tournamentName}</span>
                                                         </div>
                                                     );
                                                 }
 
                                                 return (
-                                                    <tr key={player.id} onClick={() => onNavigate('players', player.id)} className="hover:bg-royal-800/50 transition-colors cursor-pointer group">
-                                                        <td className="p-4 text-center font-bold text-royal-400 text-base tabular-nums">{player.nationalRank}</td>
-                                                        <td className="p-4 text-center font-bold text-white text-base tabular-nums">#{player.rank}</td>
+                                                    <tr key={player.id} onClick={() => onNavigate('players', player.id)} className="hover:bg-royal-800/40 transition-colors cursor-pointer group bg-royal-950/20">
+                                                        <td className="py-3 px-4 text-center font-black text-royal-400 text-xl tabular-nums">{player.nationalRank}</td>
+                                                        <td className="py-3 px-4 text-center font-black text-white text-2xl tabular-nums">#{player.rank}</td>
                                                         
-                                                        <td className="p-4 font-medium text-white flex items-center gap-3">
-                                                            <div className="w-10 h-10 rounded-full overflow-hidden border border-royal-700 bg-black shrink-0">
+                                                        <td className="py-3 px-4 flex items-center gap-4">
+                                                            <div className="w-12 h-12 rounded-full overflow-hidden border-2 border-royal-700 bg-black shrink-0 relative shadow-md">
                                                                 <PlayerMedia url={player.imageUrl || (player.images ? player.images[0] : '')} className="w-full h-full" />
                                                             </div>
-                                                            <div>
-                                                                <div className="group-hover:text-gold-500 transition-colors font-bold text-base">{player.name}</div>
+                                                            <div className="flex flex-col justify-center">
+                                                                <div className="group-hover:text-gold-500 transition-colors font-semibold text-lg text-white leading-tight">{player.name}</div>
+                                                                <div className="flex items-center gap-1.5 text-[11px] font-bold text-royal-400 uppercase tracking-wider mt-0.5">
+                                                                    <span className="text-sm leading-none drop-shadow-sm">{getFlag(player.nationality)}</span> {player.nationality}
+                                                                </div>
                                                             </div>
                                                         </td>
 
-                                                        <td className="p-4 font-bold text-gold-500 text-center text-base tabular-nums">
+                                                        <td className="py-3 px-4 font-black text-gold-500 text-center text-xl tabular-nums">
                                                             {player.points.toLocaleString()}
                                                         </td>
 
-                                                        <td className="p-4 text-center font-bold text-sm tabular-nums">
+                                                        <td className="py-3 px-4 text-center font-semibold text-base tabular-nums">
                                                             {player.diff > 0 ? <span className="text-[#059669]">+{player.diff}</span> : player.diff < 0 ? <span className="text-[#be123c]">{player.diff}</span> : <span className="text-royal-600">-</span>}
                                                         </td>
 
-                                                        <td className="p-4 text-center text-sm font-medium text-royal-400 group-hover:text-red-400 transition-colors tabular-nums">
+                                                        <td className="py-3 px-4 text-center text-base font-semibold text-royal-400 group-hover:text-red-400 transition-colors tabular-nums">
                                                             {player.droppingPoints > 0 ? `-${player.droppingPoints}` : '-'}
                                                         </td>
 
-                                                        <td className="p-4 text-center text-sm font-medium tabular-nums">
+                                                        <td className="py-3 px-4 text-center text-base font-semibold tabular-nums">
                                                             {player.bonusPoints > 0 ? <span className="text-emerald-400">+{player.bonusPoints}</span> : <span className="text-royal-600">-</span>}
                                                         </td>
 
-                                                        <td className="p-4 text-center text-sm font-medium text-royal-200 tabular-nums">
+                                                        <td className="py-3 px-4 text-center text-base font-semibold text-royal-300 tabular-nums">
                                                             {player.stats.totalPlayed}
                                                         </td>
 
-                                                        <td className="p-4 text-center text-royal-200 font-bold text-sm tabular-nums">
+                                                        <td className="py-3 px-4 text-center text-royal-200 font-semibold text-base tabular-nums">
                                                             {player.stats.wins} - {player.stats.losses}
                                                         </td>
 
-                                                        <td className="p-4 text-center">
+                                                        <td className="py-3 px-4 pl-8 text-left">
                                                             {recentDisplay}
                                                         </td>
                                                     </tr>
@@ -2475,48 +2482,54 @@
 
                                             {retired.length > 0 && (
                                                 <>
-                                                    <tr className="bg-royal-950/90 border-t-2 border-royal-700">
-                                                        <td colSpan="10" className="p-4 text-center">
-                                                            <div className="inline-flex items-center gap-3">
-                                                                <div className="h-px w-16 bg-royal-700"></div>
+                                                    <tr className="bg-royal-950 border-t-2 border-royal-700">
+                                                        <td colSpan="10" className="p-6 text-center">
+                                                            <div className="inline-flex items-center gap-4">
+                                                                <div className="h-px w-24 bg-royal-700"></div>
                                                                 <span className="text-royal-400 font-bold uppercase tracking-widest text-sm flex items-center gap-2">
                                                                     <Trophy size={16} className="text-royal-500" /> Hall of Fame
                                                                 </span>
-                                                                <div className="h-px w-16 bg-royal-700"></div>
+                                                                <div className="h-px w-24 bg-royal-700"></div>
                                                             </div>
                                                         </td>
                                                     </tr>
                                                     {retired.map((player) => (
-                                                        <tr key={player.id} onClick={() => onNavigate('players', player.id)} className="hover:bg-royal-800/50 transition-colors cursor-pointer group opacity-80 hover:opacity-100 bg-black/20">
-                                                            <td className="p-4 text-center font-bold text-royal-600 text-base tabular-nums">-</td>
-                                                            <td className="p-4 text-center font-bold text-royal-600 text-base tabular-nums">-</td>
+                                                        <tr key={player.id} onClick={() => onNavigate('players', player.id)} className="hover:bg-royal-800/50 transition-colors cursor-pointer group opacity-80 hover:opacity-100 bg-black/40">
+                                                            <td className="py-3 px-4 text-center font-black text-royal-600 text-xl tabular-nums">-</td>
+                                                            <td className="py-3 px-4 text-center font-black text-royal-600 text-2xl tabular-nums">-</td>
                                                             
-                                                            <td className="p-4 font-medium text-white flex items-center gap-3">
-                                                                <div className="w-10 h-10 rounded-full overflow-hidden border border-royal-700 bg-black shrink-0 relative">
+                                                            <td className="py-3 px-4 flex items-center gap-4">
+                                                                <div className="w-12 h-12 rounded-full overflow-hidden border-2 border-royal-700 bg-black shrink-0 relative">
                                                                     <PlayerMedia url={player.imageUrl || (player.images ? player.images[0] : '')} className="w-full h-full" />
                                                                     <div className="absolute inset-0 bg-black/40 backdrop-grayscale-[0.5]"></div>
                                                                 </div>
-                                                                <div>
-                                                                    <div className="group-hover:text-gold-500 transition-colors font-bold text-base text-royal-200">
+                                                                <div className="flex flex-col justify-center">
+                                                                    <div className="group-hover:text-gold-500 transition-colors font-semibold text-lg text-royal-300 leading-tight">
                                                                         {player.name}
                                                                         <span className="ml-3 text-[9px] bg-[#be123c]/20 text-[#fb7185] px-1.5 py-0.5 rounded uppercase tracking-wider border border-[#be123c]/30 align-middle">Retired</span>
+                                                                    </div>
+                                                                    <div className="flex items-center gap-1.5 text-[11px] font-bold text-royal-500 uppercase tracking-wider mt-0.5">
+                                                                        <span className="text-sm leading-none drop-shadow-sm grayscale">{getFlag(player.nationality)}</span> {player.nationality}
                                                                     </div>
                                                                 </div>
                                                             </td>
 
-                                                            <td className="p-4 text-center font-bold text-royal-400 tabular-nums">
-                                                                <div className="text-[10px] text-royal-500 uppercase font-bold tracking-widest mb-0.5">Peak Pts</div>
-                                                                {player.peakPoints.toLocaleString()}
+                                                            <td className="py-3 px-4 text-center font-black text-royal-400 tabular-nums">
+                                                                <div className="text-[9px] text-royal-600 uppercase tracking-widest mb-0.5">Peak Pts</div>
+                                                                <span className="text-xl">{player.peakPoints.toLocaleString()}</span>
                                                             </td>
 
-                                                            <td className="p-4 text-center font-medium text-royal-600 tabular-nums">-</td>
-                                                            <td className="p-4 text-center font-medium text-royal-600 tabular-nums">-</td>
-                                                            <td className="p-4 text-center font-medium text-royal-600 tabular-nums">-</td>
-                                                            <td className="p-4 text-center text-sm font-medium text-royal-400 tabular-nums">{player.stats.totalPlayed}</td>
-                                                            <td className="p-4 text-center text-royal-400 font-bold text-sm tabular-nums">{player.stats.wins} - {player.stats.losses}</td>
-                                                            <td className="p-4 text-center">
-                                                                <div className="text-[10px] text-royal-500 uppercase font-bold tracking-widest mb-0.5">Peak Rnk</div>
-                                                                <span className="text-royal-300 font-bold text-sm">#{player.peakRank}</span>
+                                                            <td className="py-3 px-4 text-center font-semibold text-royal-600 tabular-nums">-</td>
+                                                            <td className="py-3 px-4 text-center text-base font-semibold text-royal-600 tabular-nums">-</td>
+                                                            <td className="py-3 px-4 text-center text-base font-semibold text-royal-600 tabular-nums">-</td>
+                                                            
+                                                            <td className="py-3 px-4 text-center text-base font-semibold text-royal-400 tabular-nums">{player.stats.totalPlayed}</td>
+                                                            <td className="py-3 px-4 text-center text-royal-400 font-semibold text-base tabular-nums">{player.stats.wins} - {player.stats.losses}</td>
+                                                            <td className="py-3 px-4 pl-8 text-left">
+                                                                <div className="flex items-center justify-start gap-2">
+                                                                    <span className="text-[9px] text-royal-600 uppercase tracking-widest font-bold">Peak Rnk</span>
+                                                                    <span className="text-royal-300 font-black text-lg">#{player.peakRank}</span>
+                                                                </div>
                                                             </td>
                                                         </tr>
                                                     ))}
@@ -2896,7 +2909,9 @@
                 const rankedPlayers = calculatePlayerRankings(playersRaw, filteredTournaments);
                 const globalHist = getGlobalHistory(playersRaw, filteredTournaments);
 
-                const prevHist = globalHist.length > 1 ? globalHist[globalHist.length - 2] : null;
+                // Filter history to ONLY Major+ events to find the true "previous" official ranking
+                const majorHist = globalHist.filter(h => h.isMajorPlus);
+                const prevHist = majorHist.length > 1 ? majorHist[majorHist.length - 2] : null;
 
                 let activeList = rankedPlayers.filter(p => !p.retired);
                 activeList.forEach((p, i) => p.currentRank = i + 1);
@@ -2907,6 +2922,9 @@
                         const prevStanding = prevHist.standings.find(s => s.id === p.id);
                         const prevPoints = prevStanding ? prevStanding.pts : 0;
                         diff = p.points - prevPoints;
+                    } else {
+                        // If there is no previous major history, all their points are "new" since the start
+                        diff = p.points;
                     }
                     return { ...p, diff };
                 });
@@ -2916,7 +2934,7 @@
                     if (sortConfig.key === 'diff') { valA = a.diff; valB = b.diff; }
                     if (sortConfig.key === 'name') { valA = a.name.toLowerCase(); valB = b.name.toLowerCase(); }
                     if (sortConfig.key === 'points') { valA = a.points; valB = b.points; }
-                    if (sortConfig.key === 'dropping') { valA = a.droppingPoints || 0; valB = b.droppingPoints || 0; }
+                    if (sortConfig.key === 'drop') { valA = a.droppingPoints || 0; valB = b.droppingPoints || 0; }
                     if (sortConfig.key === 'bonus') { valA = a.bonusPoints || 0; valB = b.bonusPoints || 0; }
                     if (sortConfig.key === 'recent') { valA = a.recentTournaments?.[0]?.result || ''; valB = b.recentTournaments?.[0]?.result || ''; }
                     if (sortConfig.key === 'played') { valA = a.stats.totalPlayed; valB = b.stats.totalPlayed; }
@@ -2948,7 +2966,7 @@
             }, [playersRaw, tournaments, asOfId, sortConfig]);
 
             return (
-                <div className="max-w-5xl mx-auto space-y-6 pb-20">
+                <div className="max-w-6xl mx-auto space-y-6 pb-20">
                     <header className="mb-8 flex flex-col md:flex-row md:items-end justify-between gap-6">
                         <div>
                             <h1 className="text-3xl font-bold text-white">SNB Rankings</h1>
@@ -2957,23 +2975,24 @@
                         <HistoricalTournamentSelect tournaments={tournaments} value={asOfId} onChange={setAsOfId} />
                     </header>
 
-                    <div className="bg-royal-900 rounded-xl border border-royal-800 shadow-xl overflow-hidden">
+                    <div className="bg-royal-900/40 rounded-xl border border-royal-800 shadow-xl overflow-hidden backdrop-blur-sm">
                         <div className="overflow-x-auto pb-4 custom-scrollbar">
-                            <table className="w-full text-left border-collapse whitespace-nowrap min-w-[1050px]">
+                            {/* Adjusted min-width to prevent unnecessary horizontal scrolling */}
+                            <table className="w-full text-left border-collapse whitespace-nowrap min-w-[900px]">
                                 <thead>
-                                    <tr className="bg-royal-950/60 text-royal-200 text-[11px] uppercase tracking-widest select-none border-b border-royal-800">
-                                        <th className="p-4 font-bold w-16 text-center cursor-pointer hover:text-white transition-colors" onClick={() => handleSort('rank')}>Rank <SortIcon column="rank"/></th>
-                                        <th className="p-4 font-bold cursor-pointer hover:text-white transition-colors" onClick={() => handleSort('name')}>Player <SortIcon column="name"/></th>
-                                        <th className="p-4 font-bold text-center cursor-pointer hover:text-white transition-colors w-28" onClick={() => handleSort('points')}>Points <SortIcon column="points"/></th>
-                                        <th className="p-4 font-bold w-16 text-center cursor-pointer hover:text-white transition-colors" onClick={() => handleSort('diff')}>+/- <SortIcon column="diff"/></th>
-                                        <th className="p-4 font-bold text-center cursor-pointer hover:text-white transition-colors text-royal-400 w-24" onClick={() => handleSort('dropping')}>Dropping <SortIcon column="dropping"/></th>
-                                        <th className="p-4 font-bold text-center cursor-pointer hover:text-white transition-colors text-royal-400 w-24" onClick={() => handleSort('bonus')}>New <SortIcon column="bonus"/></th>
-                                        <th className="p-4 font-bold text-center cursor-pointer hover:text-white transition-colors text-royal-400 w-20" onClick={() => handleSort('played')}>Played <SortIcon column="played"/></th>
-                                        <th className="p-4 font-bold text-center cursor-pointer hover:text-white transition-colors w-24" onClick={() => handleSort('wl')}>W-L <SortIcon column="wl"/></th>
-                                        <th className="p-4 font-bold text-center cursor-pointer hover:text-white transition-colors w-48" onClick={() => handleSort('recent')}>Recent <SortIcon column="recent"/></th>
+                                    <tr className="bg-transparent text-royal-300 text-[11px] font-bold uppercase tracking-widest select-none border-b-2 border-royal-800/80">
+                                        <th className="py-4 px-4 w-12 text-center cursor-pointer hover:text-white transition-colors" onClick={() => handleSort('rank')}>Rank <SortIcon column="rank"/></th>
+                                        <th className="py-4 px-4 cursor-pointer hover:text-white transition-colors" onClick={() => handleSort('name')}>Player <SortIcon column="name"/></th>
+                                        <th className="py-4 px-4 text-center cursor-pointer hover:text-white transition-colors w-24" onClick={() => handleSort('points')}>Points <SortIcon column="points"/></th>
+                                        <th className="py-4 px-4 w-16 text-center cursor-pointer hover:text-white transition-colors" onClick={() => handleSort('diff')}>+/- <SortIcon column="diff"/></th>
+                                        <th className="py-4 px-4 text-center cursor-pointer hover:text-white transition-colors w-20" onClick={() => handleSort('drop')}>Drop <SortIcon column="drop"/></th>
+                                        <th className="py-4 px-4 text-center cursor-pointer hover:text-white transition-colors w-20" onClick={() => handleSort('bonus')}>New <SortIcon column="bonus"/></th>
+                                        <th className="py-4 px-4 text-center cursor-pointer hover:text-white transition-colors w-20" onClick={() => handleSort('played')}>Played <SortIcon column="played"/></th>
+                                        <th className="py-4 px-4 text-center cursor-pointer hover:text-white transition-colors w-20" onClick={() => handleSort('wl')}>W-L <SortIcon column="wl"/></th>
+                                        <th className="py-4 px-4 text-left cursor-pointer hover:text-white transition-colors pl-8 w-48" onClick={() => handleSort('recent')}>Recent <SortIcon column="recent"/></th>
                                     </tr>
                                 </thead>
-                                <tbody className="divide-y divide-royal-800/50">
+                                <tbody className="divide-y divide-royal-800/40">
                                     {active.map((player) => {
                                         const recent = player.recentTournaments?.[0];
                                         let recentDisplay = '-';
@@ -2981,45 +3000,48 @@
                                             const recentT = tournaments.find(t => t.id === recent.tournamentId);
                                             const rFlag = recentT ? getFlag(recentT.hostCountry) : '';
                                             recentDisplay = (
-                                                <div className="flex items-center justify-center gap-1.5 text-sm">
-                                                    {rFlag && <span title={recentT?.hostCountry}>{rFlag}</span>}
-                                                    <span className="truncate max-w-[120px] text-royal-200">{recent.tournamentName}</span>
-                                                    <span className="text-royal-600 font-bold mx-1">•</span>
-                                                    <span className="font-bold text-white">{getRecentAbbr(recent.result)}</span>
+                                                <div className="flex items-center justify-start gap-2 text-base">
+                                                    <span className="font-bold text-white w-8 text-right">{getRecentAbbr(recent.result)}</span>
+                                                    <span className="text-royal-500 text-xs font-black">-</span>
+                                                    {rFlag && <span className="text-lg leading-none" title={recentT?.hostCountry}>{rFlag}</span>}
+                                                    <span className="truncate max-w-[140px] text-royal-200 font-medium">{recent.tournamentName}</span>
                                                 </div>
                                             );
                                         }
 
                                         return (
-                                            <tr key={player.id} onClick={() => onSelectPlayer(player.id)} className="hover:bg-royal-800/50 transition-colors cursor-pointer group">
-                                                <td className="p-4 text-center font-bold text-white text-base tabular-nums">{player.currentRank}</td>
-                                                <td className="p-4 font-medium text-white flex items-center gap-3">
-                                                    <div className="w-10 h-10 rounded-full overflow-hidden border border-royal-700 bg-black shrink-0">
+                                            <tr key={player.id} onClick={() => onSelectPlayer(player.id)} className="hover:bg-royal-800/40 transition-colors cursor-pointer group bg-royal-950/20">
+                                                <td className="py-3 px-4 text-center font-black text-white text-2xl tabular-nums">{player.currentRank}</td>
+                                                <td className="py-3 px-4 flex items-center gap-4">
+                                                    <div className="w-12 h-12 rounded-full overflow-hidden border-2 border-royal-700 bg-black shrink-0 relative shadow-md">
                                                         <PlayerMedia url={player.imageUrl || (player.images ? player.images[0] : '')} className="w-full h-full" />
                                                     </div>
-                                                    <div>
-                                                        <div className="group-hover:text-gold-500 transition-colors font-bold text-base flex items-center gap-2">{getFlag(player.nationality)} {player.name}</div>
+                                                    <div className="flex flex-col justify-center">
+                                                        <div className="group-hover:text-gold-500 transition-colors font-semibold text-lg text-white leading-tight">{player.name}</div>
+                                                        <div className="flex items-center gap-1.5 text-[11px] font-bold text-royal-400 uppercase tracking-wider mt-0.5">
+                                                            <span className="text-sm leading-none drop-shadow-sm">{getFlag(player.nationality)}</span> {player.nationality}
+                                                        </div>
                                                     </div>
                                                 </td>
-                                                <td className="p-4 font-bold text-gold-500 text-center text-base tabular-nums">
+                                                <td className="py-3 px-4 font-black text-gold-500 text-center text-xl tabular-nums">
                                                     {player.points.toLocaleString()}
                                                 </td>
-                                                <td className="p-4 text-center font-bold text-sm tabular-nums">
+                                                <td className="py-3 px-4 text-center font-semibold text-base tabular-nums">
                                                     {player.diff > 0 ? <span className="text-[#059669]">+{player.diff}</span> : player.diff < 0 ? <span className="text-[#be123c]">{player.diff}</span> : <span className="text-royal-600">-</span>}
                                                 </td>
-                                                <td className="p-4 text-center text-sm font-medium text-royal-400 group-hover:text-red-400 transition-colors tabular-nums">
+                                                <td className="py-3 px-4 text-center text-base font-semibold text-royal-400 group-hover:text-red-400 transition-colors tabular-nums">
                                                     {player.droppingPoints > 0 ? `-${player.droppingPoints}` : '-'}
                                                 </td>
-                                                <td className="p-4 text-center text-sm font-medium tabular-nums">
+                                                <td className="py-3 px-4 text-center text-base font-semibold tabular-nums">
                                                     {player.bonusPoints > 0 ? <span className="text-emerald-400">+{player.bonusPoints}</span> : <span className="text-royal-600">-</span>}
                                                 </td>
-                                                <td className="p-4 text-center text-sm font-medium text-royal-200 tabular-nums">
+                                                <td className="py-3 px-4 text-center text-base font-semibold text-royal-300 tabular-nums">
                                                     {player.stats.totalPlayed}
                                                 </td>
-                                                <td className="p-4 text-center text-royal-200 font-bold text-sm tabular-nums">
+                                                <td className="py-3 px-4 text-center text-royal-200 font-semibold text-base tabular-nums">
                                                     {player.stats.wins} - {player.stats.losses}
                                                 </td>
-                                                <td className="p-4 text-center">
+                                                <td className="py-3 px-4 pl-8 text-left">
                                                     {recentDisplay}
                                                 </td>
                                             </tr>
@@ -3028,44 +3050,53 @@
 
                                     {retired.length > 0 && (
                                         <>
-                                            <tr className="bg-royal-950/90 border-t-2 border-royal-700">
-                                                <td colSpan="9" className="p-4 text-center">
-                                                    <div className="inline-flex items-center gap-3">
-                                                        <div className="h-px w-16 bg-royal-700"></div>
+                                            <tr className="bg-royal-950 border-t-2 border-royal-700">
+                                                <td colSpan="9" className="p-6 text-center">
+                                                    <div className="inline-flex items-center gap-4">
+                                                        <div className="h-px w-24 bg-royal-700"></div>
                                                         <span className="text-royal-400 font-bold uppercase tracking-widest text-sm flex items-center gap-2">
                                                             <Trophy size={16} className="text-royal-500" /> Hall of Fame
                                                         </span>
-                                                        <div className="h-px w-16 bg-royal-700"></div>
+                                                        <div className="h-px w-24 bg-royal-700"></div>
                                                     </div>
                                                 </td>
                                             </tr>
                                             {retired.map((player) => (
-                                                <tr key={player.id} onClick={() => onSelectPlayer(player.id)} className="hover:bg-royal-800/50 transition-colors cursor-pointer group opacity-80 hover:opacity-100 bg-black/20">
-                                                    <td className="p-4 text-center font-bold text-royal-600 text-base tabular-nums">-</td>
-                                                    <td className="p-4 font-medium text-white flex items-center gap-3">
-                                                        <div className="w-10 h-10 rounded-full overflow-hidden border border-royal-700 bg-black shrink-0 relative">
+                                                <tr key={player.id} onClick={() => onSelectPlayer(player.id)} className="hover:bg-royal-800/50 transition-colors cursor-pointer group opacity-80 hover:opacity-100 bg-black/40">
+                                                    <td className="py-3 px-4 text-center font-black text-royal-600 text-2xl tabular-nums">-</td>
+                                                    
+                                                    <td className="py-3 px-4 flex items-center gap-4">
+                                                        <div className="w-12 h-12 rounded-full overflow-hidden border-2 border-royal-700 bg-black shrink-0 relative">
                                                             <PlayerMedia url={player.imageUrl || (player.images ? player.images[0] : '')} className="w-full h-full" />
                                                             <div className="absolute inset-0 bg-black/40 backdrop-grayscale-[0.5]"></div>
                                                         </div>
-                                                        <div>
-                                                            <div className="group-hover:text-gold-500 transition-colors flex items-center gap-2 font-bold text-base text-royal-200">
-                                                                {getFlag(player.nationality)} {player.name}
-                                                                <span className="text-[9px] bg-[#be123c]/20 text-[#fb7185] px-1.5 py-0.5 rounded uppercase tracking-wider border border-[#be123c]/30 shrink-0">Retired</span>
+                                                        <div className="flex flex-col justify-center">
+                                                            <div className="group-hover:text-gold-500 transition-colors font-semibold text-lg text-royal-300 leading-tight">
+                                                                {player.name}
+                                                                <span className="ml-3 text-[9px] bg-[#be123c]/20 text-[#fb7185] px-1.5 py-0.5 rounded uppercase tracking-wider border border-[#be123c]/30 align-middle">Retired</span>
+                                                            </div>
+                                                            <div className="flex items-center gap-1.5 text-[11px] font-bold text-royal-500 uppercase tracking-wider mt-0.5">
+                                                                <span className="text-sm leading-none drop-shadow-sm grayscale">{getFlag(player.nationality)}</span> {player.nationality}
                                                             </div>
                                                         </div>
                                                     </td>
-                                                    <td className="p-4 text-center font-bold text-royal-400 tabular-nums">
-                                                        <div className="text-[10px] text-royal-500 uppercase font-bold tracking-widest mb-0.5">Peak Pts</div>
-                                                        {player.peakPoints.toLocaleString()}
+
+                                                    <td className="py-3 px-4 text-center font-black text-royal-400 tabular-nums">
+                                                        <div className="text-[9px] text-royal-600 uppercase tracking-widest mb-0.5">Peak Pts</div>
+                                                        <span className="text-xl">{player.peakPoints.toLocaleString()}</span>
                                                     </td>
-                                                    <td className="p-4 text-center font-medium text-royal-600 tabular-nums">-</td>
-                                                    <td className="p-4 text-center font-medium text-royal-600 tabular-nums">-</td>
-                                                    <td className="p-4 text-center font-medium text-royal-600 tabular-nums">-</td>
-                                                    <td className="p-4 text-center text-sm font-medium text-royal-400 tabular-nums">{player.stats.totalPlayed}</td>
-                                                    <td className="p-4 text-center text-royal-400 font-bold text-sm tabular-nums">{player.stats.wins} - {player.stats.losses}</td>
-                                                    <td className="p-4 text-center">
-                                                        <div className="text-[10px] text-royal-500 uppercase font-bold tracking-widest mb-0.5">Peak Rnk</div>
-                                                        <span className="text-royal-300 font-bold text-sm">#{player.peakRank}</span>
+
+                                                    <td className="py-3 px-4 text-center font-semibold text-royal-600 tabular-nums">-</td>
+                                                    <td className="py-3 px-4 text-center text-base font-semibold text-royal-600 tabular-nums">-</td>
+                                                    <td className="py-3 px-4 text-center text-base font-semibold text-royal-600 tabular-nums">-</td>
+                                                    
+                                                    <td className="py-3 px-4 text-center text-base font-semibold text-royal-400 tabular-nums">{player.stats.totalPlayed}</td>
+                                                    <td className="py-3 px-4 text-center text-royal-400 font-semibold text-base tabular-nums">{player.stats.wins} - {player.stats.losses}</td>
+                                                    <td className="py-3 px-4 pl-8 text-left">
+                                                        <div className="flex items-center justify-start gap-2">
+                                                            <span className="text-[9px] text-royal-600 uppercase tracking-widest font-bold">Peak Rnk</span>
+                                                            <span className="text-royal-300 font-black text-lg">#{player.peakRank}</span>
+                                                        </div>
                                                     </td>
                                                 </tr>
                                             ))}
@@ -3280,36 +3311,47 @@
         }
 
         function FloatingPlayerNav({ hasGallery }) {
-            const scrollToSection = (id) => {
-                const el = document.getElementById(id);
-                if (el) {
-                    const y = el.getBoundingClientRect().top + window.scrollY - 20;
-                    window.scrollTo({top: y, behavior: 'smooth'});
-                }
-            };
+            const scrollToSection = (id) => document.getElementById(id)?.scrollIntoView({behavior: 'smooth', block: 'start'});
+            const scrollToTop = () => document.querySelector('main .overflow-auto')?.scrollTo({ top: 0, behavior: 'smooth' });
+            
             return (
-                <div className="fixed left-4 top-1/2 -translate-y-1/2 flex flex-col gap-3 z-50 bg-royal-950/90 backdrop-blur-md p-3 rounded-2xl border border-royal-800 shadow-[0_10px_30px_rgba(0,0,0,0.8)] hidden xl:flex w-24">
+                <div className="fixed right-8 top-1/2 -translate-y-1/2 flex flex-col gap-3 z-50 bg-royal-950/90 backdrop-blur-md p-3 rounded-2xl border border-royal-800 shadow-[0_10px_30px_rgba(0,0,0,0.8)] hidden xl:flex w-24">
                     <div className="text-[10px] text-royal-400 uppercase tracking-widest font-bold text-center pb-2 border-b border-royal-800 w-full mb-1">Jump</div>
                     
+                    <button onClick={() => scrollToSection('player-tournaments')} className="p-3 w-full bg-royal-900 hover:bg-gold-500 hover:text-royal-950 text-royal-200 rounded-xl transition-all hover:scale-110 group flex flex-col items-center justify-center gap-1.5 shadow-inner">
+                        <Star size={22}/>
+                        <span className="text-[9px] font-black uppercase tracking-wider text-center">Results</span>
+                    </button>
+
+                    <button onClick={() => scrollToSection('player-matches')} className="p-3 w-full bg-royal-900 hover:bg-gold-500 hover:text-royal-950 text-royal-200 rounded-xl transition-all hover:scale-110 group flex flex-col items-center justify-center gap-1.5 shadow-inner">
+                        <History size={22}/>
+                        <span className="text-[9px] font-black uppercase tracking-wider text-center">Matches</span>
+                    </button>
+                    
+                    <button onClick={() => scrollToSection('player-h2h')} className="p-3 w-full bg-royal-900 hover:bg-gold-500 hover:text-royal-950 text-royal-200 rounded-xl transition-all hover:scale-110 group flex flex-col items-center justify-center gap-1.5 shadow-inner">
+                        <PlayersIcon size={22}/>
+                        <span className="text-[9px] font-black uppercase tracking-wider text-center">H2H</span>
+                    </button>
+
                     {hasGallery && (
                         <button onClick={() => scrollToSection('player-gallery')} className="p-3 w-full bg-royal-900 hover:bg-gold-500 hover:text-royal-950 text-royal-200 rounded-xl transition-all hover:scale-110 group flex flex-col items-center justify-center gap-1.5 shadow-inner">
-                            <GalleryIcon size={24}/>
+                            <GalleryIcon size={22}/>
                             <span className="text-[9px] font-black uppercase tracking-wider text-center">Gallery</span>
                         </button>
                     )}
                     
                     <button onClick={() => scrollToSection('player-achievements')} className="p-3 w-full bg-royal-900 hover:bg-gold-500 hover:text-royal-950 text-royal-200 rounded-xl transition-all hover:scale-110 group flex flex-col items-center justify-center gap-1.5 shadow-inner">
-                        <Trophy size={24}/>
+                        <Trophy size={22}/>
                         <span className="text-[9px] font-black uppercase tracking-wider text-center">Trophies</span>
                     </button>
                     
                     <button onClick={() => scrollToSection('player-charts')} className="p-3 w-full bg-royal-900 hover:bg-gold-500 hover:text-royal-950 text-royal-200 rounded-xl transition-all hover:scale-110 group flex flex-col items-center justify-center gap-1.5 shadow-inner">
-                        <AnalyticsIcon size={24}/>
+                        <AnalyticsIcon size={22}/>
                         <span className="text-[9px] font-black uppercase tracking-wider text-center">Charts</span>
                     </button>
                     
                     <div className="mt-2 pt-4 border-t border-royal-800 w-full">
-                        <button onClick={() => window.scrollTo({top: 0, behavior: 'smooth'})} className="p-3 w-full bg-royal-900 hover:bg-gold-500 hover:text-royal-950 text-gold-500 rounded-xl transition-all hover:scale-110 group flex flex-col items-center justify-center gap-1.5 shadow-inner">
+                        <button onClick={scrollToTop} className="p-3 w-full bg-royal-900 hover:bg-gold-500 hover:text-royal-950 text-gold-500 rounded-xl transition-all hover:scale-110 group flex flex-col items-center justify-center gap-1.5 shadow-inner">
                             <ArrowUpIcon size={20}/>
                             <span className="text-[9px] font-black uppercase tracking-wider text-center">Top</span>
                         </button>
