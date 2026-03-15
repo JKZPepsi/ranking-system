@@ -857,31 +857,27 @@
         };
 
         function PlayerMedia({ url, className = "", onClick, alt }) {
-            const [isLoading, setIsLoading] = useState(true);
-
-            // Reset loading state if the URL changes (e.g., clicking next in carousel)
-            useEffect(() => {
-                setIsLoading(true);
-            }, [url]);
+            const [loadedUrl, setLoadedUrl] = useState(null);
 
             if (!url) return <div className={`bg-royal-800 flex items-center justify-center ${className}`}><span className="text-royal-500 text-xs font-bold">TBD</span></div>;
             
             let processedUrl = url.trim();
             const lowerUrl = processedUrl.toLowerCase();
+            
+            // INSTANT STATE EVALUATION: If the current URL doesn't match the loaded URL, it is loading right now.
+            const isLoading = loadedUrl !== processedUrl;
+            const handleLoad = () => setLoadedUrl(processedUrl);
 
-            const handleLoad = () => setIsLoading(false);
-
-            // The Smooth Gold Loading Spinner
+            // Z-20 Overlay with iOS-style backdrop blur to completely obscure the old image while loading
             const loadingOverlay = (
-                <div className={`absolute inset-0 flex items-center justify-center bg-royal-950 transition-opacity duration-500 z-0 ${isLoading ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
-                    <svg className="w-6 h-6 text-gold-500 animate-spin opacity-50" viewBox="0 0 24 24" fill="none">
+                <div className={`absolute inset-0 flex items-center justify-center bg-royal-950/80 backdrop-blur-sm transition-opacity duration-300 z-20 ${isLoading ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
+                    <svg className="w-8 h-8 text-gold-500 animate-spin opacity-80" viewBox="0 0 24 24" fill="none">
                         <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                         <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                     </svg>
                 </div>
             );
 
-            // We separate the wrapper classes from the inner media classes so the loader stays perfectly centered
             const wrapperClass = `relative overflow-hidden ${className.replace('object-cover', '').trim()}`;
             const innerClass = "absolute inset-0 w-full h-full object-cover z-10";
 
@@ -893,7 +889,8 @@
                 return (
                     <div className={wrapperClass} onClick={onClick}>
                         {loadingOverlay}
-                        <div className="absolute inset-0 z-20 cursor-pointer"></div>
+                        {/* We put the shield at Z-30 so the carousel buttons at Z-30 can still be clicked! */}
+                        <div className="absolute inset-0 z-30 cursor-pointer"></div>
                         <iframe onLoad={handleLoad} src={ytEmbedUrl} className="absolute inset-0 w-full h-full border-0 pointer-events-none scale-[1.35] z-10" allow="autoplay; encrypted-media"></iframe>
                     </div>
                 );
@@ -912,17 +909,20 @@
                 );
             }
 
-            // 3. Raw HTML Embed Code
+            // 3. Raw HTML
             const isIframeString = processedUrl.startsWith('<iframe') || processedUrl.startsWith('<blockquote');
             if (isIframeString) {
+                // HTML injection doesn't have an onLoad event, so we clear the loader instantly
+                React.useEffect(() => { handleLoad(); }, [processedUrl]);
                 return (
                     <div className={wrapperClass} onClick={onClick}>
+                        {loadingOverlay}
                         <div className={`absolute inset-0 z-10 flex items-center justify-center bg-black [&>iframe]:w-full [&>iframe]:h-full [&>iframe]:border-0`} dangerouslySetInnerHTML={{ __html: processedUrl }} />
                     </div>
                 );
             }
 
-            // 4. Native Video Formats (MP4, GIFv, Reddit format=mp4)
+            // 4. Native Video Formats
             const isVideo = lowerUrl.includes('.mp4') || lowerUrl.includes('format=mp4') || lowerUrl.includes('.webm') || lowerUrl.includes('.mov') || processedUrl.match(/\.(mp4|webm|ogg|mov)(\?.*)?$/i);
             if (isVideo) {
                 return (
