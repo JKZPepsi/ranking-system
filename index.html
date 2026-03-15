@@ -1088,12 +1088,8 @@
                 }
             }
 
-            return players.map(player => {
-                let allPlayed = [];
-                let recentMatches = [];
-                let careerPoints = 0; 
-                let totalW = 0, totalL = 0;
-                let hasPlayedAny = false;
+            const mapped = players.map(player => {
+                let allPlayed = []; let recentMatches = []; let careerPoints = 0; let totalW = 0, totalL = 0; let hasPlayedAny = false;
 
                 for (const t of completedTournaments) {
                     let tMatches = [];
@@ -1125,12 +1121,10 @@
                         careerPoints += res.pts;
                         totalW += res.w;
                         totalL += res.l;
-                        
                         let totalRounds = t.format === 'atp_finals' ? 5 : 0;
                         if (t.format !== 'atp_finals' && t.bracket) {
                             try { const pb = typeof t.bracket === 'string' ? JSON.parse(t.bracket) : t.bracket; totalRounds = pb.length; } catch(e){}
                         }
-
                         allPlayed.push({ 
                             tournamentId: t.id, tournamentName: t.name, tier: getTournamentTier(t),
                             points: res.pts, result: res.resultStr, totalRounds: totalRounds, date: t.completedAt || t.createdAt
@@ -1139,12 +1133,8 @@
                 }
 
                 allPlayed.forEach((pt, idx) => { pt.playedNumber = idx + 1; });
-
                 let reversedPlayed = [...allPlayed].reverse();
-                let recentTournaments = [];
-                let officialPoints = 0;
-                let bonusPoints = 0;
-                let majorCount = 0;
+                let recentTournaments = []; let officialPoints = 0; let bonusPoints = 0; let majorCount = 0;
 
                 for (let pt of reversedPlayed) {
                     const isMajorPlus = majorTiers.includes(pt.tier);
@@ -1173,29 +1163,38 @@
                     stats: { wins: totalW, losses: totalL, totalPlayed: allPlayed.length }, 
                     hasPlayedAny 
                 };
-            })
-            .sort((a, b) => b.points - a.points || b.totalPoints - a.totalPoints || (a.name || '').localeCompare(b.name || ''))
-            .map((p, index) => ({ ...p, rank: index + 1 }));
+            });
+
+            // Sort everyone by points perfectly
+            mapped.sort((a, b) => b.points - a.points || b.totalPoints - a.totalPoints || (a.name || '').localeCompare(b.name || ''));
+
+            // ONLY assign ranks to active players. Retired players get 'null' so they don't consume a rank number.
+            let activeRank = 1;
+            return mapped.map(p => ({
+                ...p,
+                rank: p.retired ? null : activeRank++
+            }));
         };
 
         var getGlobalHistory = (playersRaw, tournaments) => {
             const completedAsc = tournaments.filter(t => t.status === 'completed').sort((a, b) => (a.completedAt || 0) - (b.completedAt || 0));
             const history = [];
-
             completedAsc.forEach((currentT, index) => {
                 const relevantTournaments = completedAsc.slice(0, index + 1);
                 const snapshotRankings = calculatePlayerRankings(playersRaw, relevantTournaments);
-                const activeRankings = snapshotRankings.filter(p => p.hasPlayedAny);
                 
+                // For historical graphs, we DO want retired players to retain their historical ranks from when they were active
+                const activeRankings = snapshotRankings.filter(p => p.hasPlayedAny);
                 activeRankings.sort((a, b) => b.points - a.points || b.totalPoints - a.totalPoints || (a.name || '').localeCompare(b.name || ''));
+                
+                // Re-assign ranks strictly for this historical snapshot
                 activeRankings.forEach((p, idx) => p.rank = idx + 1);
                 
                 const playerPoints = activeRankings.map(p => ({
                     id: p.id, name: p.name, pts: p.points, totalPts: p.totalPoints, 
-                    careerPoints: p.careerPoints, wins: p.stats.wins, matchesPlayed: p.stats.wins + p.stats.losses,
+                    careerPoints: p.careerPoints, wins: p.stats.wins, matchesPlayed: p.stats.totalPlayed, // Added totalPlayed for the snip engine!
                     imageUrl: p.imageUrl, nationality: p.nationality || 'UNK', rank: p.rank
                 }));
-
                 const tier = getTournamentTier(currentT);
                 history.push({ tournamentId: currentT.id, tournamentName: currentT.name, tier: tier, isMajorPlus: ['grand_slam', 'major', 'finals'].includes(tier), date: currentT.completedAt, standings: playerPoints });
             });
@@ -1473,6 +1472,26 @@
                 return debuts;
             }, [filteredHistory]);
 
+            // THE RETIREMENT SNIP ENGINE: Find the exact index in global history where they played their final match
+            const lastActiveIndices = useMemo(() => {
+                const indices = {};
+                playersRaw.forEach(p => {
+                    if (p.retired) {
+                        let maxM = -1;
+                        let lastIdx = -1;
+                        for (let i = 0; i < filteredHistory.length; i++) {
+                            const st = filteredHistory[i].standings?.find(x => x.id === p.id);
+                            if (st && st.matchesPlayed > maxM) {
+                                maxM = st.matchesPlayed;
+                                lastIdx = i;
+                            }
+                        }
+                        indices[p.id] = lastIdx;
+                    }
+                });
+                return indices;
+            }, [filteredHistory, playersRaw]);
+
             const CHART_PALETTE = ["#facc15", "#38bdf8", "#f472b6", "#4ade80", "#fb923c", "#a78bfa", "#2dd4bf", "#f87171", "#818cf8", "#e879f9", "#34d399", "#fbbf24", "#60a5fa", "#a3e635", "#f43f5e", "#c084fc", "#22d3ee", "#fcd34d", "#10b981", "#8b5cf6", "#fdba74", "#67e8f9", "#d9f99d", "#fda4af"];
             const getDistinctColor = (id) => {
                 let hash = 0; for (let i = 0; i < id.length; i++) hash = id.charCodeAt(i) + ((hash << 5) - hash);
@@ -1486,7 +1505,6 @@
                 if (s.rank > absoluteMaxRank) absoluteMaxRank = s.rank;
             }));
 
-            // --- PROPORTIONAL LABEL SCALING (Sleeker sizing to prevent arbitrary overlap) ---
             const cConf = {
                 8: { gap: 28, font: 12, img: 20, rectH: 26, rectW: 140, ptR: 3.5, debutR: 4.5, stroke: 2 },
                 12: { gap: 24, font: 11, img: 18, rectH: 22, rectW: 125, ptR: 3, debutR: 4, stroke: 1.5 },
@@ -1494,7 +1512,6 @@
                 'all': { gap: 16, font: 9, img: 12, rectH: 14, rectW: 100, ptR: 1.5, debutR: 2.5, stroke: 1 }
             }[cutoff] || { gap: 16, font: 9, img: 12, rectH: 14, rectW: 100, ptR: 1.5, debutR: 2.5, stroke: 1 };
 
-            const LABEL_GAP = cConf.gap;
             const width = 1200;
             const effectiveCutoff = hasCutoff ? cutoff : absoluteMaxRank;
 
@@ -1506,19 +1523,20 @@
                 maxPointsVal = Math.ceil(maxPointsVal * 1.05);
             }
 
-            // --- LAYOUT ENGINE ---
             let plotHeight = 480;
             const isExtendedMode = layoutMode === 'extended' && type === 'points' && isAll;
 
             if (isExtendedMode) {
-                // Massively expanded Y-Axis to prevent offset ties (Only when explicitly toggled in All-Time Points)
                 plotHeight = Math.max(1200, includedPlayerIds.size * cConf.gap * 2.5); 
             } else {
                 if (type === 'rank') {
-                    plotHeight = isAll ? Math.max(600, includedPlayerIds.size * cConf.gap * 0.8) : (cutoff === 8 ? 400 : cutoff === 12 ? 500 : 800);
+                    if (cutoff === 8) plotHeight = 350;
+                    else if (cutoff === 12) plotHeight = 450;
+                    else if (cutoff === 24) plotHeight = 550;
+                    else plotHeight = Math.max(500, (effectiveCutoff - 1) * (cConf.rectH + 4));
                 } else {
-                    const baseHeight = cutoff === 8 ? 500 : cutoff === 12 ? 650 : cutoff === 24 ? 900 : 1100;
-                    plotHeight = isAll ? Math.max(baseHeight, includedPlayerIds.size * cConf.gap * 0.8) : baseHeight;
+                    const baseHeight = cutoff === 8 ? 500 : cutoff === 12 ? 650 : cutoff === 24 ? 800 : 1000;
+                    plotHeight = Math.max(baseHeight, includedPlayerIds.size * (cConf.rectH + 4));
                 }
             }
 
@@ -1548,17 +1566,17 @@
                 const player = playersRaw.find(p => p.id === pid);
                 if (!player) return;
 
-                const lastActivityDate = player.recentTournaments?.[0]?.date || 0;
                 const timeline = [];
                 
                 for (let k = 0; k < historyData.length; k++) {
                     const h = historyData[k];
                     const s = h.standings?.find(st => st.id === pid);
                     
-                    // RETIRED SNIP LOGIC: Stops rendering line past their last actual tournament
-                    const isPastRetirement = player.retired && h.date > lastActivityDate;
-                    const exists = !!s && !isPastRetirement;
+                    // THE MAGIC RETIREMENT SNIP: Line ends completely after they played their final match
+                    const globalK = filteredHistory.findIndex(gh => gh.tournamentId === h.tournamentId);
+                    const isPastRetirement = player.retired && globalK > lastActiveIndices[pid];
                     
+                    const exists = !!s && !isPastRetirement;
                     let val = s ? (type === 'rank' ? s.rank : s.pts) : (type === 'rank' ? effectiveCutoff + 5 : -1000); 
                     timeline.push({ k, x: getX(k), y: getY(val), val, s, exists, isDebut: s && playerDebuts[pid] === h.tournamentId });
                 }
@@ -1622,8 +1640,7 @@
                 if (!placed) columns.push({ x: l.endX, labels: [l] });
             });
 
-            // If in strict extended mode, force 100% gap distance. Otherwise, allow tight 0.5 stacking to save space.
-            const physicsGap = isExtendedMode ? cConf.gap : cConf.gap * 0.5; 
+            const physicsGap = isExtendedMode ? cConf.gap : (cConf.rectH + 2); 
 
             columns.forEach(col => {
                 const colLabels = col.labels;
@@ -1790,7 +1807,7 @@
                                             );
                                         }))}
 
-                                        {/* HIDE THE DASHED LINE IF IN EXTENDED MODE */}
+                                        {/* HIDE THE DASHED LINE IF IN EXTENDED MODE OR IF PERFECT ALIGNMENT OCCURS */}
                                         {shouldShowLabel && !isExtendedMode && (Math.abs(adjY - endPt.y) > 2 || isDropped) && (
                                             <path d={`M ${endPt.x} ${endPt.y} C ${endPt.x + 15} ${endPt.y}, ${endPt.x + 10} ${adjY}, ${endPt.x + (isAll ? 10 : 20)} ${adjY}`} fill="none" stroke={line.color} strokeWidth="1.5" opacity="0.6" strokeDasharray="4 4" style={{ transition: 'opacity 0.3s ease' }} />
                                         )}
@@ -1824,7 +1841,7 @@
                 return () => __snbChartListeners.delete(l);
             }, []);
 
-            const { windowSize, offset, layoutMode } = __snbSharedChartState;
+            const { windowSize, offset } = __snbSharedChartState;
             const allHistory = globalHistory.filter(h => h.isMajorPlus);
             const N = allHistory.length;
 
@@ -1851,8 +1868,8 @@
             const width = 1200;
             const cConf = { gap: 24, font: 12, rectH: 28, rectW: 100, ptR: 3, debutR: 4, stroke: 2 };
             
-            // LAYOUT ENGINE TOGGLE
-            let plotHeight = layoutMode === 'extended' ? Math.max(800, nationCodes.size * cConf.gap * 2.5) : 550;
+            // CLEAN NATIONS VIEW: Locked to a tall, comfortable compact mode. No layout toggle.
+            const plotHeight = Math.max(600, nationCodes.size * cConf.gap * 1.5);
             
             const pad = { top: 40, right: 140, left: 80, bottom: 40 }; 
             const gridBottomY = pad.top + plotHeight;
@@ -1915,7 +1932,6 @@
                 }
             });
 
-            // BI-DIRECTIONAL CASCADE PHYSICS
             const labels = [];
             lines.forEach(line => {
                 const endPt = line.segments[line.segments.length - 1].slice(-1)[0];
@@ -1924,7 +1940,7 @@
 
             labels.sort((a, b) => b.actualVal - a.actualVal);
 
-            const physicsGap = layoutMode === 'extended' ? cConf.gap : cConf.gap * 0.4;
+            const physicsGap = cConf.gap * 0.8;
 
             if (labels.length > 0) {
                 labels[0].currentY = labels[0].endY;
@@ -1966,11 +1982,6 @@
                                     <button onClick={() => updateSnbChartState({ offset: Math.max(0, safeOffset - windowSize) })} disabled={safeOffset <= 0} className="p-1 hover:bg-royal-800 text-royal-400 hover:text-white rounded disabled:opacity-30 transition-colors"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg></button>
                                 </div>
                             )}
-                            <div className="w-px h-6 bg-royal-700 hidden lg:block"></div>
-                            <div className="flex items-center gap-1.5 bg-royal-950 p-1.5 rounded-lg border border-royal-800">
-                                <button onClick={() => updateSnbChartState({ layoutMode: 'compact' })} className={`px-3 py-1 rounded text-xs font-bold transition-all ${layoutMode === 'compact' ? 'bg-sky-500 text-white shadow-sm' : 'bg-transparent text-royal-400 hover:text-white hover:bg-royal-800'}`}>Compact Mode</button>
-                                <button onClick={() => updateSnbChartState({ layoutMode: 'extended' })} className={`px-3 py-1 rounded text-xs font-bold transition-all ${layoutMode === 'extended' ? 'bg-sky-500 text-white shadow-sm' : 'bg-transparent text-royal-400 hover:text-white hover:bg-royal-800'}`}>Extended Mode</button>
-                            </div>
                         </div>
                         {selectedCode && <button onClick={() => setSelectedCode(null)} className="text-xs font-medium text-gold-500 hover:text-white px-4 py-1.5 bg-royal-800 rounded-md border border-royal-700 transition-colors">Clear Selection</button>}
                     </div>
@@ -2010,8 +2021,8 @@
                                             const shouldShowText = isHighlighted && (historyData.length <= 15 || i % 2 === 0 || isLastPt);
                                             
                                             const isSolidDebut = pt.isDebut && sIdx === 0 && i === 0;
-                                            const rSize = isHighlighted ? cConf.ptR * 1.5 : cConf.ptR;
-                                            const debutR = isHighlighted ? cConf.debutR * 1.5 : cConf.debutR;
+                                            const rSize = isHighlighted ? "3" : "2";
+                                            const debutR = isHighlighted ? "4.5" : "3.5";
                                             const sWidth = isHighlighted ? 2.5 : 1.5;
                                             
                                             return (
@@ -2023,7 +2034,7 @@
                                             );
                                         }))}
                                         
-                                        {layoutMode !== 'extended' && (Math.abs(lObj.currentY - lObj.endY) > 2) && <path d={`M ${lObj.endX} ${lObj.endY} C ${lObj.endX + 15} ${lObj.endY}, ${lObj.endX + 10} ${lObj.currentY}, ${lObj.endX + 20} ${lObj.currentY}`} fill="none" stroke={line.color} strokeWidth="1.5" opacity="0.4" strokeDasharray="2 2" />}
+                                        {(Math.abs(lObj.currentY - lObj.endY) > 2) && <path d={`M ${lObj.endX} ${lObj.endY} C ${lObj.endX + 15} ${lObj.endY}, ${lObj.endX + 10} ${lObj.currentY}, ${lObj.endX + 20} ${lObj.currentY}`} fill="none" stroke={line.color} strokeWidth="1.5" opacity="0.4" strokeDasharray="2 2" />}
                                         
                                         <g transform={`translate(${lObj.endX + 20}, ${lObj.currentY})`} className="cursor-pointer" onClick={(e) => { e.stopPropagation(); onNavigate('nations', null, null, line.code); }} onMouseEnter={() => setHoveredCode(line.code)} onMouseLeave={() => setHoveredCode(null)}>
                                             <rect x="0" y={-cConf.rectH/2} width={cConf.rectW} height={cConf.rectH} rx={cConf.rectH/2} fill="#051611" fillOpacity="0.9" stroke={line.color} strokeWidth={isHighlighted ? 2 : 1} style={{ filter: isHighlighted ? 'drop-shadow(0 0 8px rgba(255,255,255,0.3))' : 'none' }} />
@@ -2771,11 +2782,9 @@
                 const globalHist = getGlobalHistory(playersRaw, filteredTournaments);
 
                 const activeList = rankedPlayers.filter(p => !p.retired);
-                activeList.forEach((p, i) => p.currentRank = i + 1);
-
+                
                 const retiredList = rankedPlayers.filter(p => p.retired).map(p => {
-                    let peakRank = 9999;
-                    let peakPoints = 0;
+                    let peakRank = 9999, peakPoints = 0;
                     globalHist.forEach(h => {
                         const s = h.standings?.find(st => st.id === p.id);
                         if (s) {
@@ -2816,7 +2825,7 @@
                                 <tbody className="divide-y divide-royal-800">
                                     {active.map((player) => (
                                         <tr key={player.id} onClick={() => onSelectPlayer(player.id)} className="hover:bg-royal-800/50 transition-colors cursor-pointer group">
-                                            <td className="p-4 text-center font-bold text-royal-400">{player.currentRank}</td>
+                                            <td className="p-4 text-center font-bold text-royal-400">{player.rank}</td>
                                             <td className="p-4 font-medium text-white flex items-center gap-3">
                                                 <div className="w-10 h-10 rounded-full overflow-hidden border border-royal-700 bg-black shrink-0">
                                                     <PlayerMedia url={player.imageUrl || (player.images ? player.images[0] : '')} className="w-full h-full" />
@@ -2935,18 +2944,9 @@
             const [showAddForm, setShowAddForm] = useState(false);
             const [searchQuery, setSearchQuery] = useState('');
 
-            // 1. First, accurately calculate everyone's rank based on points/wins
-            const playersWithRank = useMemo(() => {
-                return [...players].sort((a, b) => {
-                    if (a.points !== b.points) return (b.points || 0) - (a.points || 0);
-                    return (b.stats?.wins || 0) - (a.stats?.wins || 0);
-                }).map((p, i) => ({ ...p, rank: i + 1 }));
-            }, [players]);
-
             const displayedPlayers = useMemo(() => {
-                let filtered = [...playersWithRank];
+                let filtered = [...players]; // Already perfectly sorted and ranked by the Core Engine!
                 
-                // 2. Filter by Search Query
                 if (searchQuery.trim()) {
                     filtered = filtered.filter(p => 
                         (p.name || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -2954,15 +2954,11 @@
                     );
                 }
                 
-                // 3. Sort: Active players up top, Retired at the absolute bottom.
-                // Within those two groups, they remain perfectly sorted by their rank.
                 return filtered.sort((a, b) => {
-                    const aRet = !!a.retired;
-                    const bRet = !!b.retired;
-                    if (aRet !== bRet) return aRet ? 1 : -1; // Push retired down
-                    return a.rank - b.rank;
+                    if (a.retired !== b.retired) return a.retired ? 1 : -1;
+                    return (a.rank || 9999) - (b.rank || 9999);
                 });
-            }, [playersWithRank, searchQuery]);
+            }, [players, searchQuery]);
 
             const handleAddPlayer = async (e) => {
                 e.preventDefault(); if (!newPlayerName.trim()) return;
@@ -2976,7 +2972,7 @@
                         imageUrl: validImages[0] || '', 
                         images: validImages, 
                         createdAt: Date.now(),
-                        retired: false // Default to active when creating
+                        retired: false
                     });
                     setNewPlayerName(''); setNewPlayerNationality(''); setNewPlayerImages(['', '', '', '']); setShowAddForm(false);
                 } catch (err) { console.error(err); }
@@ -2985,7 +2981,7 @@
 
             const exportToCSV = () => {
                 const headers = ['Rank', 'Name', 'Nationality', 'Status', 'Official Points', 'Bonus Points', 'Wins', 'Losses'];
-                const rows = playersWithRank.map(p => [
+                const rows = players.map(p => [
                     p.retired ? '-' : p.rank,
                     `"${p.name}"`,
                     p.nationality || 'UNK',
@@ -3011,7 +3007,6 @@
                     <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
                         <h1 className="text-3xl font-bold text-white shrink-0">Players</h1>
                         <div className="flex flex-col md:flex-row gap-2 w-full lg:w-auto">
-                            {/* Search Bar */}
                             <input 
                                 type="text" 
                                 placeholder="Search players..." 
@@ -3019,7 +3014,6 @@
                                 value={searchQuery}
                                 onChange={e => setSearchQuery(e.target.value)}
                             />
-                            {/* Actions */}
                             <div className="flex gap-2 w-full md:w-auto">
                                 <button onClick={exportToCSV} className="flex-1 md:flex-none bg-royal-800 px-4 py-2 rounded-lg flex items-center justify-center gap-2 whitespace-nowrap hover:bg-royal-700 transition-colors text-royal-200 hover:text-white"><Download size={16}/> Export CSV</button>
                                 <button onClick={() => setShowAddForm(!showAddForm)} className="flex-1 md:flex-none bg-gold-500 px-4 py-2 rounded-lg flex items-center justify-center gap-2 whitespace-nowrap hover:bg-gold-600 text-royal-950 font-bold transition-colors">{showAddForm ? <X size={20}/> : <Plus size={20}/>} {showAddForm ? 'Cancel' : 'Add Player'}</button>
@@ -3034,14 +3028,12 @@
                                 <CountrySelect value={newPlayerNationality} onChange={setNewPlayerNationality} />
                             </div>
                             
-                            {/* Visual Media Previews for Add Player Form */}
                             <div className="bg-royal-950/50 p-4 rounded-xl border border-royal-800 mt-2">
                                 <h3 className="font-bold text-white mb-4 text-sm uppercase tracking-widest text-royal-400">Media Links & Preview</h3>
                                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                                     {[0,1,2,3].map(i => (
                                         <div key={i} className="space-y-3">
                                             <input type="text" placeholder={`Link or Embed Code ${i+1}`} className="w-full bg-royal-950 p-2 rounded-lg text-xs text-white border border-royal-700 focus:border-gold-500 transition-colors" value={newPlayerImages[i]} onChange={e => { const ni = [...newPlayerImages]; ni[i] = e.target.value; setNewPlayerImages(ni); }} />
-                                            {/* Aspect Ratio Preview Box */}
                                             <div className="w-full aspect-[3/4] bg-black rounded-lg border-2 border-royal-800 overflow-hidden flex items-center justify-center shadow-inner">
                                                 {newPlayerImages[i] ? <PlayerMedia url={newPlayerImages[i]} className="w-full h-full object-cover" /> : <span className="text-royal-700 font-bold text-[10px]">SLOT {i+1}</span>}
                                             </div>
@@ -3056,9 +3048,7 @@
 
                     <div className="grid md:grid-cols-3 gap-4">
                         {displayedPlayers.map((p, index) => {
-                            // Detect when we transition from Active to Retired to inject a subtle divider
                             const showRetiredDivider = p.retired && (index === 0 || !displayedPlayers[index - 1].retired);
-                            
                             return (
                                 <React.Fragment key={p.id}>
                                     {showRetiredDivider && (
