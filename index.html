@@ -1178,21 +1178,42 @@
 
         var getGlobalHistory = (playersRaw, tournaments) => {
             const completedAsc = tournaments.filter(t => t.status === 'completed').sort((a, b) => (a.completedAt || 0) - (b.completedAt || 0));
+            
+            // Pre-calculate last active timestamp for retired players
+            const lastActiveDates = {};
+            playersRaw.forEach(p => {
+                if (p.retired) {
+                    let lastDate = 0;
+                    completedAsc.forEach(t => {
+                        if (t.selectedPlayers && t.selectedPlayers.includes(p.id)) {
+                            lastDate = Math.max(lastDate, t.completedAt || t.createdAt);
+                        }
+                    });
+                    lastActiveDates[p.id] = lastDate;
+                }
+            });
+
             const history = [];
             completedAsc.forEach((currentT, index) => {
                 const relevantTournaments = completedAsc.slice(0, index + 1);
                 const snapshotRankings = calculatePlayerRankings(playersRaw, relevantTournaments);
                 
-                // For historical graphs, we DO want retired players to retain their historical ranks from when they were active
-                const activeRankings = snapshotRankings.filter(p => p.hasPlayedAny);
+                let activeRankings = snapshotRankings.filter(p => p.hasPlayedAny);
+                const currentTDate = currentT.completedAt || currentT.createdAt;
+                
+                // IMPORTANT: Drop retired players from the history snapshot IF this tournament happened AFTER their final career tournament
+                activeRankings = activeRankings.filter(p => {
+                    if (!p.retired) return true;
+                    return currentTDate <= (lastActiveDates[p.id] || 0);
+                });
+                
                 activeRankings.sort((a, b) => b.points - a.points || b.totalPoints - a.totalPoints || (a.name || '').localeCompare(b.name || ''));
                 
-                // Re-assign ranks strictly for this historical snapshot
                 activeRankings.forEach((p, idx) => p.rank = idx + 1);
                 
                 const playerPoints = activeRankings.map(p => ({
                     id: p.id, name: p.name, pts: p.points, totalPts: p.totalPoints, 
-                    careerPoints: p.careerPoints, wins: p.stats.wins, matchesPlayed: p.stats.totalPlayed, // Added totalPlayed for the snip engine!
+                    careerPoints: p.careerPoints, wins: p.stats.wins, matchesPlayed: p.stats.totalPlayed,
                     imageUrl: p.imageUrl, nationality: p.nationality || 'UNK', rank: p.rank
                 }));
                 const tier = getTournamentTier(currentT);
@@ -1274,7 +1295,7 @@
 
         // --- Custom Views ---
 
-        function IndividualPlayerChart({ history, type, filterPlayed = false, totalPlayersCount = 10 }) {
+        function IndividualPlayerChart({ history, type, filterPlayed = false, totalPlayersCount = 10, isRetired = false }) {
             const [range, setRange] = useState(10);
             const [hoveredPointData, setHoveredPointData] = useState(null);
 
@@ -1288,14 +1309,9 @@
             
             let minVal = type === 'rank' ? 1 : 0;
             let maxVal;
-            
-            if (type === 'rank') {
-                maxVal = Math.ceil(Math.max(10, totalPlayersCount) / 10) * 10;
-            } else if (type === 'careerPoints') {
-                maxVal = Math.max(100, ...data.map(d => d.careerPoints)) * 1.1;
-            } else {
-                maxVal = Math.max(100, ...data.map(d => d.totalPoints)) * 1.1;
-            }
+            if (type === 'rank') { maxVal = Math.ceil(Math.max(10, totalPlayersCount) / 10) * 10; } 
+            else if (type === 'careerPoints') { maxVal = Math.max(100, ...data.map(d => d.careerPoints)) * 1.1; } 
+            else { maxVal = Math.max(100, ...data.map(d => d.totalPoints)) * 1.1; }
 
             const getX = (i) => data.length === 1 ? (width / 2) : pad.left + (i * ((width - pad.left - pad.right) / (data.length - 1)));
             const getY = (val) => {
@@ -1331,7 +1347,6 @@
                     </div>
                     <div className="w-full bg-royal-900/50 rounded-xl border border-royal-700 pb-2 relative overflow-hidden">
                         <svg viewBox={`0 0 ${width} ${height}`} className="w-full h-auto overflow-visible">
-                            {/* Grid lines */}
                             {type === 'rank' ? (
                                 (() => {
                                     const lines = [1];
@@ -1362,8 +1377,7 @@
                             {data.length > 1 && <path d={pathD} fill="none" stroke="#d4af37" strokeWidth="3" strokeLinejoin="round" />}
                             
                             {type === 'points' && data.map((d, i) => {
-                                const ptX = getX(i);
-                                const ptY2 = getY(d.tournamentPoints);
+                                const ptX = getX(i); const ptY2 = getY(d.tournamentPoints);
                                 const showLabel = i % labelStep === 0 || i === data.length - 1;
                                 return (
                                     <g key={`tpt-${i}`}>
@@ -1378,36 +1392,41 @@
                             })}
 
                             {data.map((d, i) => {
-                                const ptX = getX(i);
-                                const ptY = getY(type === 'rank' ? d.rank : (type === 'careerPoints' ? d.careerPoints : d.totalPoints));
+                                const ptX = getX(i); const ptY = getY(type === 'rank' ? d.rank : (type === 'careerPoints' ? d.careerPoints : d.totalPoints));
                                 const isHovered = hoveredPointData && hoveredPointData.date === d.date;
                                 const isMinor = d.tier === 'pro' || d.tier === 'challenger';
-                                
                                 const showLabel = i % labelStep === 0 || i === data.length - 1;
                                 const val = type === 'rank' ? d.rank : (type === 'careerPoints' ? d.careerPoints : d.totalPoints);
-
                                 const dotRadius = isHovered ? "8" : (isMinor ? "3.5" : "5");
                                 const dotOpacity = isMinor ? "0.6" : "1";
                                 const dotStroke = isMinor ? "#a0bdb2" : "#d4af37";
 
+                                // NEW: Retirement Node Logic
+                                const isRetirementNode = isRetired && i === data.length - 1;
+
                                 return (
                                     <g key={i}>
-                                        <circle cx={ptX} cy={ptY} r={dotRadius} fill="#051611" stroke={dotStroke} strokeWidth={isMinor ? "1.5" : "2"} opacity={dotOpacity} style={{ transition: 'all 0.2s ease' }} />
-                                        
+                                        {isRetirementNode ? (
+                                            <g transform={`translate(${ptX}, ${ptY})`}>
+                                                <polygon points="0,-6 6,0 0,6 -6,0" fill="#be123c" stroke="#fb7185" strokeWidth="1.5" />
+                                                <text x="0" y="16" fill="#fb7185" fontSize="9" fontWeight="900" textAnchor="middle" stroke="#051611" strokeWidth="3" paintOrder="stroke">RETIRED</text>
+                                            </g>
+                                        ) : (
+                                            <circle cx={ptX} cy={ptY} r={dotRadius} fill="#051611" stroke={dotStroke} strokeWidth={isMinor ? "1.5" : "2"} opacity={dotOpacity} style={{ transition: 'all 0.2s ease' }} />
+                                        )}
+
                                         {(showLabel || isMinor) && (
-                                            <text x={ptX} y={ptY - (isMinor ? 12 : 18)} fill={isMinor ? "#a0bdb2" : "#d4af37"} fontSize={isMinor ? "11" : "16"} fontWeight="900" textAnchor="middle" stroke="#051611" strokeWidth={isMinor ? "2" : "4"} paintOrder="stroke" opacity={isMinor && !isHovered ? 0 : 1} className={isMinor ? "group-hover:opacity-100 transition-opacity" : ""}>
+                                            <text x={ptX} y={ptY - (isMinor ? 12 : 18)} fill={isRetirementNode ? "#fb7185" : (isMinor ? "#a0bdb2" : "#d4af37")} fontSize={isMinor ? "11" : "16"} fontWeight="900" textAnchor="middle" stroke="#051611" strokeWidth={isMinor ? "2" : "4"} paintOrder="stroke" opacity={isMinor && !isHovered ? 0 : 1} className={isMinor ? "group-hover:opacity-100 transition-opacity" : ""}>
                                                 {type === 'rank' ? `#${d.rank}` : val.toLocaleString()}
                                             </text>
                                         )}
-
-                                        {(type === 'points' || type === 'careerPoints') && d.achievement && !isMinor && (
+                                        {(type === 'points' || type === 'careerPoints') && d.achievement && !isMinor && !isRetirementNode && (
                                             <g transform={`translate(${ptX - 10}, ${ptY - 60})`}>
                                                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={getAchColor(d.achievement)} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                                                     <path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6M18 9h1.5a2.5 2.5 0 0 0 0-5H18M4 22h16M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22M18 2H6v7a6 6 0 0 0 12 0V2Z"/>
                                                 </svg>
                                             </g>
                                         )}
-
                                         <circle cx={ptX} cy={ptY} r="20" fill="transparent" cursor="crosshair" onMouseEnter={() => setHoveredPointData(d)} onMouseLeave={() => setHoveredPointData(null)} />
                                     </g>
                                 );
@@ -1807,8 +1826,8 @@
                                             );
                                         }))}
 
-                                        {/* HIDE THE DASHED LINE IF IN EXTENDED MODE OR IF PERFECT ALIGNMENT OCCURS */}
-                                        {shouldShowLabel && !isExtendedMode && (Math.abs(adjY - endPt.y) > 2 || isDropped) && (
+                                        {/* RESTORED DASHED LINES */}
+                                        {shouldShowLabel && (Math.abs(adjY - endPt.y) > 2 || isDropped || isExtendedMode) && (
                                             <path d={`M ${endPt.x} ${endPt.y} C ${endPt.x + 15} ${endPt.y}, ${endPt.x + 10} ${adjY}, ${endPt.x + (isAll ? 10 : 20)} ${adjY}`} fill="none" stroke={line.color} strokeWidth="1.5" opacity="0.6" strokeDasharray="4 4" style={{ transition: 'opacity 0.3s ease' }} />
                                         )}
 
@@ -3487,7 +3506,7 @@
                             <div id="player-charts" className="space-y-6 scroll-mt-8">
                                 <div className="bg-royal-900 p-6 lg:p-8 rounded-xl border border-royal-800 shadow-md">
                                     <h2 className="text-2xl font-bold text-white flex items-center gap-2 mb-6"><AnalyticsIcon size={28} className="text-gold-500"/> Career Ranking Trajectory</h2>
-                                    <IndividualPlayerChart history={rankingHistory} type="rank" filterPlayed={false} totalPlayersCount={players.length} />
+                                    <IndividualPlayerChart history={rankingHistory} type="rank" filterPlayed={false} totalPlayersCount={players.length} isRetired={player.retired} />
                                 </div>
                                 
                                 <div className="bg-royal-900 p-6 lg:p-8 rounded-xl border border-royal-800 shadow-md">
@@ -3498,12 +3517,12 @@
                                             <strong>Note:</strong> Minor events (Pro/Challenger) do not consume the 20-tournament limit and are marked with smaller silver dots.
                                         </span>
                                     </p>
-                                    <IndividualPlayerChart history={rankingHistory} type="points" filterPlayed={true} totalPlayersCount={players.length} />
+                                    <IndividualPlayerChart history={rankingHistory} type="points" filterPlayed={true} totalPlayersCount={players.length} isRetired={player.retired} />
                                 </div>
                                 
                                 <div className="bg-royal-900 p-6 lg:p-8 rounded-xl border border-royal-800 shadow-md">
                                     <h2 className="text-2xl font-bold text-white flex items-center gap-2 mb-6"><AnalyticsIcon size={28} className="text-gold-500"/> Career Points Accumulation</h2>
-                                    <IndividualPlayerChart history={rankingHistory} type="careerPoints" filterPlayed={true} totalPlayersCount={players.length} />
+                                    <IndividualPlayerChart history={rankingHistory} type="careerPoints" filterPlayed={true} totalPlayersCount={players.length} isRetired={player.retired} />
                                 </div>
                             </div>
                         </div>
