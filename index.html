@@ -4372,97 +4372,96 @@
             })();
 
             return (
-                <div className="fixed inset-0 bg-black/80 backdrop-blur-xl z-[100] flex items-center justify-center p-4 sm:p-6 animate-in fade-in duration-300">
-                    <div className="bg-[#0a0a0c] rounded-3xl w-full max-w-5xl border border-white/10 overflow-hidden shadow-[0_40px_80px_rgba(0,0,0,0.9)] flex flex-col max-h-[95vh] relative">
-                        
-                        {/* Header */}
-                        <div className="px-8 py-6 border-b border-white/[0.05] flex justify-between items-center bg-[#0d0d12]">
-                            <div>
-                                <h2 className="text-2xl font-bold text-white tracking-tight">Resolve Match</h2>
-                                <p className="text-white/40 text-sm mt-1 font-medium">{tournament.name}</p>
-                            </div>
-                            <button onClick={() => setResolvingMatch(null)} className="text-white/40 hover:text-white bg-white/5 hover:bg-white/10 p-2.5 rounded-full transition-all hover:scale-105">
-                                <X size={20} />
+                <div className="fixed inset-0 bg-[#000000] z-[200] flex flex-col animate-in fade-in duration-300">
+                    
+                    {/* Immersive Header */}
+                    <div className="absolute top-0 left-0 w-full p-6 md:p-8 flex justify-between items-start z-50 bg-gradient-to-b from-black/80 to-transparent pointer-events-none">
+                        <div className="flex items-center gap-4 pointer-events-auto">
+                            <button onClick={() => setResolvingMatch(null)} className="w-10 h-10 bg-white/10 hover:bg-white/20 rounded-full flex items-center justify-center transition-colors backdrop-blur-xl text-white shadow-lg border border-white/10">
+                                <ArrowLeft size={18} />
                             </button>
+                            <div className="hidden sm:block">
+                                <h2 className="text-lg font-bold text-white tracking-tight leading-none drop-shadow-md">Resolve Match</h2>
+                                <p className="text-white/60 text-xs font-medium mt-1 uppercase tracking-widest">{tournament.name}</p>
+                            </div>
                         </div>
-                        
-                        {/* H2H Banner */}
-                        <div className="w-full bg-[#121217] border-b border-white/[0.02] py-4 px-6 flex justify-center">
+
+                        <div className="flex flex-col items-end gap-3 pointer-events-auto">
+                            <button onClick={handleRandomize} className="bg-white/10 hover:bg-white/20 backdrop-blur-xl border border-white/10 text-white px-5 py-2 rounded-full text-xs font-bold transition-all flex items-center gap-2 shadow-lg">
+                                <Shuffle size={14} /> Auto-Resolve (Coin Toss)
+                            </button>
                             {matchH2H.total > 0 ? (
-                                <div className="inline-flex items-center bg-white/[0.03] border border-white/[0.05] rounded-full px-6 py-2 text-sm font-medium text-white/50 shadow-inner">
-                                    Head-to-Head: 
-                                    <span className="text-white font-bold mx-3">{getPlayer(resolvingMatch.p1).name}</span> 
-                                    <span className="font-black px-2.5 py-0.5 rounded text-white" style={{ backgroundColor: tierConf.hex }}>{matchH2H.p1Wins} - {matchH2H.p2Wins}</span> 
-                                    <span className="text-white font-bold ml-3">{getPlayer(resolvingMatch.p2).name}</span>
+                                <div className="hidden md:flex bg-black/40 border border-white/10 rounded-full px-5 py-1.5 items-center gap-3 backdrop-blur-xl shadow-lg">
+                                    <span className="text-white/40 text-[10px] font-bold uppercase tracking-widest">H2H</span>
+                                    <span className="text-white/80 text-xs font-medium">{getPlayer(resolvingMatch.p1).name}</span>
+                                    <span className="text-white font-bold text-sm">{matchH2H.p1Wins} - {matchH2H.p2Wins}</span>
+                                    <span className="text-white/80 text-xs font-medium">{getPlayer(resolvingMatch.p2).name}</span>
                                 </div>
                             ) : (
-                                <div className="inline-flex bg-white/[0.03] border border-white/[0.05] rounded-full px-6 py-2 text-sm font-medium text-white/40">
-                                    First Career Meeting
+                                <div className="hidden md:flex bg-black/40 border border-white/10 rounded-full px-5 py-1.5 text-[10px] font-bold text-white/50 uppercase tracking-widest backdrop-blur-xl shadow-lg">
+                                    First Meeting
                                 </div>
                             )}
                         </div>
+                    </div>
 
-                        {/* Players Area */}
-                        <div className="flex flex-col md:flex-row items-stretch p-6 md:p-10 gap-8 md:gap-12 relative overflow-y-auto custom-scrollbar">
-                            <div className="hidden md:flex absolute left-1/2 top-[40%] -translate-x-1/2 -translate-y-1/2 bg-[#0a0a0c] border border-white/10 w-12 h-12 rounded-full items-center justify-center font-black text-white/20 z-10 text-sm shadow-2xl backdrop-blur-md">VS</div>
-                            
-                            {[resolvingMatch.p1, resolvingMatch.p2].map((pid, idx) => {
-                                const p = getPlayer(pid), imgs = getImages(p);
-                                const iIdx = idx === 0 ? p1ImgIdx : p2ImgIdx, setIIdx = idx === 0 ? setP1ImgIdx : setP2ImgIdx;
-                                
-                                return (
-                                    <div key={idx} className="flex-1 flex flex-col items-center">
-                                        {/* Massive Avatar Frame */}
-                                        <div className="relative group w-full max-w-[280px] aspect-[4/5] mb-6 rounded-2xl overflow-hidden shadow-2xl border border-white/5 bg-[#050505]">
-                                            {imgs[iIdx] ? (
-                                                <PlayerMedia url={imgs[iIdx]} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
-                                            ) : (
-                                                <div className="w-full h-full flex items-center justify-center"><UserCircle size={64} className="text-white/10"/></div>
-                                            )}
-                                            
-                                            {/* Image Carousel Controls */}
-                                            {imgs.length > 1 && (
-                                                <>
-                                                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors duration-300"></div>
-                                                    <button onClick={() => setIIdx(prev => (prev === 0 ? imgs.length-1 : prev-1))} className="absolute left-3 top-1/2 -translate-y-1/2 bg-white/10 backdrop-blur-md hover:bg-white/20 p-2.5 rounded-full text-white opacity-0 group-hover:opacity-100 transition-all hover:scale-110 z-30"><ChevronLeft size={20}/></button>
-                                                    <button onClick={() => setIIdx(prev => (prev === imgs.length-1 ? 0 : prev+1))} className="absolute right-3 top-1/2 -translate-y-1/2 bg-white/10 backdrop-blur-md hover:bg-white/20 p-2.5 rounded-full text-white opacity-0 group-hover:opacity-100 transition-all hover:scale-110 z-30"><ChevronRight size={20}/></button>
-                                                    <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-1.5 bg-black/50 backdrop-blur-md px-3 py-1.5 rounded-full z-30">
-                                                        {imgs.map((_, i) => <div key={i} className={`w-1.5 h-1.5 rounded-full transition-colors ${i === iIdx ? 'bg-white' : 'bg-white/30'}`} />)}
-                                                    </div>
-                                                </>
-                                            )}
+                    {/* Split Screen Players */}
+                    <div className="flex-1 flex flex-col md:flex-row relative">
+                        {/* VS Badge */}
+                        <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-16 h-16 bg-black/60 backdrop-blur-2xl border border-white/10 rounded-full z-40 flex items-center justify-center shadow-[0_0_30px_rgba(0,0,0,0.8)]">
+                            <span className="text-white/40 font-black italic text-xl">VS</span>
+                        </div>
+
+                        {[resolvingMatch.p1, resolvingMatch.p2].map((pid, idx) => {
+                            const p = getPlayer(pid);
+                            const imgs = getImages(p);
+                            const iIdx = idx === 0 ? p1ImgIdx : p2ImgIdx;
+                            const setIIdx = idx === 0 ? setP1ImgIdx : setP2ImgIdx;
+
+                            return (
+                                <div key={idx} className="flex-1 relative group overflow-hidden bg-[#050505] border-r border-white/5 last:border-r-0">
+                                    {imgs[iIdx] ? (
+                                        <PlayerMedia url={imgs[iIdx]} className="absolute inset-0 w-full h-full object-cover object-top transition-transform duration-700 group-hover:scale-105 opacity-80 group-hover:opacity-100" />
+                                    ) : (
+                                        <div className="absolute inset-0 flex items-center justify-center bg-[#0a0a0c]"><UserCircle size={80} className="text-white/5"/></div>
+                                    )}
+                                    
+                                    {/* Grand Gradient Fade */}
+                                    <div className="absolute inset-0 bg-gradient-to-t from-black via-black/50 to-transparent opacity-90"></div>
+                                    
+                                    {/* Image Navigation Carousel */}
+                                    {imgs.length > 1 && (
+                                        <div className="absolute inset-0 z-20 pointer-events-none">
+                                            <button onClick={(e) => { e.stopPropagation(); setIIdx(prev => (prev === 0 ? imgs.length-1 : prev-1)); }} className="pointer-events-auto absolute left-4 top-1/2 -translate-y-1/2 w-12 h-12 bg-black/20 hover:bg-black/60 rounded-full flex items-center justify-center text-white backdrop-blur-md opacity-0 group-hover:opacity-100 transition-all border border-white/10"><ChevronLeft size={24}/></button>
+                                            <button onClick={(e) => { e.stopPropagation(); setIIdx(prev => (prev === imgs.length-1 ? 0 : prev+1)); }} className="pointer-events-auto absolute right-4 top-1/2 -translate-y-1/2 w-12 h-12 bg-black/20 hover:bg-black/60 rounded-full flex items-center justify-center text-white backdrop-blur-md opacity-0 group-hover:opacity-100 transition-all border border-white/10"><ChevronRight size={24}/></button>
+                                            <div className="absolute top-[20%] left-1/2 -translate-x-1/2 flex gap-2 bg-black/40 backdrop-blur-md px-3 py-1.5 rounded-full">
+                                                {imgs.map((_, i) => <div key={i} className={`w-1.5 h-1.5 rounded-full transition-colors ${i === iIdx ? 'bg-white shadow-[0_0_5px_white]' : 'bg-white/30'}`} />)}
+                                            </div>
                                         </div>
-                                        
-                                        {/* Identification */}
-                                        <h3 className="text-3xl font-bold text-white mb-2 text-center tracking-tight truncate w-full px-4">
+                                    )}
+
+                                    {/* Action Area */}
+                                    <div className="absolute bottom-0 left-0 w-full p-8 md:p-12 lg:p-16 z-30 flex flex-col justify-end">
+                                        <div className="flex items-center gap-3 mb-3">
+                                            <span className="text-3xl md:text-4xl drop-shadow-xl">{getFlag(p.nationality)}</span>
+                                            <span className="text-white/60 font-bold uppercase tracking-widest text-xs">{getCountryName(p.nationality)}</span>
+                                        </div>
+                                        <h3 className="text-4xl md:text-6xl lg:text-7xl font-black text-white tracking-tighter mb-8 drop-shadow-2xl leading-none">
                                             {p.name}
                                         </h3>
-                                        <div className="font-medium mb-8 flex items-center justify-center gap-2 text-sm text-white/50">
-                                            <span className="text-xl drop-shadow-sm">{getFlag(p.nationality)}</span> 
-                                            <span className="uppercase tracking-widest text-[10px] font-bold">{getCountryName(p.nationality)}</span>
-                                            {getSeedText(tournament, pid) && <span className="ml-2 bg-white/10 px-2 py-0.5 rounded text-[10px] text-white/80 font-mono">{getSeedText(tournament, pid)}</span>}
-                                        </div>
                                         
-                                        {/* Action Buttons */}
-                                        <div className="w-full max-w-[280px] space-y-3 mt-auto">
-                                            <button onClick={() => submitResult(pid, 'close')} className="w-full bg-white text-black py-3.5 rounded-xl font-bold text-sm hover:bg-gray-200 transition-all active:scale-[0.98] shadow-[0_0_20px_rgba(255,255,255,0.15)] hover:shadow-[0_0_25px_rgba(255,255,255,0.3)]">
+                                        <div className="flex flex-col sm:flex-row gap-4 max-w-lg w-full">
+                                            <button onClick={() => submitResult(pid, 'close')} className="flex-1 bg-white text-black py-4 md:py-5 rounded-2xl font-bold text-base md:text-lg transition-all hover:bg-gray-200 active:scale-[0.98] shadow-[0_0_30px_rgba(255,255,255,0.15)] flex justify-center items-center gap-2">
                                                 Win Match
                                             </button>
-                                            <button onClick={() => submitResult(pid, 'lopsided')} className="w-full bg-white/[0.05] text-white/80 border border-white/10 py-3.5 rounded-xl font-bold text-sm hover:bg-white/[0.1] hover:text-white transition-all active:scale-[0.98]">
+                                            <button onClick={() => submitResult(pid, 'lopsided')} className="flex-1 bg-white/10 hover:bg-white/20 backdrop-blur-xl border border-white/20 text-white py-4 md:py-5 rounded-2xl font-bold text-base md:text-lg transition-all active:scale-[0.98]">
                                                 Win (Dominant)
                                             </button>
                                         </div>
                                     </div>
-                                );
-                            })}
-                        </div>
-                        
-                        {/* Footer / Randomize */}
-                        <div className="p-6 border-t border-white/[0.05] bg-[#08080a] flex justify-center shrink-0">
-                            <button onClick={handleRandomize} className="flex items-center gap-2 bg-gold-500/10 hover:bg-gold-500/20 text-gold-400 border border-gold-500/30 px-8 py-3.5 rounded-full font-bold text-sm transition-all active:scale-[0.98] shadow-lg">
-                                <Shuffle size={16}/> Auto-Resolve (Coin Toss)
-                            </button>
-                        </div>
+                                </div>
+                            );
+                        })}
                     </div>
                 </div>
             );
@@ -4486,14 +4485,14 @@
             const tierKey = getTournamentTier(tournament);
             const tierConf = TOURNAMENT_TIERS[tierKey];
 
+            // SMART DYNAMIC SCALABLE TABS
             const tabs = useMemo(() => {
-                if (drawSize <= 16) return [{ id: 'all', label: 'Full Draw' }];
-                return [
-                    { id: 'all', label: 'Full Draw' },
-                    { id: 'top', label: 'Top Half' },
-                    { id: 'bottom', label: 'Bottom Half' },
-                    { id: 'final16', label: 'Final 16' }
-                ];
+                const navTabs = [{ id: 'all', label: 'Full Draw' }];
+                if (drawSize >= 64) navTabs.push({ id: 'final32', label: 'Final 32' });
+                if (drawSize >= 32) navTabs.push({ id: 'final16', label: 'Final 16' });
+                if (drawSize >= 16) navTabs.push({ id: 'final8', label: 'Quarterfinals' });
+                if (drawSize >= 8) navTabs.push({ id: 'final4', label: 'Semifinals' });
+                return navTabs;
             }, [drawSize]);
 
             useEffect(() => { if (!tabs.find(t => t.id === activeTab)) setActiveTab(tabs[0].id); }, [tabs, activeTab]);
@@ -4502,11 +4501,7 @@
                 setActiveTab(tabId);
                 setTimeout(() => {
                     if (!scrollContainerRef.current) return;
-                    const el = scrollContainerRef.current;
-                    const sh = el.scrollHeight; 
-                    
-                    if (tabId === 'all' || tabId === 'top' || tabId === 'final16') el.scrollTo({ top: 0, left: 0, behavior: 'smooth' });
-                    else if (tabId === 'bottom') el.scrollTo({ top: sh, left: 0, behavior: 'smooth' });
+                    scrollContainerRef.current.scrollTo({ top: 0, left: 0, behavior: 'smooth' });
                 }, 50);
             };
 
@@ -4545,7 +4540,7 @@
                 } catch(e) { console.error(e); }
             };
 
-            // ULTRA COMPACT & ELEGANT MATCH PARTICIPANT
+            // SLEEK APPLE-STYLE MATCH PARTICIPANT
             const renderMatchParticipant = (match, pId, isTop) => {
                 const p = getPlayer(pId);
                 const isBye = match.type === 'bye';
@@ -4554,18 +4549,18 @@
                 const isLoser = !isTBD && match.winner != null && match.winner !== pId && !isBye;
                 
                 return (
-                    <div className={`relative px-2.5 py-1.5 flex items-center justify-between transition-colors ${isWinner ? 'bg-white/[0.04]' : ''} ${isTop ? 'border-b border-white/[0.05]' : ''}`}>
-                        <div className={`flex items-center gap-2.5 overflow-hidden w-full pr-2 ${isLoser ? 'opacity-40 grayscale' : ''}`}>
+                    <div className={`relative px-3 py-2 flex items-center justify-between transition-colors ${isTop ? 'border-b border-white/[0.04]' : ''} ${isWinner ? 'bg-white/[0.03]' : ''}`}>
+                        <div className={`flex items-center gap-2.5 overflow-hidden w-full pr-2 ${isLoser ? 'opacity-30 grayscale' : ''}`}>
                             {isTBD ? (
                                 <>
                                     <div className="w-5 h-5 rounded-full border border-white/5 bg-white/[0.02] shrink-0"></div>
-                                    <span className="text-[10px] font-semibold text-white/20 tracking-widest uppercase">TBD</span>
+                                    <span className="text-[10px] font-bold text-white/20 tracking-widest uppercase">TBD</span>
                                 </>
                             ) : (
                                 <>
-                                    <img src={p.images?.[0] || p.imageUrl || "https://via.placeholder.com/40"} loading="lazy" decoding="async" className={`w-5 h-5 rounded-full object-cover shrink-0 ${isWinner ? 'ring-1 ring-offset-1 ring-offset-transparent' : 'border border-white/10'}`} style={{ '--tw-ring-color': isWinner ? tierConf.hex : undefined }} />
+                                    <img src={p.images?.[0] || p.imageUrl || "https://via.placeholder.com/40"} loading="lazy" decoding="async" className={`w-5 h-5 rounded-full object-cover shrink-0 shadow-sm ${isWinner ? 'ring-1 ring-offset-1 ring-offset-transparent' : 'border border-white/10'}`} style={{ '--tw-ring-color': isWinner ? tierConf.hex : undefined }} />
                                     <div className="flex flex-col min-w-0 justify-center">
-                                        <span onClick={tournament.status === 'completed' ? (e) => { e.stopPropagation(); onNavigate('players', pId); } : undefined} className={`text-[11px] font-semibold flex items-center truncate ${isWinner ? 'text-white' : 'text-white/70'} ${tournament.status === 'completed' ? 'cursor-pointer hover:underline' : ''}`}>
+                                        <span onClick={tournament.status === 'completed' ? (e) => { e.stopPropagation(); onNavigate('players', pId); } : undefined} className={`text-xs font-semibold flex items-center truncate ${isWinner ? 'text-white' : 'text-white/70'} ${tournament.status === 'completed' ? 'cursor-pointer hover:underline' : ''}`}>
                                             <span className="truncate tracking-wide">{p.name}</span>
                                             {getSeedText(tournament, pId) && <span className="text-[8px] text-white/30 font-mono ml-1.5 shrink-0">{getSeedText(tournament, pId)}</span>}
                                         </span>
@@ -4616,23 +4611,32 @@
                     )}
 
                     <div className="flex-1 overflow-auto bg-[#05100c] border border-white/[0.05] rounded-2xl px-6 pb-6 shadow-2xl custom-scrollbar relative" ref={scrollContainerRef}>
-                        <div className="flex min-w-max items-stretch relative" style={{ minHeight: '100%' }}>
+                        <div className="flex min-w-max items-stretch relative pt-4" style={{ minHeight: '100%' }}>
                             {parsedBracket.map((round, rIdx) => {
                                 if (!Array.isArray(round)) return null;
                                 
-                                // SMART RENDERING: Slice the DOM directly if Final 16 is selected
+                                // SMART DOM SLICING: Completely cut off early rounds if a specific tab is selected
+                                if (activeTab === 'final32' && rIdx < totalRounds - 5) return null;
                                 if (activeTab === 'final16' && rIdx < totalRounds - 4) return null;
+                                if (activeTab === 'final8' && rIdx < totalRounds - 3) return null;
+                                if (activeTab === 'final4' && rIdx < totalRounds - 2) return null;
 
                                 const isFinalRound = rIdx === totalRounds - 1;
-                                const isFirstVisibleRound = activeTab === 'final16' ? rIdx === totalRounds - 4 : rIdx === 0;
+                                
+                                let isFirstVisibleRound = rIdx === 0;
+                                if (activeTab === 'final32') isFirstVisibleRound = rIdx === totalRounds - 5;
+                                if (activeTab === 'final16') isFirstVisibleRound = rIdx === totalRounds - 4;
+                                if (activeTab === 'final8') isFirstVisibleRound = rIdx === totalRounds - 3;
+                                if (activeTab === 'final4') isFirstVisibleRound = rIdx === totalRounds - 2;
+
                                 const finalMatch = isFinalRound ? round[0] : null;
                                 const showHeaderTrophy = isFinalRound && finalMatch;
                                 
                                 return (
-                                <div key={rIdx} className="flex flex-col w-[220px] shrink-0 mr-8 relative z-10">
-                                    <div className="sticky top-0 z-30 bg-[#05100c] pt-6 pb-2 mb-2 border-b border-white/10">
+                                <div key={rIdx} className="flex flex-col w-[240px] shrink-0 mr-10 relative z-10">
+                                    <div className="sticky top-0 z-30 bg-[#05100c]/95 backdrop-blur-md pt-4 pb-2 mb-3 border-b border-white/10">
                                         <div className="text-center font-bold text-[10px] uppercase tracking-widest flex flex-col items-center justify-end" style={{ color: tierConf.hex }}>
-                                            {showHeaderTrophy && <DynamicTrophy tier={tierKey} result="Winner" country={tournament.hostCountry} size={32} className="mb-2 drop-shadow-xl" />}
+                                            {showHeaderTrophy && <DynamicTrophy tier={tierKey} result="Winner" country={tournament.hostCountry} size={40} className="mb-2 drop-shadow-xl" />}
                                             <div className="flex items-center justify-center gap-1.5 text-white/80">
                                                 {isFinalRound && !showHeaderTrophy && <Trophy className="w-3 h-3 inline-block opacity-80" style={{ color: tierConf.hex }} />}
                                                 {ROUND_NAMES[rIdx + rOffset]}
@@ -4640,25 +4644,24 @@
                                         </div>
                                     </div>
 
-                                    {/* justify-center ensures matches stay centered vertically without excessive gap stretching */}
-                                    <div className="flex-1 flex flex-col justify-center gap-2 py-2">
+                                    {/* COMPACT FLEXBOX LOGIC: Justify-center to naturally space them */}
+                                    <div className="flex-1 flex flex-col justify-around gap-2 py-1">
                                         {round.map((match, mIdx) => {
                                             if (!match) return null;
                                             const isReady = match.p1 && match.p2 && !match.winner && tournament.status !== 'completed' && match.type !== 'bye';
                                             
                                             return (
-                                                <div key={match.id} className="relative py-1 flex flex-col justify-center" style={{ flex: 1, maxHeight: '65px' }}>
+                                                <div key={match.id} className="relative py-1 flex flex-col justify-center" style={{ flex: 1, maxHeight: '72px' }}>
                                                     <div onClick={() => handleMatchClick(rIdx, mIdx, match)} 
-                                                         className={`relative z-10 rounded-lg transition-all duration-200 overflow-hidden flex flex-col border ${
+                                                         className={`relative z-10 rounded-xl transition-all duration-200 overflow-hidden flex flex-col border ${
                                                              isReady 
-                                                             ? 'cursor-pointer hover:scale-105 z-20 bg-white/[0.04] hover:bg-white/[0.08] backdrop-blur-md shadow-lg' 
+                                                             ? 'cursor-pointer hover:scale-105 z-20 bg-white/[0.08] hover:bg-white/[0.12] backdrop-blur-md shadow-lg border-white/20' 
                                                              : match.winner 
-                                                                 ? 'bg-[#030a07] border-white/5' 
-                                                                 : 'bg-transparent border-white/[0.02] opacity-40'
+                                                                 ? 'bg-[#0a0a0e] border-white/10' 
+                                                                 : 'bg-transparent border-white/[0.03] opacity-50'
                                                          }`}
                                                          style={{ 
-                                                             borderColor: isReady ? `${tierConf.hex}80` : undefined,
-                                                             boxShadow: isReady ? `0 4px 15px ${tierConf.hex}15` : undefined
+                                                             boxShadow: isReady ? `0 4px 15px ${tierConf.hex}20` : undefined
                                                          }}>
                                                         
                                                         {renderMatchParticipant(match, match.p1, true)}
@@ -4666,10 +4669,10 @@
                                                         {renderMatchParticipant(match, match.p2, false)}
                                                     </div>
                                                     
-                                                    {/* Clean 1px Connector lines */}
-                                                    {!isFirstVisibleRound && <div className="absolute -left-[16px] top-1/2 w-[16px] h-px bg-white/20 z-0"></div>}
-                                                    {rIdx < totalRounds - 1 && <div className="absolute -right-[16px] top-1/2 w-[16px] h-px bg-white/20 z-0"></div>}
-                                                    {rIdx < totalRounds - 1 && mIdx % 2 === 0 && <div className="absolute -right-[16px] top-1/2 w-px bg-white/20 z-0" style={{ height: '100%' }}></div>}
+                                                    {/* Ultra-Clean 1px Connector lines */}
+                                                    {!isFirstVisibleRound && <div className="absolute -left-[20px] top-1/2 w-[20px] h-px bg-white/10 z-0"></div>}
+                                                    {rIdx < totalRounds - 1 && <div className="absolute -right-[20px] top-1/2 w-[20px] h-px bg-white/10 z-0"></div>}
+                                                    {rIdx < totalRounds - 1 && mIdx % 2 === 0 && <div className="absolute -right-[20px] top-1/2 w-px bg-white/10 z-0" style={{ height: '100%' }}></div>}
                                                 </div>
                                             );
                                         })}
@@ -4708,18 +4711,21 @@
             }
             if (!Array.isArray(knockout) || knockout.length < 2) knockout = [[],[]];
 
-            const standingsA = useMemo(() => calcGroupStandings('A', groupMatches), [groupMatches]);
-            const standingsB = useMemo(() => calcGroupStandings('B', groupMatches), [groupMatches]);
+            // SMART DYNAMIC GROUP TABS
+            const groupKeys = tournament.groups ? Object.keys(tournament.groups) : ['A', 'B'];
+            const tabs = useMemo(() => {
+                const generatedTabs = groupKeys.map(k => ({ id: `group${k}`, label: `Group ${k}` }));
+                generatedTabs.push({ id: 'knockout', label: 'Championship' });
+                return generatedTabs;
+            }, [groupKeys]);
+
+            const activeGroupKey = activeTab.startsWith('group') ? activeTab.replace('group', '') : null;
+            const currentStandings = useMemo(() => calcGroupStandings(activeGroupKey, groupMatches), [activeGroupKey, groupMatches]);
 
             const isGroupStageComplete = useMemo(() => {
-                return groupMatches.length === 12 && groupMatches.every(m => m && m.winner);
-            }, [groupMatches]);
-
-            const tabs = [
-                { id: 'groupA', label: 'Group A' },
-                { id: 'groupB', label: 'Group B' },
-                { id: 'knockout', label: 'Championship' }
-            ];
+                const totalRequiredMatches = groupKeys.length * 6; // Assuming 6 matches per group (4 players)
+                return groupMatches.length === totalRequiredMatches && groupMatches.every(m => m && m.winner);
+            }, [groupMatches, groupKeys]);
 
             const handleMatchClick = (type, mIdx, match) => {
                 if (tournament.status === 'completed' || !match || !match.p1 || !match.p2 || match.winner) return;
@@ -4741,6 +4747,8 @@
                     
                     const allGroupsDone = parsedGM.every(m => m && m.winner);
                     if (allGroupsDone) {
+                        // Dynamic bracket assignment for 2 groups. 
+                        // If it expands to 16 groups, this specific assignment logic would need to expand.
                         const sA = calcGroupStandings('A', parsedGM);
                         const sB = calcGroupStandings('B', parsedGM);
                         if(sA.length >= 2 && sB.length >= 2) {
@@ -4784,6 +4792,7 @@
             const tierKey = getTournamentTier(tournament);
             const tierConf = TOURNAMENT_TIERS[tierKey];
 
+            // SLEEK APPLE-STYLE MATCH PARTICIPANT
             const renderMatchParticipant = (match, pId, isTop) => {
                 const p = getPlayer(pId);
                 const isBye = match.type === 'bye';
@@ -4792,22 +4801,20 @@
                 const isLoser = !isTBD && match.winner != null && match.winner !== pId && !isBye;
                 
                 return (
-                    <div className={`relative px-3 py-2 flex items-center justify-between transition-colors ${isWinner ? 'bg-white/[0.04]' : ''} ${isTop ? 'border-b border-white/[0.05]' : ''}`}>
-                        {isWinner && <div className="absolute left-0 top-0 bottom-0 w-1 rounded-r" style={{ backgroundColor: tierConf.hex }}></div>}
-                        
-                        <div className={`flex items-center gap-3 overflow-hidden w-full pl-2 pr-2 ${isLoser ? 'opacity-40 grayscale' : ''}`}>
+                    <div className={`relative px-3 py-2 flex items-center justify-between transition-colors ${isTop ? 'border-b border-white/[0.04]' : ''} ${isWinner ? 'bg-white/[0.03]' : ''}`}>
+                        <div className={`flex items-center gap-3 overflow-hidden w-full pr-2 ${isLoser ? 'opacity-30 grayscale' : ''}`}>
                             {isTBD ? (
                                 <>
-                                    <div className="w-7 h-7 rounded-full border border-white/5 bg-white/[0.02] shrink-0"></div>
-                                    <span className="text-[11px] font-semibold text-white/30 tracking-widest uppercase">TBD</span>
+                                    <div className="w-6 h-6 rounded-full border border-white/5 bg-white/[0.02] shrink-0"></div>
+                                    <span className="text-[11px] font-semibold text-white/20 tracking-widest uppercase">TBD</span>
                                 </>
                             ) : (
                                 <>
-                                    <img src={p.images?.[0] || p.imageUrl || "https://via.placeholder.com/40"} loading="lazy" decoding="async" className={`w-7 h-7 rounded-full object-cover shrink-0 shadow-md ${isWinner ? 'ring-2 ring-offset-1 ring-offset-[#05100c]' : 'border border-white/10'}`} style={{ '--tw-ring-color': isWinner ? tierConf.hex : undefined }} />
+                                    <img src={p.images?.[0] || p.imageUrl || "https://via.placeholder.com/40"} loading="lazy" decoding="async" className={`w-6 h-6 rounded-full object-cover shrink-0 shadow-sm ${isWinner ? 'ring-1 ring-offset-1 ring-offset-transparent' : 'border border-white/10'}`} style={{ '--tw-ring-color': isWinner ? tierConf.hex : undefined }} />
                                     <div className="flex flex-col min-w-0 justify-center">
-                                        <span onClick={tournament.status === 'completed' ? (e) => { e.stopPropagation(); onNavigate('players', pId); } : undefined} className={`text-[13px] font-bold flex items-center truncate ${isWinner ? 'text-white' : 'text-white/80'} ${tournament.status === 'completed' ? 'cursor-pointer hover:underline' : ''}`} style={{ color: isWinner ? tierConf.hex : undefined }}>
+                                        <span onClick={tournament.status === 'completed' ? (e) => { e.stopPropagation(); onNavigate('players', pId); } : undefined} className={`text-[13px] font-semibold flex items-center truncate ${isWinner ? 'text-white' : 'text-white/70'} ${tournament.status === 'completed' ? 'cursor-pointer hover:underline' : ''}`}>
                                             <span className="truncate tracking-wide">{p.name}</span>
-                                            {getSeedText(tournament, pId) && <span className="text-[9px] text-white/40 font-mono ml-2 shrink-0">{getSeedText(tournament, pId)}</span>}
+                                            {getSeedText(tournament, pId) && <span className="text-[9px] text-white/30 font-mono ml-1.5 shrink-0">{getSeedText(tournament, pId)}</span>}
                                         </span>
                                     </div>
                                 </>
@@ -4897,52 +4904,22 @@
 
                     <div className="flex-1 bg-[#05100c] border border-white/[0.05] rounded-2xl p-6 md:p-8 shadow-2xl relative overflow-hidden flex flex-col">
                         
-                        {/* Group A View */}
-                        {activeTab === 'groupA' && (
+                        {/* Dynamic Group View */}
+                        {activeGroupKey && (
                             <div className="grid lg:grid-cols-2 gap-8 animate-in fade-in duration-300 h-full">
-                                {renderStandingsTable('A', standingsA)}
+                                {renderStandingsTable(activeGroupKey, currentStandings)}
                                 <div className="space-y-4 bg-royal-950/30 p-6 rounded-2xl border border-white/[0.02] flex flex-col overflow-y-auto custom-scrollbar h-full">
-                                    <h3 className="text-white/60 text-sm font-bold uppercase tracking-widest sticky top-0 bg-[#05100c] py-2 z-10 border-b border-white/10 pb-2">Group A Matches</h3>
+                                    <h3 className="text-white/60 text-sm font-bold uppercase tracking-widest sticky top-0 bg-[#05100c] py-2 z-10 border-b border-white/10 pb-2">Group {activeGroupKey} Matches</h3>
                                     <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
-                                        {groupMatches.filter(m => m && m.group === 'A').map((match, mIdx) => {
+                                        {groupMatches.filter(m => m && m.group === activeGroupKey).map((match, mIdx) => {
                                             const isReady = !match.winner;
                                             return (
                                                 <div key={match.id} onClick={() => handleMatchClick('group', groupMatches.findIndex(m => m.id === match.id), match)} 
                                                      className={`rounded-xl transition-all duration-300 overflow-hidden flex flex-col justify-center border ${
                                                          isReady 
-                                                         ? 'cursor-pointer hover:scale-105 z-20 border-white/20 bg-white/[0.04] hover:bg-white/[0.08] backdrop-blur-sm shadow-lg' 
+                                                         ? 'cursor-pointer hover:scale-105 z-20 border-white/20 bg-white/[0.08] hover:bg-white/[0.12] backdrop-blur-md shadow-lg' 
                                                          : match.winner 
-                                                             ? 'border-white/5 bg-[#030a07]' 
-                                                             : 'border-transparent bg-white/[0.02] opacity-40'
-                                                     }`} 
-                                                     style={{ borderColor: isReady ? `${tierConf.hex}80` : undefined, boxShadow: isReady ? `0 4px 20px ${tierConf.hex}20` : undefined }}>
-                                                    {renderMatchParticipant(match, match.p1, true)}
-                                                    <div className="h-px w-full bg-white/5"></div>
-                                                    {renderMatchParticipant(match, match.p2, false)}
-                                                </div>
-                                            );
-                                        })}
-                                    </div>
-                                </div>
-                            </div>
-                        )}
-
-                        {/* Group B View */}
-                        {activeTab === 'groupB' && (
-                            <div className="grid lg:grid-cols-2 gap-8 animate-in fade-in duration-300 h-full">
-                                {renderStandingsTable('B', standingsB)}
-                                <div className="space-y-4 bg-royal-950/30 p-6 rounded-2xl border border-white/[0.02] flex flex-col overflow-y-auto custom-scrollbar h-full">
-                                    <h3 className="text-white/60 text-sm font-bold uppercase tracking-widest sticky top-0 bg-[#05100c] py-2 z-10 border-b border-white/10 pb-2">Group B Matches</h3>
-                                    <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
-                                        {groupMatches.filter(m => m && m.group === 'B').map((match, mIdx) => {
-                                            const isReady = !match.winner;
-                                            return (
-                                                <div key={match.id} onClick={() => handleMatchClick('group', groupMatches.findIndex(m => m.id === match.id), match)} 
-                                                     className={`rounded-xl transition-all duration-300 overflow-hidden flex flex-col justify-center border ${
-                                                         isReady 
-                                                         ? 'cursor-pointer hover:scale-105 z-20 border-white/20 bg-white/[0.04] hover:bg-white/[0.08] backdrop-blur-sm shadow-lg' 
-                                                         : match.winner 
-                                                             ? 'border-white/5 bg-[#030a07]' 
+                                                             ? 'border-white/10 bg-[#0a0a0e]' 
                                                              : 'border-transparent bg-white/[0.02] opacity-40'
                                                      }`} 
                                                      style={{ borderColor: isReady ? `${tierConf.hex}80` : undefined, boxShadow: isReady ? `0 4px 20px ${tierConf.hex}20` : undefined }}>
@@ -4966,7 +4943,7 @@
                                         <p className="text-lg">Complete all Group Stage matches to unlock the Championship Bracket.</p>
                                     </div>
                                 ) : (
-                                    <div className="flex min-w-max items-stretch justify-center w-full h-full p-8">
+                                    <div className="flex min-w-max items-stretch justify-center w-full h-full py-8 px-4">
                                         {knockout.map((round, rIdx) => {
                                             if (!Array.isArray(round)) return null;
                                             const isFinalRound = rIdx === 1;
@@ -4974,14 +4951,14 @@
                                             const showHeaderTrophy = isFinalRound && finalMatch?.winner;
                                             
                                             return (
-                                                <div key={rIdx} className="flex flex-col w-80 shrink-0 mx-8 relative z-10">
+                                                <div key={rIdx} className="flex flex-col w-72 shrink-0 mx-10 relative z-10">
                                                     <div className="text-center font-bold text-[11px] uppercase tracking-widest mb-10 flex flex-col items-center justify-end min-h-[80px] shrink-0 border-b border-white/10 pb-4" style={{ color: tierConf.hex }}>
                                                         {showHeaderTrophy && <DynamicTrophy tier="finals" result="Winner" country={tournament.hostCountry} size={56} className="mb-4 drop-shadow-xl" />}
                                                         <div className="flex items-center justify-center gap-2 text-white">
                                                             {isFinalRound ? 'Championship Match' : 'Semifinals'}
                                                         </div>
                                                     </div>
-                                                    <div className="flex-1 flex flex-col justify-around gap-8">
+                                                    <div className="flex-1 flex flex-col justify-around gap-8 py-4">
                                                         {round.map((match, mIdx) => {
                                                             if (!match) return null;
                                                             const isReady = match.p1 && match.p2 && !match.winner && tournament.status !== 'completed';
@@ -4989,22 +4966,22 @@
                                                             return (
                                                                 <div key={match.id} className="relative flex flex-col justify-center">
                                                                     <div onClick={() => handleMatchClick(rIdx === 0 ? 'sf' : 'f', mIdx, match)} 
-                                                                         className={`relative z-10 rounded-xl transition-all duration-300 overflow-hidden flex flex-col border ${
+                                                                         className={`relative z-10 rounded-2xl transition-all duration-300 overflow-hidden flex flex-col border ${
                                                                              isReady 
-                                                                             ? 'cursor-pointer hover:scale-105 z-20 border-white/20 bg-white/[0.05] backdrop-blur-md hover:bg-white/[0.1] shadow-xl' 
+                                                                             ? 'cursor-pointer hover:scale-105 z-20 border-white/20 bg-white/[0.08] backdrop-blur-md hover:bg-white/[0.12] shadow-xl' 
                                                                              : match.winner 
-                                                                                 ? 'border-white/5 bg-[#030a07]' 
-                                                                                 : 'border-transparent bg-white/[0.02] opacity-40'
+                                                                                 ? 'border-white/10 bg-[#0a0a0e]' 
+                                                                                 : 'border-transparent bg-white/[0.03] opacity-60'
                                                                          }`} 
                                                                          style={{ borderColor: isReady ? `${tierConf.hex}80` : undefined, boxShadow: isReady ? `0 8px 30px ${tierConf.hex}30` : undefined }}>
                                                                         {renderMatchParticipant(match, match.p1, true)}
                                                                         <div className="h-px w-full bg-white/5"></div>
                                                                         {renderMatchParticipant(match, match.p2, false)}
                                                                     </div>
-                                                                    {/* Connector lines */}
-                                                                    {rIdx === 0 && <div className="absolute -right-8 top-1/2 w-8 h-px bg-white/20 z-0"></div>}
-                                                                    {rIdx === 0 && mIdx % 2 === 0 && <div className="absolute -right-[32px] top-1/2 w-px bg-white/20 z-0" style={{ height: '100%' }}></div>}
-                                                                    {rIdx === 1 && <div className="absolute -left-8 top-1/2 w-8 h-px bg-white/20 z-0"></div>}
+                                                                    {/* 1px Apple style Connector lines */}
+                                                                    {rIdx === 0 && <div className="absolute -right-[40px] top-1/2 w-[40px] h-px bg-white/20 z-0"></div>}
+                                                                    {rIdx === 0 && mIdx % 2 === 0 && <div className="absolute -right-[40px] top-1/2 w-px bg-white/20 z-0" style={{ height: '100%' }}></div>}
+                                                                    {rIdx === 1 && <div className="absolute -left-[40px] top-1/2 w-[40px] h-px bg-white/20 z-0"></div>}
                                                                 </div>
                                                             );
                                                         })}
