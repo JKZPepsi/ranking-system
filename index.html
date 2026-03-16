@@ -3967,113 +3967,6 @@
             );
         }
 
-        function TournamentsView({ tournaments, onSelect, onCreate, onEdit }) {
-            const [search, setSearch] = useState('');
-            const [filterTier, setFilterTier] = useState('All');
-            
-            const filteredTournaments = useMemo(() => {
-                return tournaments.filter(t => {
-                    const matchesSearch = t.name.toLowerCase().includes(search.toLowerCase()) || 
-                                          getCountryName(t.hostCountry).toLowerCase().includes(search.toLowerCase());
-                    const matchesTier = filterTier === 'All' || getTournamentTier(t) === filterTier;
-                    return matchesSearch && matchesTier;
-                }).sort((a,b) => {
-                    if (a.status !== b.status) return a.status === 'active' ? -1 : 1;
-                    return (b.completedAt || b.createdAt) - (a.completedAt || a.createdAt);
-                });
-            }, [tournaments, search, filterTier]);
-
-            return (
-                <div className="max-w-7xl mx-auto space-y-6 pb-20">
-                    <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-                        <div>
-                            <h1 className="text-3xl font-bold text-white flex items-center gap-3"><TournamentsIcon size={32} className="text-gold-500"/> Tournaments</h1>
-                            <p className="text-royal-300 mt-2 text-sm">Manage events, resolve matches, and track history.</p>
-                        </div>
-                        <button onClick={onCreate} className="bg-gold-500 hover:bg-gold-400 text-royal-950 px-6 py-2.5 rounded-xl font-bold flex items-center gap-2 transition-all shadow-[0_0_15px_rgba(212,175,55,0.2)] hover:shadow-[0_0_20px_rgba(212,175,55,0.4)] hover:-translate-y-0.5">
-                            <Plus size={18}/> Create Event
-                        </button>
-                    </div>
-
-                    {/* Rich, colorful search bar area */}
-                    <div className="bg-royal-900/80 backdrop-blur-md p-3 rounded-2xl border border-royal-700/50 flex flex-col md:flex-row gap-3 shadow-lg">
-                        <div className="relative flex-1">
-                            <input type="text" placeholder="Search tournaments..." className="w-full bg-royal-950/80 border border-royal-800 text-white/90 px-4 py-3 pl-11 rounded-xl focus:outline-none focus:border-gold-500/50 transition-colors" value={search} onChange={e => setSearch(e.target.value)} />
-                            <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-royal-400" />
-                        </div>
-                        <div className="flex bg-royal-950/50 p-1 rounded-xl border border-royal-800 overflow-x-auto custom-scrollbar">
-                            <button onClick={() => setFilterTier('All')} className={`px-4 py-2 rounded-lg text-sm font-bold whitespace-nowrap transition-colors ${filterTier === 'All' ? 'bg-royal-700 text-white shadow-sm' : 'text-royal-400 hover:text-white/80'}`}>All Tiers</button>
-                            {Object.entries(TOURNAMENT_TIERS).map(([k, conf]) => (
-                                <button key={k} onClick={() => setFilterTier(k)} className={`px-4 py-2 rounded-lg text-sm font-bold whitespace-nowrap transition-colors ${filterTier === k ? 'bg-royal-700 text-white shadow-sm' : 'text-royal-400 hover:text-white/80'}`}>{conf.name}</button>
-                            ))}
-                        </div>
-                    </div>
-
-                    <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-6">
-                        {filteredTournaments.map(t => {
-                            const tierKey = getTournamentTier(t);
-                            const tierConf = TOURNAMENT_TIERS[tierKey];
-                            const drawSize = getDrawSize(t);
-                            const isActive = t.status === 'active';
-                            const mapQuery = t.location || `${t.name} ${getCountryName(t.hostCountry)}`;
-                            
-                            return (
-                                <div key={t.id} onClick={() => onSelect(t.id)} className="bg-royal-950 border-y-[3px] hover:shadow-[0_15px_40px_rgba(0,0,0,0.6)] hover:-translate-y-1 transition-all duration-300 group flex flex-col h-[220px] relative overflow-hidden rounded-2xl" style={{ borderTopColor: tierConf?.hex, borderBottomColor: 'rgba(255,255,255,0.05)' }}>
-                                    
-                                    {/* Glassmorphic Satellite Map Background - Restored Color */}
-                                    <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden opacity-30 group-hover:opacity-50 mix-blend-screen transition-opacity duration-500">
-                                        <iframe src={`https://maps.google.com/maps?q=${encodeURIComponent(mapQuery)}&t=k&z=11&ie=UTF8&iwloc=&output=embed`} className="w-[150%] h-[150%] -translate-x-[25%] -translate-y-[25%] blur-[1px]" frameBorder="0" loading="lazy" />
-                                    </div>
-                                    
-                                    {/* Ambient Vibrant Glow */}
-                                    <div className="absolute inset-0 bg-gradient-to-b from-royal-950/40 via-royal-950/80 to-royal-950 z-0"></div>
-                                    <div className="absolute top-0 left-0 w-full h-24 opacity-20 pointer-events-none" style={{ background: `linear-gradient(to bottom, ${tierConf.hex}, transparent)` }}></div>
-                                    
-                                    <div className="flex-1 relative z-10 flex flex-col p-6">
-                                        <div className="flex justify-between items-start mb-auto">
-                                            <span className={`text-[10px] uppercase font-bold tracking-widest px-2.5 py-1 rounded-md shadow-sm border ${tierConf?.bg || 'bg-white/10'} ${tierConf?.border || 'border-white/20'} ${tierConf?.color || 'text-white/60'}`}>
-                                                {tierConf?.name || 'Tournament'}
-                                            </span>
-                                            <div className="flex gap-2">
-                                                <button onClick={(e) => { e.stopPropagation(); onEdit(t.id); }} className="text-white/60 hover:text-white bg-black/40 backdrop-blur-md p-1.5 rounded-lg border border-white/10 hover:border-white/30 transition-all shadow-sm">
-                                                    <Edit2 size={14}/>
-                                                </button>
-                                                {isActive ? (
-                                                    <span className="text-[10px] uppercase font-bold tracking-widest px-2 py-1 rounded-md bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 flex items-center gap-1.5 shadow-[0_0_10px_rgba(6,182,212,0.3)] backdrop-blur-md"><span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse"></span> ACTIVE</span>
-                                                ) : (
-                                                    <span className="text-[10px] uppercase font-bold tracking-widest px-2 py-1 rounded-md bg-[#059669]/30 text-[#34d399] border border-[#059669]/40 backdrop-blur-md">COMPLETED</span>
-                                                )}
-                                            </div>
-                                        </div>
-
-                                        <div className="mt-4">
-                                            <h3 className="font-black text-xl md:text-2xl text-white mb-1.5 leading-tight group-hover:text-gold-400 transition-colors drop-shadow-md line-clamp-2">
-                                                {t.name}
-                                            </h3>
-                                            <div className="flex items-center gap-2 text-sm font-semibold text-royal-200">
-                                                <span className="text-xl drop-shadow-sm leading-none">{getFlag(t.hostCountry)}</span>
-                                                <span className="uppercase tracking-widest text-[10px] font-bold">{getCountryName(t.hostCountry)}</span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    
-                                    <div className="text-[10px] font-bold text-royal-400 uppercase tracking-widest px-6 py-4 border-t border-royal-800/50 bg-royal-950/80 backdrop-blur-md flex justify-between items-center relative z-10">
-                                        <span>{drawSize} Participants</span>
-                                        <span>{new Date(t.createdAt).toLocaleDateString()}</span>
-                                    </div>
-                                </div>
-                            );
-                        })}
-                        {filteredTournaments.length === 0 && (
-                            <div className="col-span-full py-20 text-center text-royal-400 border-2 border-dashed border-royal-800 rounded-2xl bg-royal-900/50">
-                                No tournaments found. Try adjusting your search or filters.
-                            </div>
-                        )}
-                    </div>
-                </div>
-            );
-        }
-
         function CreateTournamentView({ players, onBack, onSuccess, db, appId, editingId, tournaments }) {
             const [name, setName] = useState('');
             const [description, setDescription] = useState('');
@@ -4391,6 +4284,107 @@
             );
         }
         
+        function TournamentsView({ tournaments, onSelect, onCreate, onEdit }) {
+            const [search, setSearch] = useState('');
+            const [filterTier, setFilterTier] = useState('All');
+            
+            const filteredTournaments = useMemo(() => {
+                return tournaments.filter(t => {
+                    const matchesSearch = t.name.toLowerCase().includes(search.toLowerCase()) || 
+                                          getCountryName(t.hostCountry).toLowerCase().includes(search.toLowerCase());
+                    const matchesTier = filterTier === 'All' || getTournamentTier(t) === filterTier;
+                    return matchesSearch && matchesTier;
+                }).sort((a,b) => {
+                    if (a.status !== b.status) return a.status === 'active' ? -1 : 1;
+                    return (b.completedAt || b.createdAt) - (a.completedAt || a.createdAt);
+                });
+            }, [tournaments, search, filterTier]);
+
+            return (
+                <div className="max-w-7xl mx-auto space-y-6 pb-20">
+                    <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                        <div>
+                            <h1 className="text-3xl font-bold text-white flex items-center gap-3"><TournamentsIcon size={32} className="text-gold-500"/> Tournaments</h1>
+                            <p className="text-royal-300 mt-2 text-sm">Manage events, resolve matches, and track history.</p>
+                        </div>
+                        <button onClick={onCreate} className="bg-gold-500 hover:bg-gold-400 text-royal-950 px-6 py-2.5 rounded-xl font-bold flex items-center gap-2 transition-all shadow-[0_0_15px_rgba(212,175,55,0.2)] hover:shadow-[0_0_20px_rgba(212,175,55,0.4)] hover:-translate-y-0.5">
+                            <Plus size={18}/> Create Event
+                        </button>
+                    </div>
+
+                    <div className="bg-royal-900/80 backdrop-blur-md p-3 rounded-2xl border border-royal-700/50 flex flex-col md:flex-row gap-3 shadow-lg">
+                        <div className="relative flex-1">
+                            <input type="text" placeholder="Search tournaments..." className="w-full bg-royal-950/80 border border-royal-800 text-white/90 px-4 py-3 pl-11 rounded-xl focus:outline-none focus:border-gold-500/50 transition-colors" value={search} onChange={e => setSearch(e.target.value)} />
+                            <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-royal-400" />
+                        </div>
+                        <div className="flex bg-royal-950/50 p-1 rounded-xl border border-royal-800 overflow-x-auto custom-scrollbar">
+                            <button onClick={() => setFilterTier('All')} className={`px-4 py-2 rounded-lg text-sm font-bold whitespace-nowrap transition-colors ${filterTier === 'All' ? 'bg-royal-700 text-white shadow-sm' : 'text-royal-400 hover:text-white/80'}`}>All Tiers</button>
+                            {Object.entries(TOURNAMENT_TIERS).map(([k, conf]) => (
+                                <button key={k} onClick={() => setFilterTier(k)} className={`px-4 py-2 rounded-lg text-sm font-bold whitespace-nowrap transition-colors ${filterTier === k ? 'bg-royal-700 text-white shadow-sm' : 'text-royal-400 hover:text-white/80'}`}>{conf.name}</button>
+                            ))}
+                        </div>
+                    </div>
+
+                    <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-6">
+                        {filteredTournaments.map(t => {
+                            const tierKey = getTournamentTier(t);
+                            const tierConf = TOURNAMENT_TIERS[tierKey];
+                            const drawSize = getDrawSize(t);
+                            const isActive = t.status === 'active';
+                            
+                            return (
+                                <div key={t.id} onClick={() => onSelect(t.id)} className="bg-royal-900 border border-royal-800 hover:border-gold-500/50 rounded-2xl cursor-pointer hover:shadow-xl hover:-translate-y-1 transition-all duration-300 group flex flex-col h-[220px] relative overflow-hidden">
+                                    
+                                    {/* Ambient Vibrant Glow (Restored to rich theme) */}
+                                    <div className="absolute inset-0 bg-gradient-to-b from-royal-950/40 to-transparent z-0"></div>
+                                    <div className="absolute top-0 right-0 w-48 h-48 blur-[60px] opacity-10 pointer-events-none transition-opacity group-hover:opacity-20" style={{ backgroundColor: tierConf?.hex }}></div>
+                                    <div className="absolute top-0 left-0 w-full h-1" style={{ backgroundColor: tierConf?.hex }}></div>
+                                    
+                                    <div className="flex-1 relative z-10 flex flex-col p-6">
+                                        <div className="flex justify-between items-start mb-auto">
+                                            <span className={`text-[10px] uppercase font-bold tracking-widest px-2.5 py-1 rounded-md shadow-sm ${tierConf?.bg || 'bg-royal-800'} ${tierConf?.color || 'text-royal-200'}`}>
+                                                {tierConf?.name || 'Tournament'}
+                                            </span>
+                                            <div className="flex gap-2">
+                                                <button onClick={(e) => { e.stopPropagation(); onEdit(t.id); }} className="text-royal-400 hover:text-gold-400 bg-royal-950 p-1.5 rounded-lg border border-royal-800 hover:border-gold-500/30 transition-all shadow-sm">
+                                                    <Edit2 size={14}/>
+                                                </button>
+                                                {isActive ? (
+                                                    <span className="text-[10px] uppercase font-bold tracking-widest px-2 py-1 rounded-md bg-cyan-500/10 text-cyan-400 border border-cyan-500/30 flex items-center gap-1.5 shadow-sm"><span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse"></span> ACTIVE</span>
+                                                ) : (
+                                                    <span className="text-[10px] uppercase font-bold tracking-widest px-2 py-1 rounded-md bg-[#059669]/20 text-[#059669] border border-[#059669]/30">COMPLETED</span>
+                                                )}
+                                            </div>
+                                        </div>
+
+                                        <div className="mt-4">
+                                            <h3 className="font-bold text-xl md:text-2xl text-white mb-2 leading-tight group-hover:text-gold-400 transition-colors drop-shadow-md line-clamp-2">
+                                                {t.name}
+                                            </h3>
+                                            <div className="flex items-center gap-2 text-sm font-semibold text-royal-200">
+                                                <span className="text-xl drop-shadow-sm leading-none">{getFlag(t.hostCountry)}</span>
+                                                <span className="uppercase tracking-widest text-[10px] font-bold">{getCountryName(t.hostCountry)}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div className="text-[10px] font-bold text-royal-400 uppercase tracking-widest px-6 py-4 border-t border-royal-800/50 bg-royal-950/40 flex justify-between items-center relative z-10">
+                                        <span>{drawSize} Participants</span>
+                                        <span>{new Date(t.createdAt).toLocaleDateString()}</span>
+                                    </div>
+                                </div>
+                            );
+                        })}
+                        {filteredTournaments.length === 0 && (
+                            <div className="col-span-full py-20 text-center text-royal-400 border-2 border-dashed border-royal-800 rounded-2xl bg-royal-900/50">
+                                No tournaments found. Try adjusting your search or filters.
+                            </div>
+                        )}
+                    </div>
+                </div>
+            );
+        }
+
         function ResolveMatchModal({ resolvingMatch, setResolvingMatch, submitResult, handleRandomize, players, allTournaments = [], tournament, tierConf, onNavigate }) {
             const [p1ImgIdx, setP1ImgIdx] = useState(0);
             const [p2ImgIdx, setP2ImgIdx] = useState(0);
@@ -4420,101 +4414,109 @@
                 return { p1Wins, p2Wins, total };
             })();
 
-            // Premium SVG Icons
-            const IconDom = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>;
-            const IconClose = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><circle cx="12" cy="12" r="6"></circle><circle cx="12" cy="12" r="2"></circle></svg>;
-
             return (
-                <div className="fixed inset-0 bg-black/80 backdrop-blur-xl z-[200] flex items-center justify-center p-4 sm:p-6 animate-in fade-in duration-200">
-                    <div className="bg-royal-950 rounded-3xl w-full max-w-5xl border border-royal-800 shadow-[0_30px_60px_rgba(0,0,0,0.8)] overflow-hidden flex flex-col max-h-[95vh]">
-                        
-                        {/* Header */}
-                        <div className="px-6 py-4 border-b border-royal-800 flex justify-between items-center bg-royal-900/80 z-10 shrink-0">
-                            <div>
-                                <h2 className="text-xl font-bold text-white tracking-tight">Resolve Match</h2>
-                                <p className="text-royal-400 text-[10px] mt-0.5 font-bold uppercase tracking-widest">{tournament.name}</p>
-                            </div>
-                            <button onClick={() => setResolvingMatch(null)} className="text-royal-400 hover:text-white bg-royal-800 hover:bg-royal-700 p-2.5 rounded-full transition-all">
-                                <X size={18} />
+                <div className="fixed inset-0 bg-royal-950 z-[200] flex flex-col animate-in fade-in duration-300 overflow-hidden">
+                    
+                    {/* Header Top Bar */}
+                    <div className="w-full p-4 md:p-6 flex justify-between items-start z-50 bg-royal-950 border-b border-royal-800 shadow-md">
+                        <div className="flex items-center gap-4">
+                            <button onClick={() => setResolvingMatch(null)} className="w-10 h-10 bg-royal-900 hover:bg-royal-800 rounded-full flex items-center justify-center transition-colors text-royal-200 hover:text-white border border-royal-700">
+                                <ArrowLeft size={18} />
                             </button>
+                            <div>
+                                <h2 className="text-lg font-bold text-white tracking-tight leading-none">Resolve Match</h2>
+                                <p className="text-royal-400 text-xs font-medium mt-1 uppercase tracking-widest">{tournament.name}</p>
+                            </div>
                         </div>
-                        
-                        {/* H2H Banner */}
-                        <div className="w-full bg-royal-950 border-b border-royal-800 py-3 px-6 flex justify-center shrink-0">
+
+                        {/* H2H Stat pill */}
+                        <div className="hidden md:flex items-center gap-3 bg-royal-900 border border-royal-700 rounded-full px-5 py-2 shadow-inner">
                             {matchH2H.total > 0 ? (
-                                <div className="inline-flex items-center bg-royal-900 border border-royal-700 rounded-full px-6 py-1.5 text-xs font-medium text-royal-300 shadow-inner">
-                                    Head-to-Head: 
-                                    <span className="text-white font-bold mx-3 truncate max-w-[120px]">{getPlayer(resolvingMatch.p1).name}</span> 
-                                    <span className="font-black px-2.5 py-0.5 rounded text-royal-950 shrink-0" style={{ backgroundColor: tierConf.hex }}>{matchH2H.p1Wins} - {matchH2H.p2Wins}</span> 
-                                    <span className="text-white font-bold ml-3 truncate max-w-[120px]">{getPlayer(resolvingMatch.p2).name}</span>
-                                </div>
+                                <>
+                                    <span className="text-royal-400 text-[10px] font-bold uppercase tracking-widest">H2H</span>
+                                    <span className="text-white/90 text-sm font-medium">{getPlayer(resolvingMatch.p1).name.split(' ')[0]}</span>
+                                    <span className="text-royal-950 font-black text-sm px-2 py-0.5 rounded" style={{ backgroundColor: tierConf.hex }}>{matchH2H.p1Wins} - {matchH2H.p2Wins}</span>
+                                    <span className="text-white/90 text-sm font-medium">{getPlayer(resolvingMatch.p2).name.split(' ')[0]}</span>
+                                </>
                             ) : (
-                                <div className="inline-flex bg-royal-900 border border-royal-800 rounded-full px-6 py-1.5 text-[10px] font-bold text-royal-400 uppercase tracking-widest">
-                                    First Career Meeting
-                                </div>
+                                <span className="text-royal-400 text-[10px] font-bold uppercase tracking-widest">First Career Meeting</span>
                             )}
                         </div>
+                    </div>
 
-                        {/* Centered, Prominent Layout */}
-                        <div className="p-6 md:p-8 flex flex-col gap-8 overflow-y-auto custom-scrollbar flex-1 relative bg-[#050508]">
-                            
-                            <div className="flex flex-col md:flex-row items-center justify-center gap-8 md:gap-12 w-full max-w-4xl mx-auto relative">
-                                {/* VS Badge */}
-                                <div className="hidden md:flex absolute left-1/2 top-1/3 -translate-x-1/2 -translate-y-1/2 bg-royal-950 border-2 border-royal-800 w-14 h-14 rounded-full items-center justify-center font-black text-royal-500 z-10 text-sm shadow-xl">VS</div>
-                                
-                                {[resolvingMatch.p1, resolvingMatch.p2].map((pid, idx) => {
-                                    const p = getPlayer(pid);
-                                    const imgs = getImages(p);
-                                    const iIdx = idx === 0 ? p1ImgIdx : p2ImgIdx;
-                                    const setIIdx = idx === 0 ? setP1ImgIdx : setP2ImgIdx;
+                    {/* Split Screen Full Height Content */}
+                    <div className="flex-1 flex flex-col md:flex-row relative bg-royal-950">
+                        
+                        {/* Center Decorator */}
+                        <div className="hidden md:flex absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-royal-950 border-4 border-royal-800 w-16 h-16 rounded-full items-center justify-center font-black text-royal-500 z-40 text-lg shadow-2xl">VS</div>
 
-                                    return (
-                                        <div key={idx} className="flex-1 flex flex-col items-center w-full">
-                                            {/* Massive Focused Image */}
-                                            <div className="relative group w-48 h-48 md:w-56 md:h-56 lg:w-64 lg:h-64 rounded-full overflow-hidden shadow-2xl border-4 bg-black mb-6 shrink-0" style={{ borderColor: tierConf.hex }}>
-                                                {imgs[iIdx] ? (
-                                                    <PlayerMedia url={imgs[iIdx]} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
-                                                ) : (
-                                                    <div className="w-full h-full flex items-center justify-center bg-royal-900"><UserCircle size={64} className="text-royal-700"/></div>
-                                                )}
+                        {[resolvingMatch.p1, resolvingMatch.p2].map((pid, idx) => {
+                            const p = getPlayer(pid);
+                            const imgs = getImages(p);
+                            const iIdx = idx === 0 ? p1ImgIdx : p2ImgIdx;
+                            const setIIdx = idx === 0 ? setP1ImgIdx : setP2ImgIdx;
+
+                            return (
+                                <div key={idx} className="flex-1 relative flex flex-col p-4 md:p-8 border-b md:border-b-0 md:border-r border-royal-800 last:border-0 h-full overflow-hidden">
+                                    
+                                    {/* Large Image Area - Object Contain to prevent cutting off */}
+                                    <div className="flex-1 w-full relative flex items-center justify-center min-h-0 mb-6 group">
+                                        {imgs[iIdx] ? (
+                                            <div className="relative w-full h-full flex items-center justify-center">
+                                                {/* Soft background glow based on the image */}
+                                                <div className="absolute inset-0 blur-3xl opacity-20 pointer-events-none transition-all duration-700">
+                                                    <PlayerMedia url={imgs[iIdx]} className="w-full h-full object-cover" />
+                                                </div>
+                                                {/* Actual Image - Uncropped */}
+                                                <PlayerMedia url={imgs[iIdx]} className="relative z-10 max-w-full max-h-full object-contain drop-shadow-2xl rounded-xl border border-royal-800" />
+                                            </div>
+                                        ) : (
+                                            <div className="w-full h-full flex items-center justify-center"><UserCircle size={80} className="text-royal-800"/></div>
+                                        )}
+
+                                        {/* Image Navigation Carousel */}
+                                        {imgs.length > 1 && (
+                                            <div className="absolute inset-0 z-30 pointer-events-none flex items-center justify-between px-2">
+                                                <button onClick={(e) => { e.stopPropagation(); setIIdx(prev => (prev === 0 ? imgs.length-1 : prev-1)); }} className="pointer-events-auto w-10 h-10 bg-royal-950/60 hover:bg-royal-900 border border-royal-700 rounded-full flex items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-all backdrop-blur-sm"><ChevronLeft size={20}/></button>
+                                                <button onClick={(e) => { e.stopPropagation(); setIIdx(prev => (prev === imgs.length-1 ? 0 : prev+1)); }} className="pointer-events-auto w-10 h-10 bg-royal-950/60 hover:bg-royal-900 border border-royal-700 rounded-full flex items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-all backdrop-blur-sm"><ChevronRight size={20}/></button>
                                                 
-                                                {imgs.length > 1 && (
-                                                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors duration-300 z-10 flex items-center justify-between px-2">
-                                                        <button onClick={(e) => { e.stopPropagation(); setIIdx(prev => (prev === 0 ? imgs.length-1 : prev-1)); }} className="w-10 h-10 bg-black/50 hover:bg-black/90 rounded-full flex items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-all backdrop-blur-sm"><ChevronLeft size={20}/></button>
-                                                        <button onClick={(e) => { e.stopPropagation(); setIIdx(prev => (prev === imgs.length-1 ? 0 : prev+1)); }} className="w-10 h-10 bg-black/50 hover:bg-black/90 rounded-full flex items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-all backdrop-blur-sm"><ChevronRight size={20}/></button>
-                                                    </div>
-                                                )}
+                                                <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-1.5 bg-royal-950/80 backdrop-blur-md px-3 py-1.5 rounded-full border border-royal-800">
+                                                    {imgs.map((_, i) => <div key={i} className={`w-1.5 h-1.5 rounded-full transition-colors ${i === iIdx ? 'bg-gold-500 shadow-[0_0_5px_rgba(212,175,55,0.8)]' : 'bg-royal-600'}`} />)}
+                                                </div>
                                             </div>
-                                            
-                                            {/* Name & Country */}
-                                            <h3 className="text-2xl md:text-3xl font-black text-white tracking-tight mb-2 text-center truncate w-full px-2">
-                                                {p.name}
-                                            </h3>
-                                            <div className="flex items-center justify-center gap-2 text-xs text-royal-300 font-bold mb-6">
-                                                <span className="text-xl drop-shadow-sm leading-none">{getFlag(p.nationality)}</span> 
-                                                <span className="uppercase tracking-widest text-[10px]">{getCountryName(p.nationality)}</span>
-                                            </div>
+                                        )}
+                                    </div>
 
-                                            {/* Action Buttons directly under the player */}
-                                            <div className="w-full max-w-[280px] space-y-3">
-                                                <button onClick={() => submitResult(pid, 'close')} className="w-full bg-white text-royal-950 py-4 rounded-xl font-black text-sm hover:bg-gray-200 transition-all active:scale-[0.98] shadow-[0_0_20px_rgba(255,255,255,0.15)] flex justify-center items-center gap-2">
-                                                    <IconClose/> Win Match (Close)
-                                                </button>
-                                                <button onClick={() => submitResult(pid, 'lopsided')} className="w-full bg-royal-800 text-white border border-royal-700 py-3.5 rounded-xl font-bold text-sm hover:bg-royal-700 hover:border-royal-500 transition-all active:scale-[0.98] flex justify-center items-center gap-2 shadow-md">
-                                                    <IconDom/> Win (Dominant)
-                                                </button>
-                                            </div>
+                                    {/* Player Info & Actions Bottom Dock */}
+                                    <div className="shrink-0 flex flex-col items-center w-full max-w-sm mx-auto z-20">
+                                        <div className="flex items-center gap-2 mb-2">
+                                            <span className="text-2xl drop-shadow-md leading-none">{getFlag(p.nationality)}</span>
+                                            <span className="text-royal-300 font-bold uppercase tracking-widest text-[10px]">{getCountryName(p.nationality)}</span>
                                         </div>
-                                    );
-                                })}
-                            </div>
+                                        <h3 className="text-3xl md:text-4xl font-black text-white tracking-tight mb-6 text-center truncate w-full">
+                                            {p.name}
+                                        </h3>
 
-                            {/* Center Randomize Button */}
-                            <div className="relative flex items-center justify-center w-full max-w-4xl mx-auto mt-4 pt-8 border-t border-royal-800/50">
-                                <button onClick={handleRandomize} className="w-full max-w-md bg-gold-500 hover:bg-gold-400 text-royal-950 py-4 rounded-2xl font-black text-sm transition-all active:scale-[0.98] shadow-[0_0_20px_rgba(212,175,55,0.2)] flex justify-center items-center gap-2 uppercase tracking-widest">
-                                    <Shuffle size={18}/> Randomize (Coin Toss)
-                                </button>
-                            </div>
+                                        <div className="flex flex-row gap-3 w-full">
+                                            <button onClick={() => submitResult(pid, 'close')} className="flex-1 bg-white text-royal-950 py-4 rounded-xl font-bold text-sm md:text-base hover:bg-gray-200 transition-all active:scale-[0.98] shadow-[0_0_20px_rgba(255,255,255,0.1)] flex justify-center items-center">
+                                                Win Match
+                                            </button>
+                                            <button onClick={() => submitResult(pid, 'lopsided')} className="flex-1 bg-royal-800 text-royal-100 border border-royal-700 py-4 rounded-xl font-bold text-sm md:text-base hover:bg-royal-700 hover:text-white transition-all active:scale-[0.98] flex justify-center items-center">
+                                                Dominant
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            );
+                        })}
+                    </div>
+
+                    {/* Massive Full-Width Randomize Footer */}
+                    <div className="w-full bg-royal-950 border-t border-royal-800 p-4 md:p-6 shrink-0 z-50">
+                        <div className="max-w-xl mx-auto w-full">
+                            <button onClick={handleRandomize} className="w-full bg-gold-500 hover:bg-gold-400 text-royal-950 py-4 rounded-2xl font-black text-sm md:text-base transition-all active:scale-[0.98] shadow-[0_0_15px_rgba(212,175,55,0.3)] flex justify-center items-center gap-2 uppercase tracking-widest">
+                                <Shuffle size={18}/> Auto-Resolve (Coin Toss)
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -4539,28 +4541,22 @@
             const tierKey = getTournamentTier(tournament);
             const tierConf = TOURNAMENT_TIERS[tierKey];
 
-            // Premium SVG Icons for bracket badges
+            // PREMIUM SVG ICONS
             const IconDom = () => <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>;
             const IconClose = () => <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><circle cx="12" cy="12" r="6"></circle><circle cx="12" cy="12" r="2"></circle></svg>;
 
             // SMART DYNAMIC SCALABLE TABS
             const tabs = useMemo(() => {
-                if (drawSize <= 8) return [{ id: 'all', label: 'Full Draw' }];
+                if (drawSize <= 16) return [{ id: 'all', label: 'Full Draw' }];
                 const navTabs = [{ id: 'all', label: 'Full Draw' }];
                 
                 if (drawSize >= 64) {
-                    navTabs.push(
-                        { id: 'top', label: 'Top Half' }, 
-                        { id: 'bottom', label: 'Bottom Half' },
-                        { id: 'final16', label: 'Final 16' }
-                    );
-                } else if (drawSize === 32 || drawSize === 16) {
-                    navTabs.push(
-                        { id: 'top', label: 'Top Half' }, 
-                        { id: 'bottom', label: 'Bottom Half' },
-                        { id: 'final8', label: 'Final 8' }
-                    );
+                    navTabs.push({ id: 'q1', label: 'Group A' }, { id: 'q2', label: 'Group B' }, { id: 'q3', label: 'Group C' }, { id: 'q4', label: 'Group D' });
+                } else if (drawSize === 32) {
+                    navTabs.push({ id: 'top', label: 'Top 16' }, { id: 'bottom', label: 'Bottom 16' });
                 }
+                
+                navTabs.push({ id: 'final8', label: 'Final 8' });
                 return navTabs;
             }, [drawSize]);
 
@@ -4570,24 +4566,22 @@
                 setActiveTab(tabId);
                 setTimeout(() => {
                     if (!scrollContainerRef.current) return;
-                    const el = scrollContainerRef.current;
-                    const sh = el.scrollHeight; 
-                    
-                    if (tabId === 'all' || tabId === 'top' || tabId === 'final16' || tabId === 'final8') el.scrollTo({ top: 0, left: 0, behavior: 'smooth' });
-                    else if (tabId === 'bottom') el.scrollTo({ top: sh, left: 0, behavior: 'smooth' });
+                    scrollContainerRef.current.scrollTo({ top: 0, left: 0, behavior: 'smooth' });
                 }, 50);
             };
 
-            // STRICT DOM SLICER LOGIC
+            // GROUND-UP SLICER LOGIC (Perfectly convergence)
             const shouldShowMatch = (tab, r, m, len) => {
                 if (tab === 'all') return true;
                 
-                if (tab === 'final16') return r >= totalRounds - 4;
                 if (tab === 'final8') return r >= totalRounds - 3;
+                if (r >= totalRounds - 3) return false; // Hide late rounds when viewing early groups
                 
-                // Hide late round matches when viewing halves to save space
-                if (r >= totalRounds - 2) return false; 
-                
+                if (tab.startsWith('q')) {
+                    const q = parseInt(tab.replace('q', '')) - 1; // 0, 1, 2, 3
+                    const chunkSize = len / 4;
+                    return m >= q * chunkSize && m < (q + 1) * chunkSize;
+                }
                 if (tab === 'top' || tab === 'bottom') {
                     const h = tab === 'top' ? 0 : 1;
                     const chunkSize = len / 2;
@@ -4631,7 +4625,7 @@
                 } catch(e) { console.error(e); }
             };
 
-            // ULTRA COMPACT & ELEGANT MATCH PARTICIPANT
+            // SLEEK APPLE-STYLE MATCH PARTICIPANT
             const renderMatchParticipant = (match, pId, isTop) => {
                 const p = getPlayer(pId);
                 const isBye = match.type === 'bye';
@@ -4640,34 +4634,33 @@
                 const isLoser = !isTBD && match.winner != null && match.winner !== pId && !isBye;
                 
                 return (
-                    <div className={`relative px-2.5 py-1.5 flex items-center justify-between transition-colors h-[32px] ${isTop ? 'border-b border-white/[0.05]' : ''} ${isWinner ? 'bg-white/[0.05]' : 'bg-transparent'}`}>
+                    <div className={`relative px-4 py-2.5 flex items-center justify-between transition-colors h-[44px] ${isTop ? 'border-b border-royal-800/60' : ''} ${isWinner ? 'bg-white/[0.04]' : 'bg-transparent'}`}>
                         {isWinner && <div className="absolute left-0 top-0 bottom-0 w-[4px] rounded-r" style={{ backgroundColor: tierConf.hex }}></div>}
-                        <div className={`flex items-center gap-2.5 overflow-hidden w-full pr-2 ${isLoser ? 'opacity-40 grayscale' : ''}`}>
+                        <div className={`flex items-center gap-3 w-full pr-2 ${isLoser ? 'opacity-30 grayscale' : ''}`}>
                             {isTBD ? (
-                                <>
-                                    <div className="w-5 h-5 rounded-full border border-white/10 bg-white/5 shrink-0 flex items-center justify-center"></div>
-                                    <span className="text-[10px] font-bold text-white/20 tracking-widest uppercase">TBD</span>
-                                </>
+                                <div className="w-7 h-7 rounded-full bg-royal-900 border border-royal-800 shrink-0 flex items-center justify-center">
+                                    <span className="text-[9px] font-bold text-royal-500 uppercase tracking-widest">TBD</span>
+                                </div>
                             ) : (
                                 <>
-                                    <img src={p.images?.[0] || p.imageUrl || "https://via.placeholder.com/40"} loading="lazy" decoding="async" className={`w-5 h-5 rounded-full object-cover shrink-0 shadow-sm ${isWinner ? 'ring-1 ring-offset-1 ring-offset-transparent' : 'border border-white/10'}`} style={{ '--tw-ring-color': isWinner ? tierConf.hex : undefined }} />
+                                    <img src={p.images?.[0] || p.imageUrl || "https://via.placeholder.com/40"} loading="lazy" decoding="async" className={`w-7 h-7 rounded-full object-cover shrink-0 shadow-sm ${isWinner ? 'ring-2 ring-offset-2 ring-offset-royal-950' : 'border border-royal-700'}`} style={{ '--tw-ring-color': isWinner ? tierConf.hex : undefined }} />
                                     <div className="flex flex-col min-w-0 justify-center">
-                                        <span onClick={tournament.status === 'completed' ? (e) => { e.stopPropagation(); onNavigate('players', pId); } : undefined} className={`text-[12px] font-bold flex items-center truncate ${isWinner ? 'text-white' : 'text-white/70'} ${tournament.status === 'completed' ? 'hover:underline cursor-pointer hover:text-gold-400' : ''}`}>
+                                        <span onClick={tournament.status === 'completed' ? (e) => { e.stopPropagation(); onNavigate('players', pId); } : undefined} className={`text-[13px] font-bold flex items-center truncate ${isWinner ? 'text-white' : 'text-royal-100'} ${tournament.status === 'completed' ? 'hover:underline cursor-pointer hover:text-gold-400' : ''}`}>
                                             <span className="text-sm drop-shadow-sm">{getFlag(p.nationality)}</span>
-                                            <span className="text-[9px] uppercase tracking-widest text-white/40 font-bold ml-1.5">{p.nationality}</span>
-                                            <span className="ml-2 truncate tracking-wide">{p.name}</span>
-                                            {getSeedText(tournament, pId) && <span className="text-[8px] text-white/30 font-mono ml-1.5 shrink-0">{getSeedText(tournament, pId)}</span>}
+                                            <span className="truncate tracking-wide ml-2">{p.name}</span>
+                                            {getSeedText(tournament, pId) && <span className="text-[9px] text-royal-400 font-mono tracking-tighter bg-royal-900 px-1 rounded ml-1.5 shrink-0 border border-royal-800">{getSeedText(tournament, pId)}</span>}
                                         </span>
+                                        <span className="text-[9px] font-bold text-royal-500 uppercase tracking-widest">{p.nationality}</span>
                                     </div>
                                 </>
                             )}
                         </div>
                         {isWinner && (
-                            <span className="text-[8px] font-black text-royal-950 ml-1 px-1.5 py-0.5 rounded shrink-0 shadow-sm flex items-center gap-1" style={{ backgroundColor: tierConf.hex }}>
-                                {match.type === 'random' ? <><Shuffle size={10} strokeWidth={3}/> TOSS</> : match.type === 'lopsided' ? <><IconDom/> DOM</> : <><IconClose/> CLS</>}
+                            <span className="text-[9px] font-black text-royal-950 ml-2 px-1.5 py-0.5 rounded shrink-0 shadow-sm flex items-center gap-1" style={{ backgroundColor: tierConf.hex }}>
+                                {match.type === 'random' ? <><Shuffle size={10} strokeWidth={3}/> LUCK</> : match.type === 'lopsided' ? <><IconDom/> DOM</> : <><IconClose/> CLS</>}
                             </span>
                         )}
-                        {isBye && <span className="text-[8px] font-bold text-white/20 uppercase tracking-widest shrink-0 mr-1">BYE</span>}
+                        {isBye && <span className="text-[9px] font-bold text-royal-600 uppercase tracking-widest shrink-0 mr-1">BYE</span>}
                     </div>
                 );
             };
@@ -4675,9 +4668,9 @@
             const mapQuery = tournament.location || `${tournament.name} ${getCountryName(tournament.hostCountry)}`;
 
             return (
-                <div className="h-full flex flex-col pb-20 relative max-w-[1600px] mx-auto w-full">
+                <div className="h-full flex flex-col pb-20 relative max-w-[1600px] mx-auto w-full space-y-6">
                     {/* Header Area */}
-                    <div className="flex justify-between items-start md:items-center mb-6 shrink-0 relative z-20">
+                    <div className="flex justify-between items-start md:items-center shrink-0 relative z-20">
                         <div>
                             <button onClick={onBack} className="flex items-center gap-2 text-royal-300 hover:text-white transition-colors mb-2 text-sm font-medium">
                                 <ArrowLeft className="w-4 h-4" /> Back to Tournaments
@@ -4689,47 +4682,48 @@
                                 <span className={`${tierConf?.color || 'text-royal-300'} text-sm uppercase tracking-widest border border-current px-2 py-1 rounded shrink-0`}>{tierConf?.name || 'Tournament'}</span>
                                 <span className="text-3xl shrink-0" title={getCountryName(tournament.hostCountry || 'USA')}>{getFlag(tournament.hostCountry || 'USA')}</span>
                                 <span className="truncate">{tournament.name}</span>
-                                {tournament.status === 'completed' && <span className="bg-[#059669]/20 text-[#059669] text-xs px-2 py-1 rounded ml-2 shrink-0 font-bold tracking-widest uppercase">Completed</span>}
+                                {tournament.status === 'completed' && <span className="bg-[#059669]/20 text-[#059669] text-xs px-2 py-1 rounded ml-2 shrink-0 font-bold uppercase tracking-widest border border-[#059669]/30 backdrop-blur-sm">Completed</span>}
                             </h1>
                         </div>
-                        <div className="mt-4 md:mt-0 shrink-0">
+                        <div className="mt-4 md:mt-0 shrink-0 flex items-center gap-3">
+                            <button onClick={() => onNavigate('create_tournament', null, tournament.id)} className="flex items-center gap-2 text-royal-300 hover:text-white text-sm font-bold bg-royal-900 px-4 py-2.5 rounded-xl border border-royal-800 transition-colors shadow-md"><Edit2 size={16}/> Edit</button>
                             {showDelete ? (
-                                <div className="flex items-center gap-2 bg-[#be123c]/10 border border-[#be123c]/30 p-2 rounded-lg">
-                                    <span className="text-[#e11d48] text-sm font-bold">Delete Tournament?</span>
-                                    <button onClick={handleDelete} className="bg-[#be123c] hover:bg-[#9f1239] text-white px-3 py-1 rounded text-sm font-bold transition-colors">Yes</button>
-                                    <button onClick={() => setShowDelete(false)} className="text-royal-300 hover:text-white text-sm px-2 font-medium">Cancel</button>
+                                <div className="flex items-center gap-2 bg-[#be123c]/10 border border-[#be123c]/30 p-2 rounded-xl">
+                                    <span className="text-[#e11d48] text-sm font-bold ml-2">Delete Tournament?</span>
+                                    <button onClick={handleDelete} className="bg-[#be123c] hover:bg-[#9f1239] text-white px-4 py-1.5 rounded-lg text-sm font-bold transition-colors shadow-md">Yes</button>
+                                    <button onClick={() => setShowDelete(false)} className="text-royal-300 hover:text-white text-sm px-3 font-medium">Cancel</button>
                                 </div>
                             ) : (
-                                <button onClick={() => setShowDelete(true)} className="flex items-center gap-2 text-[#e11d48] hover:text-[#fb7185] text-sm font-bold bg-royal-950 px-3 py-2 rounded-lg border border-royal-800 transition-colors shadow-md"><Trash2 size={16}/> Delete</button>
+                                <button onClick={() => setShowDelete(true)} className="flex items-center gap-2 text-[#e11d48] hover:text-[#fb7185] text-sm font-bold bg-royal-900 px-4 py-2.5 rounded-xl border border-royal-800 transition-colors shadow-md"><Trash2 size={16}/> Delete</button>
                             )}
                         </div>
                     </div>
 
                     {tabs.length > 1 && (
-                        <div className="mb-4 relative z-20">
+                        <div className="relative z-20">
                             <GlassTabs tabs={tabs} activeTab={activeTab} onChange={handleTabChange} />
                         </div>
                     )}
 
-                    {/* Bracket Container with LOCKED Satellite Map Background */}
-                    <div className="flex-1 bg-[#05100c] rounded-2xl shadow-2xl relative overflow-hidden border border-white/5 flex flex-col">
+                    {/* Bracket Container */}
+                    <div className="flex-1 bg-royal-950 border border-royal-800 rounded-3xl shadow-[0_20px_60px_rgba(0,0,0,0.6)] relative overflow-hidden flex flex-col">
                         
                         {/* Map Background Layer - FIXED IN PLACE */}
-                        <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden opacity-15 mix-blend-screen grayscale">
+                        <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden opacity-[0.15] mix-blend-screen grayscale">
                             <iframe 
-                                src={`https://maps.google.com/maps?q=${encodeURIComponent(mapQuery)}&t=k&z=11&ie=UTF8&iwloc=&output=embed`} 
+                                src={`https://maps.google.com/maps?q=${encodeURIComponent(mapQuery)}&t=k&z=12&ie=UTF8&iwloc=&output=embed`} 
                                 className="w-[120%] h-[120%] -translate-x-[10%] -translate-y-[10%] blur-[2px]"
                                 frameBorder="0"
                                 loading="lazy"
                             />
                         </div>
-                        <div className="absolute inset-0 bg-gradient-to-b from-[#05100c]/80 to-[#05100c] z-0 pointer-events-none"></div>
+                        <div className="absolute inset-0 bg-gradient-to-b from-royal-950/80 to-royal-950 z-0 pointer-events-none"></div>
 
                         {/* Scrollable Bracket Area */}
                         <div className="flex-1 overflow-auto custom-scrollbar relative z-10 flex flex-col" ref={scrollContainerRef}>
                             
                             {/* Solid Sticky Header Row - NEVER SCROLLS OUT OF VIEW */}
-                            <div className="flex min-w-max sticky top-0 z-40 bg-[#05100c]/90 backdrop-blur-xl border-b border-white/10 pb-3 pt-6 px-8">
+                            <div className="flex min-w-max sticky top-0 z-50 bg-royal-950/95 backdrop-blur-xl border-b border-royal-800 pb-3 pt-6 px-10">
                                 {parsedBracket.map((round, rIdx) => {
                                     if (!round.some((_, mIdx) => shouldShowMatch(activeTab, rIdx, mIdx, round.length))) return null;
                                     
@@ -4737,10 +4731,10 @@
                                     const showHeaderTrophy = isFinalRound && round[0];
 
                                     return (
-                                        <div key={`header-${rIdx}`} className="w-64 shrink-0 mr-12 text-center flex flex-col items-center justify-end min-h-[40px]">
-                                            {showHeaderTrophy && <DynamicTrophy tier={tierKey} result="Winner" country={tournament.hostCountry} size={40} className="mb-2 drop-shadow-xl" />}
-                                            <div className="flex items-center justify-center gap-2 text-white font-bold uppercase tracking-widest text-[11px]" style={{ color: isFinalRound ? tierConf.hex : undefined }}>
-                                                {isFinalRound && !showHeaderTrophy && <Trophy className="w-3 h-3 inline-block opacity-80" style={{ color: tierConf.hex }} />}
+                                        <div key={`header-${rIdx}`} className="w-[280px] shrink-0 mr-12 text-center flex flex-col items-center justify-end min-h-[50px]">
+                                            {showHeaderTrophy && <DynamicTrophy tier={tierKey} result="Winner" country={tournament.hostCountry} size={48} className="mb-2 drop-shadow-xl" />}
+                                            <div className="flex items-center justify-center gap-2 text-white font-bold uppercase tracking-widest text-xs" style={{ color: isFinalRound ? tierConf.hex : undefined }}>
+                                                {isFinalRound && !showHeaderTrophy && <Trophy className="w-3.5 h-3.5 inline-block opacity-80" style={{ color: tierConf.hex }} />}
                                                 {ROUND_NAMES[rIdx + rOffset]}
                                             </div>
                                         </div>
@@ -4748,48 +4742,46 @@
                                 })}
                             </div>
 
-                            {/* Bracket Match Body - FLEX 1 TO FILL REMAINING SPACE */}
-                            <div className="flex min-w-max items-stretch relative z-10 px-8 pb-8 pt-4 flex-1">
+                            {/* Bracket Match Body */}
+                            <div className="flex min-w-max items-stretch h-full relative z-10 px-10 pb-10 pt-6 flex-1">
                                 {parsedBracket.map((round, rIdx) => {
-                                    // Check if this round has any matches to show in this tab
                                     if (!round.some((_, mIdx) => shouldShowMatch(activeTab, rIdx, mIdx, round.length))) return null;
                                     
                                     return (
-                                        <div key={`col-${rIdx}`} className="flex flex-col w-64 shrink-0 mr-12 py-1 justify-around h-full">
+                                        <div key={`col-${rIdx}`} className="flex flex-col w-[280px] shrink-0 mr-12 justify-around h-full gap-0 py-0 relative">
                                             {round.map((match, mIdx) => {
                                                 if (!shouldShowMatch(activeTab, rIdx, mIdx, round.length)) return null;
-                                                
                                                 if (!match) return null;
                                                 const isReady = match.p1 && match.p2 && !match.winner && tournament.status !== 'completed' && match.type !== 'bye';
                                                 
-                                                // Ensure absolute connectors are only drawn to elements that are ALSO visible
+                                                // Connector Line Visibility Logic
                                                 const isFirstVisibleRoundInTab = (activeTab === 'top' || activeTab === 'bottom' || activeTab === 'final16' || activeTab === 'final8' || activeTab.startsWith('q')) 
                                                     ? !shouldShowMatch(activeTab, rIdx - 1, mIdx * 2, round.length * 2) 
                                                     : rIdx === 0;
 
                                                 return (
-                                                    <div key={match.id} className="relative flex flex-col justify-center" style={{ flex: 1, minHeight: '74px' }}>
+                                                    <div key={match.id} className="relative flex flex-col justify-center" style={{ flex: 1, minHeight: '100px' }}>
                                                         <div onClick={() => handleMatchClick(rIdx, mIdx, match)} 
-                                                             className={`relative z-20 rounded-xl transition-all duration-300 overflow-hidden flex flex-col ${
+                                                             className={`relative z-20 rounded-2xl transition-all duration-300 overflow-hidden flex flex-col ${
                                                                  isReady 
-                                                                 ? 'cursor-pointer hover:scale-105 z-30 bg-white/[0.1] shadow-[0_4px_25px_rgba(0,0,0,0.6)] border border-white/30 backdrop-blur-md' 
+                                                                 ? 'cursor-pointer hover:scale-[1.02] z-30 bg-royal-800 shadow-[0_8px_30px_rgba(0,0,0,0.6)] border border-royal-600 backdrop-blur-md' 
                                                                  : match.winner 
-                                                                     ? 'bg-[#030806] border border-white/10 shadow-sm' 
-                                                                     : 'bg-black/40 border border-white/[0.05] opacity-60 backdrop-blur-sm'
+                                                                     ? 'bg-royal-900 border border-royal-800 shadow-md' 
+                                                                     : 'bg-royal-950/60 border border-royal-900 opacity-60 backdrop-blur-sm'
                                                              }`}
                                                              style={{ 
                                                                  borderColor: isReady ? tierConf.hex : undefined,
-                                                                 boxShadow: isReady ? `0 0 20px ${tierConf.hex}40` : undefined
+                                                                 boxShadow: isReady ? `0 0 25px ${tierConf.hex}30` : undefined
                                                              }}>
+                                                            
                                                             {renderMatchParticipant(match, match.p1, true)}
-                                                            <div className="h-px w-full bg-white/5"></div>
                                                             {renderMatchParticipant(match, match.p2, false)}
                                                         </div>
                                                         
-                                                        {/* Ultra-Visible Connector Lines */}
-                                                        {!isFirstVisibleRoundInTab && <div className="absolute -left-[24px] top-1/2 w-[24px] h-[2px] bg-white/20 z-10 shadow-sm"></div>}
-                                                        {rIdx < totalRounds - 1 && <div className="absolute -right-[24px] top-1/2 w-[24px] h-[2px] bg-white/20 z-10 shadow-sm"></div>}
-                                                        {rIdx < totalRounds - 1 && mIdx % 2 === 0 && <div className="absolute -right-[24px] top-1/2 w-[2px] bg-white/20 z-10 shadow-sm" style={{ height: '100%' }}></div>}
+                                                        {/* Ultra-Clean Geometric Connector Lines */}
+                                                        {!isFirstVisibleRoundInTab && <div className="absolute -left-[24px] top-1/2 w-[24px] h-[2px] bg-royal-700 z-10 shadow-sm pointer-events-none"></div>}
+                                                        {rIdx < totalRounds - 1 && <div className="absolute -right-[24px] top-1/2 w-[24px] h-[2px] bg-royal-700 z-10 shadow-sm pointer-events-none"></div>}
+                                                        {rIdx < totalRounds - 1 && mIdx % 2 === 0 && <div className="absolute -right-[24px] top-1/2 w-[2px] bg-royal-700 z-10 shadow-sm pointer-events-none" style={{ height: '100%' }}></div>}
                                                     </div>
                                                 );
                                             })}
@@ -4900,7 +4892,7 @@
             const tierKey = getTournamentTier(tournament);
             const tierConf = TOURNAMENT_TIERS[tierKey];
 
-            // Premium SVG Icons for bracket badges
+            // PREMIUM SVG ICONS
             const IconDom = () => <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>;
             const IconClose = () => <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><circle cx="12" cy="12" r="6"></circle><circle cx="12" cy="12" r="2"></circle></svg>;
 
@@ -4913,31 +4905,30 @@
                 const isLoser = !isTBD && match.winner != null && match.winner !== pId && !isBye;
                 
                 return (
-                    <div className={`relative px-2.5 py-1.5 flex items-center justify-between transition-colors h-[32px] ${isTop ? 'border-b border-white/[0.05]' : ''} ${isWinner ? 'bg-white/[0.04]' : 'bg-transparent'}`}>
+                    <div className={`relative px-4 py-2.5 flex items-center justify-between transition-colors h-[44px] ${isTop ? 'border-b border-royal-800/60' : ''} ${isWinner ? 'bg-white/[0.04]' : 'bg-transparent'}`}>
                         {isWinner && <div className="absolute left-0 top-0 bottom-0 w-[4px] rounded-r" style={{ backgroundColor: tierConf.hex }}></div>}
-                        <div className={`flex items-center gap-2.5 overflow-hidden w-full pr-2 ${isLoser ? 'opacity-40 grayscale' : ''}`}>
+                        <div className={`flex items-center gap-3 w-full pr-2 ${isLoser ? 'opacity-40 grayscale' : ''}`}>
                             {isTBD ? (
-                                <>
-                                    <div className="w-5 h-5 rounded-full border border-white/5 bg-white/[0.02] shrink-0"></div>
-                                    <span className="text-[9px] font-bold text-white/20 tracking-widest uppercase">TBD</span>
-                                </>
+                                <div className="w-7 h-7 rounded-full bg-royal-900 border border-royal-800 shrink-0 flex items-center justify-center">
+                                    <span className="text-[9px] font-bold text-royal-500 uppercase tracking-widest">TBD</span>
+                                </div>
                             ) : (
                                 <>
-                                    <img src={p.images?.[0] || p.imageUrl || "https://via.placeholder.com/40"} loading="lazy" decoding="async" className={`w-5 h-5 rounded-full object-cover shrink-0 shadow-sm ${isWinner ? 'ring-1 ring-offset-1 ring-offset-transparent' : 'border border-white/10'}`} style={{ '--tw-ring-color': isWinner ? tierConf.hex : undefined }} />
+                                    <img src={p.images?.[0] || p.imageUrl || "https://via.placeholder.com/40"} loading="lazy" decoding="async" className={`w-7 h-7 rounded-full object-cover shrink-0 shadow-sm ${isWinner ? 'ring-2 ring-offset-2 ring-offset-royal-950' : 'border border-royal-700'}`} style={{ '--tw-ring-color': isWinner ? tierConf.hex : undefined }} />
                                     <div className="flex flex-col min-w-0 justify-center">
-                                        <span onClick={tournament.status === 'completed' ? (e) => { e.stopPropagation(); onNavigate('players', pId); } : undefined} className={`text-[12px] font-bold flex items-center truncate ${isWinner ? 'text-white' : 'text-white/70'} ${tournament.status === 'completed' ? 'hover:underline cursor-pointer hover:text-gold-400' : ''}`}>
+                                        <span onClick={tournament.status === 'completed' ? (e) => { e.stopPropagation(); onNavigate('players', pId); } : undefined} className={`text-[13px] font-bold flex items-center truncate ${isWinner ? 'text-white' : 'text-royal-100'} ${tournament.status === 'completed' ? 'hover:underline cursor-pointer hover:text-gold-400' : ''}`}>
                                             <span className="text-sm drop-shadow-sm">{getFlag(p.nationality)}</span>
-                                            <span className="text-[9px] uppercase tracking-widest text-white/40 font-bold ml-1.5">{p.nationality}</span>
-                                            <span className="ml-2 truncate tracking-wide">{p.name}</span>
-                                            {getSeedText(tournament, pId) && <span className="text-[8px] text-white/30 font-mono ml-1.5 shrink-0">{getSeedText(tournament, pId)}</span>}
+                                            <span className="truncate tracking-wide ml-2">{p.name}</span>
+                                            {getSeedText(tournament, pId) && <span className="text-[9px] text-royal-400 font-mono tracking-tighter bg-royal-900 px-1 rounded ml-1.5 shrink-0 border border-royal-800">{getSeedText(tournament, pId)}</span>}
                                         </span>
+                                        <span className="text-[9px] font-bold text-royal-500 uppercase tracking-widest">{p.nationality}</span>
                                     </div>
                                 </>
                             )}
                         </div>
                         {isWinner && (
-                            <span className="text-[8px] font-black text-royal-950 ml-1 px-1.5 py-0.5 rounded shrink-0 shadow-sm flex items-center gap-1" style={{ backgroundColor: tierConf.hex }}>
-                                {match.type === 'random' ? <><Shuffle size={10} strokeWidth={3}/> TOSS</> : match.type === 'lopsided' ? <><IconDom/> DOM</> : <><IconClose/> CLS</>}
+                            <span className="text-[9px] font-black text-royal-950 ml-2 px-1.5 py-0.5 rounded shrink-0 shadow-sm flex items-center gap-1" style={{ backgroundColor: tierConf.hex }}>
+                                {match.type === 'random' ? <><Shuffle size={10} strokeWidth={3}/> LUCK</> : match.type === 'lopsided' ? <><IconDom/> DOM</> : <><IconClose/> CLS</>}
                             </span>
                         )}
                     </div>
@@ -4945,27 +4936,27 @@
             };
 
             const renderStandingsTable = (groupName, standings) => (
-                <div className="bg-[#050505]/90 backdrop-blur-xl rounded-2xl border border-white/10 overflow-hidden shadow-2xl w-full flex flex-col h-full">
-                    <div className="bg-white/[0.02] p-4 border-b border-white/[0.05] font-bold text-white flex justify-between items-center">
-                        <span className="text-lg tracking-tight" style={{ color: tierConf.hex }}>Group {groupName} Standings</span>
-                        {isGroupStageComplete && <span className="text-[10px] bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 px-2 py-0.5 rounded uppercase tracking-wider font-bold shadow-sm">Final</span>}
+                <div className="bg-royal-950/90 backdrop-blur-xl rounded-2xl border border-royal-800 overflow-hidden shadow-2xl w-full flex flex-col h-full">
+                    <div className="bg-royal-900/50 p-5 border-b border-royal-800 font-bold text-white flex justify-between items-center">
+                        <span className="text-xl tracking-tight" style={{ color: tierConf.hex }}>Group {groupName} Standings</span>
+                        {isGroupStageComplete && <span className="text-[10px] bg-[#059669]/20 text-[#059669] border border-[#059669]/30 px-2 py-0.5 rounded uppercase tracking-wider font-bold shadow-sm">Final</span>}
                     </div>
                     <table className="w-full text-left text-sm table-fixed flex-1">
-                        <thead className="bg-white/[0.01] text-white/40 text-[10px] uppercase tracking-widest border-b border-white/[0.02]">
+                        <thead className="bg-royal-950 text-royal-400 text-[10px] uppercase tracking-widest border-b border-royal-800/50">
                             <tr><th className="p-4 w-16 text-center">Rnk</th><th className="p-4">Player</th><th className="p-4 w-20 text-center">W-L</th><th className="p-4 w-20 text-center">Diff</th></tr>
                         </thead>
-                        <tbody className="divide-y divide-white/[0.02] text-white/80 font-medium">
+                        <tbody className="divide-y divide-royal-800/50 text-white font-medium">
                             {standings.map((s, idx) => {
                                 const p = getPlayer(s.id);
                                 const qualifies = isGroupStageComplete && idx < 2;
                                 return (
-                                    <tr key={s.id} className={`${qualifies ? 'bg-white/[0.05]' : 'hover:bg-white/[0.02]'} transition-colors`}>
+                                    <tr key={s.id} className={`${qualifies ? 'bg-[#059669]/10' : 'hover:bg-royal-900/30'} transition-colors`}>
                                         <td className="p-4 text-center">
-                                            <span className={`w-6 h-6 inline-flex items-center justify-center rounded-full text-xs font-bold ${qualifies ? 'text-[#050505]' : 'bg-white/10 text-white/50'}`} style={{ backgroundColor: qualifies ? tierConf.hex : undefined }}>{idx+1}</span>
+                                            <span className={`w-6 h-6 inline-flex items-center justify-center rounded-full text-xs font-bold ${qualifies ? 'bg-[#059669] text-royal-950' : 'bg-royal-800 text-royal-300'}`}>{idx+1}</span>
                                         </td>
-                                        <td className="p-4 truncate text-base">{p.name}</td>
-                                        <td className="p-4 text-center tabular-nums text-lg">{s.wins}-{s.losses}</td>
-                                        <td className={`p-4 text-center tabular-nums text-lg ${s.tiebreaker > 0 ? 'text-emerald-400' : s.tiebreaker < 0 ? 'text-rose-400' : 'text-white/40'}`}>{s.tiebreaker > 0 ? `+${s.tiebreaker}` : s.tiebreaker}</td>
+                                        <td className="p-4 truncate text-base font-bold text-white/90">{p.name}</td>
+                                        <td className="p-4 text-center tabular-nums text-lg font-black">{s.wins}-{s.losses}</td>
+                                        <td className={`p-4 text-center tabular-nums text-lg font-black ${s.tiebreaker > 0 ? 'text-[#059669]' : s.tiebreaker < 0 ? 'text-[#be123c]' : 'text-royal-400'}`}>{s.tiebreaker > 0 ? `+${s.tiebreaker}` : s.tiebreaker}</td>
                                     </tr>
                                 );
                             })}
@@ -4973,10 +4964,10 @@
                                 const p = getPlayer(pid);
                                 return (
                                     <tr key={pid}>
-                                        <td className="p-4 text-center"><span className="w-6 h-6 inline-flex items-center justify-center rounded-full text-xs font-bold bg-white/5 text-white/30">-</span></td>
-                                        <td className="p-4 truncate text-white/50 text-base">{p.name}</td>
-                                        <td className="p-4 text-center text-white/30 tabular-nums text-lg">0-0</td>
-                                        <td className="p-4 text-center text-white/30 tabular-nums text-lg">0</td>
+                                        <td className="p-4 text-center"><span className="w-6 h-6 inline-flex items-center justify-center rounded-full text-xs font-bold bg-royal-900 text-royal-600">-</span></td>
+                                        <td className="p-4 truncate text-royal-500 text-base">{p.name}</td>
+                                        <td className="p-4 text-center text-royal-600 tabular-nums text-lg font-bold">0-0</td>
+                                        <td className="p-4 text-center text-royal-600 tabular-nums text-lg font-bold">0</td>
                                     </tr>
                                 );
                             })}
@@ -4988,11 +4979,10 @@
             const mapQuery = tournament.location || `${tournament.name} ${getCountryName(tournament.hostCountry)}`;
 
             return (
-                <div className="h-full flex flex-col pb-20 relative max-w-[1600px] mx-auto w-full">
-                    {/* Header Area */}
-                    <div className="flex justify-between items-start md:items-center mb-6 shrink-0 relative z-20">
+                <div className="h-full flex flex-col pb-20 relative max-w-[1600px] mx-auto w-full space-y-6">
+                    <div className="flex justify-between items-start md:items-center shrink-0 relative z-20">
                         <div>
-                            <button onClick={onBack} className="flex items-center gap-2 text-white/50 hover:text-white transition-colors mb-2 text-sm font-medium">
+                            <button onClick={onBack} className="flex items-center gap-2 text-royal-300 hover:text-white transition-colors mb-2 text-sm font-medium">
                                 <ArrowLeft className="w-4 h-4" /> Back to Tournaments
                             </button>
                             <h1 className="text-2xl md:text-3xl font-bold text-white flex items-center gap-3">
@@ -5004,45 +4994,46 @@
                                 </span>
                                 <span className="text-3xl shrink-0" title={getCountryName(tournament.hostCountry || 'USA')}>{getFlag(tournament.hostCountry || 'USA')}</span>
                                 <span className="truncate">{tournament.name}</span>
-                                {tournament.status === 'completed' && <span className="bg-[#059669]/20 text-[#059669] text-xs px-2 py-1 rounded ml-2 shrink-0 font-bold uppercase tracking-widest">Completed</span>}
+                                {tournament.status === 'completed' && <span className="bg-[#059669]/20 text-[#059669] text-xs px-2 py-1 rounded ml-2 shrink-0 font-bold uppercase tracking-widest border border-[#059669]/30 backdrop-blur-sm">Completed</span>}
                             </h1>
                         </div>
-                        <div className="mt-4 md:mt-0 shrink-0">
+                        <div className="mt-4 md:mt-0 shrink-0 flex items-center gap-3">
+                            <button onClick={() => onNavigate('create_tournament', null, tournament.id)} className="flex items-center gap-2 text-royal-300 hover:text-white text-sm font-bold bg-royal-900 px-4 py-2.5 rounded-xl border border-royal-800 transition-colors shadow-md"><Edit2 size={16}/> Edit</button>
                             {showDelete ? (
-                                <div className="flex items-center gap-2 bg-[#be123c]/10 border border-[#be123c]/30 p-2 rounded-lg">
-                                    <span className="text-[#e11d48] text-sm font-bold">Delete Tournament?</span>
-                                    <button onClick={handleDelete} className="bg-[#be123c] hover:bg-[#9f1239] text-white px-3 py-1 rounded text-sm font-bold transition-colors">Yes</button>
-                                    <button onClick={() => setShowDelete(false)} className="text-white/50 hover:text-white text-sm px-2 font-medium">Cancel</button>
+                                <div className="flex items-center gap-2 bg-[#be123c]/10 border border-[#be123c]/30 p-2 rounded-xl">
+                                    <span className="text-[#e11d48] text-sm font-bold ml-2">Delete Tournament?</span>
+                                    <button onClick={handleDelete} className="bg-[#be123c] hover:bg-[#9f1239] text-white px-4 py-1.5 rounded-lg text-sm font-bold transition-colors shadow-md">Yes</button>
+                                    <button onClick={() => setShowDelete(false)} className="text-royal-300 hover:text-white text-sm px-3 font-medium">Cancel</button>
                                 </div>
                             ) : (
-                                <button onClick={() => setShowDelete(true)} className="flex items-center gap-2 text-[#e11d48] hover:text-[#fb7185] text-sm font-bold bg-[#05100c] px-3 py-2 rounded-lg border border-white/10 transition-colors shadow-md"><Trash2 size={16}/> Delete</button>
+                                <button onClick={() => setShowDelete(true)} className="flex items-center gap-2 text-[#e11d48] hover:text-[#fb7185] text-sm font-bold bg-royal-900 px-4 py-2.5 rounded-xl border border-royal-800 transition-colors shadow-md"><Trash2 size={16}/> Delete</button>
                             )}
                         </div>
                     </div>
                     
-                    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 relative z-20 mb-4">
+                    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 relative z-20">
                         <GlassTabs tabs={tabs} activeTab={activeTab} onChange={setActiveTab} />
                     </div>
 
-                    <div className="flex-1 bg-[#050505] border border-white/5 rounded-2xl shadow-2xl relative overflow-hidden flex flex-col">
+                    <div className="flex-1 bg-royal-950 border border-royal-800 rounded-3xl shadow-[0_20px_60px_rgba(0,0,0,0.6)] relative overflow-hidden flex flex-col">
                         
                         {/* Map Background Layer */}
-                        <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden opacity-15 mix-blend-screen grayscale">
+                        <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden opacity-20 mix-blend-screen grayscale">
                             <iframe 
-                                src={`https://maps.google.com/maps?q=${encodeURIComponent(mapQuery)}&t=k&z=11&ie=UTF8&iwloc=&output=embed`} 
-                                className="w-[120%] h-[120%] -translate-x-[10%] -translate-y-[10%] blur-[1px]"
+                                src={`https://maps.google.com/maps?q=${encodeURIComponent(mapQuery)}&t=k&z=12&ie=UTF8&iwloc=&output=embed`} 
+                                className="w-[120%] h-[120%] -translate-x-[10%] -translate-y-[10%] blur-[2px]"
                                 frameBorder="0"
                                 loading="lazy"
                             />
                         </div>
-                        <div className="absolute inset-0 bg-gradient-to-b from-[#05100c]/80 to-[#05100c] z-0 pointer-events-none"></div>
+                        <div className="absolute inset-0 bg-gradient-to-b from-royal-950/80 to-royal-950 z-0 pointer-events-none"></div>
 
                         {/* Dynamic Group View */}
                         {activeGroupKey && (
                             <div className="grid lg:grid-cols-2 gap-8 animate-in fade-in duration-300 h-full p-8 relative z-10 overflow-y-auto custom-scrollbar">
                                 {renderStandingsTable(activeGroupKey, currentStandings)}
-                                <div className="bg-[#050505]/90 backdrop-blur-xl rounded-2xl border border-white/10 flex flex-col shadow-xl">
-                                    <h3 className="text-white/60 text-xs font-bold uppercase tracking-widest px-6 py-5 border-b border-white/10 shrink-0 bg-white/[0.02]">Group {activeGroupKey} Matches</h3>
+                                <div className="bg-royal-950/90 backdrop-blur-xl rounded-2xl border border-royal-800 flex flex-col shadow-xl">
+                                    <h3 className="text-royal-300 text-sm font-bold uppercase tracking-widest px-6 py-5 border-b border-royal-800 shrink-0 bg-royal-900/50">Group {activeGroupKey} Matches</h3>
                                     <div className="flex-1 overflow-y-auto custom-scrollbar p-6 space-y-4">
                                         {groupMatches.filter(m => m && m.group === activeGroupKey).map((match, mIdx) => {
                                             const isReady = !match.winner;
@@ -5050,12 +5041,12 @@
                                                 <div key={match.id} onClick={() => handleMatchClick('group', groupMatches.findIndex(m => m.id === match.id), match)} 
                                                      className={`rounded-2xl transition-all duration-300 overflow-hidden flex flex-col justify-center border ${
                                                          isReady 
-                                                         ? 'cursor-pointer hover:scale-[1.02] z-20 bg-white/[0.1] shadow-[0_4px_20px_rgba(0,0,0,0.6)] border-white/30 backdrop-blur-md' 
+                                                         ? 'cursor-pointer hover:scale-[1.02] z-20 bg-royal-800 shadow-[0_8px_30px_rgba(0,0,0,0.5)] border-royal-600 backdrop-blur-md' 
                                                          : match.winner 
-                                                             ? 'bg-[#030806] border-white/10 shadow-sm' 
-                                                             : 'bg-black/40 border-white/[0.05] opacity-60 backdrop-blur-sm'
+                                                             ? 'bg-royal-900 border-royal-800 shadow-md' 
+                                                             : 'bg-royal-950/60 border-royal-900 opacity-60 backdrop-blur-sm'
                                                      }`} 
-                                                     style={{ borderColor: isReady ? tierConf.hex : undefined, boxShadow: isReady ? `0 0 20px ${tierConf.hex}40` : undefined }}>
+                                                     style={{ borderColor: isReady ? tierConf.hex : undefined, boxShadow: isReady ? `0 0 25px ${tierConf.hex}30` : undefined }}>
                                                     {renderMatchParticipant(match, match.p1, true)}
                                                     <div className="h-px w-full bg-white/5"></div>
                                                     {renderMatchParticipant(match, match.p2, false)}
@@ -5071,23 +5062,23 @@
                         {activeTab === 'knockout' && (
                             <div className="animate-in fade-in duration-300 h-full flex flex-col relative z-10">
                                 {!isGroupStageComplete ? (
-                                    <div className="text-center text-white/50 m-auto">
-                                        <Trophy size={80} className="mx-auto mb-6 opacity-20" />
+                                    <div className="text-center text-royal-500 m-auto">
+                                        <Trophy size={80} className="mx-auto mb-6 opacity-30" />
                                         <p className="text-xl font-medium tracking-wide">Complete all Group Stage matches<br/>to unlock the Championship Bracket.</p>
                                     </div>
                                 ) : (
                                     <>
-                                        <div className="flex min-w-max sticky top-0 z-40 bg-[#050505]/95 backdrop-blur-xl border-b border-white/10 pb-3 pt-6 px-8 justify-center">
+                                        <div className="flex min-w-max sticky top-0 z-50 bg-royal-950/95 backdrop-blur-xl border-b border-royal-800 pb-3 pt-6 px-8 justify-center">
                                             {knockout.map((round, rIdx) => {
                                                 if (!Array.isArray(round)) return null;
                                                 const isFinalRound = rIdx === 1;
                                                 const finalMatch = isFinalRound ? round[0] : null;
                                                 const showHeaderTrophy = isFinalRound && finalMatch?.winner;
                                                 return (
-                                                    <div key={`header-${rIdx}`} className="w-64 shrink-0 mx-12 text-center flex flex-col items-center justify-end min-h-[40px]">
-                                                        {showHeaderTrophy && <DynamicTrophy tier="finals" result="Winner" country={tournament.hostCountry} size={40} className="mb-2 drop-shadow-xl" />}
+                                                    <div key={`header-${rIdx}`} className="w-[280px] shrink-0 mx-12 text-center flex flex-col items-center justify-end min-h-[50px]">
+                                                        {showHeaderTrophy && <DynamicTrophy tier="finals" result="Winner" country={tournament.hostCountry} size={48} className="mb-2 drop-shadow-xl" />}
                                                         <div className="flex items-center justify-center gap-2 text-white font-bold uppercase tracking-widest text-[11px]" style={{ color: isFinalRound ? tierConf.hex : undefined }}>
-                                                            {isFinalRound && !showHeaderTrophy && <Trophy className="w-3 h-3 inline-block opacity-80" style={{ color: tierConf.hex }} />}
+                                                            {isFinalRound && !showHeaderTrophy && <Trophy className="w-3.5 h-3.5 inline-block opacity-80" style={{ color: tierConf.hex }} />}
                                                             {isFinalRound ? 'Championship' : 'Semifinals'}
                                                         </div>
                                                     </div>
@@ -5095,39 +5086,40 @@
                                             })}
                                         </div>
 
-                                        <div className="flex min-w-max items-stretch justify-center w-full h-full py-8 px-8 overflow-auto custom-scrollbar">
+                                        <div className="flex min-w-max items-stretch justify-center w-full h-full py-8 px-10 overflow-auto custom-scrollbar">
                                             {knockout.map((round, rIdx) => {
                                                 if (!Array.isArray(round)) return null;
                                                 return (
-                                                    <div key={rIdx} className="flex flex-col w-64 shrink-0 mx-12 relative z-10">
-                                                        <div className="flex-1 flex flex-col justify-around gap-12 py-4">
-                                                            {round.map((match, mIdx) => {
-                                                                if (!match) return null;
-                                                                const isReady = match.p1 && match.p2 && !match.winner && tournament.status !== 'completed';
-                                                                
-                                                                return (
-                                                                    <div key={match.id} className="relative flex flex-col justify-center" style={{ minHeight: '74px' }}>
-                                                                        <div onClick={() => handleMatchClick(rIdx === 0 ? 'sf' : 'f', mIdx, match)} 
-                                                                             className={`relative z-20 rounded-2xl transition-all duration-300 overflow-hidden flex flex-col border ${
-                                                                                 isReady 
-                                                                                 ? 'cursor-pointer hover:scale-[1.02] z-20 bg-white/[0.1] shadow-[0_4px_25px_rgba(0,0,0,0.6)] border-white/30 backdrop-blur-md' 
-                                                                                 : match.winner 
-                                                                                     ? 'bg-[#030806] border-white/10 shadow-sm' 
-                                                                                     : 'bg-black/40 border-white/[0.05] opacity-60 backdrop-blur-sm'
-                                                                             }`} 
-                                                                             style={{ borderColor: isReady ? tierConf.hex : undefined, boxShadow: isReady ? `0 0 20px ${tierConf.hex}40` : undefined }}>
-                                                                            {renderMatchParticipant(match, match.p1, true)}
-                                                                            <div className="h-px w-full bg-white/5"></div>
-                                                                            {renderMatchParticipant(match, match.p2, false)}
-                                                                        </div>
-                                                                        {/* Connector lines */}
-                                                                        {rIdx === 0 && <div className="absolute -right-[24px] top-1/2 w-[24px] h-[2px] bg-white/30 z-10"></div>}
-                                                                        {rIdx === 0 && mIdx % 2 === 0 && <div className="absolute -right-[24px] top-1/2 w-[2px] bg-white/30 z-10" style={{ height: '100%' }}></div>}
-                                                                        {rIdx === 1 && <div className="absolute -left-[24px] top-1/2 w-[24px] h-[2px] bg-white/30 z-10"></div>}
+                                                    <div key={rIdx} className="flex flex-col w-[280px] shrink-0 mx-12 relative z-10 justify-around h-full gap-0 py-0">
+                                                        {round.map((match, mIdx) => {
+                                                            if (!match) return null;
+                                                            const isReady = match.p1 && match.p2 && !match.winner && tournament.status !== 'completed';
+                                                            
+                                                            return (
+                                                                <div key={match.id} className="relative flex flex-col justify-center" style={{ flex: 1, minHeight: '100px' }}>
+                                                                    <div onClick={() => handleMatchClick(rIdx === 0 ? 'sf' : 'f', mIdx, match)} 
+                                                                         className={`relative z-20 rounded-2xl transition-all duration-300 overflow-hidden flex flex-col border ${
+                                                                             isReady 
+                                                                             ? 'cursor-pointer hover:scale-[1.02] z-30 bg-royal-800 shadow-[0_8px_30px_rgba(0,0,0,0.6)] border-royal-600 backdrop-blur-md' 
+                                                                             : match.winner 
+                                                                                 ? 'bg-royal-900 border-royal-800 shadow-md' 
+                                                                                 : 'bg-royal-950/60 border-royal-900 opacity-60 backdrop-blur-sm'
+                                                                         }`} 
+                                                                         style={{ 
+                                                                             borderColor: isReady ? tierConf.hex : undefined, 
+                                                                             boxShadow: isReady ? `0 0 25px ${tierConf.hex}30` : undefined 
+                                                                         }}>
+                                                                        {renderMatchParticipant(match, match.p1, true)}
+                                                                        <div className="h-px w-full bg-white/5"></div>
+                                                                        {renderMatchParticipant(match, match.p2, false)}
                                                                     </div>
-                                                                );
-                                                            })}
-                                                        </div>
+                                                                    {/* Connector lines */}
+                                                                    {rIdx === 0 && <div className="absolute -right-[24px] top-1/2 w-[24px] h-[2px] bg-royal-700 z-10 shadow-sm pointer-events-none"></div>}
+                                                                    {rIdx === 0 && mIdx % 2 === 0 && <div className="absolute -right-[24px] top-1/2 w-[2px] bg-royal-700 z-10 shadow-sm pointer-events-none" style={{ height: '100%' }}></div>}
+                                                                    {rIdx === 1 && <div className="absolute -left-[24px] top-1/2 w-[24px] h-[2px] bg-royal-700 z-10 shadow-sm pointer-events-none"></div>}
+                                                                </div>
+                                                            );
+                                                        })}
                                                     </div>
                                                 );
                                             })}
