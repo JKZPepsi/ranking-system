@@ -4464,14 +4464,15 @@
                                         {imgs[iIdx] && <PlayerMedia url={imgs[iIdx]} className="w-full h-full object-cover scale-110" />}
                                     </div>
 
-                                    {/* 2. Actual Image (Strict height constraints to avoid any vertical clipping) */}
-                                    <div className="absolute inset-x-0 top-0 bottom-[140px] md:bottom-[160px] z-10 p-4 pt-8 flex items-center justify-center">
+                                    {/* 2. Actual Image (Bulletproof absolute bounding to prevent portrait overflow) */}
+                                    <div className="absolute inset-0 z-10 p-4 pt-8 pb-[150px] md:pb-[170px] pointer-events-none flex justify-center items-end">
                                         {imgs[iIdx] ? (
-                                            <PlayerMedia 
-                                                url={imgs[iIdx]} 
-                                                style={{ objectFit: 'contain' }} 
-                                                className="max-w-full max-h-full w-full h-full object-contain object-center transition-transform duration-700 group-hover:scale-[1.02]" 
-                                            />
+                                            <div className="relative w-full h-full flex justify-center items-end overflow-hidden">
+                                                <PlayerMedia 
+                                                    url={imgs[iIdx]} 
+                                                    className="absolute inset-0 w-full h-full object-contain object-bottom transition-transform duration-700 group-hover:scale-[1.02]" 
+                                                />
+                                            </div>
                                         ) : (
                                             <div className="w-full h-full flex items-center justify-center"><UserCircle size={80} className="text-white/10"/></div>
                                         )}
@@ -4592,12 +4593,13 @@
                 }, 50);
             };
 
-            // STRICT DOM SLICER LOGIC 
+            // STRICT DOM SLICER LOGIC (UPDATED: Converges groups down to a single final match)
             const shouldShowMatch = (tab, r, m, len) => {
                 if (tab === 'all') return true;
                 if (tab === 'final8') return r >= totalRounds - 3;
                 
                 if (tab.startsWith('group')) {
+                    // For groups in a 64 draw, we want to show 4 total rounds (8 -> 4 -> 2 -> 1)
                     if (r >= totalRounds - 2) return false; 
                     const groupMap = { 'groupA': 0, 'groupB': 1, 'groupC': 2, 'groupD': 3 };
                     const q = groupMap[tab];
@@ -4605,6 +4607,7 @@
                     return m >= q * chunkSize && m < (q + 1) * chunkSize;
                 }
                 if (tab === 'top' || tab === 'bottom') {
+                    // For halves in a 32 draw, we want to show 4 total rounds (8 -> 4 -> 2 -> 1)
                     if (r >= totalRounds - 1) return false; 
                     const h = tab === 'top' ? 0 : 1;
                     const chunkSize = len / 2;
@@ -4694,11 +4697,11 @@
             return (
                 <div className="h-full flex flex-col pb-20 relative max-w-[1600px] mx-auto w-full">
                     
-                    {/* Background Map - Now set to Absolute so it strictly stays inside the bracket area and avoids the Sidebar */}
-                    <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden bg-[#05100c]">
+                    {/* Fixed Background Layer - Map now spans the ENTIRE page */}
+                    <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden bg-[#05100c]">
                         <iframe 
                             src={`https://maps.google.com/maps?q=${encodeURIComponent(mapQuery)}&t=k&z=11&ie=UTF8&iwloc=&output=embed`} 
-                            className="w-[120%] h-[120%] -translate-x-[10%] -translate-y-[10%] opacity-30 mix-blend-screen"
+                            className="w-[120%] h-[120%] -translate-x-[10%] -translate-y-[10%] blur-[2px] opacity-30 mix-blend-screen"
                             frameBorder="0"
                             loading="lazy"
                         />
@@ -4706,7 +4709,7 @@
                     </div>
 
                     {/* Header Area */}
-                    <div className="flex justify-between items-start md:items-center mb-6 shrink-0 relative z-20 pt-4 px-2 md:px-0">
+                    <div className="flex justify-between items-start md:items-center mb-6 shrink-0 relative z-20 pt-4">
                         <div className="flex-1 min-w-0 mr-4">
                             <button onClick={onBack} className="flex items-center gap-2 text-white/50 hover:text-white transition-colors mb-2 text-sm font-medium drop-shadow-md">
                                 <ArrowLeft className="w-4 h-4" /> Back to Tournaments
@@ -4749,13 +4752,13 @@
                     </div>
 
                     {tabs.length > 1 && (
-                        <div className="mb-4 relative z-20 px-2 md:px-0">
+                        <div className="mb-4 relative z-20">
                             <GlassTabs tabs={tabs} activeTab={activeTab} onChange={handleTabChange} />
                         </div>
                     )}
 
                     {/* Bracket Container - Switched to a translucent glass panel to let the map shine through */}
-                    <div className="flex-1 mx-2 md:mx-0 bg-black/40 backdrop-blur-xl rounded-2xl shadow-[0_0_40px_rgba(0,0,0,0.5)] relative overflow-hidden border border-white/10 flex flex-col z-20">
+                    <div className="flex-1 bg-black/40 backdrop-blur-xl rounded-2xl shadow-[0_0_40px_rgba(0,0,0,0.5)] relative overflow-hidden border border-white/10 flex flex-col z-20">
                         
                         {/* Scrollable Bracket Area */}
                         <div className="flex-1 overflow-auto custom-scrollbar relative z-10 flex flex-col" ref={scrollContainerRef}>
