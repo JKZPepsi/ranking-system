@@ -4464,10 +4464,10 @@
                                         {imgs[iIdx] && <PlayerMedia url={imgs[iIdx]} className="w-full h-full object-cover scale-110" />}
                                     </div>
 
-                                    {/* 2. Massive Actual Image */}
-                                    <div className="absolute inset-0 z-10 pb-[140px] md:pb-[180px]">
+                                    {/* 2. Actual Image (Fixed height bounds so it never crops vertically) */}
+                                    <div className="absolute inset-x-0 top-0 bottom-[160px] md:bottom-[180px] z-10 p-4 pt-10 flex items-end justify-center">
                                         {imgs[iIdx] ? (
-                                            <PlayerMedia url={imgs[iIdx]} className="w-full h-full object-contain object-bottom md:object-center transition-transform duration-700 group-hover:scale-[1.02]" />
+                                            <PlayerMedia url={imgs[iIdx]} className="w-full h-full object-contain object-bottom transition-transform duration-700 group-hover:scale-[1.02]" />
                                         ) : (
                                             <div className="w-full h-full flex items-center justify-center"><UserCircle size={80} className="text-white/10"/></div>
                                         )}
@@ -4483,7 +4483,7 @@
                                             <button onClick={(e) => { e.stopPropagation(); setIIdx(prev => (prev === imgs.length-1 ? 0 : prev+1)); }} className="pointer-events-auto w-12 h-12 bg-black/40 hover:bg-black/80 border border-white/10 rounded-full flex items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-all backdrop-blur-md shadow-lg hover:scale-110"><ChevronRight size={24}/></button>
                                             
                                             {/* Minimalist dots indicator */}
-                                            <div className="absolute top-6 left-1/2 -translate-x-1/2 flex gap-1.5 bg-black/50 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/10 shadow-lg">
+                                            <div className="absolute top-6 left-1/2 -translate-x-1/2 flex gap-1.5 bg-black/50 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/10 shadow-lg pointer-events-auto">
                                                 {imgs.map((_, i) => <div key={i} className={`w-1.5 h-1.5 rounded-full transition-colors ${i === iIdx ? 'bg-white shadow-[0_0_5px_rgba(255,255,255,0.8)]' : 'bg-white/30'}`} />)}
                                             </div>
                                         </div>
@@ -4493,18 +4493,21 @@
                                     <div className="absolute inset-x-0 bottom-0 z-40 p-6 md:p-8 flex flex-col items-center justify-end h-full pointer-events-none">
                                         <div className="pointer-events-auto w-full flex flex-col items-center">
                                             
-                                            {/* Flag & Name */}
+                                            {/* Flag & Name (Clickable) */}
                                             <div className="flex items-center justify-center gap-2 text-white/70 mb-2 drop-shadow-md">
                                                 <span className="text-2xl leading-none">{getFlag(p.nationality)}</span> 
                                                 <span className="uppercase tracking-widest text-[10px] font-bold">{getCountryName(p.nationality)}</span>
                                             </div>
-                                            <h3 className="text-4xl md:text-5xl font-black text-white tracking-tight mb-8 text-center drop-shadow-2xl">
+                                            <h3 
+                                                onClick={() => { setResolvingMatch(null); onNavigate('players', pid); }}
+                                                className="text-4xl md:text-5xl font-black text-white tracking-tight mb-8 text-center drop-shadow-2xl cursor-pointer hover:text-gold-400 hover:underline transition-colors"
+                                            >
                                                 {p.name}
                                             </h3>
                                             
                                             {/* Action Buttons */}
                                             <div className="flex flex-col xl:flex-row gap-3 w-full max-w-[360px]">
-                                                <button onClick={() => submitResult(pid, 'close')} className="flex-1 bg-white text-black py-4 rounded-xl font-black text-sm md:text-base hover:bg-gray-200 transition-all active:scale-[0.98] shadow-[0_0_30px_rgba(255,255,255,0.15)] hover:shadow-[0_0_40px_rgba(255,255,255,0.3)] flex justify-center items-center gap-2">
+                                                <button onClick={() => submitResult(pid, 'close')} className="flex-1 bg-white text-black py-4 rounded-xl font-black text-sm md:text-base hover:bg-slate-200 hover:scale-[1.03] transition-all active:scale-[0.98] shadow-[0_0_30px_rgba(255,255,255,0.15)] hover:shadow-[0_0_40px_rgba(255,255,255,0.4)] flex justify-center items-center gap-2 border border-transparent">
                                                     <IconClose/> Win Match
                                                 </button>
                                                 <button onClick={() => submitResult(pid, 'lopsided')} className="flex-1 bg-white/10 hover:bg-white/20 backdrop-blur-2xl border border-white/20 text-white py-4 rounded-xl font-bold text-sm transition-all active:scale-[0.98] flex justify-center items-center gap-2 shadow-lg">
@@ -4585,23 +4588,22 @@
                 }, 50);
             };
 
-            // STRICT DOM SLICER LOGIC
+            // STRICT DOM SLICER LOGIC (UPDATED: Converges groups down to a single final match)
             const shouldShowMatch = (tab, r, m, len) => {
                 if (tab === 'all') return true;
-                
                 if (tab === 'final8') return r >= totalRounds - 3;
                 
-                // Hide late round matches when viewing halves/groups to save space
-                if (drawSize === 32 && r >= totalRounds - 3) return false; 
-                if (drawSize === 64 && r >= totalRounds - 3) return false; 
-                
                 if (tab.startsWith('group')) {
+                    // For groups in a 64 draw, we want to show 4 total rounds (8 -> 4 -> 2 -> 1)
+                    if (r >= totalRounds - 2) return false; 
                     const groupMap = { 'groupA': 0, 'groupB': 1, 'groupC': 2, 'groupD': 3 };
                     const q = groupMap[tab];
                     const chunkSize = len / 4;
                     return m >= q * chunkSize && m < (q + 1) * chunkSize;
                 }
                 if (tab === 'top' || tab === 'bottom') {
+                    // For halves in a 32 draw, we want to show 4 total rounds (8 -> 4 -> 2 -> 1)
+                    if (r >= totalRounds - 1) return false; 
                     const h = tab === 'top' ? 0 : 1;
                     const chunkSize = len / 2;
                     return m >= h * chunkSize && m < (h + 1) * chunkSize;
@@ -4689,26 +4691,38 @@
 
             return (
                 <div className="h-full flex flex-col pb-20 relative max-w-[1600px] mx-auto w-full">
+                    
+                    {/* Fixed Background Layer - Map now spans the ENTIRE page */}
+                    <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden bg-[#05100c]">
+                        <iframe 
+                            src={`https://maps.google.com/maps?q=${encodeURIComponent(mapQuery)}&t=k&z=11&ie=UTF8&iwloc=&output=embed`} 
+                            className="w-[120%] h-[120%] -translate-x-[10%] -translate-y-[10%] blur-[2px] opacity-30 mix-blend-screen"
+                            frameBorder="0"
+                            loading="lazy"
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-b from-[#05100c]/90 via-[#05100c]/60 to-[#05100c] z-10"></div>
+                    </div>
+
                     {/* Header Area */}
-                    <div className="flex justify-between items-start md:items-center mb-6 shrink-0 relative z-20">
+                    <div className="flex justify-between items-start md:items-center mb-6 shrink-0 relative z-20 pt-4">
                         <div className="flex-1 min-w-0 mr-4">
-                            <button onClick={onBack} className="flex items-center gap-2 text-white/50 hover:text-white transition-colors mb-2 text-sm font-medium">
+                            <button onClick={onBack} className="flex items-center gap-2 text-white/50 hover:text-white transition-colors mb-2 text-sm font-medium drop-shadow-md">
                                 <ArrowLeft className="w-4 h-4" /> Back to Tournaments
                             </button>
                             <h1 className="text-2xl md:text-3xl font-bold text-white flex items-center gap-3 flex-wrap">
                                 {['grand_slam', 'finals', 'major'].includes(tierKey) && (
                                     <DynamicTrophy tier={tierKey} result="Winner" country={tournament.hostCountry} size={48} className="drop-shadow-lg shrink-0" />
                                 )}
-                                <span className={`${tierConf?.color || 'text-royal-300'} text-sm uppercase tracking-widest border border-current px-2 py-1 rounded shrink-0`}>{tierConf?.name || 'Tournament'}</span>
+                                <span className={`${tierConf?.color || 'text-royal-300'} text-sm uppercase tracking-widest border border-current px-2 py-1 rounded shrink-0 bg-black/20 backdrop-blur-sm`}>{tierConf?.name || 'Tournament'}</span>
                                 <span className="text-3xl shrink-0" title={getCountryName(tournament.hostCountry || 'USA')}>{getFlag(tournament.hostCountry || 'USA')}</span>
-                                <span className="truncate">{tournament.name}</span>
+                                <span className="truncate drop-shadow-md">{tournament.name}</span>
                                 {tournament.status === 'completed' && <span className="bg-[#059669]/20 text-[#059669] text-xs px-2 py-1 rounded shrink-0 font-bold tracking-widest uppercase border border-[#059669]/30">Completed</span>}
                             </h1>
                             
                             {/* Expandable Description Line */}
                             {tournament.description && (
                                 <div className="mt-3">
-                                    <p className={`text-white/50 text-sm font-medium ${expandedDesc ? '' : 'line-clamp-1 break-words'}`}>
+                                    <p className={`text-white/70 text-sm font-medium drop-shadow-sm ${expandedDesc ? '' : 'line-clamp-1 break-words'}`}>
                                         {tournament.description}
                                     </p>
                                     {tournament.description.length > 100 && (
@@ -4721,13 +4735,13 @@
                         </div>
                         <div className="shrink-0">
                             {showDelete ? (
-                                <div className="flex items-center gap-2 bg-[#be123c]/10 border border-[#be123c]/30 p-2 rounded-lg">
+                                <div className="flex items-center gap-2 bg-[#be123c]/20 border border-[#be123c]/50 p-2 rounded-lg backdrop-blur-md">
                                     <span className="text-[#e11d48] text-sm font-bold">Delete Tournament?</span>
-                                    <button onClick={handleDelete} className="bg-[#be123c] hover:bg-[#9f1239] text-white px-3 py-1 rounded text-sm font-bold transition-colors">Yes</button>
-                                    <button onClick={() => setShowDelete(false)} className="text-white/50 hover:text-white text-sm px-2 font-medium">Cancel</button>
+                                    <button onClick={handleDelete} className="bg-[#be123c] hover:bg-[#9f1239] text-white px-3 py-1 rounded text-sm font-bold transition-colors shadow-md">Yes</button>
+                                    <button onClick={() => setShowDelete(false)} className="text-white/70 hover:text-white text-sm px-2 font-medium">Cancel</button>
                                 </div>
                             ) : (
-                                <button onClick={() => setShowDelete(true)} className="flex items-center gap-2 text-[#e11d48] hover:text-[#fb7185] text-sm font-bold bg-[#05100c] px-3 py-2 rounded-lg border border-white/10 transition-colors shadow-md"><Trash2 size={16}/> Delete</button>
+                                <button onClick={() => setShowDelete(true)} className="flex items-center gap-2 text-[#e11d48] hover:text-[#fb7185] text-sm font-bold bg-black/40 backdrop-blur-md px-3 py-2 rounded-lg border border-white/10 transition-colors shadow-md"><Trash2 size={16}/> Delete</button>
                             )}
                         </div>
                     </div>
@@ -4738,25 +4752,14 @@
                         </div>
                     )}
 
-                    {/* Bracket Container with LOCKED Satellite Map Background */}
-                    <div className="flex-1 bg-[#05100c] rounded-2xl shadow-2xl relative overflow-hidden border border-white/5 flex flex-col">
+                    {/* Bracket Container - Switched to a translucent glass panel to let the map shine through */}
+                    <div className="flex-1 bg-black/40 backdrop-blur-xl rounded-2xl shadow-[0_0_40px_rgba(0,0,0,0.5)] relative overflow-hidden border border-white/10 flex flex-col z-20">
                         
-                        {/* Map Background Layer - FIXED IN PLACE */}
-                        <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden opacity-30 mix-blend-screen opacity-[0.15]">
-                            <iframe 
-                                src={`https://maps.google.com/maps?q=${encodeURIComponent(mapQuery)}&t=k&z=11&ie=UTF8&iwloc=&output=embed`} 
-                                className="w-[120%] h-[120%] -translate-x-[10%] -translate-y-[10%] blur-[0px]"
-                                frameBorder="0"
-                                loading="lazy"
-                            />
-                        </div>
-                        <div className="absolute inset-0 bg-gradient-to-b from-[#05100c]/80 to-[#05100c] z-0 pointer-events-none"></div>
-
                         {/* Scrollable Bracket Area */}
                         <div className="flex-1 overflow-auto custom-scrollbar relative z-10 flex flex-col" ref={scrollContainerRef}>
                             
                             {/* Solid Sticky Header Row - NEVER SCROLLS OUT OF VIEW */}
-                            <div className="flex min-w-max sticky top-0 z-40 bg-[#05100c]/90 backdrop-blur-xl border-b border-white/10 pb-3 pt-6 px-8 shadow-sm">
+                            <div className="flex min-w-max sticky top-0 z-40 bg-black/60 backdrop-blur-xl border-b border-white/10 pb-3 pt-6 px-8 shadow-md">
                                 {parsedBracket.map((round, rIdx) => {
                                     if (!round.some((_, mIdx) => shouldShowMatch(activeTab, rIdx, mIdx, round.length))) return null;
                                     
@@ -4801,8 +4804,8 @@
                                                                  isReady 
                                                                  ? 'cursor-pointer hover:scale-105 z-30 bg-white/[0.1] shadow-[0_4px_25px_rgba(0,0,0,0.6)] border-white/40 backdrop-blur-md' 
                                                                  : match.winner 
-                                                                     ? 'bg-[#030806] border-white/10 shadow-sm' 
-                                                                     : 'bg-black/40 border-white/[0.02] opacity-60 backdrop-blur-sm'
+                                                                     ? 'bg-black/60 border-white/10 shadow-sm' 
+                                                                     : 'bg-black/30 border-white/[0.05] opacity-60 backdrop-blur-sm'
                                                              }`}
                                                              style={{ 
                                                                  borderColor: isReady ? tierConf.hex : undefined,
@@ -4830,7 +4833,7 @@
                 </div>
             );
         }
-
+        
         function SNBInternationalsBracket({ tournament, allTournaments = [], players, onBack, db, appId, onNavigate }) {
             const [resolvingMatch, setResolvingMatch] = useState(null);
             const [showDelete, setShowDelete] = useState(false);
