@@ -4457,392 +4457,550 @@
             );
         }
 
-        function TournamentBracket({ tournament, allTournaments = [], players, onBack, db, appId, onNavigate }) {
+        function TournamentBracket({
+            tournament,
+            allTournaments = [],
+            players,
+            onBack,
+            db,
+            appId,
+            onNavigate
+        }) {
             const [resolvingMatch, setResolvingMatch] = useState(null);
             const [activeTab, setActiveTab] = useState('all');
             const [showDelete, setShowDelete] = useState(false);
             const scrollContainerRef = useRef(null);
-
-            const getPlayer = (id) => players.find(p => p.id === id) || { name: 'TBD', rank: '-', nationality: 'UNK' };
-            
+        
+            const getPlayer = (id) =>
+                players.find(p => p.id === id) ||
+                { name: 'TBD', rank: '-', nationality: 'UNK' };
+        
+            /* ---------------- PARSE BRACKET ---------------- */
+        
             let parsedBracket = [];
-            try { parsedBracket = typeof tournament.bracket === 'string' ? JSON.parse(tournament.bracket) : tournament.bracket; } catch(e){}
+            try {
+                parsedBracket =
+                    typeof tournament.bracket === 'string'
+                        ? JSON.parse(tournament.bracket)
+                        : tournament.bracket;
+            } catch {}
             if (!Array.isArray(parsedBracket)) parsedBracket = [];
-
+        
             const totalRounds = parsedBracket.length;
             const drawSize = parsedBracket[0]?.length * 2 || 32;
-            const rOffset = 6 - totalRounds; 
+        
             const tierKey = getTournamentTier(tournament);
             const tierConf = TOURNAMENT_TIERS[tierKey];
-
-            // SMART NAVIGATION: Added "Final 16"
+        
+            const rOffset = 6 - totalRounds;
+        
+            /* ---------------- SMART TAB SYSTEM ----------------
+               Automatically scales to large tournaments
+            ---------------------------------------------------*/
+        
             const tabs = useMemo(() => {
-                if (drawSize <= 16) return [{ id: 'all', label: 'Full Draw' }];
-                return [
-                    { id: 'all', label: 'Full Draw' },
-                    { id: 'top', label: 'Top Half' },
-                    { id: 'bottom', label: 'Bottom Half' },
-                    { id: 'final16', label: 'Final 16' }
-                ];
+                const base = [{ id: 'all', label: 'Full Draw' }];
+        
+                if (drawSize <= 16) return base;
+        
+                // halves
+                base.push({ id: 'top', label: 'Top Half' });
+                base.push({ id: 'bottom', label: 'Bottom Half' });
+        
+                // dynamic grouping (future 64+ players)
+                if (drawSize >= 64) {
+                    const groups = Math.min(16, drawSize / 4);
+                    for (let i = 0; i < groups; i++) {
+                        const letter = String.fromCharCode(65 + i);
+                        base.push({
+                            id: `group_${letter}`,
+                            label: `Group ${letter}`
+                        });
+                    }
+                }
+        
+                // finals focus
+                base.push({ id: 'final16', label: 'Final 16' });
+        
+                return base;
             }, [drawSize]);
-
-            useEffect(() => { if (!tabs.find(t => t.id === activeTab)) setActiveTab(tabs[0].id); }, [tabs, activeTab]);
-
-            // SMART PANNING
-            const handleTabChange = (tabId) => {
-                setActiveTab(tabId);
-                setTimeout(() => {
-                    if (!scrollContainerRef.current) return;
-                    const el = scrollContainerRef.current;
-                    const sh = el.scrollHeight; 
-                    
-                    if (tabId === 'all') el.scrollTo({ top: 0, left: 0, behavior: 'smooth' });
-                    else if (tabId === 'top') el.scrollTo({ top: 0, left: 0, behavior: 'smooth' });
-                    else if (tabId === 'bottom') el.scrollTo({ top: sh, left: 0, behavior: 'smooth' });
-                    else if (tabId === 'final16') el.scrollTo({ top: 0, left: 0, behavior: 'smooth' });
-                }, 50);
+        
+            useEffect(() => {
+                if (!tabs.find(t => t.id === activeTab))
+                    setActiveTab(tabs[0].id);
+            }, [tabs]);
+        
+            /* ---------------- MATCH ACTIONS ---------------- */
+        
+            const handleMatchClick = (rIdx, mIdx, match) => {
+                if (
+                    tournament.status === 'completed' ||
+                    !match ||
+                    !match.p1 ||
+                    !match.p2 ||
+                    match.winner ||
+                    match.type === 'bye'
+                ) return;
+        
+                setResolvingMatch({
+                    roundIndex: rIdx,
+                    matchIndex: mIdx,
+                    ...match
+                });
             };
-
-            const handleMatchClick = (rIdx, mIdx, match) => { 
-                if (tournament.status === 'completed' || !match || !match.p1 || !match.p2 || match.winner) return; 
-                if (match.type === 'bye') return; 
-                setResolvingMatch({ roundIndex: rIdx, matchIndex: mIdx, ...match }); 
-            };
-
+        
             const submitResult = async (winnerId, type) => {
                 const newBracket = JSON.parse(JSON.stringify(parsedBracket));
                 const { roundIndex: rIdx, matchIndex: mIdx } = resolvingMatch;
-                newBracket[rIdx][mIdx].winner = winnerId; newBracket[rIdx][mIdx].type = type;
-                if (rIdx < totalRounds - 1) { 
-                    const nRIdx = rIdx + 1; 
-                    const nMIdx = Math.floor(mIdx / 2); 
-                    if (mIdx % 2 === 0) newBracket[nRIdx][nMIdx].p1 = winnerId; 
-                    else newBracket[nRIdx][nMIdx].p2 = winnerId; 
+        
+                newBracket[rIdx][mIdx].winner = winnerId;
+                newBracket[rIdx][mIdx].type = type;
+        
+                if (rIdx < totalRounds - 1) {
+                    const nR = rIdx + 1;
+                    const nM = Math.floor(mIdx / 2);
+                    if (mIdx % 2 === 0) newBracket[nR][nM].p1 = winnerId;
+                    else newBracket[nR][nM].p2 = winnerId;
                 }
-                const tRef = window.fb.doc(db, 'artifacts', appId, 'public', 'data', 'tournaments', tournament.id);
-                let newStatus = tournament.status; let completedAt = tournament.completedAt;
-                if (rIdx === totalRounds - 1) { newStatus = 'completed'; completedAt = Date.now(); }
-                await window.fb.updateDoc(tRef, { bracket: JSON.stringify(newBracket), status: newStatus, completedAt: completedAt || null });
+        
+                const tRef = window.fb.doc(
+                    db,
+                    'artifacts',
+                    appId,
+                    'public',
+                    'data',
+                    'tournaments',
+                    tournament.id
+                );
+        
+                let newStatus = tournament.status;
+                let completedAt = tournament.completedAt;
+        
+                if (rIdx === totalRounds - 1) {
+                    newStatus = 'completed';
+                    completedAt = Date.now();
+                }
+        
+                await window.fb.updateDoc(tRef, {
+                    bracket: JSON.stringify(newBracket),
+                    status: newStatus,
+                    completedAt: completedAt || null
+                });
+        
                 setResolvingMatch(null);
             };
-
+        
             const handleRandomize = () => {
-                const winnerId = Math.random() < 0.5 ? resolvingMatch.p1 : resolvingMatch.p2;
+                const winnerId =
+                    Math.random() < 0.5
+                        ? resolvingMatch.p1
+                        : resolvingMatch.p2;
                 submitResult(winnerId, 'close');
             };
-
-            const handleDelete = async () => {
-                try {
-                    onBack();
-                    await window.fb.deleteDoc(window.fb.doc(db, 'artifacts', appId, 'public', 'data', 'tournaments', tournament.id));
-                } catch(e) { console.error(e); }
-            };
-
-            // REVAMPED MATCH PARTICIPANT
+        
+            /* ---------------- PARTICIPANT ROW ----------------
+               Compact + Apple-style hierarchy
+            --------------------------------------------------*/
+        
             const renderMatchParticipant = (match, pId, isTop) => {
                 const p = getPlayer(pId);
-                const isBye = match.type === 'bye';
+        
                 const isTBD = pId == null;
-                const isWinner = !isTBD && match.winner === pId && !isBye;
-                const isLoser = !isTBD && match.winner != null && match.winner !== pId && !isBye;
-                
+                const isWinner = match.winner === pId;
+                const isLoser =
+                    match.winner != null && match.winner !== pId;
+        
                 return (
-                    <div className={`relative px-3 py-1.5 flex items-center justify-between transition-colors ${isWinner ? 'bg-white/[0.03]' : ''} ${isTop ? 'border-b border-white/[0.05]' : ''}`}>
-                        <div className={`flex items-center gap-3 overflow-hidden w-full pr-2 ${isLoser ? 'opacity-40 grayscale' : ''}`}>
+                    <div
+                        className={`flex items-center justify-between px-2.5 py-1.5
+                        ${isTop ? 'border-b border-white/[0.05]' : ''}
+                        ${isWinner ? 'bg-white/[0.03]' : ''}`}
+                    >
+                        <div className={`flex items-center gap-2 min-w-0 ${isLoser ? 'opacity-40' : ''}`}>
                             {isTBD ? (
-                                <>
-                                    <div className="w-8 h-8 rounded-full border border-white/10 bg-white/5 shrink-0 flex items-center justify-center text-[10px] text-white/30 font-bold"></div>
-                                    <span className="text-[11px] font-semibold text-white/30 tracking-widest uppercase">TBD</span>
-                                </>
+                                <span className="text-[11px] text-white/30 uppercase tracking-widest">
+                                    TBD
+                                </span>
                             ) : (
                                 <>
-                                    <img src={p.images?.[0] || p.imageUrl || "https://via.placeholder.com/40"} loading="lazy" decoding="async" className={`w-8 h-8 rounded-full object-cover shrink-0 shadow-md ${isWinner ? 'ring-2 ring-offset-1 ring-offset-[#05100c]' : 'border border-white/10'}`} style={{ '--tw-ring-color': isWinner ? tierConf.hex : undefined }} />
-                                    <div className="flex flex-col min-w-0 justify-center">
-                                        <span onClick={tournament.status === 'completed' ? (e) => { e.stopPropagation(); onNavigate('players', pId); } : undefined} className={`text-[13px] font-bold flex items-center truncate ${isWinner ? '' : 'text-white/80'} ${tournament.status === 'completed' ? 'cursor-pointer hover:underline' : ''}`} style={{ color: isWinner ? tierConf.hex : undefined }}>
-                                            {getFlag(p.nationality)} <span className="truncate ml-1.5 tracking-wide">{p.name}</span>
-                                            {getSeedText(tournament, pId) && <span className="text-[9px] text-white/40 font-mono ml-2 shrink-0">{getSeedText(tournament, pId)}</span>}
-                                        </span>
-                                    </div>
+                                    <img
+                                        src={p.images?.[0] || p.imageUrl || "https://via.placeholder.com/40"}
+                                        className={`w-6 h-6 rounded-full object-cover
+                                        ${isWinner ? 'ring-1' : 'border border-white/10'}`}
+                                        style={{ '--tw-ring-color': tierConf.hex }}
+                                    />
+                                    <span
+                                        className={`text-[12px] font-medium truncate`}
+                                        style={{ color: isWinner ? tierConf.hex : undefined }}
+                                    >
+                                        {getFlag(p.nationality)}
+                                        <span className="ml-1">{p.name}</span>
+                                    </span>
                                 </>
                             )}
                         </div>
-                        {isWinner && <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="shrink-0 mr-1" style={{ color: tierConf.hex }}><polyline points="20 6 9 17 4 12"></polyline></svg>}
-                        {isBye && <span className="text-[9px] font-bold text-white/30 uppercase tracking-widest shrink-0 mr-1">BYE</span>}
+        
+                        {isWinner && (
+                            <Check size={14} style={{ color: tierConf.hex }} />
+                        )}
                     </div>
                 );
             };
-
+        
+            /* ---------------- RENDER ---------------- */
+        
             return (
-                <div className="h-full flex flex-col pb-20">
-                    <div className="flex justify-between items-start md:items-center mb-6 shrink-0">
+                <div className="h-full flex flex-col pb-16">
+        
+                    {/* HEADER */}
+                    <div className="flex justify-between items-start mb-5">
                         <div>
-                            <button onClick={onBack} className="flex items-center gap-2 text-royal-300 hover:text-white transition-colors mb-2 text-sm font-medium">
-                                <ArrowLeft className="w-4 h-4" /> Back to Tournaments
+                            <button
+                                onClick={onBack}
+                                className="text-sm text-royal-300 hover:text-white mb-2"
+                            >
+                                ← Back
                             </button>
-                            <h1 className="text-2xl md:text-3xl font-bold text-white flex items-center gap-3">
-                                {['grand_slam', 'finals', 'major'].includes(tierKey) && (
-                                    <DynamicTrophy tier={tierKey} result="Winner" country={tournament.hostCountry} size={48} className="drop-shadow-lg shrink-0" />
-                                )}
-                                <span className={`${tierConf?.color || 'text-royal-300'} text-sm uppercase tracking-widest border border-current px-2 py-1 rounded shrink-0`}>{tierConf?.name || 'Tournament'}</span>
-                                <span className="text-3xl shrink-0" title={getCountryName(tournament.hostCountry || 'USA')}>{getFlag(tournament.hostCountry || 'USA')}</span>
-                                <span className="truncate">{tournament.name}</span>
-                                {tournament.status === 'completed' && <span className="bg-[#059669]/20 text-[#059669] text-xs px-2 py-1 rounded ml-2 shrink-0 font-bold tracking-widest uppercase">Completed</span>}
+        
+                            <h1 className="text-2xl font-semibold text-white flex items-center gap-3">
+                                <span
+                                    className={`${tierConf.color} text-xs uppercase tracking-widest border border-current px-2 py-1 rounded`}
+                                >
+                                    {tierConf.name}
+                                </span>
+        
+                                <span className="text-3xl">
+                                    {getFlag(tournament.hostCountry || 'USA')}
+                                </span>
+        
+                                <span className="truncate">
+                                    {tournament.name}
+                                </span>
                             </h1>
                         </div>
-                        <div className="mt-4 md:mt-0 shrink-0">
-                            {showDelete ? (
-                                <div className="flex items-center gap-2 bg-[#be123c]/10 border border-[#be123c]/30 p-2 rounded-lg">
-                                    <span className="text-[#e11d48] text-sm font-bold">Delete Tournament?</span>
-                                    <button onClick={handleDelete} className="bg-[#be123c] hover:bg-[#9f1239] text-white px-3 py-1 rounded text-sm font-bold transition-colors">Yes</button>
-                                    <button onClick={() => setShowDelete(false)} className="text-royal-300 hover:text-white text-sm px-2 font-medium">Cancel</button>
-                                </div>
-                            ) : (
-                                <button onClick={() => setShowDelete(true)} className="flex items-center gap-2 text-[#e11d48] hover:text-[#fb7185] text-sm font-bold bg-royal-950 px-3 py-2 rounded-lg border border-royal-800 transition-colors"><Trash2 size={16}/> Delete</button>
-                            )}
-                        </div>
                     </div>
-
-                    {tabs.length > 1 && (
-                        <div className="mb-4">
-                            <GlassTabs tabs={tabs} activeTab={activeTab} onChange={handleTabChange} />
-                        </div>
-                    )}
-
-                    <div className="flex-1 overflow-auto bg-[#05100c] border border-white/[0.05] rounded-2xl px-6 pb-6 shadow-2xl custom-scrollbar relative" ref={scrollContainerRef}>
-                        <div className="flex min-w-max items-stretch relative" style={{ minHeight: '100%' }}>
+        
+                    {/* SMART TABS */}
+                    <GlassTabs
+                        tabs={tabs}
+                        activeTab={activeTab}
+                        onChange={setActiveTab}
+                    />
+        
+                    {/* BRACKET AREA */}
+                    <div
+                        ref={scrollContainerRef}
+                        className="flex-1 overflow-auto mt-4 bg-[#05100c]
+                        border border-white/[0.05] rounded-2xl px-4 pb-4 custom-scrollbar"
+                    >
+                        <div className="flex min-w-max items-stretch">
+        
                             {parsedBracket.map((round, rIdx) => {
-                                if (!Array.isArray(round)) return null;
-                                
-                                // SMART RENDERING: Slice the DOM directly if Final 16 is selected
-                                if (activeTab === 'final16' && rIdx < totalRounds - 4) return null;
-
-                                const isFinalRound = rIdx === totalRounds - 1;
-                                const isFirstVisibleRound = activeTab === 'final16' ? rIdx === totalRounds - 4 : rIdx === 0;
-                                const finalMatch = isFinalRound ? round[0] : null;
-                                const showHeaderTrophy = isFinalRound && finalMatch;
-                                
+        
+                                if (activeTab === 'final16' &&
+                                    rIdx < totalRounds - 4) return null;
+        
                                 return (
-                                <div key={rIdx} className="flex flex-col w-[260px] shrink-0 mr-8 relative z-10">
-                                    <div className="sticky top-0 z-30 bg-[#05100c] pt-6 pb-3 mb-2 border-b border-white/10">
-                                        <div className="text-center font-bold text-xs uppercase tracking-widest flex flex-col items-center justify-end" style={{ color: tierConf.hex }}>
-                                            {showHeaderTrophy && <DynamicTrophy tier={tierKey} result="Winner" country={tournament.hostCountry} size={40} className="mb-2 drop-shadow-xl" />}
-                                            <div className="flex items-center justify-center gap-2 text-white">
-                                                {isFinalRound && !showHeaderTrophy && <Trophy className="w-4 h-4 inline-block mb-0.5 opacity-80" style={{ color: tierConf.hex }} />}
-                                                {ROUND_NAMES[rIdx + rOffset]}
-                                            </div>
+                                    <div
+                                        key={rIdx}
+                                        className="flex flex-col w-[210px] mr-6 shrink-0"
+                                    >
+                                        {/* ROUND HEADER */}
+                                        <div className="sticky top-0 bg-[#05100c]
+                                            text-center text-[11px]
+                                            uppercase tracking-widest
+                                            pb-2 pt-4 mb-2 border-b border-white/10"
+                                            style={{ color: tierConf.hex }}
+                                        >
+                                            {ROUND_NAMES[rIdx + rOffset]}
                                         </div>
-                                    </div>
-
-                                    <div className="flex-1 flex flex-col justify-around gap-3 py-4">
-                                        {round.map((match, mIdx) => {
-                                            if (!match) return null;
-                                            const isReady = match.p1 && match.p2 && !match.winner && tournament.status !== 'completed' && match.type !== 'bye';
-                                            
-                                            return (
-                                                <div key={match.id} className="relative flex flex-col justify-center" style={{ flex: 1 }}>
-                                                    <div onClick={() => handleMatchClick(rIdx, mIdx, match)} 
-                                                         className={`relative z-10 rounded-xl transition-all duration-300 overflow-hidden flex flex-col ${
-                                                             isReady 
-                                                             ? 'cursor-pointer hover:scale-105 z-20 border bg-[#081a14] hover:bg-[#0a2018] backdrop-blur-sm' 
-                                                             : match.winner 
-                                                                 ? 'border bg-[#051611]' 
-                                                                 : 'border bg-[#051611]/50 opacity-50'
-                                                         }`}
-                                                         style={{ 
-                                                             boxShadow: isReady ? `0 0 12px ${tierConf.hex}50, inset 0 0 15px ${tierConf.hex}15` : undefined,
-                                                             borderColor: isReady ? tierConf.hex : 'rgba(255,255,255,0.08)'
-                                                         }}>
-                                                        
+        
+                                        {/* MATCHES */}
+                                        <div className="flex flex-col gap-2 py-2">
+        
+                                            {round.map((match, mIdx) => {
+        
+                                                const isReady =
+                                                    match.p1 &&
+                                                    match.p2 &&
+                                                    !match.winner &&
+                                                    tournament.status !== 'completed';
+        
+                                                return (
+                                                    <div
+                                                        key={match.id}
+                                                        onClick={() =>
+                                                            handleMatchClick(rIdx, mIdx, match)
+                                                        }
+                                                        className={`rounded-lg overflow-hidden transition
+                                                        ${
+                                                            isReady
+                                                                ? 'cursor-pointer hover:bg-white/[0.04]'
+                                                                : 'opacity-80'
+                                                        }
+                                                        border border-white/[0.06]
+                                                        bg-[#061610]`}
+                                                    >
                                                         {renderMatchParticipant(match, match.p1, true)}
                                                         {renderMatchParticipant(match, match.p2, false)}
                                                     </div>
-                                                    
-                                                    {/* Smart Connector lines */}
-                                                    {!isFirstVisibleRound && <div className="absolute -left-[16px] top-1/2 w-[16px] h-[2px] bg-white/[0.1] z-0"></div>}
-                                                    {rIdx < totalRounds - 1 && <div className="absolute -right-[16px] top-1/2 w-[16px] h-[2px] bg-white/[0.1] z-0"></div>}
-                                                    {rIdx < totalRounds - 1 && mIdx % 2 === 0 && <div className="absolute -right-[16px] top-1/2 w-[2px] bg-white/[0.1] z-0" style={{ height: '100%' }}></div>}
-                                                </div>
-                                            );
-                                        })}
+                                                );
+                                            })}
+                                        </div>
                                     </div>
-                                </div>
                                 );
                             })}
                         </div>
                     </div>
-                    <ResolveMatchModal resolvingMatch={resolvingMatch} setResolvingMatch={setResolvingMatch} submitResult={submitResult} handleRandomize={handleRandomize} players={players} allTournaments={allTournaments} tournament={tournament} tierConf={tierConf} onNavigate={onNavigate} />
+        
+                    <ResolveMatchModal
+                        resolvingMatch={resolvingMatch}
+                        setResolvingMatch={setResolvingMatch}
+                        submitResult={submitResult}
+                        handleRandomize={handleRandomize}
+                        players={players}
+                        allTournaments={allTournaments}
+                        tournament={tournament}
+                        tierConf={tierConf}
+                        onNavigate={onNavigate}
+                    />
                 </div>
             );
         }
 
-        function SNBInternationalsBracket({ tournament, allTournaments = [], players, onBack, db, appId, onNavigate }) {
+        function SNBInternationalsBracket({
+            tournament,
+            allTournaments = [],
+            players,
+            onBack,
+            db,
+            appId,
+            onNavigate
+        }) {
             const [resolvingMatch, setResolvingMatch] = useState(null);
             const [showDelete, setShowDelete] = useState(false);
             const [activeTab, setActiveTab] = useState('groupA');
-
-            const getPlayer = (id) => players.find(p => p.id === id) || { name: 'TBD', rank: '-', nationality: 'UNK' };
-
+        
+            const getPlayer = (id) =>
+                players.find(p => p.id === id) ||
+                { name: 'TBD', rank: '-', nationality: 'UNK' };
+        
             let groupMatches = [];
-            let knockout = [[],[]];
-            
-            if (typeof tournament.groupMatches === 'string') {
-                try { groupMatches = JSON.parse(tournament.groupMatches); } catch(e){}
-            } else {
-                groupMatches = tournament.groupMatches || [];
-            }
-            if (!Array.isArray(groupMatches)) groupMatches = [];
-            
-            if (typeof tournament.bracket === 'string') {
-                try { knockout = JSON.parse(tournament.bracket); } catch(e){}
-            } else {
-                knockout = tournament.bracket || [[],[]];
-            }
-            if (!Array.isArray(knockout) || knockout.length < 2) knockout = [[],[]];
-
-            const standingsA = useMemo(() => calcGroupStandings('A', groupMatches), [groupMatches]);
-            const standingsB = useMemo(() => calcGroupStandings('B', groupMatches), [groupMatches]);
-
+            let knockout = [[], []];
+        
+            try {
+                groupMatches =
+                    typeof tournament.groupMatches === 'string'
+                        ? JSON.parse(tournament.groupMatches)
+                        : tournament.groupMatches || [];
+            } catch {}
+        
+            try {
+                knockout =
+                    typeof tournament.bracket === 'string'
+                        ? JSON.parse(tournament.bracket)
+                        : tournament.bracket || [[], []];
+            } catch {}
+        
+            const tierKey = getTournamentTier(tournament);
+            const tierConf = TOURNAMENT_TIERS[tierKey];
+        
+            const standingsA = useMemo(
+                () => calcGroupStandings('A', groupMatches),
+                [groupMatches]
+            );
+        
+            const standingsB = useMemo(
+                () => calcGroupStandings('B', groupMatches),
+                [groupMatches]
+            );
+        
             const isGroupStageComplete = useMemo(() => {
-                return groupMatches.length === 12 && groupMatches.every(m => m && m.winner);
+                return (
+                    groupMatches.length === 12 &&
+                    groupMatches.every(m => m && m.winner)
+                );
             }, [groupMatches]);
-
+        
             const tabs = [
                 { id: 'groupA', label: 'Group A' },
                 { id: 'groupB', label: 'Group B' },
                 { id: 'knockout', label: 'Championship' }
             ];
-
+        
+            /* ---------- MATCH ACTIONS ---------- */
+        
             const handleMatchClick = (type, mIdx, match) => {
-                if (tournament.status === 'completed' || !match || !match.p1 || !match.p2 || match.winner) return;
-                setResolvingMatch({ matchType: type, matchIndex: mIdx, ...match });
+                if (
+                    tournament.status === 'completed' ||
+                    !match ||
+                    !match.p1 ||
+                    !match.p2 ||
+                    match.winner
+                ) return;
+        
+                setResolvingMatch({
+                    matchType: type,
+                    matchIndex: mIdx,
+                    ...match
+                });
             };
-
+        
             const submitResult = async (winnerId, winType) => {
                 const newT = JSON.parse(JSON.stringify(tournament));
                 const { matchType, matchIndex } = resolvingMatch;
-
+        
                 let parsedGM = [];
                 let parsedKO = [[], []];
-                try { parsedGM = typeof newT.groupMatches === 'string' ? JSON.parse(newT.groupMatches) : newT.groupMatches; } catch(e){}
-                try { parsedKO = typeof newT.bracket === 'string' ? JSON.parse(newT.bracket) : newT.bracket; } catch(e){}
-
+        
+                try {
+                    parsedGM =
+                        typeof newT.groupMatches === 'string'
+                            ? JSON.parse(newT.groupMatches)
+                            : newT.groupMatches;
+                } catch {}
+        
+                try {
+                    parsedKO =
+                        typeof newT.bracket === 'string'
+                            ? JSON.parse(newT.bracket)
+                            : newT.bracket;
+                } catch {}
+        
                 if (matchType === 'group') {
                     parsedGM[matchIndex].winner = winnerId;
                     parsedGM[matchIndex].type = winType;
-                    
+        
                     const allGroupsDone = parsedGM.every(m => m && m.winner);
+        
                     if (allGroupsDone) {
                         const sA = calcGroupStandings('A', parsedGM);
                         const sB = calcGroupStandings('B', parsedGM);
-                        if(sA.length >= 2 && sB.length >= 2) {
-                            parsedKO[0][0].p1 = sA[0].id;
-                            parsedKO[0][0].p2 = sB[1].id;
-                            parsedKO[0][1].p1 = sB[0].id;
-                            parsedKO[0][1].p2 = sA[1].id;
-                        }
+        
+                        parsedKO[0][0].p1 = sA[0].id;
+                        parsedKO[0][0].p2 = sB[1].id;
+                        parsedKO[0][1].p1 = sB[0].id;
+                        parsedKO[0][1].p2 = sA[1].id;
                     }
-                } else if (matchType === 'sf') {
+                }
+        
+                if (matchType === 'sf') {
                     parsedKO[0][matchIndex].winner = winnerId;
                     parsedKO[0][matchIndex].type = winType;
+        
                     if (matchIndex === 0) parsedKO[1][0].p1 = winnerId;
                     else parsedKO[1][0].p2 = winnerId;
-                } else if (matchType === 'f') {
+                }
+        
+                if (matchType === 'f') {
                     parsedKO[1][0].winner = winnerId;
                     parsedKO[1][0].type = winType;
+        
                     newT.status = 'completed';
                     newT.completedAt = Date.now();
                 }
-                
+        
                 newT.groupMatches = JSON.stringify(parsedGM);
                 newT.bracket = JSON.stringify(parsedKO);
-
-                await window.fb.updateDoc(window.fb.doc(db, 'artifacts', appId, 'public', 'data', 'tournaments', tournament.id), newT);
+        
+                await window.fb.updateDoc(
+                    window.fb.doc(
+                        db,
+                        'artifacts',
+                        appId,
+                        'public',
+                        'data',
+                        'tournaments',
+                        tournament.id
+                    ),
+                    newT
+                );
+        
                 setResolvingMatch(null);
             };
-
+        
             const handleRandomize = () => {
-                const winnerId = Math.random() < 0.5 ? resolvingMatch.p1 : resolvingMatch.p2;
+                const winnerId =
+                    Math.random() < 0.5
+                        ? resolvingMatch.p1
+                        : resolvingMatch.p2;
+        
                 submitResult(winnerId, 'close');
             };
-
-            const handleDelete = async () => {
-                try {
-                    onBack();
-                    await window.fb.deleteDoc(window.fb.doc(db, 'artifacts', appId, 'public', 'data', 'tournaments', tournament.id));
-                } catch(e) { console.error(e); }
-            };
-
-            const tierKey = getTournamentTier(tournament);
-            const tierConf = TOURNAMENT_TIERS[tierKey];
-
-            // REVAMPED MATCH PARTICIPANT
+        
+            /* ---------- PARTICIPANT ROW ---------- */
+        
             const renderMatchParticipant = (match, pId, isTop) => {
                 const p = getPlayer(pId);
-                const isBye = match.type === 'bye';
+        
                 const isTBD = pId == null;
-                const isWinner = !isTBD && match.winner === pId && !isBye;
-                const isLoser = !isTBD && match.winner != null && match.winner !== pId && !isBye;
-                
+                const isWinner = match.winner === pId;
+                const isLoser =
+                    match.winner != null && match.winner !== pId;
+        
                 return (
-                    <div className={`relative px-3 py-2 flex items-center justify-between transition-colors ${isWinner ? 'bg-white/[0.03]' : ''} ${isTop ? 'border-b border-white/[0.05]' : ''}`}>
-                        {isWinner && <div className="absolute left-0 top-0 bottom-0 w-1 rounded-r" style={{ backgroundColor: tierConf.hex }}></div>}
-                        
-                        <div className={`flex items-center gap-3 overflow-hidden w-full pl-2 pr-2 ${isLoser ? 'opacity-40 grayscale' : ''}`}>
+                    <div
+                        className={`flex items-center justify-between px-2.5 py-1.5
+                        ${isTop ? 'border-b border-white/[0.05]' : ''}
+                        ${isWinner ? 'bg-white/[0.03]' : ''}`}
+                    >
+                        <div className={`flex items-center gap-2 min-w-0 ${isLoser ? 'opacity-40' : ''}`}>
                             {isTBD ? (
-                                <>
-                                    <div className="w-8 h-8 rounded-full border border-white/10 bg-white/5 shrink-0 flex items-center justify-center text-[10px] text-white/30 font-bold"></div>
-                                    <span className="text-[11px] font-semibold text-white/30 tracking-widest uppercase">TBD</span>
-                                </>
+                                <span className="text-[11px] text-white/30 uppercase">
+                                    TBD
+                                </span>
                             ) : (
                                 <>
-                                    <img src={p.images?.[0] || p.imageUrl || "https://via.placeholder.com/40"} loading="lazy" decoding="async" className={`w-8 h-8 rounded-full object-cover shrink-0 shadow-md ${isWinner ? 'ring-2 ring-offset-1 ring-offset-[#05100c]' : 'border border-white/10'}`} style={{ '--tw-ring-color': isWinner ? tierConf.hex : undefined }} />
-                                    <div className="flex flex-col min-w-0 justify-center">
-                                        <span onClick={tournament.status === 'completed' ? (e) => { e.stopPropagation(); onNavigate('players', pId); } : undefined} className={`text-[13px] font-bold flex items-center truncate ${isWinner ? '' : 'text-white/80'} ${tournament.status === 'completed' ? 'cursor-pointer hover:underline' : ''}`} style={{ color: isWinner ? tierConf.hex : undefined }}>
-                                            {getFlag(p.nationality)} <span className="truncate ml-1.5 tracking-wide">{p.name}</span>
-                                            {getSeedText(tournament, pId) && <span className="text-[9px] text-white/40 font-mono ml-2 shrink-0">{getSeedText(tournament, pId)}</span>}
-                                        </span>
-                                    </div>
+                                    <img
+                                        src={p.images?.[0] || p.imageUrl || "https://via.placeholder.com/40"}
+                                        className={`w-6 h-6 rounded-full object-cover
+                                        ${isWinner ? 'ring-1' : 'border border-white/10'}`}
+                                        style={{ '--tw-ring-color': tierConf.hex }}
+                                    />
+        
+                                    <span
+                                        className="text-[12px] font-medium truncate"
+                                        style={{ color: isWinner ? tierConf.hex : undefined }}
+                                    >
+                                        {getFlag(p.nationality)}
+                                        <span className="ml-1">{p.name}</span>
+                                    </span>
                                 </>
                             )}
                         </div>
-                        {isWinner && <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="shrink-0 mr-1" style={{ color: tierConf.hex }}><polyline points="20 6 9 17 4 12"></polyline></svg>}
                     </div>
                 );
             };
-
+        
+            /* ---------- GROUP STANDINGS ---------- */
+        
             const renderStandingsTable = (groupName, standings) => (
-                <div className="bg-[#05100c] rounded-2xl border border-white/[0.05] overflow-hidden shadow-2xl w-full flex flex-col">
-                    <div className="bg-white/[0.02] p-4 border-b border-white/[0.05] font-bold text-white flex justify-between items-center">
-                        <span className="text-lg tracking-tight" style={{ color: tierConf.hex }}>Group {groupName} Standings</span>
-                        {isGroupStageComplete && <span className="text-[10px] bg-[#059669]/10 text-[#059669] border border-[#059669]/20 px-2 py-0.5 rounded uppercase tracking-wider font-bold">Final</span>}
+                <div className="bg-[#05100c] rounded-xl border border-white/[0.05] overflow-hidden">
+                    <div className="p-3 text-sm font-semibold border-b border-white/[0.05]"
+                        style={{ color: tierConf.hex }}>
+                        Group {groupName} Standings
                     </div>
-                    <table className="w-full text-left text-sm table-fixed flex-1">
-                        <thead className="bg-white/[0.01] text-white/40 text-[10px] uppercase tracking-widest border-b border-white/[0.02]">
-                            <tr><th className="p-3 w-12 text-center">Rnk</th><th className="p-3">Player</th><th className="p-3 w-16 text-center">W-L</th><th className="p-3 w-16 text-center">Diff</th></tr>
+        
+                    <table className="w-full text-xs">
+                        <thead className="text-white/40">
+                            <tr>
+                                <th className="p-2">Rnk</th>
+                                <th className="p-2 text-left">Player</th>
+                                <th className="p-2">W-L</th>
+                                <th className="p-2">Diff</th>
+                            </tr>
                         </thead>
-                        <tbody className="divide-y divide-white/[0.02] text-white/80 font-medium">
+        
+                        <tbody>
                             {standings.map((s, idx) => {
                                 const p = getPlayer(s.id);
-                                const qualifies = isGroupStageComplete && idx < 2;
+        
                                 return (
-                                    <tr key={s.id} className={`${qualifies ? 'bg-[#059669]/5' : 'hover:bg-white/[0.02]'} transition-colors`}>
-                                        <td className="p-3 text-center">
-                                            <span className={`w-5 h-5 inline-flex items-center justify-center rounded-full text-[10px] font-bold ${qualifies ? 'bg-[#059669] text-[#05100c]' : 'bg-white/10 text-white/50'}`}>{idx+1}</span>
-                                        </td>
-                                        <td className="p-3 truncate">{p.name}</td>
-                                        <td className="p-3 text-center tabular-nums">{s.wins}-{s.losses}</td>
-                                        <td className={`p-3 text-center tabular-nums ${s.tiebreaker > 0 ? 'text-[#059669]' : s.tiebreaker < 0 ? 'text-[#be123c]' : 'text-white/40'}`}>{s.tiebreaker > 0 ? `+${s.tiebreaker}` : s.tiebreaker}</td>
-                                    </tr>
-                                );
-                            })}
-                            {standings.length === 0 && tournament.groups && tournament.groups[groupName] && tournament.groups[groupName].map((pid, idx) => {
-                                const p = getPlayer(pid);
-                                return (
-                                    <tr key={pid}>
-                                        <td className="p-3 text-center"><span className="w-5 h-5 inline-flex items-center justify-center rounded-full text-[10px] font-bold bg-white/5 text-white/30">-</span></td>
-                                        <td className="p-3 truncate text-white/50">{p.name}</td>
-                                        <td className="p-3 text-center text-white/30 tabular-nums">0-0</td>
-                                        <td className="p-3 text-center text-white/30 tabular-nums">0</td>
+                                    <tr key={s.id} className="border-t border-white/[0.04]">
+                                        <td className="p-2 text-center">{idx + 1}</td>
+                                        <td className="p-2 truncate">{p.name}</td>
+                                        <td className="p-2 text-center">{s.wins}-{s.losses}</td>
+                                        <td className="p-2 text-center">{s.tiebreaker}</td>
                                     </tr>
                                 );
                             })}
@@ -4850,166 +5008,139 @@
                     </table>
                 </div>
             );
-
+        
+            /* ---------- RENDER ---------- */
+        
             return (
-                <div className="h-full flex flex-col pb-20 max-w-6xl mx-auto space-y-6">
-                    <div className="flex justify-between items-start md:items-center shrink-0">
-                        <div>
-                            <button onClick={onBack} className="flex items-center gap-2 text-royal-300 hover:text-white transition-colors mb-2 text-sm font-medium">
-                                <ArrowLeft className="w-4 h-4" /> Back to Tournaments
-                            </button>
-                            <h1 className="text-2xl md:text-3xl font-bold text-white flex items-center gap-3">
-                                {tournament.status === 'completed' && (
-                                    <DynamicTrophy tier="finals" result="Winner" country={tournament.hostCountry} size={48} className="drop-shadow-lg shrink-0" />
-                                )}
-                                <span className={`${tierConf?.color || 'text-cyan-400'} text-sm uppercase tracking-widest border border-current px-2 py-1 rounded shrink-0`}>
-                                    {tierConf?.name || 'SNB Internationals'}
-                                </span>
-                                <span className="text-3xl shrink-0" title={getCountryName(tournament.hostCountry || 'USA')}>{getFlag(tournament.hostCountry || 'USA')}</span>
-                                <span className="truncate">{tournament.name}</span>
-                                {tournament.status === 'completed' && <span className="bg-[#059669]/20 text-[#059669] text-xs px-2 py-1 rounded ml-2 shrink-0 font-bold uppercase tracking-widest">Completed</span>}
-                            </h1>
-                        </div>
-                        <div className="mt-4 md:mt-0 shrink-0">
-                            {showDelete ? (
-                                <div className="flex items-center gap-2 bg-[#be123c]/10 border border-[#be123c]/30 p-2 rounded-lg">
-                                    <span className="text-[#e11d48] text-sm font-bold">Delete Tournament?</span>
-                                    <button onClick={handleDelete} className="bg-[#be123c] hover:bg-[#9f1239] text-white px-3 py-1 rounded text-sm font-bold transition-colors">Yes</button>
-                                    <button onClick={() => setShowDelete(false)} className="text-royal-300 hover:text-white text-sm px-2 font-medium">Cancel</button>
-                                </div>
-                            ) : (
-                                <button onClick={() => setShowDelete(true)} className="flex items-center gap-2 text-[#e11d48] hover:text-[#fb7185] text-sm font-bold bg-royal-950 px-3 py-2 rounded-lg border border-royal-800 transition-colors"><Trash2 size={16}/> Delete</button>
-                            )}
-                        </div>
+                <div className="h-full flex flex-col pb-16 max-w-6xl mx-auto space-y-6">
+        
+                    <div>
+                        <button
+                            onClick={onBack}
+                            className="text-sm text-royal-300 hover:text-white mb-2"
+                        >
+                            ← Back
+                        </button>
+        
+                        <h1 className="text-2xl font-semibold text-white flex items-center gap-3">
+                            <span
+                                className={`${tierConf.color} text-xs uppercase border border-current px-2 py-1 rounded`}
+                            >
+                                {tierConf.name}
+                            </span>
+        
+                            <span className="text-3xl">
+                                {getFlag(tournament.hostCountry || 'USA')}
+                            </span>
+        
+                            <span className="truncate">
+                                {tournament.name}
+                            </span>
+                        </h1>
                     </div>
-                    
-                    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                        <GlassTabs tabs={tabs} activeTab={activeTab} onChange={setActiveTab} />
-                    </div>
-
-                    <div className="flex-1 bg-[#05100c] border border-white/[0.05] rounded-2xl p-6 md:p-8 shadow-2xl relative overflow-hidden flex flex-col">
-                        
-                        {/* Group A View */}
+        
+                    <GlassTabs tabs={tabs} activeTab={activeTab} onChange={setActiveTab} />
+        
+                    <div className="flex-1 bg-[#05100c] border border-white/[0.05] rounded-2xl p-6">
+        
                         {activeTab === 'groupA' && (
-                            <div className="grid lg:grid-cols-2 gap-8 animate-in fade-in duration-300 h-full">
+                            <div className="grid lg:grid-cols-2 gap-6">
                                 {renderStandingsTable('A', standingsA)}
-                                <div className="space-y-4 bg-royal-950/30 p-6 rounded-2xl border border-white/[0.02] flex flex-col overflow-y-auto custom-scrollbar h-full">
-                                    <h3 className="text-white/60 text-sm font-bold uppercase tracking-widest sticky top-0 bg-[#05100c] py-2 z-10">Group A Matches</h3>
-                                    <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
-                                        {groupMatches.filter(m => m && m.group === 'A').map((match, mIdx) => {
-                                            const isReady = !match.winner;
-                                            return (
-                                                <div key={match.id} onClick={() => handleMatchClick('group', groupMatches.findIndex(m => m.id === match.id), match)} 
-                                                     className={`border rounded-xl transition-all duration-300 overflow-hidden bg-[#05100c] shadow-sm flex flex-col justify-center ${
-                                                         isReady 
-                                                         ? 'cursor-pointer hover:scale-105 z-20 border border-white/20 bg-white/[0.05] hover:bg-white/[0.1] backdrop-blur-sm' 
-                                                         : match.winner 
-                                                             ? 'border border-white/10 bg-[#051611]' 
-                                                             : 'border border-white/[0.02] bg-[#051611]/50 opacity-50'
-                                                     }`} 
-                                                     style={{ boxShadow: isReady ? `0 4px 20px ${tierConf.hex}20` : undefined }}>
-                                                    {renderMatchParticipant(match, match.p1, true)}
-                                                    <div className="h-px w-full bg-white/5"></div>
-                                                    {renderMatchParticipant(match, match.p2, false)}
-                                                </div>
-                                            );
-                                        })}
-                                    </div>
+        
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                    {groupMatches
+                                        .filter(m => m.group === 'A')
+                                        .map((match, i) => (
+                                            <div
+                                                key={match.id}
+                                                onClick={() =>
+                                                    handleMatchClick(
+                                                        'group',
+                                                        groupMatches.findIndex(m => m.id === match.id),
+                                                        match
+                                                    )
+                                                }
+                                                className="rounded-lg border border-white/[0.06] bg-[#061610]"
+                                            >
+                                                {renderMatchParticipant(match, match.p1, true)}
+                                                {renderMatchParticipant(match, match.p2, false)}
+                                            </div>
+                                        ))}
                                 </div>
                             </div>
                         )}
-
-                        {/* Group B View */}
+        
                         {activeTab === 'groupB' && (
-                            <div className="grid lg:grid-cols-2 gap-8 animate-in fade-in duration-300 h-full">
+                            <div className="grid lg:grid-cols-2 gap-6">
                                 {renderStandingsTable('B', standingsB)}
-                                <div className="space-y-4 bg-royal-950/30 p-6 rounded-2xl border border-white/[0.02] flex flex-col overflow-y-auto custom-scrollbar h-full">
-                                    <h3 className="text-white/60 text-sm font-bold uppercase tracking-widest sticky top-0 bg-[#05100c] py-2 z-10">Group B Matches</h3>
-                                    <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
-                                        {groupMatches.filter(m => m && m.group === 'B').map((match, mIdx) => {
-                                            const isReady = !match.winner;
-                                            return (
-                                                <div key={match.id} onClick={() => handleMatchClick('group', groupMatches.findIndex(m => m.id === match.id), match)} 
-                                                     className={`border rounded-xl transition-all duration-300 overflow-hidden bg-[#05100c] shadow-sm flex flex-col justify-center ${
-                                                         isReady 
-                                                         ? 'cursor-pointer hover:scale-105 z-20 border border-white/20 bg-white/[0.05] hover:bg-white/[0.1] backdrop-blur-sm' 
-                                                         : match.winner 
-                                                             ? 'border border-white/10 bg-[#051611]' 
-                                                             : 'border border-white/[0.02] bg-[#051611]/50 opacity-50'
-                                                     }`} 
-                                                     style={{ boxShadow: isReady ? `0 4px 20px ${tierConf.hex}20` : undefined }}>
-                                                    {renderMatchParticipant(match, match.p1, true)}
-                                                    <div className="h-px w-full bg-white/5"></div>
-                                                    {renderMatchParticipant(match, match.p2, false)}
-                                                </div>
-                                            );
-                                        })}
-                                    </div>
+        
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                    {groupMatches
+                                        .filter(m => m.group === 'B')
+                                        .map((match, i) => (
+                                            <div
+                                                key={match.id}
+                                                onClick={() =>
+                                                    handleMatchClick(
+                                                        'group',
+                                                        groupMatches.findIndex(m => m.id === match.id),
+                                                        match
+                                                    )
+                                                }
+                                                className="rounded-lg border border-white/[0.06] bg-[#061610]"
+                                            >
+                                                {renderMatchParticipant(match, match.p1, true)}
+                                                {renderMatchParticipant(match, match.p2, false)}
+                                            </div>
+                                        ))}
                                 </div>
                             </div>
                         )}
-
-                        {/* Knockout View */}
+        
                         {activeTab === 'knockout' && (
-                            <div className="animate-in fade-in duration-300 h-full flex flex-col items-center justify-center relative">
-                                {!isGroupStageComplete ? (
-                                    <div className="text-center text-white/40">
-                                        <Trophy size={64} className="mx-auto mb-4 opacity-20" />
-                                        <p className="text-lg">Complete all Group Stage matches to unlock the Championship Bracket.</p>
+                            <div className="flex justify-center gap-10">
+        
+                                {knockout.map((round, rIdx) => (
+                                    <div key={rIdx} className="flex flex-col gap-3 w-[220px]">
+        
+                                        <div className="text-center text-xs uppercase tracking-widest pb-2 border-b border-white/10"
+                                            style={{ color: tierConf.hex }}>
+                                            {rIdx === 0 ? 'Semifinals' : 'Final'}
+                                        </div>
+        
+                                        {round.map((match, mIdx) => (
+                                            <div
+                                                key={match.id}
+                                                onClick={() =>
+                                                    handleMatchClick(
+                                                        rIdx === 0 ? 'sf' : 'f',
+                                                        mIdx,
+                                                        match
+                                                    )
+                                                }
+                                                className="rounded-lg border border-white/[0.06] bg-[#061610]"
+                                            >
+                                                {renderMatchParticipant(match, match.p1, true)}
+                                                {renderMatchParticipant(match, match.p2, false)}
+                                            </div>
+                                        ))}
                                     </div>
-                                ) : (
-                                    <div className="flex min-w-max items-stretch justify-center w-full h-full p-8">
-                                        {knockout.map((round, rIdx) => {
-                                            if (!Array.isArray(round)) return null;
-                                            const isFinalRound = rIdx === 1;
-                                            const finalMatch = isFinalRound ? round[0] : null;
-                                            const showHeaderTrophy = isFinalRound && finalMatch?.winner;
-                                            
-                                            return (
-                                                <div key={rIdx} className="flex flex-col w-80 shrink-0 mx-8 relative z-10">
-                                                    <div className="text-center font-bold text-sm uppercase tracking-widest mb-10 flex flex-col items-center justify-end min-h-[80px] shrink-0 border-b border-white/10 pb-4" style={{ color: tierConf.hex }}>
-                                                        {showHeaderTrophy && <DynamicTrophy tier="finals" result="Winner" country={tournament.hostCountry} size={64} className="mb-4 drop-shadow-xl" />}
-                                                        <div className="flex items-center justify-center gap-2 text-white">
-                                                            {isFinalRound ? 'Championship Match' : 'Semifinals'}
-                                                        </div>
-                                                    </div>
-                                                    <div className="flex-1 flex flex-col justify-around gap-8">
-                                                        {round.map((match, mIdx) => {
-                                                            if (!match) return null;
-                                                            const isReady = match.p1 && match.p2 && !match.winner && tournament.status !== 'completed';
-                                                            
-                                                            return (
-                                                                <div key={match.id} className="relative flex flex-col justify-center">
-                                                                    <div onClick={() => handleMatchClick(rIdx === 0 ? 'sf' : 'f', mIdx, match)} 
-                                                                         className={`relative z-10 border rounded-xl transition-all duration-300 overflow-hidden bg-[#05100c] shadow-lg flex flex-col ${
-                                                                             isReady 
-                                                                             ? 'cursor-pointer hover:scale-105 z-20 border border-white/20 bg-white/[0.05] backdrop-blur-md hover:bg-white/[0.1]' 
-                                                                             : match.winner 
-                                                                                 ? 'border border-white/10' 
-                                                                                 : 'border border-white/[0.03] opacity-60'
-                                                                         }`} 
-                                                                         style={{ boxShadow: isReady ? `0 8px 30px ${tierConf.hex}30` : undefined }}>
-                                                                        {renderMatchParticipant(match, match.p1, true)}
-                                                                        <div className="h-px w-full bg-white/5"></div>
-                                                                        {renderMatchParticipant(match, match.p2, false)}
-                                                                    </div>
-                                                                    {/* Connector lines */}
-                                                                    {rIdx === 0 && <div className="absolute -right-[32px] top-1/2 w-[32px] h-[2px] bg-white/[0.1] z-0"></div>}
-                                                                    {rIdx === 0 && mIdx % 2 === 0 && <div className="absolute -right-[32px] top-1/2 w-[2px] bg-white/[0.1] z-0" style={{ height: '100%' }}></div>}
-                                                                    {rIdx === 1 && <div className="absolute -left-[32px] top-1/2 w-[32px] h-[2px] bg-white/[0.1] z-0"></div>}
-                                                                </div>
-                                                            );
-                                                        })}
-                                                    </div>
-                                                </div>
-                                            );
-                                        })}
-                                    </div>
-                                )}
+                                ))}
                             </div>
                         )}
                     </div>
-                    <ResolveMatchModal resolvingMatch={resolvingMatch} setResolvingMatch={setResolvingMatch} submitResult={submitResult} handleRandomize={handleRandomize} players={players} allTournaments={allTournaments} tournament={tournament} tierConf={tierConf} onNavigate={onNavigate} />
+        
+                    <ResolveMatchModal
+                        resolvingMatch={resolvingMatch}
+                        setResolvingMatch={setResolvingMatch}
+                        submitResult={submitResult}
+                        handleRandomize={handleRandomize}
+                        players={players}
+                        allTournaments={allTournaments}
+                        tournament={tournament}
+                        tierConf={tierConf}
+                        onNavigate={onNavigate}
+                    />
                 </div>
             );
         }
