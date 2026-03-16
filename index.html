@@ -4459,18 +4459,18 @@
                             return (
                                 <div key={idx} className="flex-1 relative rounded-[2rem] overflow-hidden bg-[#030305] border border-white/10 flex flex-col group shadow-2xl ring-1 ring-inset ring-white/5">
                                     
-                                    {/* 1. Blurred Ambient Background */}
+                                    {/* 1. Blurred Ambient Background (We WANT this one to remain object-cover!) */}
                                     <div className="absolute inset-0 z-0 opacity-40 blur-[50px] saturate-150 pointer-events-none transition-all duration-700">
-                                        {imgs[iIdx] && <PlayerMedia url={imgs[iIdx]} className="w-full h-full object-cover scale-110" />}
+                                        {imgs[iIdx] && <PlayerMedia url={imgs[iIdx]} className="w-full h-full scale-110" />}
                                     </div>
 
-                                    {/* 2. Actual Image (Bulletproof absolute bounding to prevent portrait overflow) */}
-                                    <div className="absolute inset-0 z-10 p-4 pt-8 pb-[150px] md:pb-[170px] pointer-events-none flex justify-center items-end">
+                                    {/* 2. Actual Image (CSS Overrides forcefully injected to child elements) */}
+                                    <div className="absolute inset-0 z-10 p-4 pt-8 pb-[140px] md:pb-[160px] pointer-events-none flex items-center justify-center">
                                         {imgs[iIdx] ? (
-                                            <div className="relative w-full h-full flex justify-center items-end overflow-hidden">
+                                            <div className="relative w-full h-full [&_img]:!object-contain [&_video]:!object-contain [&_img]:!object-bottom [&_video]:!object-bottom">
                                                 <PlayerMedia 
                                                     url={imgs[iIdx]} 
-                                                    className="absolute inset-0 w-full h-full object-contain object-bottom transition-transform duration-700 group-hover:scale-[1.02]" 
+                                                    className="w-full h-full transition-transform duration-700 group-hover:scale-[1.02]" 
                                                 />
                                             </div>
                                         ) : (
