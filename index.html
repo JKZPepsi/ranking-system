@@ -2549,52 +2549,6 @@
             );
         }
 
-        function HistoricalTournamentSelect({ tournaments, value, onChange }) {
-            const [isOpen, setIsOpen] = useState(false);
-            const [search, setSearch] = useState('');
-            const wrapperRef = useRef(null);
-            
-            useEffect(() => {
-                function handleClickOutside(event) { if (wrapperRef.current && !wrapperRef.current.contains(event.target)) setIsOpen(false); }
-                document.addEventListener("mousedown", handleClickOutside);
-                return () => document.removeEventListener("mousedown", handleClickOutside);
-            }, []);
-            
-            const completed = useMemo(() => tournaments.filter(t => t.status === 'completed').sort((a, b) => (b.completedAt || 0) - (a.completedAt || 0)), [tournaments]);
-            const filtered = completed.filter(t => t.name.toLowerCase().includes(search.toLowerCase()));
-            const selectedT = completed.find(t => t.id === value);
-
-            return (
-                <div ref={wrapperRef} className="relative w-full md:w-80">
-                    <div 
-                        className="w-full bg-royal-900/80 backdrop-blur-md border border-royal-700/50 rounded-xl px-4 py-2.5 text-white/90 flex justify-between items-center cursor-pointer hover:bg-royal-800 transition-colors shadow-sm"
-                        onClick={() => setIsOpen(!isOpen)}
-                    >
-                        <span className="truncate text-sm font-medium tracking-wide">
-                            {value === '' ? '🟢 Live Rankings' : `🕒 As of: ${selectedT?.name}`}
-                        </span>
-                        <ChevronRight size={16} className={`shrink-0 text-white/50 transition-transform duration-300 ${isOpen ? 'rotate-90' : ''}`} />
-                    </div>
-                    {isOpen && (
-                        <div className="absolute z-50 w-full mt-2 bg-royal-800/95 backdrop-blur-xl border border-white/10 rounded-xl shadow-2xl max-h-72 overflow-y-auto custom-scrollbar">
-                            <div className="p-2 sticky top-0 bg-royal-800/90 backdrop-blur-md border-b border-white/5 z-10">
-                                <input type="text" autoFocus className="w-full bg-royal-950/50 border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-gold-500/50 transition-colors" placeholder="Search history..." value={search} onChange={e => setSearch(e.target.value)} />
-                            </div>
-                            <div className="px-4 py-3 hover:bg-white/5 cursor-pointer flex items-center gap-2 text-white/90 border-b border-white/5 transition-colors" onClick={() => { onChange(''); setIsOpen(false); setSearch(''); }}>
-                                <span className="font-semibold text-emerald-400">🟢 Live Rankings</span>
-                            </div>
-                            {filtered.map(t => (
-                                <div key={t.id} className="px-4 py-2.5 hover:bg-white/5 cursor-pointer flex flex-col text-white/80 transition-colors" onClick={() => { onChange(t.id); setIsOpen(false); setSearch(''); }}>
-                                    <span className="font-medium text-sm truncate">{t.name}</span>
-                                    <span className="text-[10px] text-white/40 mt-0.5 tracking-wider uppercase">{new Date(t.completedAt).toLocaleDateString()}</span>
-                                </div>
-                            ))}
-                            {filtered.length === 0 && <div className="p-4 text-center text-white/40 text-sm">No tournaments found</div>}
-                        </div>
-                    )}
-                </div>
-            );
-        }
 
         function CountrySelect({ value, onChange, disabled }) {
             const [isOpen, setIsOpen] = useState(false);
@@ -2643,55 +2597,95 @@
             return map[result] || result || '-';
         };
 
-        function DashboardNationFilter({ value, onChange, players }) {
+        function HistoricalTournamentSelect({ tournaments, value, onChange }) {
             const [isOpen, setIsOpen] = useState(false);
             const [search, setSearch] = useState('');
             const wrapperRef = useRef(null);
+            
+            useEffect(() => {
+                function handleClickOutside(event) { if (wrapperRef.current && !wrapperRef.current.contains(event.target)) setIsOpen(false); }
+                document.addEventListener("mousedown", handleClickOutside);
+                return () => document.removeEventListener("mousedown", handleClickOutside);
+            }, []);
+            
+            const completed = useMemo(() => tournaments.filter(t => t.status === 'completed').sort((a, b) => (b.completedAt || 0) - (a.completedAt || 0)), [tournaments]);
+            const filtered = completed.filter(t => t.name.toLowerCase().includes(search.toLowerCase()));
+            const selectedT = completed.find(t => t.id === value);
 
-            // Get unique nations from current players to populate filter
-            const activeNations = useMemo(() => {
-                const codes = new Set();
-                players.forEach(p => { if (p.nationality) codes.add(p.nationality); });
-                return Array.from(codes).map(code => COUNTRIES.find(c => c.code === code) || { code, name: code, flag: '🏳️' })
-                     .sort((a, b) => a.name.localeCompare(b.name));
-            }, [players]);
+            return (
+                <div ref={wrapperRef} className="relative w-full sm:w-72">
+                    <div 
+                        className="w-full bg-royal-900/80 backdrop-blur-md border border-royal-700/50 rounded-xl px-4 py-2.5 text-white/90 flex justify-between items-center cursor-pointer hover:bg-royal-800 transition-colors shadow-sm"
+                        onClick={() => setIsOpen(!isOpen)}
+                    >
+                        <span className="truncate text-sm font-medium tracking-wide">
+                            {value === '' ? '🟢 Live Rankings' : `🕒 As of: ${selectedT?.name}`}
+                        </span>
+                        <ChevronRight size={16} className={`shrink-0 text-white/50 transition-transform duration-300 ${isOpen ? 'rotate-90' : ''}`} />
+                    </div>
+                    {isOpen && (
+                        <div className="absolute z-50 w-full mt-2 bg-royal-800/95 backdrop-blur-xl border border-white/10 rounded-xl shadow-2xl max-h-72 overflow-y-auto custom-scrollbar">
+                            <div className="p-2 sticky top-0 bg-royal-800/90 backdrop-blur-md border-b border-white/5 z-10">
+                                <input type="text" autoFocus className="w-full bg-royal-950/50 border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-gold-500/50 transition-colors" placeholder="Search history..." value={search} onChange={e => setSearch(e.target.value)} />
+                            </div>
+                            <div className="px-4 py-3 hover:bg-white/5 cursor-pointer flex items-center gap-2 text-white/90 border-b border-white/5 transition-colors" onClick={() => { onChange(''); setIsOpen(false); setSearch(''); }}>
+                                <span className="font-semibold text-emerald-400">🟢 Live Rankings</span>
+                            </div>
+                            {filtered.map(t => (
+                                <div key={t.id} className="px-4 py-2.5 hover:bg-white/5 cursor-pointer flex flex-col text-white/80 transition-colors" onClick={() => { onChange(t.id); setIsOpen(false); setSearch(''); }}>
+                                    <span className="font-medium text-sm truncate">{t.name}</span>
+                                    <span className="text-[10px] text-white/40 mt-0.5 tracking-wider uppercase">{new Date(t.completedAt).toLocaleDateString()}</span>
+                                </div>
+                            ))}
+                            {filtered.length === 0 && <div className="p-4 text-center text-white/40 text-sm">No tournaments found</div>}
+                        </div>
+                    )}
+                </div>
+            );
+        }
 
+        function DashboardCountryFilter({ value, onChange, playersRaw }) {
+            const [isOpen, setIsOpen] = useState(false);
+            const [search, setSearch] = useState('');
+            const wrapperRef = useRef(null);
+            
             useEffect(() => {
                 function handleClickOutside(event) { if (wrapperRef.current && !wrapperRef.current.contains(event.target)) setIsOpen(false); }
                 document.addEventListener("mousedown", handleClickOutside);
                 return () => document.removeEventListener("mousedown", handleClickOutside);
             }, []);
 
-            const filtered = activeNations.filter(c => c.name.toLowerCase().includes(search.toLowerCase()) || c.code.toLowerCase().includes(search.toLowerCase()));
-            const selectedCountry = activeNations.find(c => c.code === value);
+            const activeCodes = Array.from(new Set(playersRaw.map(p => p.nationality))).filter(Boolean);
+            const availableCountries = COUNTRIES.filter(c => activeCodes.includes(c.code));
+            const filtered = availableCountries.filter(c => c.name.toLowerCase().includes(search.toLowerCase()) || c.code.toLowerCase().includes(search.toLowerCase()));
+            const selected = COUNTRIES.find(c => c.code === value);
 
             return (
-                <div ref={wrapperRef} className="relative w-full sm:w-64 z-40">
+                <div ref={wrapperRef} className="relative w-full sm:w-64">
                     <div 
                         className="w-full bg-royal-900/80 backdrop-blur-md border border-royal-700/50 rounded-xl px-4 py-2.5 text-white/90 flex justify-between items-center cursor-pointer hover:bg-royal-800 transition-colors shadow-sm"
                         onClick={() => setIsOpen(!isOpen)}
                     >
                         <span className="truncate text-sm font-medium tracking-wide">
-                            {value === 'all' ? '🌍 All Nations' : `${selectedCountry?.flag} ${selectedCountry?.name}`}
+                            {value === 'All' ? 'All Nations' : `${selected?.flag} ${selected?.name}`}
                         </span>
                         <ChevronRight size={16} className={`shrink-0 text-white/50 transition-transform duration-300 ${isOpen ? 'rotate-90' : ''}`} />
                     </div>
                     {isOpen && (
-                        <div className="absolute w-full mt-2 bg-royal-800/95 backdrop-blur-xl border border-white/10 rounded-xl shadow-2xl max-h-72 overflow-y-auto custom-scrollbar">
+                        <div className="absolute z-50 w-full mt-2 bg-royal-800/95 backdrop-blur-xl border border-white/10 rounded-xl shadow-2xl max-h-72 overflow-y-auto custom-scrollbar">
                             <div className="p-2 sticky top-0 bg-royal-800/90 backdrop-blur-md border-b border-white/5 z-10">
-                                <div className="relative">
-                                    <input type="text" autoFocus className="w-full bg-royal-950/50 border border-white/10 rounded-lg px-3 py-2 pl-8 text-sm text-white focus:outline-none focus:border-gold-500/50 transition-colors" placeholder="Search nations..." value={search} onChange={e => setSearch(e.target.value)} />
-                                    <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-white/40" />
-                                </div>
+                                <input type="text" autoFocus className="w-full bg-royal-950/50 border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-gold-500/50 transition-colors" placeholder="Search nations..." value={search} onChange={e => setSearch(e.target.value)} />
                             </div>
-                            <div className="px-4 py-3 hover:bg-white/5 cursor-pointer flex items-center gap-3 text-white/90 border-b border-white/5 transition-colors" onClick={() => { onChange('all'); setIsOpen(false); setSearch(''); }}>
-                                <span className="text-xl">🌍</span> <span className="font-semibold text-sm">All Nations</span>
+                            <div className="px-4 py-3 hover:bg-white/5 cursor-pointer flex items-center gap-2 text-white/90 border-b border-white/5 transition-colors" onClick={() => { onChange('All'); setIsOpen(false); setSearch(''); }}>
+                                <span className="font-semibold">All Nations</span>
                             </div>
                             {filtered.map(c => (
-                                <div key={c.code} className="px-4 py-2.5 hover:bg-white/5 cursor-pointer flex items-center gap-3 text-white/80 transition-colors" onClick={() => { onChange(c.code); setIsOpen(false); setSearch(''); }}>
-                                    <span className="text-xl drop-shadow-sm">{c.flag}</span> <span className="font-medium text-sm">{c.name} ({c.code})</span>
+                                <div key={c.code} className="px-4 py-2.5 hover:bg-white/5 cursor-pointer flex items-center gap-3 text-white/90 transition-colors" onClick={() => { onChange(c.code); setIsOpen(false); setSearch(''); }}>
+                                    <span className="text-lg">{c.flag}</span>
+                                    <span className="font-medium text-sm truncate">{c.name}</span>
                                 </div>
                             ))}
+                            {filtered.length === 0 && <div className="p-4 text-center text-white/40 text-sm">No nations found</div>}
                         </div>
                     )}
                 </div>
@@ -2700,14 +2694,14 @@
 
         function DashboardView({ playersRaw, tournaments, onSelectPlayer, players }) {
             const [asOfId, setAsOfId] = useState('');
-            const [filterNation, setFilterNation] = useState('all');
+            const [filterCountry, setFilterCountry] = useState('All');
             const [sortConfig, setSortConfig] = useState({ key: 'rank', direction: 'asc' });
 
             const handleSort = (key) => {
                 if (sortConfig.key === key) {
                     setSortConfig({ key, direction: sortConfig.direction === 'asc' ? 'desc' : 'asc' });
                 } else {
-                    setSortConfig({ key, direction: ['rank', 'name'].includes(key) ? 'asc' : 'desc' });
+                    setSortConfig({ key, direction: ['rank', 'name', 'nationality'].includes(key) ? 'asc' : 'desc' });
                 }
             };
 
@@ -2730,9 +2724,12 @@
                 const prevHist = majorHist.length > 1 ? majorHist[majorHist.length - 2] : null;
 
                 let activeList = rankedPlayers.filter(p => !p.retired);
-                
-                // Assign global rank BEFORE filtering by nation
+                // Assign global rank before filtering
                 activeList.forEach((p, i) => p.currentRank = i + 1);
+
+                if (filterCountry !== 'All') {
+                    activeList = activeList.filter(p => p.nationality === filterCountry);
+                }
 
                 activeList = activeList.map(p => {
                     let diff = 0;
@@ -2745,11 +2742,6 @@
                     }
                     return { ...p, diff };
                 });
-
-                // Apply Nation Filter
-                if (filterNation !== 'all') {
-                    activeList = activeList.filter(p => p.nationality === filterNation);
-                }
 
                 activeList.sort((a, b) => {
                     let valA = a.currentRank, valB = b.currentRank;
@@ -2770,7 +2762,12 @@
                     return 0;
                 });
 
-                let retiredList = rankedPlayers.filter(p => p.retired).map(p => {
+                let retiredList = rankedPlayers.filter(p => p.retired);
+                if (filterCountry !== 'All') {
+                    retiredList = retiredList.filter(p => p.nationality === filterCountry);
+                }
+
+                retiredList = retiredList.map(p => {
                     let peakRank = 9999, peakPoints = 0;
                     globalHist.forEach(h => {
                         const s = h.standings?.find(st => st.id === p.id);
@@ -2782,27 +2779,20 @@
                     if (peakRank === 9999) peakRank = p.rank || '-';
                     if (peakPoints === 0) peakPoints = p.points || 0;
                     return { ...p, peakRank, peakPoints };
-                });
-
-                // Apply Nation Filter to retired
-                if (filterNation !== 'all') {
-                    retiredList = retiredList.filter(p => p.nationality === filterNation);
-                }
-
-                retiredList.sort((a, b) => b.peakPoints - a.peakPoints);
+                }).sort((a, b) => b.peakPoints - a.peakPoints);
 
                 return { active: activeList, retired: retiredList };
-            }, [playersRaw, tournaments, asOfId, sortConfig, filterNation]);
+            }, [playersRaw, tournaments, asOfId, sortConfig, filterCountry]);
 
             return (
                 <div className="max-w-6xl mx-auto space-y-6 pb-20">
-                    <header className="mb-6 flex flex-col md:flex-row md:items-end justify-between gap-6">
-                        <div className="shrink-0">
+                    <header className="mb-8 flex flex-col md:flex-row md:items-end justify-between gap-6">
+                        <div>
                             <h1 className="text-3xl font-bold text-white tracking-tight">SNB Rankings</h1>
                             <p className="text-white/50 text-sm mt-1.5 font-medium">Based on the last 20 SNB Major+ tournaments.</p>
                         </div>
-                        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 z-40">
-                            <DashboardNationFilter value={filterNation} onChange={setFilterNation} players={playersRaw} />
+                        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+                            <DashboardCountryFilter value={filterCountry} onChange={setFilterCountry} playersRaw={playersRaw} />
                             <HistoricalTournamentSelect tournaments={tournaments} value={asOfId} onChange={setAsOfId} />
                         </div>
                     </header>
@@ -2815,11 +2805,10 @@
                                         <th className="py-3 px-2 w-24 text-center cursor-pointer hover:text-white transition-colors" onClick={() => handleSort('rank')}>
                                             Rank <SortIcon column="rank"/>
                                         </th>
-                                        {/* Player column width expanded to absorb the old Nat column space */}
-                                        <th className="py-3 pl-4 pr-2 w-[340px] text-left cursor-pointer hover:text-white transition-colors" onClick={() => handleSort('name')}>
+                                        <th className="py-3 px-2 w-[300px] text-left cursor-pointer hover:text-white transition-colors" onClick={() => handleSort('name')}>
                                             Player <SortIcon column="name"/>
                                         </th>
-                                        <th className="py-3 px-2 w-28 text-center cursor-pointer hover:text-white transition-colors" onClick={() => handleSort('points')}>
+                                        <th className="py-3 px-2 w-32 text-center cursor-pointer hover:text-white transition-colors" onClick={() => handleSort('points')}>
                                             Points <SortIcon column="points"/>
                                         </th>
                                         <th className="py-3 px-2 w-20 text-center cursor-pointer hover:text-white transition-colors" onClick={() => handleSort('diff')}>
@@ -2865,49 +2854,46 @@
 
                                         return (
                                             <tr key={player.id} onClick={() => onSelectPlayer(player.id)} className="hover:bg-white/[0.03] transition-colors duration-200 cursor-pointer group">
-                                                <td className="py-2.5 px-2 text-center">
-                                                    {/* Thicker font-semibold rank */}
-                                                    <span className="text-3xl font-semibold tabular-nums text-white/90 tracking-tight">{player.currentRank}</span>
+                                                <td className="py-3 px-2 text-center">
+                                                    <span className="text-3xl font-medium tabular-nums text-white/90 tracking-tighter">{player.currentRank}</span>
                                                 </td>
                                                 
-                                                <td className="py-2.5 pl-4 pr-2 text-left">
-                                                    <div className="flex items-center gap-4">
+                                                <td className="py-3 px-2 text-left">
+                                                    <div className="flex items-center gap-3.5">
                                                         <div className="w-12 h-12 rounded-full overflow-hidden border border-white/10 group-hover:border-gold-500/50 transition-colors bg-royal-950 shrink-0 shadow-sm relative">
                                                             <PlayerMedia url={player.imageUrl || (player.images ? player.images[0] : '')} className="w-full h-full object-cover" />
                                                         </div>
                                                         <div className="flex flex-col justify-center min-w-0">
-                                                            <div className="font-bold text-lg text-white/95 truncate group-hover:text-gold-400 transition-colors tracking-wide">
+                                                            <div className="font-medium text-base text-white/95 truncate group-hover:text-gold-400 transition-colors tracking-wide">
                                                                 {player.name}
                                                             </div>
-                                                            <div className="flex items-center gap-1.5 text-[11px] font-medium text-white/50 uppercase tracking-widest mt-0.5">
+                                                            <div className="flex items-center gap-1.5 text-[11px] font-semibold text-white/80 uppercase tracking-widest mt-0.5">
                                                                 <span className="text-sm leading-none drop-shadow-sm">{getFlag(player.nationality)}</span> {player.nationality}
                                                             </div>
                                                         </div>
                                                     </div>
                                                 </td>
                                                 
-                                                <td className="py-2.5 px-2 text-center">
-                                                    {/* Thicker font-bold points */}
-                                                    <span className="text-2xl font-bold tabular-nums text-gold-400 tracking-tight">{player.points.toLocaleString()}</span>
+                                                <td className="py-3 px-2 text-center">
+                                                    <span className="text-2xl font-medium tabular-nums text-gold-400 tracking-tight">{player.points.toLocaleString()}</span>
                                                 </td>
                                                 
-                                                <td className="py-2.5 px-2 text-center font-medium text-sm tabular-nums">
+                                                <td className="py-3 px-2 text-center font-medium text-sm tabular-nums">
                                                     {player.diff > 0 ? <span className="text-emerald-400">+{player.diff}</span> : player.diff < 0 ? <span className="text-rose-400">{player.diff}</span> : <span className="text-white/30">-</span>}
                                                 </td>
-                                                {/* Brighter secondary text metrics (text-white/85) */}
-                                                <td className="py-2.5 px-2 text-center text-sm font-medium text-white/85 group-hover:text-rose-400 transition-colors tabular-nums">
+                                                <td className="py-3 px-2 text-center text-sm font-medium text-white/60 group-hover:text-rose-400 transition-colors tabular-nums">
                                                     {player.droppingPoints > 0 ? `-${player.droppingPoints}` : '-'}
                                                 </td>
-                                                <td className="py-2.5 px-2 text-center text-sm font-medium tabular-nums">
+                                                <td className="py-3 px-2 text-center text-sm font-medium tabular-nums">
                                                     {player.bonusPoints > 0 ? <span className="text-emerald-400">+{player.bonusPoints}</span> : <span className="text-white/30">-</span>}
                                                 </td>
-                                                <td className="py-2.5 px-2 text-center text-sm font-medium text-white/85 tabular-nums">
+                                                <td className="py-3 px-2 text-center text-sm font-medium text-white/85 tabular-nums">
                                                     {player.stats.totalPlayed}
                                                 </td>
-                                                <td className="py-2.5 px-2 text-center text-white/85 font-medium text-sm tabular-nums">
+                                                <td className="py-3 px-2 text-center text-white/85 font-medium text-sm tabular-nums">
                                                     {player.stats.wins} - {player.stats.losses}
                                                 </td>
-                                                <td className="py-2.5 px-4 text-center">
+                                                <td className="py-3 px-4 text-center">
                                                     {recentDisplay}
                                                 </td>
                                             </tr>
@@ -2929,40 +2915,40 @@
                                             </tr>
                                             {retired.map((player) => (
                                                 <tr key={player.id} onClick={() => onSelectPlayer(player.id)} className="hover:bg-white/[0.03] transition-all duration-300 cursor-pointer group opacity-60 grayscale hover:grayscale-0 hover:opacity-100">
-                                                    <td className="py-2.5 px-2 text-center text-3xl font-semibold text-white/30 tabular-nums tracking-tight">-</td>
+                                                    <td className="py-3 px-2 text-center text-3xl font-light text-white/30 tabular-nums">-</td>
                                                     
-                                                    <td className="py-2.5 pl-4 pr-2 text-left">
-                                                        <div className="flex items-center gap-4">
+                                                    <td className="py-3 px-2 text-left">
+                                                        <div className="flex items-center gap-3.5">
                                                             <div className="w-12 h-12 rounded-full overflow-hidden border border-white/10 bg-royal-950 shrink-0 shadow-sm relative">
                                                                 <PlayerMedia url={player.imageUrl || (player.images ? player.images[0] : '')} className="w-full h-full object-cover" />
                                                             </div>
                                                             <div className="flex flex-col justify-center min-w-0">
-                                                                <div className="font-bold text-lg text-white/80 truncate flex items-center gap-2">
+                                                                <div className="font-medium text-base text-white/80 truncate flex items-center gap-2">
                                                                     {player.name}
                                                                     <span className="text-[8px] bg-rose-500/20 text-rose-300 px-1.5 py-0.5 rounded uppercase tracking-widest border border-rose-500/30">Ret</span>
                                                                 </div>
-                                                                <div className="flex items-center gap-1.5 text-[11px] font-medium text-white/50 uppercase tracking-widest mt-0.5">
+                                                                <div className="flex items-center gap-1.5 text-[11px] font-semibold text-white/50 uppercase tracking-widest mt-0.5">
                                                                     <span className="text-sm leading-none drop-shadow-sm">{getFlag(player.nationality)}</span> {player.nationality}
                                                                 </div>
                                                             </div>
                                                         </div>
                                                     </td>
                                                     
-                                                    <td className="py-2.5 px-2 text-center">
+                                                    <td className="py-3 px-2 text-center">
                                                         <div className="text-[8px] text-white/40 uppercase tracking-widest font-semibold">Peak Pts</div>
-                                                        <span className="text-xl font-bold text-white/60 tabular-nums tracking-tight">{player.peakPoints.toLocaleString()}</span>
+                                                        <span className="text-xl font-medium text-white/60 tabular-nums">{player.peakPoints.toLocaleString()}</span>
                                                     </td>
                                                     
-                                                    <td className="py-2.5 px-2 text-center text-white/30">-</td>
-                                                    <td className="py-2.5 px-2 text-center text-white/30">-</td>
-                                                    <td className="py-2.5 px-2 text-center text-white/30">-</td>
+                                                    <td className="py-3 px-2 text-center text-white/30">-</td>
+                                                    <td className="py-3 px-2 text-center text-white/30">-</td>
+                                                    <td className="py-3 px-2 text-center text-white/30">-</td>
                                                     
-                                                    <td className="py-2.5 px-2 text-center text-sm font-medium text-white/85 tabular-nums">{player.stats.totalPlayed}</td>
-                                                    <td className="py-2.5 px-2 text-center text-white/85 font-medium text-sm tabular-nums">{player.stats.wins} - {player.stats.losses}</td>
-                                                    <td className="py-2.5 px-4 text-center">
+                                                    <td className="py-3 px-2 text-center text-sm font-medium text-white/60 tabular-nums">{player.stats.totalPlayed}</td>
+                                                    <td className="py-3 px-2 text-center text-white/60 font-medium text-sm tabular-nums">{player.stats.wins} - {player.stats.losses}</td>
+                                                    <td className="py-3 px-4 text-center">
                                                         <div className="flex flex-col items-center justify-center">
                                                             <span className="text-[8px] text-white/40 uppercase tracking-widest font-semibold">Peak Rank</span>
-                                                            <span className="text-white/60 font-semibold text-base tabular-nums">#{player.peakRank}</span>
+                                                            <span className="text-white/60 font-medium text-base">#{player.peakRank}</span>
                                                         </div>
                                                     </td>
                                                 </tr>
@@ -3074,8 +3060,8 @@
                                             <tr className="bg-white/[0.02] text-white/50 text-[10px] font-semibold uppercase tracking-widest select-none border-b border-white/[0.08]">
                                                 <th className="py-3 px-2 w-20 text-center">Nat Rank</th>
                                                 <th className="py-3 px-2 w-20 text-center">Glb Rank</th>
-                                                <th className="py-3 pl-4 pr-2 w-[340px] text-left">Player</th>
-                                                <th className="py-3 px-2 w-28 text-center">Points</th>
+                                                <th className="py-3 px-2 w-[320px] text-left">Player</th>
+                                                <th className="py-3 px-2 w-32 text-center">Points</th>
                                                 <th className="py-3 px-2 w-20 text-center">+/-</th>
                                                 <th className="py-3 px-2 w-20 text-center">Drop</th>
                                                 <th className="py-3 px-2 w-20 text-center">New</th>
@@ -3107,54 +3093,54 @@
 
                                                 return (
                                                     <tr key={player.id} onClick={() => onNavigate('players', player.id)} className="hover:bg-white/[0.03] transition-colors duration-200 cursor-pointer group">
-                                                        <td className="py-2.5 px-2 text-center">
-                                                            <span className="text-3xl font-semibold tabular-nums text-white/90 tracking-tight">{player.nationalRank}</span>
+                                                        <td className="py-3 px-2 text-center">
+                                                            <span className="text-3xl font-medium tabular-nums text-white/90 tracking-tighter">{player.nationalRank}</span>
                                                         </td>
-                                                        <td className="py-2.5 px-2 text-center text-white/60 font-medium text-lg tabular-nums">
+                                                        <td className="py-3 px-2 text-center text-white/60 font-medium text-lg tabular-nums">
                                                             #{player.rank}
                                                         </td>
                                                         
-                                                        <td className="py-2.5 pl-4 pr-2 text-left">
-                                                            <div className="flex items-center gap-4">
+                                                        <td className="py-3 px-2 text-left">
+                                                            <div className="flex items-center gap-3.5">
                                                                 <div className="w-12 h-12 rounded-full overflow-hidden border border-white/10 group-hover:border-gold-500/50 transition-colors bg-royal-950 shrink-0 shadow-sm relative">
                                                                     <PlayerMedia url={player.imageUrl || (player.images ? player.images[0] : '')} className="w-full h-full object-cover" />
                                                                 </div>
                                                                 <div className="flex flex-col justify-center min-w-0">
-                                                                    <div className="font-bold text-lg text-white/95 truncate group-hover:text-gold-400 transition-colors tracking-wide">
+                                                                    <div className="font-medium text-base text-white/95 truncate group-hover:text-gold-400 transition-colors tracking-wide">
                                                                         {player.name}
                                                                     </div>
-                                                                    <div className="flex items-center gap-1.5 text-[11px] font-medium text-white/50 uppercase tracking-widest mt-0.5">
+                                                                    <div className="flex items-center gap-1.5 text-[11px] font-semibold text-white/80 uppercase tracking-widest mt-0.5">
                                                                         <span className="text-sm leading-none drop-shadow-sm">{getFlag(player.nationality)}</span> {player.nationality}
                                                                     </div>
                                                                 </div>
                                                             </div>
                                                         </td>
 
-                                                        <td className="py-2.5 px-2 text-center">
-                                                            <span className="text-2xl font-bold tabular-nums text-gold-400 tracking-tight">{player.points.toLocaleString()}</span>
+                                                        <td className="py-3 px-2 text-center">
+                                                            <span className="text-2xl font-medium tabular-nums text-gold-400 tracking-tight">{player.points.toLocaleString()}</span>
                                                         </td>
 
-                                                        <td className="py-2.5 px-2 text-center font-medium text-sm tabular-nums">
+                                                        <td className="py-3 px-2 text-center font-medium text-sm tabular-nums">
                                                             {player.diff > 0 ? <span className="text-emerald-400">+{player.diff}</span> : player.diff < 0 ? <span className="text-rose-400">{player.diff}</span> : <span className="text-white/30">-</span>}
                                                         </td>
 
-                                                        <td className="py-2.5 px-2 text-center text-sm font-medium text-white/85 group-hover:text-rose-400 transition-colors tabular-nums">
+                                                        <td className="py-3 px-2 text-center text-sm font-medium text-white/60 group-hover:text-rose-400 transition-colors tabular-nums">
                                                             {player.droppingPoints > 0 ? `-${player.droppingPoints}` : '-'}
                                                         </td>
 
-                                                        <td className="py-2.5 px-2 text-center text-sm font-medium tabular-nums">
+                                                        <td className="py-3 px-2 text-center text-sm font-medium tabular-nums">
                                                             {player.bonusPoints > 0 ? <span className="text-emerald-400">+{player.bonusPoints}</span> : <span className="text-white/30">-</span>}
                                                         </td>
 
-                                                        <td className="py-2.5 px-2 text-center text-sm font-medium text-white/85 tabular-nums">
+                                                        <td className="py-3 px-2 text-center text-sm font-medium text-white/85 tabular-nums">
                                                             {player.stats.totalPlayed}
                                                         </td>
 
-                                                        <td className="py-2.5 px-2 text-center text-white/85 font-medium text-sm tabular-nums">
+                                                        <td className="py-3 px-2 text-center text-white/85 font-medium text-sm tabular-nums">
                                                             {player.stats.wins} - {player.stats.losses}
                                                         </td>
 
-                                                        <td className="py-2.5 px-4 text-center">
+                                                        <td className="py-3 px-4 text-center">
                                                             {recentDisplay}
                                                         </td>
                                                     </tr>
@@ -3176,41 +3162,42 @@
                                                     </tr>
                                                     {retired.map((player) => (
                                                         <tr key={player.id} onClick={() => onNavigate('players', player.id)} className="hover:bg-white/[0.03] transition-all duration-300 cursor-pointer group opacity-60 grayscale hover:grayscale-0 hover:opacity-100">
-                                                            <td className="py-2.5 px-2 text-center text-3xl font-semibold text-white/30 tabular-nums tracking-tight">-</td>
-                                                            <td className="py-2.5 px-2 text-center text-lg font-medium text-white/30 tabular-nums">-</td>
+                                                            <td className="py-3 px-2 text-center text-3xl font-light text-white/30 tabular-nums">-</td>
+                                                            <td className="py-3 px-2 text-center text-lg font-medium text-white/30 tabular-nums">-</td>
                                                             
-                                                            <td className="py-2.5 pl-4 pr-2 text-left">
-                                                                <div className="flex items-center gap-4">
+                                                            <td className="py-3 px-2 text-left">
+                                                                <div className="flex items-center gap-3.5">
                                                                     <div className="w-12 h-12 rounded-full overflow-hidden border border-white/10 bg-royal-950 shrink-0 shadow-sm relative">
                                                                         <PlayerMedia url={player.imageUrl || (player.images ? player.images[0] : '')} className="w-full h-full object-cover" />
+                                                                        <div className="absolute inset-0 bg-black/40 backdrop-grayscale-[0.5]"></div>
                                                                     </div>
                                                                     <div className="flex flex-col justify-center min-w-0">
-                                                                        <div className="font-bold text-lg text-white/80 truncate flex items-center gap-2">
+                                                                        <div className="font-medium text-base text-white/80 truncate flex items-center gap-2">
                                                                             {player.name}
                                                                             <span className="text-[8px] bg-rose-500/20 text-rose-300 px-1.5 py-0.5 rounded uppercase tracking-widest border border-rose-500/30">Ret</span>
                                                                         </div>
-                                                                        <div className="flex items-center gap-1.5 text-[11px] font-medium text-white/50 uppercase tracking-widest mt-0.5">
-                                                                            <span className="text-sm leading-none drop-shadow-sm">{getFlag(player.nationality)}</span> {player.nationality}
+                                                                        <div className="flex items-center gap-1.5 text-[11px] font-semibold text-white/50 uppercase tracking-widest mt-0.5">
+                                                                            <span className="text-sm leading-none drop-shadow-sm grayscale opacity-60">{getFlag(player.nationality)}</span> {player.nationality}
                                                                         </div>
                                                                     </div>
                                                                 </div>
                                                             </td>
 
-                                                            <td className="py-2.5 px-2 text-center">
+                                                            <td className="py-3 px-2 text-center">
                                                                 <div className="text-[8px] text-white/40 uppercase tracking-widest font-semibold">Peak Pts</div>
-                                                                <span className="text-xl font-bold text-white/60 tabular-nums tracking-tight">{player.peakPoints.toLocaleString()}</span>
+                                                                <span className="text-xl font-medium text-white/60 tabular-nums">{player.peakPoints.toLocaleString()}</span>
                                                             </td>
 
-                                                            <td className="py-2.5 px-2 text-center text-white/30">-</td>
-                                                            <td className="py-2.5 px-2 text-center text-white/30">-</td>
-                                                            <td className="py-2.5 px-2 text-center text-white/30">-</td>
+                                                            <td className="py-3 px-2 text-center text-white/30">-</td>
+                                                            <td className="py-3 px-2 text-center text-white/30">-</td>
+                                                            <td className="py-3 px-2 text-center text-white/30">-</td>
                                                             
-                                                            <td className="py-2.5 px-2 text-center text-sm font-medium text-white/85 tabular-nums">{player.stats.totalPlayed}</td>
-                                                            <td className="py-2.5 px-2 text-center text-white/85 font-medium text-sm tabular-nums">{player.stats.wins} - {player.stats.losses}</td>
-                                                            <td className="py-2.5 px-4 text-center">
+                                                            <td className="py-3 px-2 text-center text-sm font-medium text-white/60 tabular-nums">{player.stats.totalPlayed}</td>
+                                                            <td className="py-3 px-2 text-center text-white/60 font-medium text-sm tabular-nums">{player.stats.wins} - {player.stats.losses}</td>
+                                                            <td className="py-3 px-4 text-center">
                                                                 <div className="flex flex-col items-center justify-center">
                                                                     <span className="text-[8px] text-white/40 uppercase tracking-widest font-semibold">Peak Rank</span>
-                                                                    <span className="text-white/60 font-semibold text-base tabular-nums">#{player.peakRank}</span>
+                                                                    <span className="text-white/60 font-medium text-base">#{player.peakRank}</span>
                                                                 </div>
                                                             </td>
                                                         </tr>
