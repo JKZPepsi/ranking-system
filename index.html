@@ -4550,6 +4550,21 @@
 
             useEffect(() => { if (!tabs.find(t => t.id === activeTab)) setActiveTab(tabs[0].id); }, [tabs, activeTab]);
 
+            // RESTORED: Smart Panning function
+            const handleTabChange = (tabId) => {
+                setActiveTab(tabId);
+                setTimeout(() => {
+                    if (!scrollContainerRef.current) return;
+                    const el = scrollContainerRef.current;
+                    const sh = el.scrollHeight; 
+                    
+                    if (tabId === 'all' || tabId === 'top' || tabId === 'f4' || tabId === 'q1') el.scrollTo({ top: 0, left: 0, behavior: 'smooth' });
+                    else if (tabId === 'bottom' || tabId === 'q4') el.scrollTo({ top: sh, left: 0, behavior: 'smooth' });
+                    else if (tabId === 'q2') el.scrollTo({ top: sh * 0.33, left: 0, behavior: 'smooth' });
+                    else if (tabId === 'q3') el.scrollTo({ top: sh * 0.66, left: 0, behavior: 'smooth' });
+                }, 50);
+            };
+
             // SMART BRACKET SLICER LOGIC
             const shouldShowMatch = (tab, r, m, len) => {
                 if (tab === 'all') return true;
@@ -4609,25 +4624,24 @@
                 const p = getPlayer(pId);
                 const isBye = match.type === 'bye';
                 const isTBD = pId == null;
-                // FIX: null === null evaluated to true previously. Ensuring pId exists first.
                 const isWinner = !isTBD && match.winner === pId && !isBye;
                 const isLoser = !isTBD && match.winner != null && match.winner !== pId && !isBye;
                 
                 return (
-                    <div className={`relative px-4 py-1.5 flex items-center justify-between transition-colors h-[32px] ${isTop ? 'border-b border-white/[0.05]' : ''} ${isWinner ? 'bg-white/[0.05]' : 'bg-transparent'}`}>
-                        {isWinner && <div className="absolute left-0 top-0 bottom-0 w-[4px] rounded-r" style={{ backgroundColor: tierConf.hex }}></div>}
+                    <div className={`relative px-4 py-2.5 flex items-center justify-between transition-colors ${isTop ? 'border-b border-royal-800/50' : ''} ${isWinner ? 'bg-white/[0.04]' : 'bg-transparent'}`}>
+                        {isWinner && <div className="absolute left-0 top-0 bottom-0 w-[5px] rounded-r" style={{ backgroundColor: tierConf.hex }}></div>}
                         <div className={`flex items-center gap-3 w-full pr-2 ${isLoser ? 'opacity-40 grayscale' : ''}`}>
                             {isTBD ? (
-                                <div className="w-5 h-5 rounded-full bg-white/5 shrink-0 border border-white/10 flex items-center justify-center">
-                                    <span className="text-[8px] text-white/30 font-bold">TBD</span>
+                                <div className="w-6 h-6 rounded-full bg-royal-800 shrink-0 border border-royal-700 flex items-center justify-center">
+                                    <span className="text-[9px] text-royal-500 font-bold">TBD</span>
                                 </div>
                             ) : (
                                 <>
-                                    <img src={p.images?.[0] || p.imageUrl || "https://via.placeholder.com/40"} className="w-5 h-5 rounded-full object-cover shrink-0 shadow-sm border border-white/10" />
+                                    <img src={p.images?.[0] || p.imageUrl || "https://via.placeholder.com/40"} className={`w-7 h-7 rounded-full object-cover shrink-0 shadow-sm ${isWinner ? 'ring-2 ring-offset-2 ring-offset-royal-900' : 'border border-royal-700'}`} style={{ '--tw-ring-color': isWinner ? tierConf.hex : undefined }} />
                                     <div className="flex flex-col min-w-0">
-                                        <span onClick={tournament.status === 'completed' ? (e) => { e.stopPropagation(); onNavigate('players', pId); } : undefined} className={`text-xs font-semibold flex items-center truncate ${isWinner ? 'text-white' : 'text-white/70'} ${tournament.status === 'completed' ? 'hover:underline cursor-pointer hover:text-gold-400' : ''}`}>
+                                        <span onClick={tournament.status === 'completed' ? (e) => { e.stopPropagation(); onNavigate('players', pId); } : undefined} className={`text-sm font-semibold flex items-center truncate ${isWinner ? 'text-white' : 'text-royal-100'} ${tournament.status === 'completed' ? 'hover:underline cursor-pointer hover:text-gold-400' : ''}`}>
                                             {getFlag(p.nationality)} <span className="ml-2 truncate tracking-wide">{p.name}</span>
-                                            {getSeedText(tournament, pId) && <span className="ml-1.5 text-[8px] text-white/40 font-mono tracking-tighter bg-white/10 px-1 rounded">{getSeedText(tournament, pId)}</span>}
+                                            {getSeedText(tournament, pId) && <span className="ml-1.5 text-[9px] text-royal-400 font-mono tracking-tighter bg-royal-800 px-1 rounded border border-royal-700">{getSeedText(tournament, pId)}</span>}
                                         </span>
                                     </div>
                                 </>
@@ -4638,19 +4652,19 @@
                                 {match.type === 'random' ? '🎲 Toss' : match.type === 'lopsided' ? '🔥 DOM' : '⚔️ CLS'}
                             </span>
                         )}
-                        {isBye && <span className="text-[9px] font-bold text-white/30 uppercase tracking-widest shrink-0">BYE</span>}
+                        {isBye && <span className="text-[10px] font-bold text-royal-500 uppercase tracking-widest shrink-0">BYE</span>}
                     </div>
                 );
             };
 
-            const mapQuery = `${tournament.name} ${getCountryName(tournament.hostCountry)}`;
+            const mapQuery = tournament.location || tournament.hostCountry || 'Earth';
 
             return (
-                <div className="h-full flex flex-col pb-20 relative max-w-[1600px] mx-auto w-full">
+                <div className="h-full flex flex-col pb-20 relative">
                     {/* Header Area */}
                     <div className="flex justify-between items-start md:items-center mb-6 shrink-0 relative z-20">
                         <div>
-                            <button onClick={onBack} className="flex items-center gap-2 text-white/50 hover:text-white transition-colors mb-2 text-sm font-medium">
+                            <button onClick={onBack} className="flex items-center gap-2 text-royal-300 hover:text-white transition-colors mb-2 text-sm font-medium">
                                 <ArrowLeft className="w-4 h-4" /> Back to Tournaments
                             </button>
                             <h1 className="text-2xl md:text-3xl font-bold text-white flex items-center gap-3">
@@ -4668,10 +4682,10 @@
                                 <div className="flex items-center gap-2 bg-[#be123c]/10 border border-[#be123c]/30 p-2 rounded-lg">
                                     <span className="text-[#e11d48] text-sm font-bold">Delete Tournament?</span>
                                     <button onClick={handleDelete} className="bg-[#be123c] hover:bg-[#9f1239] text-white px-3 py-1 rounded text-sm font-bold transition-colors">Yes</button>
-                                    <button onClick={() => setShowDelete(false)} className="text-white/50 hover:text-white text-sm px-2 font-medium">Cancel</button>
+                                    <button onClick={() => setShowDelete(false)} className="text-royal-300 hover:text-white text-sm px-2 font-medium">Cancel</button>
                                 </div>
                             ) : (
-                                <button onClick={() => setShowDelete(true)} className="flex items-center gap-2 text-[#e11d48] hover:text-[#fb7185] text-sm font-bold bg-[#05100c] px-3 py-2 rounded-lg border border-white/10 transition-colors shadow-md"><Trash2 size={16}/> Delete</button>
+                                <button onClick={() => setShowDelete(true)} className="flex items-center gap-2 text-[#e11d48] hover:text-[#fb7185] text-sm font-bold bg-royal-950 px-3 py-2 rounded-lg border border-royal-800 transition-colors"><Trash2 size={16}/> Delete</button>
                             )}
                         </div>
                     </div>
@@ -4683,20 +4697,19 @@
                     )}
 
                     {/* Bracket Container with Satellite Map Background */}
-                    <div className="flex-1 overflow-auto bg-[#05100c] rounded-2xl shadow-2xl custom-scrollbar relative border border-white/5 flex flex-col">
+                    <div className="flex-1 overflow-auto bg-royal-950 rounded-2xl shadow-2xl custom-scrollbar relative border border-royal-800 flex flex-col">
                         
                         {/* Map Background Layer */}
-                        <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden opacity-15 mix-blend-screen grayscale blur-[1px]">
+                        <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden opacity-20 mix-blend-screen">
                             <iframe 
-                                src={`https://maps.google.com/maps?q=${encodeURIComponent(mapQuery)}&t=k&z=11&ie=UTF8&iwloc=&output=embed`} 
-                                className="w-[120%] h-[120%] -translate-x-[10%] -translate-y-[10%]"
+                                src={`https://maps.google.com/maps?q=${encodeURIComponent(mapQuery)}&t=k&z=13&ie=UTF8&iwloc=&output=embed`} 
+                                className="w-[120%] h-[120%] -translate-x-[10%] -translate-y-[10%] blur-sm grayscale"
                                 frameBorder="0"
-                                loading="lazy"
                             />
                         </div>
 
                         {/* Solid Sticky Header Row */}
-                        <div className="flex min-w-max sticky top-0 z-40 bg-[#05100c]/90 backdrop-blur-xl border-b border-white/10 pb-3 pt-6 px-8">
+                        <div className="flex min-w-max sticky top-0 z-40 bg-royal-950/80 backdrop-blur-xl border-b border-royal-800 pb-3 pt-6 px-8">
                             {parsedBracket.map((round, rIdx) => {
                                 if (!round.some((_, mIdx) => shouldShowMatch(activeTab, rIdx, mIdx, round.length))) return null;
                                 
@@ -4704,9 +4717,9 @@
                                 const showHeaderTrophy = isFinalRound && round[0];
 
                                 return (
-                                    <div key={`header-${rIdx}`} className="w-64 shrink-0 mr-12 text-center flex flex-col items-center justify-end min-h-[40px]">
+                                    <div key={`header-${rIdx}`} className="w-72 shrink-0 mr-12 text-center flex flex-col items-center justify-end min-h-[40px]">
                                         {showHeaderTrophy && <DynamicTrophy tier={tierKey} result="Winner" country={tournament.hostCountry} size={40} className="mb-2 drop-shadow-xl" />}
-                                        <div className="flex items-center justify-center gap-2 text-white font-bold uppercase tracking-widest text-[11px]" style={{ color: isFinalRound ? tierConf.hex : undefined }}>
+                                        <div className="flex items-center justify-center gap-2 text-white font-bold uppercase tracking-widest text-xs" style={{ color: isFinalRound ? tierConf.hex : undefined }}>
                                             {isFinalRound && !showHeaderTrophy && <Trophy className="w-3 h-3 inline-block opacity-80" style={{ color: tierConf.hex }} />}
                                             {ROUND_NAMES[rIdx + rOffset]}
                                         </div>
@@ -4722,7 +4735,7 @@
                                 if (!round.some((_, mIdx) => shouldShowMatch(activeTab, rIdx, mIdx, round.length))) return null;
                                 
                                 return (
-                                    <div key={`col-${rIdx}`} className="flex flex-col w-64 shrink-0 mr-12 py-1">
+                                    <div key={`col-${rIdx}`} className="flex flex-col w-72 shrink-0 mr-12 py-2">
                                         {round.map((match, mIdx) => {
                                             if (!shouldShowMatch(activeTab, rIdx, mIdx, round.length)) return null;
                                             
@@ -4730,33 +4743,27 @@
                                             const isReady = match.p1 && match.p2 && !match.winner && tournament.status !== 'completed' && match.type !== 'bye';
                                             
                                             // Ensure absolute connectors are only drawn to elements that are ALSO visible
-                                            const isFirstVisibleRoundInTab = (activeTab.startsWith('q') || activeTab === 'top' || activeTab === 'bottom' || activeTab === 'f4' || activeTab === 'final32' || activeTab === 'final16' || activeTab === 'final8') 
-                                                ? !shouldShowMatch(activeTab, rIdx - 1, mIdx * 2, round.length * 2) 
-                                                : rIdx === 0;
+                                            const isFirstVisibleRoundInTab = (activeTab.startsWith('q') || activeTab === 'top' || activeTab === 'bottom' || activeTab === 'f4') ? !shouldShowMatch(activeTab, rIdx - 1, mIdx * 2, round.length * 2) : rIdx === 0;
 
                                             return (
-                                                <div key={match.id} className="relative flex flex-col justify-center" style={{ flex: 1, minHeight: '74px' }}>
+                                                <div key={match.id} className="relative flex flex-col justify-center" style={{ flex: 1, minHeight: '80px' }}>
                                                     <div onClick={() => handleMatchClick(rIdx, mIdx, match)} 
-                                                         className={`relative z-20 rounded-xl transition-all duration-300 overflow-hidden flex flex-col ${
+                                                         className={`relative z-20 rounded-2xl transition-all duration-300 overflow-hidden flex flex-col my-1.5 ${
                                                              isReady 
-                                                             ? 'cursor-pointer hover:scale-105 z-30 bg-white/[0.1] shadow-[0_4px_25px_rgba(0,0,0,0.6)] border border-white/30 backdrop-blur-md' 
+                                                             ? 'cursor-pointer hover:scale-[1.02] bg-royal-800 shadow-[0_4px_20px_rgba(0,0,0,0.5)] border border-royal-600' 
                                                              : match.winner 
-                                                                 ? 'bg-[#030806] border border-white/10 shadow-sm' 
-                                                                 : 'bg-black/40 border border-white/[0.05] opacity-60 backdrop-blur-sm'
+                                                                 ? 'bg-royal-900 border border-royal-800' 
+                                                                 : 'bg-royal-950/60 border border-royal-900 opacity-60 backdrop-blur-sm'
                                                          }`}
-                                                         style={{ 
-                                                             borderColor: isReady ? tierConf.hex : undefined,
-                                                             boxShadow: isReady ? `0 0 20px ${tierConf.hex}40` : undefined
-                                                         }}>
+                                                         style={{ borderColor: isReady ? tierConf.hex : undefined }}>
                                                         {renderMatchParticipant(match, match.p1, true)}
-                                                        <div className="h-px w-full bg-white/5"></div>
                                                         {renderMatchParticipant(match, match.p2, false)}
                                                     </div>
                                                     
-                                                    {/* Ultra-visible White Connector Lines */}
-                                                    {!isFirstVisibleRoundInTab && <div className="absolute -left-[24px] top-1/2 w-[24px] h-[2px] bg-white/30 z-10"></div>}
-                                                    {rIdx < totalRounds - 1 && <div className="absolute -right-[24px] top-1/2 w-[24px] h-[2px] bg-white/30 z-10"></div>}
-                                                    {rIdx < totalRounds - 1 && mIdx % 2 === 0 && <div className="absolute -right-[24px] top-1/2 w-[2px] bg-white/30 z-10" style={{ height: '100%' }}></div>}
+                                                    {/* Pure CSS Connector Lines */}
+                                                    {!isFirstVisibleRoundInTab && <div className="absolute -left-[24px] top-1/2 w-[24px] h-[2px] bg-royal-700 z-10"></div>}
+                                                    {rIdx < totalRounds - 1 && <div className="absolute -right-[24px] top-1/2 w-[24px] h-[2px] bg-royal-700 z-10"></div>}
+                                                    {rIdx < totalRounds - 1 && mIdx % 2 === 0 && <div className="absolute -right-[24px] top-1/2 w-[2px] bg-royal-700 z-10" style={{ height: '100%' }}></div>}
                                                 </div>
                                             );
                                         })}
