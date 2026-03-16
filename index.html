@@ -3444,6 +3444,7 @@
             const [editRetired, setEditRetired] = useState(false);
             const [isSaving, setIsSaving] = useState(false);
             const [showDelete, setShowDelete] = useState(false);
+            const [lightboxIndex, setLightboxIndex] = useState(null);
 
             useEffect(() => {
                 if (player) {
@@ -3481,6 +3482,9 @@
                 catch (err) { console.error(err); }
             };
 
+            const handleNextImg = (e) => { e.stopPropagation(); setLightboxIndex(prev => (prev === player.images.length - 1 ? 0 : prev + 1)); };
+            const handlePrevImg = (e) => { e.stopPropagation(); setLightboxIndex(prev => (prev === 0 ? player.images.length - 1 : prev - 1)); };
+
             const matchHistory = useMemo(() => {
                 if (!player) return [];
                 let matches = [];
@@ -3511,14 +3515,15 @@
                             });
                         });
                     } else {
-                        let pb = []; try { pb = typeof t.bracket === 'string' ? JSON.parse(t.bracket) : (t.bracket || []); } catch(e){}
-                        if (!Array.isArray(pb)) return;
+                        let parsedBracket = [];
+                        try { parsedBracket = typeof t.bracket === 'string' ? JSON.parse(t.bracket) : (t.bracket || []); } catch(e){}
+                        if (!Array.isArray(parsedBracket)) return;
                         
-                        pb.forEach((round, rIdx) => {
+                        parsedBracket.forEach((round, rIdx) => {
                             if (!Array.isArray(round)) return;
                             round.forEach(m => {
                                 if (m && (m.p1 === player.id || m.p2 === player.id) && m.winner && m.type !== 'bye') {
-                                    const rOffset = 6 - pb.length;
+                                    const rOffset = 6 - parsedBracket.length;
                                     const oppId = m.p1 === player.id ? m.p2 : m.p1;
                                     const oppName = players.find(p => p.id === oppId)?.name || 'Unknown';
                                     matches.push({ tournamentId: t.id, tournamentName: t.name, tier: getTournamentTier(t), roundName: ROUND_NAMES[rIdx + rOffset], roundIndex: rIdx + rOffset, opponentId: oppId, opponentName: oppName, isWin: m.winner === player.id, type: m.type, date: t.completedAt || t.createdAt });
@@ -3622,7 +3627,7 @@
                     {!isEditing && <FloatingPlayerNav hasGallery={player.images?.length > 1} />}
 
                     <div className="mb-6 xl:pl-4">
-                        <button onClick={onBack} className="flex items-center gap-2 text-white/50 hover:text-white transition-colors text-sm font-medium"><ArrowLeft size={16}/> Back to Roster</button>
+                        <button onClick={onBack} className="flex items-center gap-2 text-royal-300 hover:text-white transition-colors text-sm font-medium"><ArrowLeft size={16}/> Back to Roster</button>
                     </div>
 
                     {isEditing ? (
@@ -3684,24 +3689,24 @@
                             <div id="player-overview" className="relative rounded-3xl overflow-hidden border border-white/10 bg-[#05100c] shadow-2xl mb-2 scroll-mt-8 group/hero">
                                 {/* Blurred Background */}
                                 <div className="absolute inset-0 z-0 overflow-hidden">
-                                    <PlayerMedia url={player.images?.[0] || player.imageUrl} className={`w-full h-full object-cover blur-3xl opacity-40 scale-110 transition-transform duration-1000 ${player.retired ? 'grayscale' : ''}`} />
+                                    <PlayerMedia url={player.images?.[0] || player.imageUrl} className={`w-full h-full object-cover blur-3xl opacity-30 scale-125 transition-transform duration-1000 ${player.retired ? 'grayscale' : ''}`} />
                                 </div>
                                 {/* Dark Gradient Overlay */}
-                                <div className="absolute inset-0 bg-gradient-to-t from-[#05100c] via-[#05100c]/70 to-[#05100c]/20 z-0"></div>
+                                <div className="absolute inset-0 bg-gradient-to-t from-[#05100c] via-[#05100c]/80 to-[#05100c]/30 z-0"></div>
 
                                 {/* Edit Button */}
                                 <button onClick={() => setIsEditing(true)} className="absolute top-6 right-6 bg-black/40 backdrop-blur-md p-2.5 rounded-xl border border-white/10 hover:border-gold-500/50 transition-colors z-20 shadow-lg text-white/50 hover:text-gold-400">
                                     <Edit2 size={16} />
                                 </button>
 
-                                <div className="relative z-10 px-8 pt-16 pb-8 flex flex-col items-center text-center">
-                                    {/* Crisp Avatar */}
-                                    <div className="w-32 h-32 md:w-40 md:h-40 rounded-full overflow-hidden border-4 border-[#05100c] shadow-2xl bg-black relative mb-6">
+                                <div className="relative z-10 px-8 pt-16 pb-12 flex flex-col items-center text-center">
+                                    {/* Massive Crisp Avatar */}
+                                    <div className="w-48 h-48 md:w-64 md:h-64 rounded-full overflow-hidden border-4 border-[#05100c] shadow-[0_0_50px_rgba(0,0,0,0.8)] ring-2 ring-white/10 bg-black relative mb-8">
                                         <PlayerMedia url={player.images?.[0] || player.imageUrl} className={`w-full h-full object-cover ${player.retired ? 'grayscale opacity-80' : ''}`} />
                                     </div>
 
                                     {/* Identification */}
-                                    <h1 className="text-4xl md:text-5xl font-bold text-white tracking-tight flex items-center justify-center gap-3 mb-3">
+                                    <h1 className="text-4xl md:text-5xl font-black text-white tracking-tight flex items-center justify-center gap-3 mb-4">
                                         {player.name}
                                         {player.retired && <span className="text-[10px] px-2 py-1 bg-rose-500/20 text-rose-300 border border-rose-500/30 rounded uppercase tracking-widest align-middle flex items-center gap-1.5 shadow-sm"><span className="w-1.5 h-1.5 rounded-full bg-rose-400"></span> RETIRED</span>}
                                     </h1>
@@ -3839,16 +3844,43 @@
                                 </div>
                             </div>
 
-                            {/* Gallery */}
+                            {/* Full-Width Interactive Grid Gallery */}
                             {player.images?.length > 1 && (
                                 <div id="player-gallery" className="bg-[#05100c] rounded-2xl border border-white/[0.05] p-8 shadow-xl scroll-mt-8">
                                     <h2 className="text-xl font-bold text-white mb-6 flex items-center gap-2"><GalleryIcon size={22} className="text-white/60"/> Media Gallery</h2>
-                                    <div className="flex gap-5 overflow-x-auto pb-2 custom-scrollbar snap-x">
+                                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                                         {player.images.map((img, i) => (
-                                            <div key={i} className="w-56 h-72 shrink-0 rounded-xl overflow-hidden bg-black snap-start shadow-md border border-white/5">
-                                                <PlayerMedia url={img} className="w-full h-full object-cover hover:scale-105 transition-transform duration-500" />
+                                            <div key={i} onClick={() => setLightboxIndex(i)} className="w-full aspect-[3/4] cursor-pointer rounded-xl overflow-hidden bg-black shadow-md border border-white/5 relative group">
+                                                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors z-10 duration-300"></div>
+                                                <PlayerMedia url={img} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
                                             </div>
                                         ))}
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Lightbox Modal */}
+                            {lightboxIndex !== null && (
+                                <div className="fixed inset-0 z-[200] bg-black/95 backdrop-blur-3xl flex items-center justify-center animate-in fade-in duration-200" onClick={() => setLightboxIndex(null)}>
+                                    <button className="absolute top-6 right-6 text-white/50 hover:text-white bg-white/10 p-3 rounded-full backdrop-blur-md transition-colors z-50 hover:bg-white/20" onClick={(e) => { e.stopPropagation(); setLightboxIndex(null); }}>
+                                        <X size={24} />
+                                    </button>
+                                    
+                                    <button className="absolute left-4 md:left-12 top-1/2 -translate-y-1/2 text-white/50 hover:text-white bg-white/10 p-4 rounded-full backdrop-blur-md transition-all z-50 hover:scale-110 hover:bg-white/20" onClick={handlePrevImg}>
+                                        <ChevronLeft size={32} />
+                                    </button>
+                                    
+                                    {/* The contained image wrapper to ensure it doesn't get weirdly stretched by PlayerMedia's object-cover */}
+                                    <div className="w-[85vw] h-[85vh] max-w-4xl flex items-center justify-center relative shadow-2xl rounded-2xl overflow-hidden" onClick={e => e.stopPropagation()}>
+                                        <PlayerMedia url={player.images[lightboxIndex]} className="absolute inset-0 w-full h-full" />
+                                    </div>
+                                    
+                                    <button className="absolute right-4 md:right-12 top-1/2 -translate-y-1/2 text-white/50 hover:text-white bg-white/10 p-4 rounded-full backdrop-blur-md transition-all z-50 hover:scale-110 hover:bg-white/20" onClick={handleNextImg}>
+                                        <ChevronRight size={32} />
+                                    </button>
+
+                                    <div className="absolute bottom-8 left-1/2 -translate-x-1/2 text-white/60 font-bold tracking-widest text-sm bg-white/10 px-6 py-2.5 rounded-full backdrop-blur-md border border-white/5">
+                                        {lightboxIndex + 1} / {player.images.length}
                                     </div>
                                 </div>
                             )}
@@ -3876,7 +3908,7 @@
                                 )}
                             </div>
 
-                            {/* Charts Wrapper (Original code remains, just placed inside the new structure) */}
+                            {/* Charts Wrapper */}
                             <div id="player-charts" className="space-y-6 scroll-mt-8">
                                 <div className="bg-[#05100c] p-6 lg:p-8 rounded-2xl border border-white/[0.05] shadow-xl">
                                     <h2 className="text-xl font-bold text-white flex items-center gap-2 mb-6"><AnalyticsIcon size={24} className="text-gold-500"/> Career Ranking Trajectory</h2>
@@ -3910,19 +3942,8 @@
                 <div className="fixed right-8 top-1/2 -translate-y-1/2 flex flex-col gap-3 z-50 bg-[#05100c]/80 backdrop-blur-2xl p-3 rounded-2xl border border-white/10 shadow-[0_20px_40px_rgba(0,0,0,0.8)] hidden xl:flex w-24">
                     <div className="text-[9px] text-white/40 uppercase tracking-widest font-bold text-center pb-2 border-b border-white/10 w-full mb-1">Jump</div>
                     
-                    <button onClick={() => scrollToSection('player-tournaments')} className="p-3 w-full bg-white/[0.03] hover:bg-gold-500 hover:text-[#05100c] text-white/60 rounded-xl transition-all hover:scale-105 group flex flex-col items-center justify-center gap-1.5 border border-transparent hover:border-gold-400">
-                        <Star size={20}/>
-                        <span className="text-[9px] font-bold uppercase tracking-wider text-center">Results</span>
-                    </button>
-
-                    <button onClick={() => scrollToSection('player-matches')} className="p-3 w-full bg-white/[0.03] hover:bg-emerald-500 hover:text-[#05100c] text-white/60 rounded-xl transition-all hover:scale-105 group flex flex-col items-center justify-center gap-1.5 border border-transparent hover:border-emerald-400">
-                        <History size={20}/>
-                        <span className="text-[9px] font-bold uppercase tracking-wider text-center">Matches</span>
-                    </button>
-                    
-                    <button onClick={() => scrollToSection('player-h2h')} className="p-3 w-full bg-white/[0.03] hover:bg-sky-400 hover:text-[#05100c] text-white/60 rounded-xl transition-all hover:scale-105 group flex flex-col items-center justify-center gap-1.5 border border-transparent hover:border-sky-300">
-                        <PlayersIcon size={20}/>
-                        <span className="text-[9px] font-bold uppercase tracking-wider text-center">H2H</span>
+                    <button onClick={scrollToTop} className="p-2 w-full text-white/30 hover:text-white transition-colors group flex flex-col items-center justify-center gap-1 mb-1">
+                        <ArrowUpIcon size={16}/>
                     </button>
 
                     {hasGallery && (
