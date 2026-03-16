@@ -3967,7 +3967,7 @@
             );
         }
 
-        function TournamentsView({ tournaments, onSelect, onCreate }) {
+        function TournamentsView({ tournaments, onSelect, onCreate, onEdit }) {
             const [search, setSearch] = useState('');
             const [filterTier, setFilterTier] = useState('All');
             
@@ -3983,70 +3983,82 @@
                 });
             }, [tournaments, search, filterTier]);
 
-            const tierOptions = [
-                { value: 'All', label: 'All Tiers' },
-                ...Object.entries(TOURNAMENT_TIERS).map(([k, conf]) => ({ value: k, label: conf.name }))
-            ];
-
             return (
                 <div className="max-w-7xl mx-auto space-y-6 pb-20">
-                    <SectionHeader 
-                        title="Tournaments" 
-                        subtitle="Manage events, resolve matches, and track history."
-                        icon={TournamentsIcon}
-                        rightContent={
-                            <button onClick={onCreate} className="bg-gold-500 hover:bg-gold-400 text-royal-950 px-6 py-2.5 rounded-xl font-bold flex items-center gap-2 transition-all shadow-[0_0_15px_rgba(212,175,55,0.2)] hover:shadow-[0_0_20px_rgba(212,175,55,0.4)]">
-                                <Plus size={18}/> Create Event
-                            </button>
-                        }
-                    />
+                    <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                        <div>
+                            <h1 className="text-3xl font-bold text-white flex items-center gap-3"><TournamentsIcon size={32} className="text-gold-500"/> Tournaments</h1>
+                            <p className="text-royal-300 mt-2 text-sm">Manage events, resolve matches, and track history.</p>
+                        </div>
+                        <button onClick={onCreate} className="bg-gold-500 hover:bg-gold-400 text-royal-950 px-6 py-2.5 rounded-xl font-bold flex items-center gap-2 transition-all shadow-[0_0_15px_rgba(212,175,55,0.2)] hover:shadow-[0_0_20px_rgba(212,175,55,0.4)] hover:-translate-y-0.5">
+                            <Plus size={18}/> Create Event
+                        </button>
+                    </div>
 
                     <div className="bg-[#05100c] p-4 rounded-2xl border border-white/[0.05] flex flex-col md:flex-row gap-4 shadow-lg">
                         <div className="relative flex-1">
-                            <input type="text" placeholder="Search tournaments..." className="w-full bg-white/[0.02] border border-white/10 text-white/90 px-4 py-2.5 pl-10 rounded-xl focus:outline-none focus:border-gold-500/50 transition-colors" value={search} onChange={e => setSearch(e.target.value)} />
-                            <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-white/40" />
+                            <input type="text" placeholder="Search tournaments..." className="w-full bg-white/[0.02] border border-white/10 text-white/90 px-4 py-3 pl-11 rounded-xl focus:outline-none focus:border-gold-500/50 transition-colors" value={search} onChange={e => setSearch(e.target.value)} />
+                            <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-white/40" />
                         </div>
-                        <GlassDropdown value={filterTier} onChange={setFilterTier} options={tierOptions} placeholder="All Tiers" />
+                        <div className="flex bg-white/[0.02] p-1 rounded-xl border border-white/10 overflow-x-auto custom-scrollbar">
+                            <button onClick={() => setFilterTier('All')} className={`px-4 py-2 rounded-lg text-sm font-bold whitespace-nowrap transition-colors ${filterTier === 'All' ? 'bg-white/10 text-white' : 'text-white/40 hover:text-white/80'}`}>All Tiers</button>
+                            {Object.entries(TOURNAMENT_TIERS).map(([k, conf]) => (
+                                <button key={k} onClick={() => setFilterTier(k)} className={`px-4 py-2 rounded-lg text-sm font-bold whitespace-nowrap transition-colors ${filterTier === k ? 'bg-white/10 text-white' : 'text-white/40 hover:text-white/80'}`}>{conf.name}</button>
+                            ))}
+                        </div>
                     </div>
 
-                    <div className="grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
+                    <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-6">
                         {filteredTournaments.map(t => {
                             const tierKey = getTournamentTier(t);
                             const tierConf = TOURNAMENT_TIERS[tierKey];
                             const drawSize = getDrawSize(t);
                             const isActive = t.status === 'active';
+                            const mapQuery = `${t.name} ${getCountryName(t.hostCountry)}`;
                             
                             return (
-                                <div key={t.id} onClick={() => onSelect(t.id)} className="bg-[#05100c] border border-white/[0.05] hover:border-white/20 rounded-2xl p-6 cursor-pointer hover:shadow-2xl hover:-translate-y-1 transition-all duration-300 group flex flex-col h-full relative overflow-hidden">
-                                    {/* Ambient Glow */}
-                                    <div className="absolute top-0 right-0 w-32 h-32 blur-[50px] opacity-20 pointer-events-none transition-opacity group-hover:opacity-40" style={{ backgroundColor: tierConf?.hex }}></div>
+                                <div key={t.id} onClick={() => onSelect(t.id)} className="bg-[#05100c] border border-white/[0.05] hover:border-white/20 rounded-2xl cursor-pointer hover:shadow-[0_15px_40px_rgba(0,0,0,0.6)] hover:-translate-y-1 transition-all duration-300 group flex flex-col h-[220px] relative overflow-hidden">
                                     
-                                    <div className="flex-1 relative z-10">
-                                        <div className="flex justify-between items-start mb-4">
-                                            <span className={`text-[10px] uppercase font-bold tracking-widest px-2.5 py-1 rounded-md ${tierConf?.bg || 'bg-white/10'} ${tierConf?.color || 'text-white/60'}`}>
+                                    {/* Glassmorphic Satellite Map Background */}
+                                    <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden opacity-[0.15] group-hover:opacity-30 mix-blend-screen grayscale transition-opacity duration-500">
+                                        <iframe src={`https://maps.google.com/maps?q=${encodeURIComponent(mapQuery)}&t=k&z=11&ie=UTF8&iwloc=&output=embed`} className="w-[150%] h-[150%] -translate-x-[25%] -translate-y-[25%] blur-[2px]" frameBorder="0" loading="lazy" />
+                                    </div>
+                                    
+                                    {/* Ambient Glow */}
+                                    <div className="absolute top-0 right-0 w-48 h-48 blur-[60px] opacity-20 pointer-events-none transition-opacity group-hover:opacity-40" style={{ backgroundColor: tierConf?.hex }}></div>
+                                    <div className="absolute inset-0 bg-gradient-to-b from-transparent to-[#05100c] z-0"></div>
+                                    
+                                    <div className="flex-1 relative z-10 flex flex-col p-6">
+                                        <div className="flex justify-between items-start mb-auto">
+                                            <span className={`text-[10px] uppercase font-bold tracking-widest px-2.5 py-1 rounded-md shadow-sm border ${tierConf?.bg || 'bg-white/10'} ${tierConf?.border || 'border-white/20'} ${tierConf?.color || 'text-white/60'}`}>
                                                 {tierConf?.name || 'Tournament'}
                                             </span>
-                                            {isActive ? (
-                                                <span className="text-[10px] uppercase font-bold tracking-widest px-2 py-1 rounded-md bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 flex items-center gap-1.5 shadow-[0_0_10px_rgba(6,182,212,0.2)]">
-                                                    <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse"></span> LIVE
-                                                </span>
-                                            ) : (
-                                                <span className="text-[10px] uppercase font-bold tracking-widest text-white/30">Completed</span>
-                                            )}
+                                            <div className="flex gap-2">
+                                                <button onClick={(e) => { e.stopPropagation(); onEdit(t.id); }} className="text-white/30 hover:text-white bg-black/40 backdrop-blur-md p-1.5 rounded-lg border border-white/10 hover:border-white/30 transition-all shadow-sm">
+                                                    <Edit2 size={14}/>
+                                                </button>
+                                                {isActive ? (
+                                                    <span className="text-[10px] uppercase font-bold tracking-widest px-2 py-1 rounded-md bg-cyan-500/10 text-cyan-400 border border-cyan-500/30 flex items-center gap-1.5 shadow-[0_0_8px_rgba(6,182,212,0.3)] backdrop-blur-md"><span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse"></span> ACTIVE</span>
+                                                ) : (
+                                                    <span className="text-[10px] uppercase font-bold tracking-widest px-2 py-1 rounded-md bg-[#059669]/20 text-[#059669] border border-[#059669]/30 backdrop-blur-md">COMPLETED</span>
+                                                )}
+                                            </div>
                                         </div>
 
-                                        <h3 className="font-bold text-xl text-white/95 mb-2 leading-tight group-hover:text-gold-400 transition-colors">
-                                            {t.name}
-                                        </h3>
-                                        
-                                        <div className="flex items-center gap-2 text-sm font-medium text-white/60 mb-6">
-                                            <span className="text-xl drop-shadow-sm">{getFlag(t.hostCountry)}</span>
-                                            {getCountryName(t.hostCountry)}
+                                        <div className="mt-4">
+                                            <h3 className="font-bold text-xl md:text-2xl text-white mb-2 leading-tight group-hover:text-gold-400 transition-colors drop-shadow-md line-clamp-2">
+                                                {t.name}
+                                            </h3>
+                                            {t.description && <p className="text-white/40 text-xs line-clamp-1 mb-3">{t.description}</p>}
+                                            <div className="flex items-center gap-2 text-sm font-medium text-white/70">
+                                                <span className="text-xl drop-shadow-sm leading-none">{getFlag(t.hostCountry)}</span>
+                                                <span className="uppercase tracking-widest text-[10px] font-bold">{getCountryName(t.hostCountry)}</span>
+                                            </div>
                                         </div>
                                     </div>
                                     
-                                    <div className="text-[11px] font-semibold text-white/40 uppercase tracking-widest pt-4 border-t border-white/[0.05] flex justify-between items-center relative z-10">
-                                        <span>{drawSize} Players</span>
+                                    <div className="text-[10px] font-bold text-white/30 uppercase tracking-widest px-6 py-4 border-t border-white/[0.05] bg-[#05100c]/80 backdrop-blur-md flex justify-between items-center relative z-10">
+                                        <span>{drawSize} Participants</span>
                                         <span>{new Date(t.createdAt).toLocaleDateString()}</span>
                                     </div>
                                 </div>
@@ -4062,13 +4074,13 @@
             );
         }
 
-        function CreateTournamentView({ players, onBack, onSuccess, db, appId }) {
+        function CreateTournamentView({ players, onBack, onSuccess, db, appId, editingId, tournaments }) {
             const [name, setName] = useState('');
             const [description, setDescription] = useState('');
             const [hostCountry, setHostCountry] = useState('USA');
-            const [location, setLocation] = useState(''); // NEW: City Map Background
-            const [tier, setTier] = useState('pro');
-            const [size, setSize] = useState(32);
+            const [tier, setTier] = useState('challenger');
+            const [size, setSize] = useState(16);
+            
             const [selectedWildcards, setSelectedWildcards] = useState([]);
             const [withdrawnIds, setWithdrawnIds] = useState([]);
             const [isGenerating, setIsGenerating] = useState(false);
@@ -4077,6 +4089,20 @@
             const [withdrawnSearch, setWithdrawnSearch] = useState('');
             const [errorMsg, setErrorMsg] = useState('');
             
+            // Edit Mode Setup
+            useEffect(() => {
+                if (editingId && tournaments) {
+                    const tToEdit = tournaments.find(t => t.id === editingId);
+                    if (tToEdit) {
+                        setName(tToEdit.name);
+                        setDescription(tToEdit.description || '');
+                        setHostCountry(tToEdit.hostCountry || 'USA');
+                        setTier(tToEdit.tier || 'challenger');
+                        // Prevent messing with bracket size/players once generated, we just let them edit metadata.
+                    }
+                }
+            }, [editingId, tournaments]);
+
             const tierConf = TOURNAMENT_TIERS[tier];
             
             const allowedSizes = useMemo(() => {
@@ -4084,15 +4110,13 @@
                 if (tier === 'grand_slam') return [64];
                 if (tier === 'major') return [32, 64];
                 if (tier === 'pro') return [16, 32, 64];
-                return [8, 16, 32, 64];
+                return [8, 16, 32, 64]; // Challenger
             }, [tier]);
 
             useEffect(() => { 
-                if (!allowedSizes.includes(size)) setSize(allowedSizes[0]);
-                setSelectedWildcards([]); 
-                setWithdrawnIds([]);
-                setErrorMsg('');
-            }, [tier, allowedSizes, size]);
+                if (!editingId && !allowedSizes.includes(size)) setSize(allowedSizes[0]);
+                if (!editingId) { setSelectedWildcards([]); setWithdrawnIds([]); setErrorMsg(''); }
+            }, [tier, allowedSizes, size, editingId]);
 
             let sizeMultiplier = 1;
             if (tier !== 'finals' && tier !== 'grand_slam') {
@@ -4156,194 +4180,209 @@
             const filteredAuto = autoQualifiers.filter(p => p.name.toLowerCase().includes(autoSearch.toLowerCase()) || (p.nationality || '').toLowerCase().includes(autoSearch.toLowerCase()));
             const filteredWithdrawn = withdrawnPlayers.filter(p => p.name.toLowerCase().includes(withdrawnSearch.toLowerCase()) || (p.nationality || '').toLowerCase().includes(withdrawnSearch.toLowerCase()));
 
-            const handleCreate = async () => {
+            const handleCreateOrUpdate = async () => {
                 setErrorMsg('');
                 if (!name.trim()) { setErrorMsg("Please enter a tournament name."); return; }
-                if (autoQualifiers.length + selectedWildcards.length !== size) { setErrorMsg(`You must exactly select ${size} total participants (${reqWc} wildcards required).`); return; }
                 
                 setIsGenerating(true);
                 try {
-                    const selected = [...autoQualifiers, ...remainingPlayers.filter(p => selectedWildcards.includes(p.id))].sort((a,b) => a.rank - b.rank);
-                    let bracket; let format = 'elimination'; let groupMatches = null; let groups = null;
-
-                    if (tier === 'finals') {
-                        const finalsData = generateATPFinalsDraw(selected);
-                        bracket = finalsData.knockout; format = finalsData.format; groupMatches = finalsData.groupMatches; groups = finalsData.groups;
+                    const tRef = editingId ? window.fb.doc(db, 'artifacts', appId, 'public', 'data', 'tournaments', editingId) : window.fb.collection(db, 'artifacts', appId, 'public', 'data', 'tournaments');
+                    
+                    if (editingId) {
+                        // Just update metadata
+                        await window.fb.updateDoc(tRef, { name: name.trim(), description: description.trim(), hostCountry, tier });
+                        onSuccess(editingId);
                     } else {
-                        bracket = JSON.stringify(generateKnockoutDraw(selected, size));
-                    }
+                        if (autoQualifiers.length + selectedWildcards.length !== size) { setErrorMsg(`You must exactly select ${size} total participants (${reqWc} wildcards required).`); setIsGenerating(false); return; }
+                        
+                        const selected = [...autoQualifiers, ...remainingPlayers.filter(p => selectedWildcards.includes(p.id))].sort((a,b) => a.rank - b.rank);
+                        let bracket; let format = 'elimination'; let groupMatches = null; let groups = null;
 
-                    const docRef = await window.fb.addDoc(window.fb.collection(db, 'artifacts', appId, 'public', 'data', 'tournaments'), { 
-                        name: name.trim(), description: description.trim(), hostCountry, location: location.trim(), tier, status: 'active', createdAt: Date.now(), selectedPlayers: selected.map(p => p.id), 
-                        format, bracket, ...(groupMatches ? { groupMatches, groups } : {})
-                    });
-                    onSuccess(docRef.id);
-                } catch (err) { console.error(err); setErrorMsg("Failed to generate the tournament."); }
+                        if (tier === 'finals') {
+                            const finalsData = generateATPFinalsDraw(selected);
+                            bracket = finalsData.knockout; format = finalsData.format; groupMatches = finalsData.groupMatches; groups = finalsData.groups;
+                        } else {
+                            bracket = JSON.stringify(generateKnockoutDraw(selected, size));
+                        }
+
+                        const docRef = await window.fb.addDoc(tRef, { 
+                            name: name.trim(), description: description.trim(), hostCountry, tier, status: 'active', createdAt: Date.now(), selectedPlayers: selected.map(p => p.id), 
+                            format, bracket, ...(groupMatches ? { groupMatches, groups } : {})
+                        });
+                        onSuccess(docRef.id);
+                    }
+                } catch (err) { console.error(err); setErrorMsg(editingId ? "Failed to update tournament." : "Failed to generate the tournament."); }
                 setIsGenerating(false);
             };
 
             const countryOptions = COUNTRIES.map(c => ({ value: c.code, label: `${c.flag} ${c.name}`, searchKey: `${c.name} ${c.code}`, renderLabel: <span className="flex items-center gap-2"><span className="text-lg">{c.flag}</span> <span className="truncate">{c.name}</span></span>, renderOption: <span className="flex items-center gap-3"><span className="text-lg">{c.flag}</span> <span className="font-medium text-sm truncate">{c.name}</span></span> }));
-            const tierOptions = Object.entries(TOURNAMENT_TIERS).map(([k, conf]) => ({ value: k, label: conf.name }));
 
             return (
                 <div className="max-w-5xl mx-auto space-y-6 pb-20">
                     <button onClick={onBack} className="flex items-center gap-2 text-white/50 hover:text-white transition-colors text-sm font-medium"><ArrowLeft size={16}/> Back to Tournaments</button>
                     
-                    <div className="bg-[#05100c] p-8 rounded-2xl border border-white/[0.05] shadow-2xl">
-                        <SectionHeader title="Create Tournament" />
+                    <div className="bg-[#05100c] p-8 rounded-3xl border border-white/[0.05] shadow-2xl">
+                        <SectionHeader title={editingId ? "Edit Tournament" : "Create Tournament"} />
 
-                        <div className="grid md:grid-cols-2 gap-6 mb-6">
+                        <div className="grid md:grid-cols-2 gap-6 mb-6 border-b border-white/10 pb-8">
                             <div>
-                                <label className="block text-xs font-bold text-white/40 uppercase tracking-widest mb-2">Tournament Name</label>
-                                <input type="text" className="w-full bg-white/[0.02] border border-white/10 text-white/90 px-4 py-2.5 rounded-xl focus:outline-none focus:border-gold-500/50 transition-colors" placeholder="e.g. World Championship 2026..." value={name} onChange={e => setName(e.target.value)} />
+                                <label className="block text-[10px] font-bold text-white/40 uppercase tracking-widest mb-2.5">Tournament Name</label>
+                                <input type="text" className="w-full bg-white/[0.02] border border-white/10 text-white/90 px-4 py-3 rounded-xl focus:outline-none focus:border-gold-500/50 transition-colors shadow-inner" placeholder="e.g. World Championship 2026..." value={name} onChange={e => setName(e.target.value)} />
                             </div>
                             <div>
-                                <label className="block text-xs font-bold text-white/40 uppercase tracking-widest mb-2">Host Country</label>
-                                <GlassDropdown value={hostCountry} onChange={setHostCountry} options={countryOptions} hasSearch={true} placeholder="Select Country" />
+                                <label className="block text-[10px] font-bold text-white/40 uppercase tracking-widest mb-2.5">Host Country</label>
+                                <CountrySelect value={hostCountry} onChange={setHostCountry} />
+                                <p className="text-[10px] text-white/30 mt-2 font-medium">Generates a live satellite background from Google Maps.</p>
                             </div>
-                        </div>
-                        
-                        <div className="grid md:grid-cols-2 gap-6 mb-6">
-                            <div>
-                                <label className="block text-xs font-bold text-white/40 uppercase tracking-widest mb-2">City / Map Location (Optional)</label>
-                                <input type="text" className="w-full bg-white/[0.02] border border-white/10 text-white/90 px-4 py-2.5 rounded-xl focus:outline-none focus:border-gold-500/50 transition-colors" placeholder="e.g. Paris, France..." value={location} onChange={e => setLocation(e.target.value)} />
-                                <p className="text-[10px] text-white/30 mt-1">This generates the satellite map background for the bracket.</p>
-                            </div>
-                            <div>
-                                <label className="block text-xs font-bold text-white/40 uppercase tracking-widest mb-2">Description (Optional)</label>
-                                <textarea className="w-full bg-white/[0.02] border border-white/10 text-white/90 px-4 py-2.5 rounded-xl focus:outline-none focus:border-gold-500/50 transition-colors custom-scrollbar" placeholder="A brief description of this event..." value={description} onChange={e => setDescription(e.target.value)} rows="2"></textarea>
+                            <div className="md:col-span-2">
+                                <label className="block text-[10px] font-bold text-white/40 uppercase tracking-widest mb-2.5">Description (Optional)</label>
+                                <textarea className="w-full bg-white/[0.02] border border-white/10 text-white/90 px-4 py-3 rounded-xl focus:outline-none focus:border-gold-500/50 transition-colors custom-scrollbar shadow-inner" placeholder="A brief description of this event..." value={description} onChange={e => setDescription(e.target.value)} rows="2"></textarea>
                             </div>
                         </div>
 
-                        <div className="grid md:grid-cols-2 gap-6 mb-8 border-b border-white/10 pb-8">
+                        <div className="grid md:grid-cols-2 gap-8 mb-8">
                             <div>
-                                <label className="block text-xs font-bold text-white/40 uppercase tracking-widest mb-2">Tier</label>
-                                <GlassDropdown value={tier} onChange={setTier} options={tierOptions} placeholder="Select Tier" />
-                            </div>
-                            <div>
-                                <label className="block text-xs font-bold text-white/40 uppercase tracking-widest mb-2">Draw Size</label>
-                                <div className="flex flex-wrap gap-2">
-                                    {allowedSizes.map(s => (
-                                        <button key={s} onClick={() => setSize(s)} className={`px-5 py-2 rounded-xl text-sm font-semibold transition-all border ${size === s ? 'bg-gold-500/20 text-gold-400 border-gold-500/50' : 'bg-white/[0.02] border-white/10 text-white/50 hover:bg-white/[0.05] hover:text-white'}`}>
-                                            {s} Players
+                                <label className="block text-[10px] font-bold text-white/40 uppercase tracking-widest mb-3">Tier Selector</label>
+                                <div className="flex flex-col gap-2">
+                                    {Object.entries(TOURNAMENT_TIERS).map(([k, conf]) => (
+                                        <button key={k} onClick={() => setTier(k)} className={`px-4 py-3 rounded-xl text-sm font-bold transition-all border text-left flex justify-between items-center ${tier === k ? `${conf.bg} ${conf.color} ${conf.border} shadow-md` : 'bg-white/[0.01] border-white/5 text-white/50 hover:bg-white/[0.04] hover:text-white'}`}>
+                                            {conf.name}
+                                            {tier === k && <CheckCircle size={16} className="shrink-0"/>}
                                         </button>
                                     ))}
                                 </div>
                             </div>
-                        </div>
-
-                        <div className="bg-white/[0.02] p-4 rounded-xl border border-white/[0.05] mb-8 text-sm text-white/60 leading-relaxed">
-                            <div className="flex items-center gap-2 mb-1"><span className={`font-bold ${tierConf.color}`}>{tierConf.name}:</span> Winner gets <strong className="text-white/90">{expectedWinnerPoints} points</strong>.</div>
-                            <div>{tierConf.excludeTop > 0 ? `The Top ${tierConf.excludeTop} ranked players in the world are strictly excluded from competing.` : (tier === 'finals' ? 'Exclusive to the Top 8 Players in the World. Uses Round Robin Group Stage format.' : 'Open to all competitors.')} {reqWc > 0 && <span>This {size}-player bracket format requires <strong className="text-white/90">{reqWc} wildcards</strong>.</span>} {reqAuto > 0 && <span>Click an Auto Qualifier to simulate a withdrawal.</span>}</div>
-                        </div>
-
-                        {!hasEnoughPlayers && (
-                            <div className="bg-rose-500/10 border border-rose-500/30 text-rose-400 p-4 rounded-xl flex items-center justify-center gap-3 mb-6">
-                                <Shield className="w-6 h-6 shrink-0" />
-                                <span className="font-medium text-sm">Not enough eligible players in your directory to run this tier correctly. You need {size + tierConf.excludeTop}, but only have {activePlayers.length}.</span>
+                            <div>
+                                <label className="block text-[10px] font-bold text-white/40 uppercase tracking-widest mb-3">Draw Size</label>
+                                <div className="grid grid-cols-2 gap-2">
+                                    {allowedSizes.map(s => (
+                                        <button key={s} disabled={!!editingId} onClick={() => setSize(s)} className={`px-4 py-4 rounded-xl text-base font-black transition-all border ${size === s ? 'bg-gold-500/10 text-gold-400 border-gold-500/30 shadow-md' : 'bg-white/[0.01] border-white/5 text-white/40 hover:bg-white/[0.04] hover:text-white'} disabled:opacity-50 disabled:cursor-not-allowed`}>
+                                            {s} <span className="text-[10px] uppercase font-bold tracking-widest block text-white/30 mt-1">Players</span>
+                                        </button>
+                                    ))}
+                                </div>
+                                <div className="mt-6 bg-white/[0.02] p-5 rounded-xl border border-white/[0.05] text-sm text-white/60 leading-relaxed shadow-inner">
+                                    <div className="flex items-center gap-2 mb-2"><span className={`font-bold ${tierConf.color}`}>{tierConf.name} Config:</span></div>
+                                    <ul className="space-y-1.5 list-disc pl-4 text-xs font-medium">
+                                        <li>Winner receives <strong className="text-white/90">{expectedWinnerPoints} pts</strong>.</li>
+                                        <li>{tierConf.excludeTop > 0 ? `Top ${tierConf.excludeTop} globally ranked players are excluded.` : (tier === 'finals' ? 'Exclusive Round Robin for Top 8.' : 'Open Entry.')}</li>
+                                        {reqWc > 0 && <li>Requires <strong className="text-gold-400">{reqWc} Wildcards</strong>.</li>}
+                                    </ul>
+                                </div>
                             </div>
-                        )}
+                        </div>
 
-                        <div className={`grid ${reqAuto > 0 ? 'md:grid-cols-2' : 'grid-cols-1'} gap-6`}>
-                            {reqAuto > 0 && (
-                                <div className="flex flex-col h-[450px]">
-                                    <div className="flex justify-between items-center mb-3 shrink-0">
-                                        <h3 className="font-bold text-white/90">Auto Qualifiers <span className="text-white/40 text-xs ml-1">(Top {reqAuto})</span></h3>
+                        {!editingId && (
+                            <>
+                                {!hasEnoughPlayers && (
+                                    <div className="bg-rose-500/10 border border-rose-500/30 text-rose-400 p-4 rounded-xl flex items-center justify-center gap-3 mb-6 shadow-md">
+                                        <Shield className="w-6 h-6 shrink-0" />
+                                        <span className="font-medium text-sm">Not enough eligible players to run this tier. Need {size + tierConf.excludeTop}, but only have {activePlayers.length}.</span>
                                     </div>
-                                    <div className="bg-white/[0.02] rounded-xl p-2 flex-1 overflow-y-auto border border-white/[0.05] space-y-1 min-h-0 custom-scrollbar">
-                                        <div className="relative mb-2 shrink-0">
-                                            <input type="text" placeholder="Search qualifiers..." className="w-full bg-white/[0.02] border border-white/5 text-white/80 px-3 py-2 pl-9 rounded-lg text-sm focus:outline-none focus:border-gold-500/30" value={autoSearch} onChange={e => setAutoSearch(e.target.value)} />
-                                            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-white/30" />
-                                        </div>
-                                        {filteredAuto.map(p => (
-                                            <div key={p.id} onClick={() => toggleWithdraw(p.id)} className="p-2.5 opacity-90 hover:opacity-100 text-sm flex items-center justify-between text-white/80 cursor-pointer hover:bg-rose-500/10 rounded-lg transition-colors group border border-transparent hover:border-rose-500/20">
-                                                <span className="flex items-center">
-                                                    <span className="font-light text-white/30 mr-3 w-6 tabular-nums">#{p.rank}</span> 
-                                                    <span className="mr-2.5 drop-shadow-sm">{getFlag(p.nationality)}</span> <span className="font-medium">{p.name}</span>
-                                                </span>
-                                                <X size={14} className="text-rose-400 opacity-0 group-hover:opacity-100 transition-opacity" />
+                                )}
+
+                                <div className={`grid ${reqAuto > 0 ? 'md:grid-cols-2' : 'grid-cols-1'} gap-6 border-t border-white/10 pt-8`}>
+                                    {reqAuto > 0 && (
+                                        <div className="flex flex-col h-[450px]">
+                                            <div className="flex justify-between items-center mb-3 shrink-0">
+                                                <h3 className="font-bold text-white/90">Auto Qualifiers <span className="text-white/40 text-xs ml-1">(Top {reqAuto})</span></h3>
                                             </div>
-                                        ))}
-                                    </div>
-                                </div>
-                            )}
-
-                            <div className="flex flex-col h-[450px]">
-                                <div className="flex justify-between items-center mb-3 shrink-0">
-                                    <h3 className="font-bold text-white/90">{reqAuto === 0 ? 'Participants' : (reqWc === 0 ? 'Alternates / Standby' : 'Select Wildcards')}</h3>
-                                    <div className="flex gap-2 items-center flex-wrap justify-end">
-                                        {reqAuto === 0 && remainingPlayers.length > 0 && (
-                                            <button onClick={() => withdrawTopFraction(4)} className="text-[10px] uppercase tracking-wider font-bold bg-white/5 text-white/50 hover:bg-rose-500/20 hover:text-rose-400 px-2 py-1 rounded transition-colors border border-white/10 hover:border-rose-500/30">Drop 1/4</button>
-                                        )}
-                                        {selectedWildcards.length < reqWc && reqWc > 0 && (
-                                            <button onClick={selectRandomWildcards} className="text-[10px] flex items-center gap-1 bg-white/5 hover:bg-white/10 text-white/60 hover:text-white px-2 py-1 rounded transition-colors border border-white/10">
-                                                <Shuffle size={10} /> Auto-Fill
-                                            </button>
-                                        )}
-                                        <span className={`text-xs px-2 py-0.5 rounded-md font-bold border ${selectedWildcards.length === reqWc ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : 'bg-gold-500/10 text-gold-400 border-gold-500/20'}`}>
-                                            {selectedWildcards.length} / {reqWc}
-                                        </span>
-                                    </div>
-                                </div>
-                                <div className="bg-white/[0.02] rounded-xl p-2 flex-1 flex flex-col border border-white/[0.05] min-h-0">
-                                    <div className="relative mb-2 shrink-0">
-                                        <input type="text" placeholder="Search..." className="w-full bg-white/[0.02] border border-white/5 text-white/80 px-3 py-2 pl-9 rounded-lg text-sm focus:outline-none focus:border-gold-500/30" value={wcSearch} onChange={e => setWcSearch(e.target.value)} />
-                                        <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-white/30" />
-                                    </div>
-                                    <div className="overflow-y-auto space-y-1 pr-1 flex-1 custom-scrollbar">
-                                        {filteredRemaining.map(p => { 
-                                            const isS = selectedWildcards.includes(p.id); 
-                                            const isDisabled = reqWc === 0 || (!isS && selectedWildcards.length >= reqWc);
-                                            return (
-                                                <div key={p.id} onClick={() => !isDisabled && toggleWildcard(p.id)} className={`p-2.5 rounded-lg ${reqWc > 0 ? 'cursor-pointer' : 'cursor-default'} flex justify-between items-center text-sm font-medium transition-colors group ${isS ? 'bg-gold-500/10 border border-gold-500/30 text-white' : (isDisabled && reqWc > 0) ? 'opacity-30 cursor-not-allowed border border-transparent' : 'hover:bg-white/[0.05] text-white/70 border border-transparent'}`}>
-                                                    <span className="flex items-center">
-                                                        <span className={`font-light mr-3 w-6 tabular-nums ${isS ? 'text-gold-400/50' : 'text-white/30'}`}>#{p.rank}</span> 
-                                                        <span className="mr-2.5 drop-shadow-sm">{getFlag(p.nationality)}</span> <span className={isS ? 'font-bold' : ''}>{p.name}</span>
-                                                    </span>
-                                                    <div className="flex items-center gap-2">
-                                                        {isS && <CheckCircle size={16} className="text-gold-500" />}
-                                                        {reqWc > 0 && !isS && !isDisabled && <X size={16} className="text-rose-500 opacity-0 group-hover:opacity-100 transition-opacity hover:scale-110" onClick={(e) => { e.stopPropagation(); toggleWithdraw(p.id); }} title="Withdraw Player" />}
-                                                    </div>
+                                            <div className="bg-[#030806] rounded-xl p-2 flex-1 overflow-y-auto border border-white/5 space-y-1 min-h-0 custom-scrollbar shadow-inner">
+                                                <div className="relative mb-2 shrink-0">
+                                                    <input type="text" placeholder="Search qualifiers to withdraw..." className="w-full bg-white/[0.04] border border-white/5 text-white/80 px-3 py-2 pl-9 rounded-lg text-sm focus:outline-none focus:border-gold-500/30" value={autoSearch} onChange={e => setAutoSearch(e.target.value)} />
+                                                    <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-white/30" />
                                                 </div>
-                                            ) 
-                                        })}
-                                        {filteredRemaining.length === 0 && <div className="text-center py-4 text-white/40 text-sm">No players found.</div>}
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        {withdrawnPlayers.length > 0 && (
-                            <div className="mt-8 flex flex-col h-[250px]">
-                                <div className="flex justify-between items-end mb-3 shrink-0 border-t border-white/10 pt-6">
-                                    <h3 className="font-bold text-white/50 text-xs uppercase tracking-widest">Withdrawn / Skipped</h3>
-                                    <span className="text-xs text-white/40 font-medium">{withdrawnPlayers.length} Players</span>
-                                </div>
-                                <div className="bg-white/[0.02] rounded-xl p-2 flex-1 flex flex-col border border-white/[0.05] min-h-0">
-                                    <div className="relative mb-2 shrink-0">
-                                        <input type="text" placeholder="Search withdrawn players to restore..." className="w-full bg-white/[0.02] border border-white/5 text-white/80 px-3 py-2 pl-9 rounded-lg text-sm focus:outline-none focus:border-gold-500/30" value={withdrawnSearch} onChange={e => setWithdrawnSearch(e.target.value)} />
-                                        <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-white/30" />
-                                    </div>
-                                    <div className="overflow-y-auto space-y-1 pr-1 flex-1 custom-scrollbar">
-                                        {filteredWithdrawn.map(p => (
-                                            <div key={p.id} onClick={() => toggleWithdraw(p.id)} className="p-2.5 text-sm flex items-center justify-between text-white/40 cursor-pointer hover:bg-white/[0.05] hover:text-white/80 rounded-lg transition-colors group">
-                                                <span className="flex items-center line-through group-hover:no-underline">
-                                                    <span className="font-light mr-3 w-6 tabular-nums">#{p.rank}</span> 
-                                                    <span className="mr-2.5 drop-shadow-sm">{getFlag(p.nationality)}</span> <span className="font-medium">{p.name}</span>
-                                                </span>
-                                                <Plus size={14} className="text-emerald-500 opacity-0 group-hover:opacity-100 transition-opacity" />
+                                                {filteredAuto.map(p => (
+                                                    <div key={p.id} onClick={() => toggleWithdraw(p.id)} className="p-2 opacity-90 hover:opacity-100 text-sm flex items-center justify-between text-white/80 cursor-pointer hover:bg-rose-500/10 rounded-lg transition-colors group border border-transparent hover:border-rose-500/20">
+                                                        <span className="flex items-center">
+                                                            <span className="font-mono text-white/30 mr-3 w-6 text-[10px]">#{p.rank}</span> 
+                                                            <span className="mr-2.5 drop-shadow-sm">{getFlag(p.nationality)}</span> <span className="font-medium truncate max-w-[150px]">{p.name}</span>
+                                                        </span>
+                                                        <X size={14} className="text-rose-400 opacity-0 group-hover:opacity-100 transition-opacity" />
+                                                    </div>
+                                                ))}
                                             </div>
-                                        ))}
+                                        </div>
+                                    )}
+
+                                    <div className="flex flex-col h-[450px]">
+                                        <div className="flex justify-between items-center mb-3 shrink-0">
+                                            <h3 className="font-bold text-white/90">{reqAuto === 0 ? 'Participants' : (reqWc === 0 ? 'Alternates' : 'Wildcards')}</h3>
+                                            <div className="flex gap-2 items-center flex-wrap justify-end">
+                                                {reqAuto === 0 && remainingPlayers.length > 0 && (
+                                                    <button onClick={() => withdrawTopFraction(4)} className="text-[9px] uppercase tracking-wider font-bold bg-white/5 text-white/50 hover:bg-rose-500/20 hover:text-rose-400 px-2 py-1 rounded transition-colors border border-white/10">Drop 1/4</button>
+                                                )}
+                                                {selectedWildcards.length < reqWc && reqWc > 0 && (
+                                                    <button onClick={selectRandomWildcards} className="text-[10px] flex items-center gap-1 bg-white/10 hover:bg-white/20 text-white px-2.5 py-1 rounded-md transition-colors border border-white/10 font-bold shadow-sm">
+                                                        <Shuffle size={12} /> Auto-Fill
+                                                    </button>
+                                                )}
+                                                <span className={`text-[11px] px-2.5 py-1 rounded-md font-black tracking-wide border shadow-sm ${selectedWildcards.length === reqWc ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : 'bg-gold-500/10 text-gold-400 border-gold-500/20'}`}>
+                                                    {selectedWildcards.length} / {reqWc}
+                                                </span>
+                                            </div>
+                                        </div>
+                                        <div className="bg-[#030806] rounded-xl p-2 flex-1 flex flex-col border border-white/5 min-h-0 shadow-inner">
+                                            <div className="relative mb-2 shrink-0">
+                                                <input type="text" placeholder="Search..." className="w-full bg-white/[0.04] border border-white/5 text-white/80 px-3 py-2 pl-9 rounded-lg text-sm focus:outline-none focus:border-gold-500/30" value={wcSearch} onChange={e => setWcSearch(e.target.value)} />
+                                                <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-white/30" />
+                                            </div>
+                                            <div className="overflow-y-auto space-y-1 pr-1 flex-1 custom-scrollbar">
+                                                {filteredRemaining.map(p => { 
+                                                    const isS = selectedWildcards.includes(p.id); 
+                                                    const isDisabled = reqWc === 0 || (!isS && selectedWildcards.length >= reqWc);
+                                                    return (
+                                                        <div key={p.id} onClick={() => !isDisabled && toggleWildcard(p.id)} className={`p-2 rounded-lg ${reqWc > 0 ? 'cursor-pointer' : 'cursor-default'} flex justify-between items-center text-sm transition-colors group ${isS ? 'bg-gold-500/10 border border-gold-500/30 text-white shadow-sm' : (isDisabled && reqWc > 0) ? 'opacity-30 cursor-not-allowed border border-transparent' : 'hover:bg-white/[0.05] text-white/70 border border-transparent'}`}>
+                                                            <span className="flex items-center">
+                                                                <span className={`font-mono text-[10px] mr-3 w-6 ${isS ? 'text-gold-400/70' : 'text-white/30'}`}>#{p.rank}</span> 
+                                                                <span className="mr-2.5 drop-shadow-sm">{getFlag(p.nationality)}</span> <span className={`truncate max-w-[120px] ${isS ? 'font-bold' : 'font-medium'}`}>{p.name}</span>
+                                                            </span>
+                                                            <div className="flex items-center gap-2">
+                                                                {isS && <CheckCircle size={16} className="text-gold-500 drop-shadow-sm" />}
+                                                                {reqWc > 0 && !isS && !isDisabled && <X size={14} className="text-rose-500 opacity-0 group-hover:opacity-100 transition-opacity hover:scale-110" onClick={(e) => { e.stopPropagation(); toggleWithdraw(p.id); }} />}
+                                                            </div>
+                                                        </div>
+                                                    ) 
+                                                })}
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
+
+                                {withdrawnPlayers.length > 0 && (
+                                    <div className="mt-8 flex flex-col h-[250px]">
+                                        <div className="flex justify-between items-end mb-3 shrink-0 border-t border-white/10 pt-6">
+                                            <h3 className="font-bold text-white/50 text-[10px] uppercase tracking-widest">Withdrawn / Skipped</h3>
+                                            <span className="text-xs text-white/40 font-bold bg-white/5 px-2 py-0.5 rounded">{withdrawnPlayers.length} Players</span>
+                                        </div>
+                                        <div className="bg-[#030806] rounded-xl p-2 flex-1 flex flex-col border border-white/5 min-h-0 shadow-inner">
+                                            <div className="relative mb-2 shrink-0">
+                                                <input type="text" placeholder="Search withdrawn players to restore..." className="w-full bg-white/[0.04] border border-white/5 text-white/80 px-3 py-2 pl-9 rounded-lg text-sm focus:outline-none focus:border-gold-500/30" value={withdrawnSearch} onChange={e => setWithdrawnSearch(e.target.value)} />
+                                                <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-white/30" />
+                                            </div>
+                                            <div className="overflow-y-auto space-y-1 pr-1 flex-1 custom-scrollbar">
+                                                {filteredWithdrawn.map(p => (
+                                                    <div key={p.id} onClick={() => toggleWithdraw(p.id)} className="p-2 text-sm flex items-center justify-between text-white/40 cursor-pointer hover:bg-emerald-500/10 hover:text-emerald-300 rounded-lg transition-colors group">
+                                                        <span className="flex items-center line-through group-hover:no-underline">
+                                                            <span className="font-mono mr-3 w-6 text-[10px]">#{p.rank}</span> 
+                                                            <span className="mr-2.5 drop-shadow-sm grayscale group-hover:grayscale-0">{getFlag(p.nationality)}</span> <span className="font-medium">{p.name}</span>
+                                                        </span>
+                                                        <Plus size={14} className="text-emerald-500 opacity-0 group-hover:opacity-100 transition-opacity" />
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
+                            </>
                         )}
 
-                        {errorMsg && <div className="mt-6 text-rose-400 text-sm font-semibold text-center w-full bg-rose-500/10 p-3 rounded-xl border border-rose-500/20">{errorMsg}</div>}
+                        {errorMsg && <div className="mt-8 text-rose-400 text-sm font-bold text-center w-full bg-rose-500/10 p-4 rounded-xl border border-rose-500/20 shadow-md">{errorMsg}</div>}
                         
-                        <div className="mt-8 pt-6 border-t border-white/10 flex justify-end">
-                            <button onClick={handleCreate} disabled={isGenerating || !hasEnoughPlayers || selectedWildcards.length !== reqWc || !name.trim()} className="bg-gold-500 hover:bg-gold-400 text-royal-950 px-8 py-3 rounded-xl font-bold flex items-center gap-2 disabled:opacity-30 disabled:cursor-not-allowed transition-all shadow-[0_0_15px_rgba(212,175,55,0.2)] hover:shadow-[0_0_25px_rgba(212,175,55,0.4)]">
-                                <Play size={18}/> {isGenerating ? 'Generating...' : 'Start Tournament'}
+                        <div className="mt-8 pt-8 border-t border-white/10 flex justify-end">
+                            <button onClick={handleCreateOrUpdate} disabled={isGenerating || (!editingId && (!hasEnoughPlayers || selectedWildcards.length !== reqWc)) || !name.trim()} className="bg-white text-[#05100c] px-10 py-4 rounded-2xl font-black text-lg flex items-center gap-3 disabled:opacity-30 disabled:cursor-not-allowed transition-all shadow-[0_0_20px_rgba(255,255,255,0.15)] hover:shadow-[0_0_30px_rgba(255,255,255,0.3)] hover:-translate-y-1 active:scale-[0.98]">
+                                {editingId ? <Edit2 size={20}/> : <Play size={20}/>} 
+                                {isGenerating ? 'Processing...' : (editingId ? 'Update Tournament' : 'Generate Bracket')}
                             </button>
                         </div>
                     </div>
@@ -4381,98 +4420,96 @@
             })();
 
             return (
-                <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-[200] flex items-center justify-center p-4 sm:p-6 animate-in fade-in duration-300">
-                    <div className="bg-royal-950 rounded-3xl w-full max-w-4xl border border-royal-800 overflow-hidden shadow-[0_20px_60px_rgba(0,0,0,0.8)] flex flex-col max-h-[95vh]">
-                        
-                        {/* Header */}
-                        <div className="px-8 py-5 border-b border-royal-800 flex justify-between items-center bg-royal-900">
-                            <div>
-                                <h2 className="text-xl font-bold text-white tracking-tight">Resolve Match</h2>
-                                <p className="text-royal-300 text-xs mt-1 font-medium tracking-wide uppercase">{tournament.name}</p>
-                            </div>
-                            <button onClick={() => setResolvingMatch(null)} className="text-royal-400 hover:text-white bg-royal-800 hover:bg-royal-700 p-2.5 rounded-full transition-all">
-                                <X size={18} />
+                <div className="fixed inset-0 bg-black/90 backdrop-blur-2xl z-[200] flex flex-col animate-in fade-in duration-300">
+                    
+                    {/* Immersive Header */}
+                    <div className="absolute top-0 left-0 w-full p-6 md:p-8 flex justify-between items-start z-50 bg-gradient-to-b from-black/90 to-transparent pointer-events-none">
+                        <div className="flex items-center gap-4 pointer-events-auto">
+                            <button onClick={() => setResolvingMatch(null)} className="w-10 h-10 bg-white/10 hover:bg-white/20 rounded-full flex items-center justify-center transition-colors backdrop-blur-xl text-white shadow-lg border border-white/10">
+                                <ArrowLeft size={18} />
                             </button>
+                            <div className="hidden sm:block">
+                                <h2 className="text-lg font-bold text-white tracking-tight leading-none drop-shadow-md">Resolve Match</h2>
+                                <p className="text-white/50 text-xs font-bold mt-1.5 uppercase tracking-widest">{tournament.name}</p>
+                            </div>
                         </div>
-                        
-                        {/* H2H Banner */}
-                        <div className="w-full bg-royal-950 border-b border-royal-800 py-3 px-6 flex justify-center">
+
+                        <div className="flex flex-col items-end gap-3 pointer-events-auto">
+                            <button onClick={handleRandomize} className="bg-white/10 hover:bg-white/20 backdrop-blur-xl border border-white/10 text-white px-6 py-2.5 rounded-full text-xs font-bold transition-all flex items-center gap-2 shadow-lg">
+                                <Shuffle size={14} /> Auto-Resolve (Coin Toss)
+                            </button>
                             {matchH2H.total > 0 ? (
-                                <div className="inline-flex items-center bg-royal-900 border border-royal-700 rounded-full px-5 py-1.5 text-xs font-medium text-royal-300 shadow-inner">
-                                    Head-to-Head: 
-                                    <span className="text-white font-bold mx-3">{getPlayer(resolvingMatch.p1).name}</span> 
-                                    <span className="font-black px-2 py-0.5 rounded text-royal-950" style={{ backgroundColor: tierConf.hex }}>{matchH2H.p1Wins} - {matchH2H.p2Wins}</span> 
-                                    <span className="text-white font-bold ml-3">{getPlayer(resolvingMatch.p2).name}</span>
+                                <div className="hidden md:flex bg-black/60 border border-white/10 rounded-full px-5 py-2 items-center gap-3 backdrop-blur-xl shadow-lg">
+                                    <span className="text-white/40 text-[9px] font-black uppercase tracking-widest">H2H</span>
+                                    <span className="text-white/80 text-xs font-bold">{getPlayer(resolvingMatch.p1).name}</span>
+                                    <span className="text-white font-black text-sm px-2 rounded" style={{ backgroundColor: `${tierConf.hex}40` }}>{matchH2H.p1Wins} - {matchH2H.p2Wins}</span>
+                                    <span className="text-white/80 text-xs font-bold">{getPlayer(resolvingMatch.p2).name}</span>
                                 </div>
                             ) : (
-                                <div className="inline-flex bg-royal-900 border border-royal-800 rounded-full px-5 py-1.5 text-xs font-medium text-royal-400">
+                                <div className="hidden md:flex bg-black/60 border border-white/10 rounded-full px-5 py-2 text-[10px] font-black text-white/40 uppercase tracking-widest backdrop-blur-xl shadow-lg">
                                     First Career Meeting
                                 </div>
                             )}
                         </div>
+                    </div>
 
-                        {/* Players Area */}
-                        <div className="flex flex-col md:flex-row items-stretch p-6 md:p-8 gap-6 relative overflow-y-auto custom-scrollbar">
-                            <div className="hidden md:flex absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-[60%] bg-royal-950 border border-royal-700 w-12 h-12 rounded-full items-center justify-center font-black text-royal-500 z-10 text-xs shadow-xl">VS</div>
-                            
-                            {[resolvingMatch.p1, resolvingMatch.p2].map((pid, idx) => {
-                                const p = getPlayer(pid);
-                                const imgs = getImages(p);
-                                const iIdx = idx === 0 ? p1ImgIdx : p2ImgIdx;
-                                const setIIdx = idx === 0 ? setP1ImgIdx : setP2ImgIdx;
+                    {/* Split Screen Players */}
+                    <div className="flex-1 flex flex-col md:flex-row items-stretch pt-24 md:pt-0">
+                        {/* VS Badge */}
+                        <div className="hidden md:flex absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-16 h-16 bg-black/80 backdrop-blur-3xl border border-white/10 rounded-full z-40 items-center justify-center shadow-[0_0_30px_rgba(0,0,0,0.8)]">
+                            <span className="text-white/30 font-black italic text-xl">VS</span>
+                        </div>
 
-                                return (
-                                    <div key={idx} className="flex-1 flex flex-col items-center bg-royal-900/50 p-6 rounded-2xl border border-royal-800 relative">
-                                        {/* Avatar Frame */}
-                                        <div className="relative group w-32 h-32 md:w-40 md:h-40 rounded-full overflow-hidden shadow-xl border-[3px] border-royal-800 bg-black mb-5 shrink-0" style={{ borderColor: tierConf.hex }}>
-                                            {imgs[iIdx] ? (
-                                                <PlayerMedia url={imgs[iIdx]} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
-                                            ) : (
-                                                <div className="w-full h-full flex items-center justify-center bg-royal-950"><UserCircle size={48} className="text-royal-800"/></div>
-                                            )}
-                                            
-                                            {/* Image Carousel Controls */}
-                                            {imgs.length > 1 && (
-                                                <>
-                                                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors duration-300"></div>
-                                                    <button onClick={(e) => { e.stopPropagation(); setIIdx(prev => (prev === 0 ? imgs.length-1 : prev-1)); }} className="absolute left-2 top-1/2 -translate-y-1/2 w-8 h-8 bg-black/40 hover:bg-black/80 rounded-full flex items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-all z-30"><ChevronLeft size={16}/></button>
-                                                    <button onClick={(e) => { e.stopPropagation(); setIIdx(prev => (prev === imgs.length-1 ? 0 : prev+1)); }} className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 bg-black/40 hover:bg-black/80 rounded-full flex items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-all z-30"><ChevronRight size={16}/></button>
-                                                </>
-                                            )}
-                                        </div>
-                                        
-                                        {/* Identification */}
-                                        <div className="text-center mb-6">
-                                            <h3 className="text-2xl font-bold text-white tracking-tight mb-1 truncate w-full max-w-[250px]">
-                                                {p.name}
-                                            </h3>
-                                            <div className="flex items-center justify-center gap-2 text-sm text-royal-300 font-medium">
-                                                <span className="text-xl drop-shadow-sm leading-none">{getFlag(p.nationality)}</span> 
-                                                <span className="uppercase tracking-widest text-[10px] font-bold">{getCountryName(p.nationality)}</span>
-                                                {getSeedText(tournament, pid) && <span className="ml-1.5 bg-royal-800 px-1.5 rounded text-[10px] text-royal-400 font-mono tracking-tighter">{getSeedText(tournament, pid)}</span>}
+                        {[resolvingMatch.p1, resolvingMatch.p2].map((pid, idx) => {
+                            const p = getPlayer(pid);
+                            const imgs = getImages(p);
+                            const iIdx = idx === 0 ? p1ImgIdx : p2ImgIdx;
+                            const setIIdx = idx === 0 ? setP1ImgIdx : setP2ImgIdx;
+
+                            return (
+                                <div key={idx} className="flex-1 relative group overflow-hidden bg-[#050505] border-r border-white/5 last:border-r-0">
+                                    {imgs[iIdx] ? (
+                                        <PlayerMedia url={imgs[iIdx]} className="absolute inset-0 w-full h-full object-cover object-top transition-transform duration-700 group-hover:scale-105 opacity-60 group-hover:opacity-90" />
+                                    ) : (
+                                        <div className="absolute inset-0 flex items-center justify-center bg-[#0a0a0c]"><UserCircle size={80} className="text-white/5"/></div>
+                                    )}
+                                    
+                                    {/* Grand Gradient Fade */}
+                                    <div className="absolute inset-0 bg-gradient-to-t from-black via-black/60 to-transparent opacity-100"></div>
+                                    
+                                    {/* Image Navigation Carousel */}
+                                    {imgs.length > 1 && (
+                                        <div className="absolute inset-0 z-20 pointer-events-none">
+                                            <button onClick={(e) => { e.stopPropagation(); setIIdx(prev => (prev === 0 ? imgs.length-1 : prev-1)); }} className="pointer-events-auto absolute left-6 top-1/2 -translate-y-1/2 w-12 h-12 bg-black/40 hover:bg-black/80 rounded-full flex items-center justify-center text-white backdrop-blur-md opacity-0 group-hover:opacity-100 transition-all border border-white/10"><ChevronLeft size={24}/></button>
+                                            <button onClick={(e) => { e.stopPropagation(); setIIdx(prev => (prev === imgs.length-1 ? 0 : prev+1)); }} className="pointer-events-auto absolute right-6 top-1/2 -translate-y-1/2 w-12 h-12 bg-black/40 hover:bg-black/80 rounded-full flex items-center justify-center text-white backdrop-blur-md opacity-0 group-hover:opacity-100 transition-all border border-white/10"><ChevronRight size={24}/></button>
+                                            <div className="absolute top-1/4 left-1/2 -translate-x-1/2 flex gap-2 bg-black/60 backdrop-blur-md px-3 py-1.5 rounded-full">
+                                                {imgs.map((_, i) => <div key={i} className={`w-1.5 h-1.5 rounded-full transition-colors ${i === iIdx ? 'bg-white shadow-[0_0_5px_white]' : 'bg-white/30'}`} />)}
                                             </div>
                                         </div>
+                                    )}
+
+                                    {/* Action Area */}
+                                    <div className="absolute bottom-0 left-0 w-full p-8 md:p-12 lg:p-16 z-30 flex flex-col justify-end">
+                                        <div className="flex items-center gap-3 mb-4">
+                                            <span className="text-4xl drop-shadow-2xl">{getFlag(p.nationality)}</span>
+                                            <span className="text-white/60 font-bold uppercase tracking-widest text-sm drop-shadow-md">{getCountryName(p.nationality)}</span>
+                                        </div>
+                                        <h3 className="text-5xl md:text-6xl lg:text-7xl font-black text-white tracking-tighter mb-10 drop-shadow-[0_4px_20px_rgba(0,0,0,0.8)] leading-none">
+                                            {p.name}
+                                        </h3>
                                         
-                                        {/* Action Buttons */}
-                                        <div className="w-full mt-auto space-y-3">
-                                            <button onClick={() => submitResult(pid, 'close')} className="w-full bg-white text-royal-950 py-3.5 rounded-xl font-bold text-sm hover:bg-gray-200 transition-all active:scale-[0.98] shadow-lg flex justify-center items-center">
+                                        <div className="flex flex-col sm:flex-row gap-4 w-full">
+                                            <button onClick={() => submitResult(pid, 'close')} className="flex-1 bg-white text-black py-4 rounded-2xl font-black text-lg transition-all hover:bg-gray-200 active:scale-[0.98] shadow-[0_0_40px_rgba(255,255,255,0.2)] hover:shadow-[0_0_50px_rgba(255,255,255,0.4)] flex justify-center items-center">
                                                 Win Match
                                             </button>
-                                            <button onClick={() => submitResult(pid, 'lopsided')} className="w-full bg-royal-800 text-royal-200 border border-royal-700 py-3.5 rounded-xl font-bold text-sm hover:bg-royal-700 hover:text-white transition-all active:scale-[0.98]">
+                                            <button onClick={() => submitResult(pid, 'lopsided')} className="flex-1 bg-white/10 hover:bg-white/20 backdrop-blur-2xl border border-white/20 text-white py-4 rounded-2xl font-bold text-lg transition-all active:scale-[0.98] shadow-lg">
                                                 Win (Dominant)
                                             </button>
                                         </div>
                                     </div>
-                                );
-                            })}
-                        </div>
-                        
-                        {/* Footer / Randomize */}
-                        <div className="p-5 border-t border-royal-800 bg-royal-950 flex justify-center shrink-0">
-                            <button onClick={handleRandomize} className="flex items-center gap-2 bg-gold-500 hover:bg-gold-400 text-royal-950 px-8 py-3 rounded-xl font-bold text-sm transition-all active:scale-[0.98] shadow-[0_0_15px_rgba(212,175,55,0.2)]">
-                                <Shuffle size={16}/> Auto-Resolve (Coin Toss)
-                            </button>
-                        </div>
+                                </div>
+                            );
+                        })}
                     </div>
                 </div>
             );
@@ -4482,6 +4519,7 @@
             const [resolvingMatch, setResolvingMatch] = useState(null);
             const [activeTab, setActiveTab] = useState('all');
             const [showDelete, setShowDelete] = useState(false);
+            const scrollContainerRef = useRef(null);
 
             const getPlayer = (id) => players.find(p => p.id === id) || { name: 'TBD', rank: '-', nationality: 'UNK' };
             
@@ -4556,7 +4594,7 @@
 
             const handleRandomize = () => {
                 const winnerId = Math.random() < 0.5 ? resolvingMatch.p1 : resolvingMatch.p2;
-                submitResult(winnerId, 'close');
+                submitResult(winnerId, 'random');
             };
 
             const handleDelete = async () => {
@@ -4571,43 +4609,48 @@
                 const p = getPlayer(pId);
                 const isBye = match.type === 'bye';
                 const isTBD = pId == null;
+                // FIX: null === null evaluated to true previously. Ensuring pId exists first.
                 const isWinner = !isTBD && match.winner === pId && !isBye;
                 const isLoser = !isTBD && match.winner != null && match.winner !== pId && !isBye;
                 
                 return (
-                    <div className={`relative px-4 py-2.5 flex items-center justify-between transition-colors ${isTop ? 'border-b border-royal-800/50' : ''} ${isWinner ? 'bg-white/[0.04]' : 'bg-transparent'}`}>
-                        {isWinner && <div className="absolute left-0 top-0 bottom-0 w-[5px] rounded-r" style={{ backgroundColor: tierConf.hex }}></div>}
+                    <div className={`relative px-4 py-1.5 flex items-center justify-between transition-colors h-[32px] ${isTop ? 'border-b border-white/[0.05]' : ''} ${isWinner ? 'bg-white/[0.05]' : 'bg-transparent'}`}>
+                        {isWinner && <div className="absolute left-0 top-0 bottom-0 w-[4px] rounded-r" style={{ backgroundColor: tierConf.hex }}></div>}
                         <div className={`flex items-center gap-3 w-full pr-2 ${isLoser ? 'opacity-40 grayscale' : ''}`}>
                             {isTBD ? (
-                                <div className="w-6 h-6 rounded-full bg-royal-800 shrink-0 border border-royal-700 flex items-center justify-center">
-                                    <span className="text-[9px] text-royal-500 font-bold">TBD</span>
+                                <div className="w-5 h-5 rounded-full bg-white/5 shrink-0 border border-white/10 flex items-center justify-center">
+                                    <span className="text-[8px] text-white/30 font-bold">TBD</span>
                                 </div>
                             ) : (
                                 <>
-                                    <img src={p.images?.[0] || p.imageUrl || "https://via.placeholder.com/40"} className={`w-7 h-7 rounded-full object-cover shrink-0 shadow-sm ${isWinner ? 'ring-2 ring-offset-2 ring-offset-royal-900' : 'border border-royal-700'}`} style={{ '--tw-ring-color': isWinner ? tierConf.hex : undefined }} />
+                                    <img src={p.images?.[0] || p.imageUrl || "https://via.placeholder.com/40"} className="w-5 h-5 rounded-full object-cover shrink-0 shadow-sm border border-white/10" />
                                     <div className="flex flex-col min-w-0">
-                                        <span onClick={tournament.status === 'completed' ? (e) => { e.stopPropagation(); onNavigate('players', pId); } : undefined} className={`text-sm font-semibold flex items-center truncate ${isWinner ? 'text-white' : 'text-royal-100'} ${tournament.status === 'completed' ? 'hover:underline cursor-pointer hover:text-gold-400' : ''}`}>
+                                        <span onClick={tournament.status === 'completed' ? (e) => { e.stopPropagation(); onNavigate('players', pId); } : undefined} className={`text-xs font-semibold flex items-center truncate ${isWinner ? 'text-white' : 'text-white/70'} ${tournament.status === 'completed' ? 'hover:underline cursor-pointer hover:text-gold-400' : ''}`}>
                                             {getFlag(p.nationality)} <span className="ml-2 truncate tracking-wide">{p.name}</span>
-                                            {getSeedText(tournament, pId) && <span className="ml-1.5 text-[9px] text-royal-400 font-mono tracking-tighter bg-royal-800 px-1 rounded border border-royal-700">{getSeedText(tournament, pId)}</span>}
+                                            {getSeedText(tournament, pId) && <span className="ml-1.5 text-[8px] text-white/40 font-mono tracking-tighter bg-white/10 px-1 rounded">{getSeedText(tournament, pId)}</span>}
                                         </span>
                                     </div>
                                 </>
                             )}
                         </div>
-                        {isWinner && <CheckCircle size={16} style={{ color: tierConf.hex }} className="shrink-0 drop-shadow-md"/>}
-                        {isBye && <span className="text-[10px] font-bold text-royal-500 uppercase tracking-widest shrink-0">BYE</span>}
+                        {isWinner && (
+                            <span className="text-[9px] font-bold text-white/50 ml-2 bg-black/40 px-1.5 py-0.5 rounded shrink-0" style={{ color: tierConf.hex }}>
+                                {match.type === 'random' ? '🎲 Toss' : match.type === 'lopsided' ? '🔥 DOM' : '⚔️ CLS'}
+                            </span>
+                        )}
+                        {isBye && <span className="text-[9px] font-bold text-white/30 uppercase tracking-widest shrink-0">BYE</span>}
                     </div>
                 );
             };
 
-            const mapQuery = tournament.location || tournament.hostCountry || 'Earth';
+            const mapQuery = `${tournament.name} ${getCountryName(tournament.hostCountry)}`;
 
             return (
-                <div className="h-full flex flex-col pb-20 relative">
+                <div className="h-full flex flex-col pb-20 relative max-w-[1600px] mx-auto w-full">
                     {/* Header Area */}
                     <div className="flex justify-between items-start md:items-center mb-6 shrink-0 relative z-20">
                         <div>
-                            <button onClick={onBack} className="flex items-center gap-2 text-royal-300 hover:text-white transition-colors mb-2 text-sm font-medium">
+                            <button onClick={onBack} className="flex items-center gap-2 text-white/50 hover:text-white transition-colors mb-2 text-sm font-medium">
                                 <ArrowLeft className="w-4 h-4" /> Back to Tournaments
                             </button>
                             <h1 className="text-2xl md:text-3xl font-bold text-white flex items-center gap-3">
@@ -4625,34 +4668,35 @@
                                 <div className="flex items-center gap-2 bg-[#be123c]/10 border border-[#be123c]/30 p-2 rounded-lg">
                                     <span className="text-[#e11d48] text-sm font-bold">Delete Tournament?</span>
                                     <button onClick={handleDelete} className="bg-[#be123c] hover:bg-[#9f1239] text-white px-3 py-1 rounded text-sm font-bold transition-colors">Yes</button>
-                                    <button onClick={() => setShowDelete(false)} className="text-royal-300 hover:text-white text-sm px-2 font-medium">Cancel</button>
+                                    <button onClick={() => setShowDelete(false)} className="text-white/50 hover:text-white text-sm px-2 font-medium">Cancel</button>
                                 </div>
                             ) : (
-                                <button onClick={() => setShowDelete(true)} className="flex items-center gap-2 text-[#e11d48] hover:text-[#fb7185] text-sm font-bold bg-royal-950 px-3 py-2 rounded-lg border border-royal-800 transition-colors"><Trash2 size={16}/> Delete</button>
+                                <button onClick={() => setShowDelete(true)} className="flex items-center gap-2 text-[#e11d48] hover:text-[#fb7185] text-sm font-bold bg-[#05100c] px-3 py-2 rounded-lg border border-white/10 transition-colors shadow-md"><Trash2 size={16}/> Delete</button>
                             )}
                         </div>
                     </div>
 
                     {tabs.length > 1 && (
                         <div className="mb-4 relative z-20">
-                            <GlassTabs tabs={tabs} activeTab={activeTab} onChange={setActiveTab} />
+                            <GlassTabs tabs={tabs} activeTab={activeTab} onChange={handleTabChange} />
                         </div>
                     )}
 
                     {/* Bracket Container with Satellite Map Background */}
-                    <div className="flex-1 overflow-auto bg-royal-950 rounded-2xl shadow-2xl custom-scrollbar relative border border-royal-800 flex flex-col">
+                    <div className="flex-1 overflow-auto bg-[#05100c] rounded-2xl shadow-2xl custom-scrollbar relative border border-white/5 flex flex-col">
                         
                         {/* Map Background Layer */}
-                        <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden opacity-20 mix-blend-screen">
+                        <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden opacity-15 mix-blend-screen grayscale blur-[1px]">
                             <iframe 
-                                src={`https://maps.google.com/maps?q=${encodeURIComponent(mapQuery)}&t=k&z=13&ie=UTF8&iwloc=&output=embed`} 
-                                className="w-[120%] h-[120%] -translate-x-[10%] -translate-y-[10%] blur-sm grayscale"
+                                src={`https://maps.google.com/maps?q=${encodeURIComponent(mapQuery)}&t=k&z=11&ie=UTF8&iwloc=&output=embed`} 
+                                className="w-[120%] h-[120%] -translate-x-[10%] -translate-y-[10%]"
                                 frameBorder="0"
+                                loading="lazy"
                             />
                         </div>
 
                         {/* Solid Sticky Header Row */}
-                        <div className="flex min-w-max sticky top-0 z-40 bg-royal-950/80 backdrop-blur-xl border-b border-royal-800 pb-3 pt-6 px-8">
+                        <div className="flex min-w-max sticky top-0 z-40 bg-[#05100c]/90 backdrop-blur-xl border-b border-white/10 pb-3 pt-6 px-8">
                             {parsedBracket.map((round, rIdx) => {
                                 if (!round.some((_, mIdx) => shouldShowMatch(activeTab, rIdx, mIdx, round.length))) return null;
                                 
@@ -4660,9 +4704,9 @@
                                 const showHeaderTrophy = isFinalRound && round[0];
 
                                 return (
-                                    <div key={`header-${rIdx}`} className="w-72 shrink-0 mr-12 text-center flex flex-col items-center justify-end min-h-[40px]">
+                                    <div key={`header-${rIdx}`} className="w-64 shrink-0 mr-12 text-center flex flex-col items-center justify-end min-h-[40px]">
                                         {showHeaderTrophy && <DynamicTrophy tier={tierKey} result="Winner" country={tournament.hostCountry} size={40} className="mb-2 drop-shadow-xl" />}
-                                        <div className="flex items-center justify-center gap-2 text-white font-bold uppercase tracking-widest text-xs" style={{ color: isFinalRound ? tierConf.hex : undefined }}>
+                                        <div className="flex items-center justify-center gap-2 text-white font-bold uppercase tracking-widest text-[11px]" style={{ color: isFinalRound ? tierConf.hex : undefined }}>
                                             {isFinalRound && !showHeaderTrophy && <Trophy className="w-3 h-3 inline-block opacity-80" style={{ color: tierConf.hex }} />}
                                             {ROUND_NAMES[rIdx + rOffset]}
                                         </div>
@@ -4678,7 +4722,7 @@
                                 if (!round.some((_, mIdx) => shouldShowMatch(activeTab, rIdx, mIdx, round.length))) return null;
                                 
                                 return (
-                                    <div key={`col-${rIdx}`} className="flex flex-col w-72 shrink-0 mr-12 py-2">
+                                    <div key={`col-${rIdx}`} className="flex flex-col w-64 shrink-0 mr-12 py-1">
                                         {round.map((match, mIdx) => {
                                             if (!shouldShowMatch(activeTab, rIdx, mIdx, round.length)) return null;
                                             
@@ -4686,27 +4730,33 @@
                                             const isReady = match.p1 && match.p2 && !match.winner && tournament.status !== 'completed' && match.type !== 'bye';
                                             
                                             // Ensure absolute connectors are only drawn to elements that are ALSO visible
-                                            const isFirstVisibleRoundInTab = (activeTab.startsWith('q') || activeTab === 'top' || activeTab === 'bottom' || activeTab === 'f4') ? !shouldShowMatch(activeTab, rIdx - 1, mIdx * 2, round.length * 2) : rIdx === 0;
+                                            const isFirstVisibleRoundInTab = (activeTab.startsWith('q') || activeTab === 'top' || activeTab === 'bottom' || activeTab === 'f4' || activeTab === 'final32' || activeTab === 'final16' || activeTab === 'final8') 
+                                                ? !shouldShowMatch(activeTab, rIdx - 1, mIdx * 2, round.length * 2) 
+                                                : rIdx === 0;
 
                                             return (
-                                                <div key={match.id} className="relative flex flex-col justify-center" style={{ flex: 1, minHeight: '80px' }}>
+                                                <div key={match.id} className="relative flex flex-col justify-center" style={{ flex: 1, minHeight: '74px' }}>
                                                     <div onClick={() => handleMatchClick(rIdx, mIdx, match)} 
-                                                         className={`relative z-20 rounded-2xl transition-all duration-300 overflow-hidden flex flex-col ${
+                                                         className={`relative z-20 rounded-xl transition-all duration-300 overflow-hidden flex flex-col ${
                                                              isReady 
-                                                             ? 'cursor-pointer hover:scale-[1.02] bg-royal-800 shadow-[0_4px_20px_rgba(0,0,0,0.5)] border border-royal-600' 
+                                                             ? 'cursor-pointer hover:scale-105 z-30 bg-white/[0.1] shadow-[0_4px_25px_rgba(0,0,0,0.6)] border border-white/30 backdrop-blur-md' 
                                                              : match.winner 
-                                                                 ? 'bg-royal-900 border border-royal-800' 
-                                                                 : 'bg-royal-950/60 border border-royal-900 opacity-60 backdrop-blur-sm'
+                                                                 ? 'bg-[#030806] border border-white/10 shadow-sm' 
+                                                                 : 'bg-black/40 border border-white/[0.05] opacity-60 backdrop-blur-sm'
                                                          }`}
-                                                         style={{ borderColor: isReady ? tierConf.hex : undefined }}>
+                                                         style={{ 
+                                                             borderColor: isReady ? tierConf.hex : undefined,
+                                                             boxShadow: isReady ? `0 0 20px ${tierConf.hex}40` : undefined
+                                                         }}>
                                                         {renderMatchParticipant(match, match.p1, true)}
+                                                        <div className="h-px w-full bg-white/5"></div>
                                                         {renderMatchParticipant(match, match.p2, false)}
                                                     </div>
                                                     
-                                                    {/* Pure CSS Connector Lines */}
-                                                    {!isFirstVisibleRoundInTab && <div className="absolute -left-[24px] top-1/2 w-[24px] h-[2px] bg-royal-700 z-10"></div>}
-                                                    {rIdx < totalRounds - 1 && <div className="absolute -right-[24px] top-1/2 w-[24px] h-[2px] bg-royal-700 z-10"></div>}
-                                                    {rIdx < totalRounds - 1 && mIdx % 2 === 0 && <div className="absolute -right-[24px] top-1/2 w-[2px] bg-royal-700 z-10" style={{ height: '100%' }}></div>}
+                                                    {/* Ultra-visible White Connector Lines */}
+                                                    {!isFirstVisibleRoundInTab && <div className="absolute -left-[24px] top-1/2 w-[24px] h-[2px] bg-white/30 z-10"></div>}
+                                                    {rIdx < totalRounds - 1 && <div className="absolute -right-[24px] top-1/2 w-[24px] h-[2px] bg-white/30 z-10"></div>}
+                                                    {rIdx < totalRounds - 1 && mIdx % 2 === 0 && <div className="absolute -right-[24px] top-1/2 w-[2px] bg-white/30 z-10" style={{ height: '100%' }}></div>}
                                                 </div>
                                             );
                                         })}
@@ -4744,6 +4794,7 @@
             }
             if (!Array.isArray(knockout) || knockout.length < 2) knockout = [[],[]];
 
+            // SMART DYNAMIC GROUP TABS
             const groupKeys = tournament.groups ? Object.keys(tournament.groups) : ['A', 'B'];
             const tabs = useMemo(() => {
                 const generatedTabs = groupKeys.map(k => ({ id: `group${k}`, label: `Group ${k}` }));
@@ -4755,7 +4806,7 @@
             const currentStandings = useMemo(() => calcGroupStandings(activeGroupKey, groupMatches), [activeGroupKey, groupMatches]);
 
             const isGroupStageComplete = useMemo(() => {
-                const totalRequiredMatches = groupKeys.length * 6;
+                const totalRequiredMatches = groupKeys.length * 6; // Assuming 6 matches per group (4 players)
                 return groupMatches.length === totalRequiredMatches && groupMatches.every(m => m && m.winner);
             }, [groupMatches, groupKeys]);
 
@@ -4782,17 +4833,22 @@
                         const sA = calcGroupStandings('A', parsedGM);
                         const sB = calcGroupStandings('B', parsedGM);
                         if(sA.length >= 2 && sB.length >= 2) {
-                            parsedKO[0][0].p1 = sA[0].id; parsedKO[0][0].p2 = sB[1].id;
-                            parsedKO[0][1].p1 = sB[0].id; parsedKO[0][1].p2 = sA[1].id;
+                            parsedKO[0][0].p1 = sA[0].id;
+                            parsedKO[0][0].p2 = sB[1].id;
+                            parsedKO[0][1].p1 = sB[0].id;
+                            parsedKO[0][1].p2 = sA[1].id;
                         }
                     }
                 } else if (matchType === 'sf') {
-                    parsedKO[0][matchIndex].winner = winnerId; parsedKO[0][matchIndex].type = winType;
+                    parsedKO[0][matchIndex].winner = winnerId;
+                    parsedKO[0][matchIndex].type = winType;
                     if (matchIndex === 0) parsedKO[1][0].p1 = winnerId;
                     else parsedKO[1][0].p2 = winnerId;
                 } else if (matchType === 'f') {
-                    parsedKO[1][0].winner = winnerId; parsedKO[1][0].type = winType;
-                    newT.status = 'completed'; newT.completedAt = Date.now();
+                    parsedKO[1][0].winner = winnerId;
+                    parsedKO[1][0].type = winType;
+                    newT.status = 'completed';
+                    newT.completedAt = Date.now();
                 }
                 
                 newT.groupMatches = JSON.stringify(parsedGM);
@@ -4804,7 +4860,7 @@
 
             const handleRandomize = () => {
                 const winnerId = Math.random() < 0.5 ? resolvingMatch.p1 : resolvingMatch.p2;
-                submitResult(winnerId, 'close');
+                submitResult(winnerId, 'random');
             };
 
             const handleDelete = async () => {
@@ -4826,52 +4882,57 @@
                 const isLoser = !isTBD && match.winner != null && match.winner !== pId && !isBye;
                 
                 return (
-                    <div className={`relative px-4 py-2.5 flex items-center justify-between transition-colors ${isTop ? 'border-b border-royal-800/50' : ''} ${isWinner ? 'bg-white/[0.04]' : 'bg-transparent'}`}>
+                    <div className={`relative px-4 py-2.5 flex items-center justify-between transition-colors ${isTop ? 'border-b border-white/[0.04]' : ''} ${isWinner ? 'bg-white/[0.04]' : 'bg-transparent'}`}>
                         {isWinner && <div className="absolute left-0 top-0 bottom-0 w-[5px] rounded-r" style={{ backgroundColor: tierConf.hex }}></div>}
                         <div className={`flex items-center gap-3 w-full pr-2 ${isLoser ? 'opacity-40 grayscale' : ''}`}>
                             {isTBD ? (
-                                <div className="w-6 h-6 rounded-full bg-royal-800 shrink-0 border border-royal-700 flex items-center justify-center">
-                                    <span className="text-[9px] text-royal-500 font-bold">TBD</span>
-                                </div>
+                                <>
+                                    <div className="w-6 h-6 rounded-full border border-white/5 bg-white/[0.02] shrink-0"></div>
+                                    <span className="text-[11px] font-semibold text-white/20 tracking-widest uppercase">TBD</span>
+                                </>
                             ) : (
                                 <>
-                                    <img src={p.images?.[0] || p.imageUrl || "https://via.placeholder.com/40"} className={`w-7 h-7 rounded-full object-cover shrink-0 shadow-sm ${isWinner ? 'ring-2 ring-offset-2 ring-offset-royal-900' : 'border border-royal-700'}`} style={{ '--tw-ring-color': isWinner ? tierConf.hex : undefined }} />
+                                    <img src={p.images?.[0] || p.imageUrl || "https://via.placeholder.com/40"} className={`w-7 h-7 rounded-full object-cover shrink-0 shadow-md ${isWinner ? 'ring-2 ring-offset-2 ring-offset-royal-900' : 'border border-white/10'}`} style={{ '--tw-ring-color': isWinner ? tierConf.hex : undefined }} />
                                     <div className="flex flex-col min-w-0">
-                                        <span onClick={tournament.status === 'completed' ? (e) => { e.stopPropagation(); onNavigate('players', pId); } : undefined} className={`text-sm font-semibold flex items-center truncate ${isWinner ? 'text-white' : 'text-royal-100'} ${tournament.status === 'completed' ? 'hover:underline cursor-pointer hover:text-gold-400' : ''}`}>
+                                        <span onClick={tournament.status === 'completed' ? (e) => { e.stopPropagation(); onNavigate('players', pId); } : undefined} className={`text-sm font-semibold flex items-center truncate ${isWinner ? 'text-white' : 'text-white/70'} ${tournament.status === 'completed' ? 'hover:underline cursor-pointer hover:text-gold-400' : ''}`}>
                                             {getFlag(p.nationality)} <span className="ml-2 truncate tracking-wide">{p.name}</span>
-                                            {getSeedText(tournament, pId) && <span className="ml-1.5 text-[9px] text-royal-400 font-mono tracking-tighter bg-royal-800 px-1 rounded border border-royal-700">{getSeedText(tournament, pId)}</span>}
+                                            {getSeedText(tournament, pId) && <span className="ml-1.5 text-[9px] text-white/30 font-mono tracking-tighter bg-white/10 px-1 rounded">{getSeedText(tournament, pId)}</span>}
                                         </span>
                                     </div>
                                 </>
                             )}
                         </div>
-                        {isWinner && <CheckCircle size={16} style={{ color: tierConf.hex }} className="shrink-0 drop-shadow-md"/>}
+                        {isWinner && (
+                            <span className="text-[9px] font-bold text-white/50 ml-2 bg-black/40 px-1.5 py-0.5 rounded shrink-0" style={{ color: tierConf.hex }}>
+                                {match.type === 'random' ? '🎲 Toss' : match.type === 'lopsided' ? '🔥 DOM' : '⚔️ CLS'}
+                            </span>
+                        )}
                     </div>
                 );
             };
 
             const renderStandingsTable = (groupName, standings) => (
-                <div className="bg-royal-900 rounded-2xl border border-royal-700 overflow-hidden shadow-2xl w-full flex flex-col h-full">
-                    <div className="bg-royal-950/80 p-4 border-b border-royal-800 font-bold text-white flex justify-between items-center">
+                <div className="bg-[#05100c] rounded-2xl border border-white/[0.05] overflow-hidden shadow-2xl w-full flex flex-col h-full">
+                    <div className="bg-white/[0.02] p-4 border-b border-white/[0.05] font-bold text-white flex justify-between items-center">
                         <span className="text-lg tracking-tight" style={{ color: tierConf.hex }}>Group {groupName} Standings</span>
                         {isGroupStageComplete && <span className="text-[10px] bg-[#059669]/10 text-[#059669] border border-[#059669]/20 px-2 py-0.5 rounded uppercase tracking-wider font-bold">Final</span>}
                     </div>
                     <table className="w-full text-left text-sm table-fixed flex-1">
-                        <thead className="bg-royal-950/40 text-royal-300 text-[10px] uppercase tracking-widest border-b border-royal-800/50">
+                        <thead className="bg-white/[0.01] text-white/40 text-[10px] uppercase tracking-widest border-b border-white/[0.02]">
                             <tr><th className="p-4 w-16 text-center">Rnk</th><th className="p-4">Player</th><th className="p-4 w-20 text-center">W-L</th><th className="p-4 w-20 text-center">Diff</th></tr>
                         </thead>
-                        <tbody className="divide-y divide-royal-800/50 text-white font-medium">
+                        <tbody className="divide-y divide-white/[0.02] text-white/80 font-medium">
                             {standings.map((s, idx) => {
                                 const p = getPlayer(s.id);
                                 const qualifies = isGroupStageComplete && idx < 2;
                                 return (
                                     <tr key={s.id} className={`${qualifies ? 'bg-[#059669]/10' : 'hover:bg-white/[0.02]'} transition-colors`}>
                                         <td className="p-4 text-center">
-                                            <span className={`w-6 h-6 inline-flex items-center justify-center rounded-full text-xs font-bold ${qualifies ? 'bg-[#059669] text-[#05100c]' : 'bg-royal-800 text-royal-300'}`}>{idx+1}</span>
+                                            <span className={`w-6 h-6 inline-flex items-center justify-center rounded-full text-xs font-bold ${qualifies ? 'bg-[#059669] text-[#05100c]' : 'bg-white/10 text-white/50'}`}>{idx+1}</span>
                                         </td>
                                         <td className="p-4 truncate text-base">{p.name}</td>
                                         <td className="p-4 text-center tabular-nums text-lg">{s.wins}-{s.losses}</td>
-                                        <td className={`p-4 text-center tabular-nums text-lg ${s.tiebreaker > 0 ? 'text-[#059669]' : s.tiebreaker < 0 ? 'text-[#be123c]' : 'text-royal-400'}`}>{s.tiebreaker > 0 ? `+${s.tiebreaker}` : s.tiebreaker}</td>
+                                        <td className={`p-4 text-center tabular-nums text-lg ${s.tiebreaker > 0 ? 'text-[#059669]' : s.tiebreaker < 0 ? 'text-[#be123c]' : 'text-white/40'}`}>{s.tiebreaker > 0 ? `+${s.tiebreaker}` : s.tiebreaker}</td>
                                     </tr>
                                 );
                             })}
@@ -4879,10 +4940,10 @@
                                 const p = getPlayer(pid);
                                 return (
                                     <tr key={pid}>
-                                        <td className="p-4 text-center"><span className="w-6 h-6 inline-flex items-center justify-center rounded-full text-xs font-bold bg-royal-800 text-royal-500">-</span></td>
-                                        <td className="p-4 truncate text-royal-400 text-base">{p.name}</td>
-                                        <td className="p-4 text-center text-royal-500 tabular-nums text-lg">0-0</td>
-                                        <td className="p-4 text-center text-royal-500 tabular-nums text-lg">0</td>
+                                        <td className="p-4 text-center"><span className="w-6 h-6 inline-flex items-center justify-center rounded-full text-xs font-bold bg-white/5 text-white/30">-</span></td>
+                                        <td className="p-4 truncate text-white/50 text-base">{p.name}</td>
+                                        <td className="p-4 text-center text-white/30 tabular-nums text-lg">0-0</td>
+                                        <td className="p-4 text-center text-white/30 tabular-nums text-lg">0</td>
                                     </tr>
                                 );
                             })}
@@ -4891,13 +4952,13 @@
                 </div>
             );
 
-            const mapQuery = tournament.location || tournament.hostCountry || 'Earth';
+            const mapQuery = `${tournament.name} ${getCountryName(tournament.hostCountry)}`;
 
             return (
                 <div className="h-full flex flex-col pb-20 relative max-w-6xl mx-auto space-y-6">
                     <div className="flex justify-between items-start md:items-center shrink-0 relative z-20">
                         <div>
-                            <button onClick={onBack} className="flex items-center gap-2 text-royal-300 hover:text-white transition-colors mb-2 text-sm font-medium">
+                            <button onClick={onBack} className="flex items-center gap-2 text-white/50 hover:text-white transition-colors mb-2 text-sm font-medium">
                                 <ArrowLeft className="w-4 h-4" /> Back to Tournaments
                             </button>
                             <h1 className="text-2xl md:text-3xl font-bold text-white flex items-center gap-3">
@@ -4917,10 +4978,10 @@
                                 <div className="flex items-center gap-2 bg-[#be123c]/10 border border-[#be123c]/30 p-2 rounded-lg">
                                     <span className="text-[#e11d48] text-sm font-bold">Delete Tournament?</span>
                                     <button onClick={handleDelete} className="bg-[#be123c] hover:bg-[#9f1239] text-white px-3 py-1 rounded text-sm font-bold transition-colors">Yes</button>
-                                    <button onClick={() => setShowDelete(false)} className="text-royal-300 hover:text-white text-sm px-2 font-medium">Cancel</button>
+                                    <button onClick={() => setShowDelete(false)} className="text-white/50 hover:text-white text-sm px-2 font-medium">Cancel</button>
                                 </div>
                             ) : (
-                                <button onClick={() => setShowDelete(true)} className="flex items-center gap-2 text-[#e11d48] hover:text-[#fb7185] text-sm font-bold bg-royal-950 px-3 py-2 rounded-lg border border-royal-800 transition-colors"><Trash2 size={16}/> Delete</button>
+                                <button onClick={() => setShowDelete(true)} className="flex items-center gap-2 text-[#e11d48] hover:text-[#fb7185] text-sm font-bold bg-[#05100c] px-3 py-2 rounded-lg border border-white/10 transition-colors shadow-md"><Trash2 size={16}/> Delete</button>
                             )}
                         </div>
                     </div>
@@ -4929,14 +4990,15 @@
                         <GlassTabs tabs={tabs} activeTab={activeTab} onChange={setActiveTab} />
                     </div>
 
-                    <div className="flex-1 bg-royal-950 border border-royal-800 rounded-2xl shadow-2xl relative overflow-hidden flex flex-col">
+                    <div className="flex-1 bg-[#05100c] border border-white/[0.05] rounded-2xl shadow-2xl relative overflow-hidden flex flex-col">
                         
                         {/* Map Background Layer */}
-                        <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden opacity-20 mix-blend-screen">
+                        <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden opacity-15 mix-blend-screen grayscale blur-[1px]">
                             <iframe 
-                                src={`https://maps.google.com/maps?q=${encodeURIComponent(mapQuery)}&t=k&z=13&ie=UTF8&iwloc=&output=embed`} 
-                                className="w-[120%] h-[120%] -translate-x-[10%] -translate-y-[10%] blur-sm grayscale"
+                                src={`https://maps.google.com/maps?q=${encodeURIComponent(mapQuery)}&t=k&z=11&ie=UTF8&iwloc=&output=embed`} 
+                                className="w-[120%] h-[120%] -translate-x-[10%] -translate-y-[10%]"
                                 frameBorder="0"
+                                loading="lazy"
                             />
                         </div>
 
@@ -4944,8 +5006,8 @@
                         {activeGroupKey && (
                             <div className="grid lg:grid-cols-2 gap-8 animate-in fade-in duration-300 h-full p-8 relative z-10">
                                 {renderStandingsTable(activeGroupKey, currentStandings)}
-                                <div className="bg-royal-900/90 backdrop-blur-md rounded-2xl border border-royal-700 flex flex-col shadow-xl">
-                                    <h3 className="text-royal-300 text-sm font-bold uppercase tracking-widest px-6 py-4 border-b border-royal-800 shrink-0 bg-royal-950/50">Group {activeGroupKey} Matches</h3>
+                                <div className="bg-[#05100c]/90 backdrop-blur-xl rounded-2xl border border-white/10 flex flex-col shadow-xl">
+                                    <h3 className="text-white/60 text-sm font-bold uppercase tracking-widest px-6 py-4 border-b border-white/10 shrink-0 bg-white/[0.02]">Group {activeGroupKey} Matches</h3>
                                     <div className="flex-1 overflow-y-auto custom-scrollbar p-6 space-y-4">
                                         {groupMatches.filter(m => m && m.group === activeGroupKey).map((match, mIdx) => {
                                             const isReady = !match.winner;
@@ -4953,13 +5015,14 @@
                                                 <div key={match.id} onClick={() => handleMatchClick('group', groupMatches.findIndex(m => m.id === match.id), match)} 
                                                      className={`rounded-2xl transition-all duration-300 overflow-hidden flex flex-col justify-center border ${
                                                          isReady 
-                                                         ? 'cursor-pointer hover:scale-[1.02] z-20 bg-royal-800 shadow-[0_4px_20px_rgba(0,0,0,0.4)] border-royal-600' 
+                                                         ? 'cursor-pointer hover:scale-[1.02] z-20 bg-white/[0.1] shadow-[0_4px_20px_rgba(0,0,0,0.6)] border-white/30 backdrop-blur-md' 
                                                          : match.winner 
-                                                             ? 'bg-royal-900 border-royal-800' 
-                                                             : 'bg-royal-950/50 border-royal-900 opacity-60'
+                                                             ? 'bg-[#030806] border-white/10 shadow-sm' 
+                                                             : 'bg-black/40 border-white/[0.05] opacity-60 backdrop-blur-sm'
                                                      }`} 
-                                                     style={{ borderColor: isReady ? tierConf.hex : undefined }}>
+                                                     style={{ borderColor: isReady ? tierConf.hex : undefined, boxShadow: isReady ? `0 0 20px ${tierConf.hex}40` : undefined }}>
                                                     {renderMatchParticipant(match, match.p1, true)}
+                                                    <div className="h-px w-full bg-white/5"></div>
                                                     {renderMatchParticipant(match, match.p2, false)}
                                                 </div>
                                             );
@@ -4973,13 +5036,13 @@
                         {activeTab === 'knockout' && (
                             <div className="animate-in fade-in duration-300 h-full flex flex-col relative z-10">
                                 {!isGroupStageComplete ? (
-                                    <div className="text-center text-royal-500 m-auto">
+                                    <div className="text-center text-white/50 m-auto">
                                         <Trophy size={80} className="mx-auto mb-6 opacity-20" />
                                         <p className="text-xl font-medium tracking-wide">Complete all Group Stage matches<br/>to unlock the Championship Bracket.</p>
                                     </div>
                                 ) : (
                                     <>
-                                        <div className="flex min-w-max sticky top-0 z-40 bg-royal-950/80 backdrop-blur-xl border-b border-royal-800 pb-3 pt-6 px-8 justify-center">
+                                        <div className="flex min-w-max sticky top-0 z-40 bg-[#05100c]/90 backdrop-blur-xl border-b border-white/10 pb-3 pt-6 px-8 justify-center">
                                             {knockout.map((round, rIdx) => {
                                                 if (!Array.isArray(round)) return null;
                                                 const isFinalRound = rIdx === 1;
@@ -5011,19 +5074,20 @@
                                                                         <div onClick={() => handleMatchClick(rIdx === 0 ? 'sf' : 'f', mIdx, match)} 
                                                                              className={`relative z-20 rounded-2xl transition-all duration-300 overflow-hidden flex flex-col border ${
                                                                                  isReady 
-                                                                                 ? 'cursor-pointer hover:scale-[1.02] z-20 bg-royal-800 shadow-[0_4px_20px_rgba(0,0,0,0.5)] border-royal-600' 
+                                                                                 ? 'cursor-pointer hover:scale-105 z-20 bg-white/[0.1] shadow-[0_4px_25px_rgba(0,0,0,0.6)] border-white/30 backdrop-blur-md' 
                                                                                  : match.winner 
-                                                                                     ? 'bg-royal-900 border-royal-800' 
-                                                                                     : 'bg-royal-950/60 border-royal-900 opacity-60 backdrop-blur-sm'
+                                                                                     ? 'bg-[#030806] border-white/10 shadow-sm' 
+                                                                                     : 'bg-black/40 border-white/[0.05] opacity-60 backdrop-blur-sm'
                                                                              }`} 
-                                                                             style={{ borderColor: isReady ? tierConf.hex : undefined }}>
+                                                                             style={{ borderColor: isReady ? tierConf.hex : undefined, boxShadow: isReady ? `0 0 20px ${tierConf.hex}40` : undefined }}>
                                                                             {renderMatchParticipant(match, match.p1, true)}
+                                                                            <div className="h-px w-full bg-white/5"></div>
                                                                             {renderMatchParticipant(match, match.p2, false)}
                                                                         </div>
                                                                         {/* 2px Connector lines */}
-                                                                        {rIdx === 0 && <div className="absolute -right-[32px] top-1/2 w-[32px] h-[2px] bg-royal-700 z-10"></div>}
-                                                                        {rIdx === 0 && mIdx % 2 === 0 && <div className="absolute -right-[32px] top-1/2 w-[2px] bg-royal-700 z-10" style={{ height: '100%' }}></div>}
-                                                                        {rIdx === 1 && <div className="absolute -left-[32px] top-1/2 w-[32px] h-[2px] bg-royal-700 z-10"></div>}
+                                                                        {rIdx === 0 && <div className="absolute -right-[32px] top-1/2 w-[32px] h-[2px] bg-white/30 z-10"></div>}
+                                                                        {rIdx === 0 && mIdx % 2 === 0 && <div className="absolute -right-[32px] top-1/2 w-[2px] bg-white/30 z-10" style={{ height: '100%' }}></div>}
+                                                                        {rIdx === 1 && <div className="absolute -left-[32px] top-1/2 w-[32px] h-[2px] bg-white/30 z-10"></div>}
                                                                     </div>
                                                                 );
                                                             })}
@@ -5041,8 +5105,6 @@
                 </div>
             );
         }
-        
-        // --- Main App Logic ---
 
         function App() {
             const [user, setUser] = useState(null);
@@ -5125,25 +5187,18 @@
             const handlePlayerSelect = (id) => navigate('players', id);
 
             if (loading) return (
-                <div className="min-h-screen flex items-center justify-center bg-royal-950 w-full selection:bg-transparent">
+                <div className="min-h-screen flex items-center justify-center bg-[#05100c] w-full selection:bg-transparent">
                     <div className="flex flex-col items-center gap-6" style={{ animation: 'snb-luxury-reveal 1.5s cubic-bezier(0.22, 1, 0.36, 1) forwards' }}>
-                        
-                        {/* Flat, crisp logo. Zero glow. Breathing opacity. */}
                         <SnbLogo size={42} className="text-gold-500/70" style={{ animation: 'snb-breath 3s ease-in-out infinite' }} />
-                        
-                        {/* Wide tracking, tiny font, muted color. The hallmark of premium UI. */}
                         <div className="flex flex-col items-center gap-2 mt-2">
-                            <span className="text-royal-400 text-[10px] font-medium tracking-[0.4em] uppercase" style={{ animation: 'snb-breath 3s ease-in-out infinite 0.5s' }}>
+                            <span className="text-white/40 text-[10px] font-medium tracking-[0.4em] uppercase" style={{ animation: 'snb-breath 3s ease-in-out infinite 0.5s' }}>
                                 SNB Tour
                             </span>
-                            {/* An ultra-thin, almost invisible loading line */}
-                            <div className="w-12 h-[1px] bg-royal-900 mt-2 overflow-hidden">
+                            <div className="w-12 h-[1px] bg-white/10 mt-2 overflow-hidden">
                                 <div className="w-full h-full bg-gold-500/40" style={{ animation: 'snb-slide 2s cubic-bezier(0.65, 0, 0.35, 1) infinite' }}></div>
                             </div>
                         </div>
-
                     </div>
-
                     <style dangerouslySetInnerHTML={{__html: `
                         @keyframes snb-luxury-reveal {
                             0% { opacity: 0; filter: blur(2px); transform: translateY(4px); }
@@ -5162,58 +5217,61 @@
             );
             
             if (firebaseError || (!user && !loading)) return (
-                <div className="min-h-screen flex flex-col items-center justify-center bg-royal-950 text-royal-50 w-full p-4">
-                    <div className="text-center p-8 bg-royal-900 rounded-xl border border-red-500/30 max-w-md shadow-2xl">
+                <div className="min-h-screen flex flex-col items-center justify-center bg-[#05100c] text-white w-full p-4">
+                    <div className="text-center p-8 bg-white/[0.02] rounded-2xl border border-red-500/30 max-w-md shadow-2xl">
                         <Shield size={48} className="mx-auto mb-4 text-red-500" />
                         <h2 className="text-xl font-bold text-white mb-2">Firebase Configuration Required</h2>
-                        <p className="text-royal-300 text-xs text-left bg-royal-950 p-4 rounded border border-royal-800">Please provide valid Firebase credentials in index.html.</p>
+                        <p className="text-white/40 text-xs text-left bg-black p-4 rounded-xl border border-white/10">Please provide valid Firebase credentials in index.html.</p>
                     </div>
                 </div>
             );
 
             return (
-                <div className="h-screen w-full bg-royal-950 text-royal-50 flex font-sans overflow-hidden">
-                    <nav className="w-64 bg-royal-900 border-r border-royal-800 flex flex-col hidden md:flex shrink-0">
-                        <div onClick={() => navigateTo('dashboard')} className="p-5 border-b border-royal-800 flex items-center gap-1.5 text-xl font-bold text-white cursor-pointer hover:text-gold-400 transition-colors">
-                            <SnbLogo size={28} className="text-gold-500 mr-1"/><span>SNB Tour</span>
+                <div className="h-screen w-full bg-[#05100c] text-white flex font-sans overflow-hidden">
+                    <nav className="w-64 bg-[#030806] border-r border-white/10 flex flex-col hidden md:flex shrink-0">
+                        <div onClick={() => navigateTo('dashboard')} className="p-6 border-b border-white/10 flex items-center gap-2 text-xl font-bold text-white cursor-pointer hover:text-gold-400 transition-colors">
+                            <SnbLogo size={28} className="text-gold-500"/><span>SNB Tour</span>
                         </div>
-                        <div className="px-3 py-3">
-                            <button onClick={() => navigateTo('tournaments')} className={`w-full flex items-center justify-center gap-2 px-4 py-2 text-base font-bold rounded-lg transition-all shadow-md ${activeTab === 'tournaments' ? 'bg-gold-400 text-royal-950 shadow-gold-500/20' : 'bg-gold-500 text-royal-950 hover:bg-gold-400 shadow-gold-500/10 hover:shadow-gold-500/20'}`}>
-                                <TournamentsIcon size={18}/> Tournaments
+                        <div className="px-4 py-6 border-b border-white/10">
+                            <button onClick={() => navigateTo('create_tournament')} className={`w-full flex items-center justify-center gap-2 px-4 py-3 text-sm font-bold rounded-xl transition-all shadow-md ${activeTab === 'create_tournament' ? 'bg-gold-400 text-black shadow-[0_0_15px_rgba(212,175,55,0.3)]' : 'bg-gold-500 text-black hover:bg-gold-400 hover:shadow-[0_0_20px_rgba(212,175,55,0.4)]'}`}>
+                                <Plus size={18}/> Create Event
                             </button>
                         </div>
-                        <div className="flex-1 pb-2 space-y-0.5">
-                            <button onClick={() => navigateTo('dashboard')} className={`w-full flex items-center gap-3 px-6 py-3 font-medium transition-colors ${activeTab === 'dashboard' ? 'bg-royal-800/50 text-gold-500 border-r-4 border-gold-500' : 'text-royal-300 hover:bg-royal-800 hover:text-royal-100'}`}><DashboardIcon size={20}/>SNB Rankings</button>
-                            <button onClick={() => navigateTo('players')} className={`w-full flex items-center gap-3 px-6 py-3 font-medium transition-colors ${activeTab === 'players' ? 'bg-royal-800/50 text-gold-500 border-r-4 border-gold-500' : 'text-royal-300 hover:bg-royal-800 hover:text-royal-100'}`}><PlayersIcon size={20}/>Players</button>
-                            <button onClick={() => navigateTo('nations')} className={`w-full flex items-center gap-3 px-6 py-3 font-medium transition-colors ${activeTab === 'nations' ? 'bg-royal-800/50 text-gold-500 border-r-4 border-gold-500' : 'text-royal-300 hover:bg-royal-800 hover:text-royal-100'}`}><NationsIcon size={20}/>Nations</button>
-                            <button onClick={() => navigateTo('analytics')} className={`w-full flex items-center gap-3 px-6 py-3 font-medium transition-colors ${activeTab === 'analytics' ? 'bg-royal-800/50 text-gold-500 border-r-4 border-gold-500' : 'text-royal-300 hover:bg-royal-800 hover:text-royal-100'}`}><AnalyticsIcon size={20}/>Analytics</button>
+                        <div className="flex-1 py-4 space-y-1 overflow-y-auto">
+                            <button onClick={() => navigateTo('dashboard')} className={`w-full flex items-center gap-3 px-6 py-3.5 font-medium transition-colors ${activeTab === 'dashboard' ? 'bg-white/[0.05] text-gold-500 border-r-4 border-gold-500' : 'text-white/50 hover:bg-white/[0.02] hover:text-white'}`}><DashboardIcon size={20}/>SNB Rankings</button>
+                            <button onClick={() => navigateTo('tournaments')} className={`w-full flex items-center gap-3 px-6 py-3.5 font-medium transition-colors ${(activeTab === 'tournaments' && !selectedTournamentId) ? 'bg-white/[0.05] text-gold-500 border-r-4 border-gold-500' : 'text-white/50 hover:bg-white/[0.02] hover:text-white'}`}><TournamentsIcon size={20}/>Tournaments</button>
+                            <button onClick={() => navigateTo('players')} className={`w-full flex items-center gap-3 px-6 py-3.5 font-medium transition-colors ${activeTab === 'players' ? 'bg-white/[0.05] text-gold-500 border-r-4 border-gold-500' : 'text-white/50 hover:bg-white/[0.02] hover:text-white'}`}><PlayersIcon size={20}/>Players</button>
+                            <button onClick={() => navigateTo('nations')} className={`w-full flex items-center gap-3 px-6 py-3.5 font-medium transition-colors ${activeTab === 'nations' ? 'bg-white/[0.05] text-gold-500 border-r-4 border-gold-500' : 'text-white/50 hover:bg-white/[0.02] hover:text-white'}`}><NationsIcon size={20}/>Nations</button>
+                            <button onClick={() => navigateTo('analytics')} className={`w-full flex items-center gap-3 px-6 py-3.5 font-medium transition-colors ${activeTab === 'analytics' ? 'bg-white/[0.05] text-gold-500 border-r-4 border-gold-500' : 'text-white/50 hover:bg-white/[0.02] hover:text-white'}`}><AnalyticsIcon size={20}/>Analytics</button>
                         </div>
                     </nav>
-                    <main className="flex-1 flex flex-col overflow-hidden">
-                        <div className="md:hidden bg-royal-900 p-4 flex justify-between items-center border-b border-royal-800 overflow-x-auto">
+                    <main className="flex-1 flex flex-col overflow-hidden relative">
+                        {/* Mobile Nav */}
+                        <div className="md:hidden bg-[#030806] p-4 flex justify-between items-center border-b border-white/10 overflow-x-auto shrink-0 z-50">
                             <div onClick={() => navigateTo('dashboard')} className="flex items-center gap-1.5 font-bold text-gold-500 mr-4 cursor-pointer hover:text-gold-400">
                                 <SnbLogo size={24} className="text-gold-500"/><span>SNB Tour</span>
                             </div>
                             <div className="flex gap-3 items-center">
-                                <button onClick={() => navigateTo('tournaments')} className={`p-2 rounded-lg transition-colors ${activeTab === 'tournaments' ? 'bg-gold-400 text-royal-950' : 'bg-gold-500 text-royal-950 hover:bg-gold-400'}`}><TournamentsIcon size={20}/></button>
-                                <div className="w-px h-6 bg-royal-700 mx-1"></div>
-                                <button onClick={() => navigateTo('dashboard')} className={activeTab === 'dashboard' ? 'text-gold-500' : 'text-royal-400'}><DashboardIcon size={20}/></button>
-                                <button onClick={() => navigateTo('players')} className={activeTab === 'players' ? 'text-gold-500' : 'text-royal-400'}><PlayersIcon size={20}/></button>
-                                <button onClick={() => navigateTo('nations')} className={activeTab === 'nations' ? 'text-gold-500' : 'text-royal-400'}><NationsIcon size={20}/></button>
-                                <button onClick={() => navigateTo('analytics')} className={activeTab === 'analytics' ? 'text-gold-500' : 'text-royal-400'}><AnalyticsIcon size={20}/></button>
+                                <button onClick={() => navigateTo('create_tournament')} className={`p-2 rounded-lg transition-colors ${activeTab === 'create_tournament' ? 'bg-gold-400 text-black' : 'bg-gold-500 text-black hover:bg-gold-400'}`}><Plus size={18}/></button>
+                                <div className="w-px h-6 bg-white/10 mx-1"></div>
+                                <button onClick={() => navigateTo('dashboard')} className={activeTab === 'dashboard' ? 'text-gold-500' : 'text-white/40'}><DashboardIcon size={20}/></button>
+                                <button onClick={() => navigateTo('tournaments')} className={(activeTab === 'tournaments' && !selectedTournamentId) ? 'text-gold-500' : 'text-white/40'}><TournamentsIcon size={20}/></button>
+                                <button onClick={() => navigateTo('players')} className={activeTab === 'players' ? 'text-gold-500' : 'text-white/40'}><PlayersIcon size={20}/></button>
+                                <button onClick={() => navigateTo('nations')} className={activeTab === 'nations' ? 'text-gold-500' : 'text-white/40'}><NationsIcon size={20}/></button>
+                                <button onClick={() => navigateTo('analytics')} className={activeTab === 'analytics' ? 'text-gold-500' : 'text-white/40'}><AnalyticsIcon size={20}/></button>
                             </div>
                         </div>
-                        <div className="flex-1 overflow-auto p-4 md:p-8">
+                        <div className="flex-1 overflow-auto p-4 md:p-8 custom-scrollbar bg-[#05100c]">
                             {activeTab === 'dashboard' && <DashboardView playersRaw={playersRaw} tournaments={tournaments} onSelectPlayer={handlePlayerSelect} players={players} />}
                             {activeTab === 'analytics' && <AnalyticsView playersRaw={playersRaw} tournaments={tournaments} players={players} onNavigate={navigate} />}
                             
-                            {/* NATIONS VIEWS UPDATED HERE */}
                             {activeTab === 'nations' && !selectedNationCode && <NationsView players={players} playersRaw={playersRaw} tournaments={tournaments} onNavigate={navigate} />}
                             {activeTab === 'nations' && selectedNationCode && <NationProfile code={selectedNationCode} players={players} onBack={() => navigate('nations')} onNavigate={navigate} playersRaw={playersRaw} tournaments={tournaments} />}
                             
                             {activeTab === 'players' && !selectedPlayerId && <PlayersView players={players} onSelectPlayer={handlePlayerSelect} db={db} appId={appId} />}
                             {activeTab === 'players' && selectedPlayerId && <PlayerProfile player={players.find(p => p.id === selectedPlayerId)} players={players} playersRaw={playersRaw} onBack={() => navigateTo('players')} tournaments={tournaments} db={db} appId={appId} onNavigate={navigate} />}
-                            {activeTab === 'tournaments' && !selectedTournamentId && <TournamentsView tournaments={tournaments} onSelect={(id) => navigate('tournaments', null, id)} onCreate={() => navigateTo('create_tournament')} />}
+                            
+                            {activeTab === 'tournaments' && !selectedTournamentId && <TournamentsView tournaments={tournaments} onSelect={(id) => navigate('tournaments', null, id)} onCreate={() => navigateTo('create_tournament')} onEdit={(id) => navigate('create_tournament', null, id)} />}
                             {activeTab === 'tournaments' && selectedTournamentId && (() => {
                                 const t = tournaments.find(t => t.id === selectedTournamentId);
                                 if (!t) return null;
@@ -5221,7 +5279,7 @@
                                     <SNBInternationalsBracket tournament={t} players={players} onBack={() => navigateTo('tournaments')} db={db} appId={appId} allTournaments={tournaments} onNavigate={navigate} /> :
                                     <TournamentBracket tournament={t} allTournaments={tournaments} players={players} onBack={() => navigateTo('tournaments')} db={db} appId={appId} onNavigate={navigate} />
                             })()}
-                            {activeTab === 'create_tournament' && <CreateTournamentView players={players} onBack={() => navigateTo('tournaments')} onSuccess={id => navigate('tournaments', null, id)} db={db} appId={appId} />}
+                            {activeTab === 'create_tournament' && <CreateTournamentView players={players} onBack={() => navigateTo('tournaments')} onSuccess={id => navigate('tournaments', null, id)} db={db} appId={appId} editingId={selectedTournamentId} tournaments={tournaments} />}
                         </div>
                     </main>
                 </div>
@@ -5233,5 +5291,4 @@
     </script>
 </body>
 </html>
-
 
