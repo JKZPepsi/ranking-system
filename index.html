@@ -4412,15 +4412,16 @@
             const IconClose = () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><circle cx="12" cy="12" r="6"></circle><circle cx="12" cy="12" r="2"></circle></svg>;
 
             return (
-                <div className="fixed inset-0 bg-[#050508]/95 backdrop-blur-3xl z-[200] flex flex-col animate-in zoom-in-95 duration-300">
+                <div className="fixed inset-0 bg-[#050508]/95 backdrop-blur-3xl z-[200] flex flex-col animate-in zoom-in-[0.98] duration-300">
                     
-                    <div className="flex items-center justify-between px-6 py-4 border-b border-white/10 shrink-0 bg-black/40 shadow-md z-50">
+                    {/* Top App Bar */}
+                    <div className="flex items-center justify-between px-6 py-4 border-b border-white/5 shrink-0 bg-black/20 z-50">
                         <div className="flex items-center gap-4">
-                            <button onClick={() => setResolvingMatch(null)} className="w-10 h-10 bg-white/10 hover:bg-white/20 rounded-full flex items-center justify-center transition-colors text-white border border-white/10 shadow-sm backdrop-blur-md">
+                            <button onClick={() => setResolvingMatch(null)} className="w-10 h-10 bg-white/5 hover:bg-white/10 rounded-full flex items-center justify-center transition-colors text-white border border-white/10 shadow-sm backdrop-blur-md">
                                 <ArrowLeft size={18} />
                             </button>
                             <div className="hidden sm:block">
-                                <h2 className="text-lg font-black text-white tracking-tight leading-none drop-shadow-sm">Resolve Match</h2>
+                                <h2 className="text-lg font-bold text-white tracking-tight leading-none drop-shadow-sm">Resolve Match</h2>
                                 <p className="text-white/50 text-[10px] mt-1 font-bold uppercase tracking-widest">{tournament.name}</p>
                             </div>
                         </div>
@@ -4430,7 +4431,7 @@
                                 <div className="inline-flex items-center bg-white/5 border border-white/10 rounded-full px-5 py-1.5 text-xs font-medium text-white/60 shadow-inner backdrop-blur-md">
                                     H2H: 
                                     <span className="text-white font-bold mx-3">{getPlayer(resolvingMatch.p1).name}</span> 
-                                    <span className="font-black px-2.5 py-0.5 rounded text-black" style={{ backgroundColor: tierConf.hex }}>{matchH2H.p1Wins} - {matchH2H.p2Wins}</span> 
+                                    <span className="font-black px-2.5 py-0.5 rounded text-black shadow-sm" style={{ backgroundColor: tierConf.hex }}>{matchH2H.p1Wins} - {matchH2H.p2Wins}</span> 
                                     <span className="text-white font-bold ml-3">{getPlayer(resolvingMatch.p2).name}</span>
                                 </div>
                             ) : (
@@ -4441,8 +4442,16 @@
                         </div>
                     </div>
 
-                    <div className="flex-1 flex flex-col md:flex-row relative min-h-0 bg-[#050508]">
-                        <div className="hidden md:flex absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-14 h-14 bg-black rounded-full z-40 items-center justify-center font-black text-white/30 border border-white/10 shadow-[0_0_30px_rgba(0,0,0,0.8)]">VS</div>
+                    {/* Arena - Full Screen Split */}
+                    <div className="flex-1 flex flex-col md:flex-row relative min-h-0 p-4 md:p-6 gap-4 md:gap-6 z-10">
+                        
+                        {/* VS Center Floating Badge & Randomize Button */}
+                        <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex flex-col items-center gap-4 z-40 w-full max-w-[200px] pointer-events-none">
+                            <div className="w-14 h-14 bg-black border border-white/10 rounded-full flex items-center justify-center font-black text-white/30 text-lg shadow-[0_0_30px_rgba(0,0,0,0.8)] backdrop-blur-xl">VS</div>
+                            <button onClick={handleRandomize} className="pointer-events-auto w-full bg-royal-900/90 border border-royal-700 hover:bg-royal-800 text-white px-6 py-3.5 rounded-2xl font-bold shadow-2xl transition-all active:scale-[0.98] flex items-center justify-center gap-2 text-sm backdrop-blur-md">
+                                <Shuffle size={16}/> Auto-Resolve
+                            </button>
+                        </div>
                         
                         {[resolvingMatch.p1, resolvingMatch.p2].map((pid, idx) => {
                             const p = getPlayer(pid);
@@ -4451,55 +4460,58 @@
                             const setIIdx = idx === 0 ? setP1ImgIdx : setP2ImgIdx;
 
                             return (
-                                <div key={idx} className="flex-1 relative group overflow-hidden bg-black border-b md:border-b-0 md:border-r border-white/5 last:border-0 flex flex-col">
+                                <div key={idx} className="flex-1 relative rounded-3xl overflow-hidden bg-black border border-white/5 flex flex-col group shadow-2xl">
                                     
-                                    <div className="absolute inset-0 z-0">
+                                    {/* Blurred Ambient Background */}
+                                    <div className="absolute inset-0 z-0 opacity-30 blur-[60px] saturate-150 pointer-events-none transition-all duration-700">
+                                        {imgs[iIdx] && <PlayerMedia url={imgs[iIdx]} className="w-full h-full object-cover scale-125" />}
+                                    </div>
+
+                                    {/* Massive Image Container */}
+                                    <div className="flex-1 w-full relative z-10 min-h-0 flex items-center justify-center p-4 pb-[160px] md:pb-0">
                                         {imgs[iIdx] ? (
-                                            <PlayerMedia url={imgs[iIdx]} className="w-full h-full object-cover transition-transform duration-[1.5s] group-hover:scale-105 opacity-60 group-hover:opacity-80" />
+                                            <PlayerMedia url={imgs[iIdx]} className="absolute inset-0 w-full h-full object-contain transition-transform duration-700 group-hover:scale-[1.02]" />
                                         ) : (
-                                            <div className="w-full h-full flex items-center justify-center"><UserCircle size={80} className="text-white/5"/></div>
+                                            <UserCircle size={80} className="text-white/10"/>
                                         )}
                                     </div>
-                                    
-                                    <div className="absolute inset-0 bg-gradient-to-t from-black via-black/80 to-transparent z-10 pointer-events-none"></div>
 
+                                    {/* Image Carousel Controls */}
                                     {imgs.length > 1 && (
-                                        <div className="absolute inset-0 z-20 pointer-events-none">
-                                            <button onClick={(e) => { e.stopPropagation(); setIIdx(prev => (prev === 0 ? imgs.length-1 : prev-1)); }} className="pointer-events-auto absolute left-6 top-1/2 -translate-y-1/2 w-12 h-12 bg-black/40 hover:bg-black/80 border border-white/10 rounded-full flex items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-all backdrop-blur-md shadow-lg hover:scale-110"><ChevronLeft size={24}/></button>
-                                            <button onClick={(e) => { e.stopPropagation(); setIIdx(prev => (prev === imgs.length-1 ? 0 : prev+1)); }} className="pointer-events-auto absolute right-6 top-1/2 -translate-y-1/2 w-12 h-12 bg-black/40 hover:bg-black/80 border border-white/10 rounded-full flex items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-all backdrop-blur-md shadow-lg hover:scale-110"><ChevronRight size={24}/></button>
-                                            <div className="absolute top-[10%] left-1/2 -translate-x-1/2 flex gap-1.5 bg-black/50 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/10">
+                                        <div className="absolute inset-0 z-30 pointer-events-none flex items-center justify-between px-6 pb-[120px]">
+                                            <button onClick={(e) => { e.stopPropagation(); setIIdx(prev => (prev === 0 ? imgs.length-1 : prev-1)); }} className="pointer-events-auto w-12 h-12 bg-black/40 hover:bg-black/80 border border-white/10 rounded-full flex items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-all backdrop-blur-md shadow-lg hover:scale-110"><ChevronLeft size={24}/></button>
+                                            <button onClick={(e) => { e.stopPropagation(); setIIdx(prev => (prev === imgs.length-1 ? 0 : prev+1)); }} className="pointer-events-auto w-12 h-12 bg-black/40 hover:bg-black/80 border border-white/10 rounded-full flex items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-all backdrop-blur-md shadow-lg hover:scale-110"><ChevronRight size={24}/></button>
+                                            
+                                            <div className="absolute top-6 left-1/2 -translate-x-1/2 flex gap-1.5 bg-black/50 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/10 shadow-lg">
                                                 {imgs.map((_, i) => <div key={i} className={`w-1.5 h-1.5 rounded-full transition-colors ${i === iIdx ? 'bg-white shadow-[0_0_5px_rgba(255,255,255,0.8)]' : 'bg-white/30'}`} />)}
                                             </div>
                                         </div>
                                     )}
 
-                                    <div className="relative z-30 p-8 md:p-12 flex flex-col items-center justify-end h-full">
-                                        <div className="flex items-center justify-center gap-2 text-white/70 mb-3 drop-shadow-md">
-                                            <span className="text-3xl leading-none">{getFlag(p.nationality)}</span> 
-                                            <span className="uppercase tracking-widest text-xs font-bold">{getCountryName(p.nationality)}</span>
-                                        </div>
-                                        <h3 className="text-4xl md:text-5xl lg:text-6xl font-black text-white tracking-tight mb-8 text-center drop-shadow-[0_4px_20px_rgba(0,0,0,0.8)]">
-                                            {p.name}
-                                        </h3>
-                                        
-                                        <div className="flex flex-col sm:flex-row gap-3 w-full max-w-[340px]">
-                                            <button onClick={() => submitResult(pid, 'close')} className="flex-1 bg-white text-black py-4 rounded-xl font-black text-sm md:text-base hover:bg-gray-200 transition-all active:scale-[0.98] shadow-[0_0_30px_rgba(255,255,255,0.15)] hover:shadow-[0_0_40px_rgba(255,255,255,0.3)] flex justify-center items-center gap-2">
-                                                <IconClose/> Win Match
-                                            </button>
-                                            <button onClick={() => submitResult(pid, 'lopsided')} className="flex-1 bg-black/40 backdrop-blur-xl border border-white/20 text-white py-4 rounded-xl font-bold text-sm md:text-base hover:bg-white/10 hover:text-white transition-all active:scale-[0.98] flex justify-center items-center gap-2 shadow-lg">
-                                                <IconDom/> Dominant
-                                            </button>
+                                    {/* Player Content & Buttons (Anchored to bottom) */}
+                                    <div className="absolute inset-x-0 bottom-0 z-40 bg-gradient-to-t from-black via-black/90 to-transparent pt-32 px-6 pb-8 flex flex-col items-center justify-end pointer-events-none">
+                                        <div className="pointer-events-auto w-full max-w-sm flex flex-col items-center">
+                                            <div className="flex items-center justify-center gap-2 text-white/70 mb-2 drop-shadow-md">
+                                                <span className="text-2xl leading-none">{getFlag(p.nationality)}</span> 
+                                                <span className="uppercase tracking-widest text-[10px] font-bold">{getCountryName(p.nationality)}</span>
+                                            </div>
+                                            <h3 className="text-3xl md:text-4xl font-black text-white tracking-tight mb-6 text-center drop-shadow-2xl line-clamp-1 w-full px-2">
+                                                {p.name}
+                                            </h3>
+                                            
+                                            <div className="flex flex-row gap-3 w-full">
+                                                <button onClick={() => submitResult(pid, 'close')} className="flex-1 bg-white text-black py-4 rounded-xl font-bold text-sm hover:bg-gray-200 transition-all active:scale-[0.98] shadow-[0_0_20px_rgba(255,255,255,0.15)] flex justify-center items-center gap-2">
+                                                    <IconClose/> Win (Close)
+                                                </button>
+                                                <button onClick={() => submitResult(pid, 'lopsided')} className="flex-1 bg-white/10 hover:bg-white/20 backdrop-blur-xl border border-white/10 text-white py-4 rounded-xl font-bold text-sm transition-all active:scale-[0.98] flex justify-center items-center gap-2">
+                                                    <IconDom/> Dominant
+                                                </button>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
                             );
                         })}
-                    </div>
-
-                    <div className="shrink-0 p-6 z-50 flex justify-center bg-[#050508] border-t border-white/10">
-                        <button onClick={handleRandomize} className="w-full max-w-sm bg-gold-500/10 border border-gold-500/50 text-gold-400 py-4 rounded-2xl font-black text-sm uppercase tracking-widest shadow-[0_0_20px_rgba(212,175,55,0.2)] hover:bg-gold-500 hover:text-black hover:shadow-[0_0_30px_rgba(212,175,55,0.6)] transition-all flex justify-center items-center gap-2">
-                            <Shuffle size={18} strokeWidth={3} /> Lucky Toss
-                        </button>
                     </div>
                 </div>
             );
@@ -4524,27 +4536,24 @@
             const tierKey = getTournamentTier(tournament);
             const tierConf = TOURNAMENT_TIERS[tierKey];
 
-            const IconDom = () => <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>;
-            const IconClose = () => <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><circle cx="12" cy="12" r="6"></circle><circle cx="12" cy="12" r="2"></circle></svg>;
-
-            // SMART DYNAMIC SCALABLE TABS
+            // SMART DYNAMIC SCALABLE TABS (Apple Style Slicing)
             const tabs = useMemo(() => {
                 if (drawSize <= 16) return [{ id: 'all', label: 'Full Draw' }];
                 const navTabs = [{ id: 'all', label: 'Full Draw' }];
                 
                 if (drawSize >= 64) {
                     navTabs.push(
-                        { id: 'q1', label: 'Group A' }, 
-                        { id: 'q2', label: 'Group B' }, 
-                        { id: 'q3', label: 'Group C' }, 
-                        { id: 'q4', label: 'Group D' },
+                        { id: 'groupA', label: 'Group A' }, 
+                        { id: 'groupB', label: 'Group B' },
+                        { id: 'groupC', label: 'Group C' }, 
+                        { id: 'groupD', label: 'Group D' },
                         { id: 'final8', label: 'Final 8' }
                     );
                 } else if (drawSize === 32) {
                     navTabs.push(
-                        { id: 'top', label: 'Top 16' }, 
-                        { id: 'bottom', label: 'Bottom 16' },
-                        { id: 'final16', label: 'Final 16' }
+                        { id: 'top16', label: 'Top 16' }, 
+                        { id: 'bottom16', label: 'Bottom 16' },
+                        { id: 'final8', label: 'Final 8' }
                     );
                 }
                 return navTabs;
@@ -4556,7 +4565,13 @@
                 setActiveTab(tabId);
                 setTimeout(() => {
                     if (!scrollContainerRef.current) return;
-                    scrollContainerRef.current.scrollTo({ top: 0, left: 0, behavior: 'smooth' });
+                    const el = scrollContainerRef.current;
+                    const sh = el.scrollHeight; 
+                    
+                    if (tabId === 'all' || tabId === 'top16' || tabId === 'final8' || tabId === 'groupA') el.scrollTo({ top: 0, left: 0, behavior: 'smooth' });
+                    else if (tabId === 'bottom16' || tabId === 'groupD') el.scrollTo({ top: sh, left: 0, behavior: 'smooth' });
+                    else if (tabId === 'groupB') el.scrollTo({ top: sh * 0.33, left: 0, behavior: 'smooth' });
+                    else if (tabId === 'groupC') el.scrollTo({ top: sh * 0.66, left: 0, behavior: 'smooth' });
                 }, 50);
             };
 
@@ -4564,21 +4579,18 @@
             const shouldShowMatch = (tab, r, m, len) => {
                 if (tab === 'all') return true;
                 
-                if (tab === 'final16') return r >= totalRounds - 4;
                 if (tab === 'final8') return r >= totalRounds - 3;
+                if (r >= totalRounds - 3) return false; // Hide Final 8 matches when viewing groups/halves
                 
-                if (tab === 'top' || tab === 'bottom') {
-                    if (r >= totalRounds - 1) return false; // Hide Final when viewing halves
-                    const h = tab === 'top' ? 0 : 1;
-                    const chunkSize = len / 2;
-                    return m >= h * chunkSize && m < (h + 1) * chunkSize;
-                }
-
-                if (tab.startsWith('q')) {
-                    if (r >= totalRounds - 2) return false; // Hide SF, F when viewing quarters
-                    const q = parseInt(tab.replace('q', '')) - 1;
+                if (tab.startsWith('group')) {
+                    const q = {'groupA': 0, 'groupB': 1, 'groupC': 2, 'groupD': 3}[tab];
                     const chunkSize = len / 4;
                     return m >= q * chunkSize && m < (q + 1) * chunkSize;
+                }
+                if (tab === 'top16' || tab === 'bottom16') {
+                    const h = tab === 'top16' ? 0 : 1;
+                    const chunkSize = len / 2;
+                    return m >= h * chunkSize && m < (h + 1) * chunkSize;
                 }
                 return true;
             };
@@ -4606,11 +4618,6 @@
                 setResolvingMatch(null);
             };
 
-            const handleRandomize = () => {
-                const winnerId = Math.random() < 0.5 ? resolvingMatch.p1 : resolvingMatch.p2;
-                submitResult(winnerId, 'random');
-            };
-
             const handleDelete = async () => {
                 try {
                     onBack();
@@ -4618,6 +4625,10 @@
                 } catch(e) { console.error(e); }
             };
 
+            const IconDom = () => <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>;
+            const IconClose = () => <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><circle cx="12" cy="12" r="6"></circle><circle cx="12" cy="12" r="2"></circle></svg>;
+
+            // ULTRA COMPACT & ELEGANT MATCH PARTICIPANT
             const renderMatchParticipant = (match, pId, isTop) => {
                 const p = getPlayer(pId);
                 const isBye = match.type === 'bye';
@@ -4626,9 +4637,9 @@
                 const isLoser = !isTBD && match.winner != null && match.winner !== pId && !isBye;
                 
                 return (
-                    <div className={`relative px-2.5 py-1.5 flex items-center justify-between transition-colors h-[32px] ${isTop ? 'border-b border-white/[0.05]' : ''}`}>
-                        {isWinner && <div className="absolute left-0 top-0 bottom-0 w-[3px] rounded-r" style={{ backgroundColor: tierConf.hex }}></div>}
-                        <div className={`flex items-center gap-2.5 overflow-hidden w-full pr-2 ${isLoser ? 'opacity-40 grayscale' : ''}`}>
+                    <div className={`relative px-2.5 py-1.5 flex items-center justify-between transition-colors h-[34px] ${isTop ? 'border-b border-white/[0.05]' : ''} ${isWinner ? 'bg-white/[0.05]' : 'bg-transparent'}`}>
+                        {isWinner && <div className="absolute left-0 top-0 bottom-0 w-[4px] rounded-r" style={{ backgroundColor: tierConf.hex }}></div>}
+                        <div className={`flex items-center gap-2.5 overflow-hidden w-full pr-2 ${isLoser ? 'opacity-50 grayscale-[0.8]' : ''}`}>
                             {isTBD ? (
                                 <>
                                     <div className="w-5 h-5 rounded-full border border-white/10 bg-white/5 shrink-0 flex items-center justify-center"></div>
@@ -4640,8 +4651,8 @@
                                     <div className="flex flex-col min-w-0 justify-center">
                                         <span onClick={tournament.status === 'completed' ? (e) => { e.stopPropagation(); onNavigate('players', pId); } : undefined} className={`text-[12px] font-bold flex items-center truncate ${isWinner ? 'text-white' : 'text-white/70'} ${tournament.status === 'completed' ? 'hover:underline cursor-pointer hover:text-gold-400' : ''}`}>
                                             <span className="text-sm drop-shadow-sm">{getFlag(p.nationality)}</span>
-                                            <span className="text-[9px] uppercase tracking-widest text-white/40 font-bold ml-1.5">{p.nationality}</span>
-                                            <span className="ml-2 truncate tracking-wide">{p.name}</span>
+                                            <span className="text-[9px] uppercase tracking-widest text-white/40 font-bold mx-1.5">{p.nationality}</span>
+                                            <span className="truncate tracking-wide">{p.name}</span>
                                             {getSeedText(tournament, pId) && <span className="text-[8px] text-white/30 font-mono ml-1.5 shrink-0">{getSeedText(tournament, pId)}</span>}
                                         </span>
                                     </div>
@@ -4649,7 +4660,7 @@
                             )}
                         </div>
                         {isWinner && (
-                            <span className="text-[8px] font-black text-white ml-1 px-1.5 py-0.5 rounded shrink-0 shadow-sm flex items-center gap-1" style={{ backgroundColor: `${tierConf.hex}40`, color: tierConf.hex }}>
+                            <span className="text-[8px] font-black text-royal-950 ml-1 px-1.5 py-0.5 rounded shrink-0 shadow-sm flex items-center gap-1" style={{ backgroundColor: tierConf.hex }}>
                                 {match.type === 'random' ? <><Shuffle size={10} strokeWidth={3}/> LUCK</> : match.type === 'lopsided' ? <><IconDom/> DOM</> : <><IconClose/> CLS</>}
                             </span>
                         )}
@@ -4698,10 +4709,10 @@
                     )}
 
                     {/* Bracket Container with LOCKED Satellite Map Background */}
-                    <div className="flex-1 bg-[#05100c] rounded-2xl shadow-2xl relative overflow-hidden border border-white/5 flex flex-col">
+                    <div className="flex-1 bg-[#050505] rounded-2xl shadow-2xl relative overflow-hidden border border-white/5 flex flex-col">
                         
                         {/* Map Background Layer - FIXED IN PLACE */}
-                        <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden opacity-[0.10] mix-blend-screen grayscale">
+                        <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden opacity-[0.12] mix-blend-screen grayscale">
                             <iframe 
                                 src={`https://maps.google.com/maps?q=${encodeURIComponent(mapQuery)}&t=k&z=11&ie=UTF8&iwloc=&output=embed`} 
                                 className="w-[120%] h-[120%] -translate-x-[10%] -translate-y-[10%]"
@@ -4709,13 +4720,13 @@
                                 loading="lazy"
                             />
                         </div>
-                        <div className="absolute inset-0 bg-gradient-to-b from-[#05100c]/80 to-[#05100c] z-0 pointer-events-none"></div>
+                        <div className="absolute inset-0 bg-gradient-to-b from-[#0a0a0c]/80 to-[#0a0a0c] z-0 pointer-events-none"></div>
 
                         {/* Scrollable Bracket Area */}
                         <div className="flex-1 overflow-auto custom-scrollbar relative z-10 flex flex-col" ref={scrollContainerRef}>
                             
                             {/* Solid Sticky Header Row - NEVER SCROLLS OUT OF VIEW */}
-                            <div className="flex min-w-max sticky top-0 z-40 bg-[#05100c]/90 backdrop-blur-xl border-b border-white/10 pb-3 pt-6 px-8">
+                            <div className="flex min-w-max sticky top-0 z-40 bg-[#0a0a0c]/90 backdrop-blur-xl border-b border-white/10 pb-3 pt-6 px-8">
                                 {parsedBracket.map((round, rIdx) => {
                                     if (!round.some((_, mIdx) => shouldShowMatch(activeTab, rIdx, mIdx, round.length))) return null;
                                     
@@ -4749,23 +4760,23 @@
                                                 const isReady = match.p1 && match.p2 && !match.winner && tournament.status !== 'completed' && match.type !== 'bye';
                                                 
                                                 // Ensure absolute connectors are only drawn to elements that are ALSO visible
-                                                const isFirstVisibleRoundInTab = (activeTab === 'top' || activeTab === 'bottom' || activeTab === 'final16' || activeTab === 'final8' || activeTab.startsWith('q')) 
+                                                const isFirstVisibleRoundInTab = (activeTab !== 'all') 
                                                     ? !shouldShowMatch(activeTab, rIdx - 1, mIdx * 2, round.length * 2) 
                                                     : rIdx === 0;
 
                                                 return (
                                                     <div key={match.id} className="relative flex flex-col justify-center" style={{ flex: 1, minHeight: '74px' }}>
                                                         <div onClick={() => handleMatchClick(rIdx, mIdx, match)} 
-                                                             className={`relative z-20 rounded-xl transition-all duration-300 overflow-hidden flex flex-col ${
+                                                             className={`relative z-20 rounded-xl transition-all duration-200 overflow-hidden flex flex-col ${
                                                                  isReady 
-                                                                 ? 'cursor-pointer hover:scale-[1.02] z-30 bg-white/[0.02] shadow-[0_4px_12px_rgba(0,0,0,0.5)] border border-white/10 backdrop-blur-md' 
+                                                                 ? 'cursor-pointer hover:scale-[1.02] z-30 bg-white/[0.02] hover:bg-white/[0.06] shadow-sm border border-white/10 backdrop-blur-md' 
                                                                  : match.winner 
-                                                                     ? 'bg-transparent border border-white/5 shadow-sm' 
-                                                                     : 'bg-transparent border border-white/[0.02] opacity-50'
+                                                                     ? 'bg-[#0a0a0c] border border-white/10 shadow-sm' 
+                                                                     : 'bg-transparent border border-white/[0.05] opacity-50'
                                                              }`}
                                                              style={{ 
-                                                                 borderColor: isReady ? `${tierConf.hex}60` : undefined,
-                                                                 boxShadow: isReady ? `0 0 15px ${tierConf.hex}15` : undefined
+                                                                 borderColor: isReady ? tierConf.hex : undefined,
+                                                                 boxShadow: isReady ? `0 0 15px ${tierConf.hex}30` : undefined
                                                              }}>
                                                             {renderMatchParticipant(match, match.p1, true)}
                                                             <div className="h-px w-full bg-white/5"></div>
@@ -4773,9 +4784,9 @@
                                                         </div>
                                                         
                                                         {/* Ultra-Clean Connector Lines (Thicker & Brighter) */}
-                                                        {!isFirstVisibleRoundInTab && <div className="absolute -left-[24px] top-1/2 w-[24px] h-[2px] bg-white/30 z-10 shadow-sm"></div>}
-                                                        {rIdx < totalRounds - 1 && <div className="absolute -right-[24px] top-1/2 w-[24px] h-[2px] bg-white/30 z-10 shadow-sm"></div>}
-                                                        {rIdx < totalRounds - 1 && mIdx % 2 === 0 && <div className="absolute -right-[24px] top-1/2 w-[2px] bg-white/30 z-10 shadow-sm" style={{ height: '100%' }}></div>}
+                                                        {!isFirstVisibleRoundInTab && <div className="absolute -left-[24px] top-1/2 w-[24px] h-[2px] bg-white/20 z-10 shadow-sm"></div>}
+                                                        {rIdx < totalRounds - 1 && <div className="absolute -right-[24px] top-1/2 w-[24px] h-[2px] bg-white/20 z-10 shadow-sm"></div>}
+                                                        {rIdx < totalRounds - 1 && mIdx % 2 === 0 && <div className="absolute -right-[24px] top-1/2 w-[2px] bg-white/20 z-10 shadow-sm" style={{ height: '100%' }}></div>}
                                                     </div>
                                                 );
                                             })}
@@ -4783,24 +4794,23 @@
                                     );
                                 })}
                             </div>
-
-                            {/* Expandable Description Area */}
-                            {tournament.description && (
-                                <div className="bg-[#050505] p-6 text-center border-t border-white/5 relative z-20 w-full mt-auto">
-                                    <p className={`text-white/50 text-xs max-w-3xl mx-auto transition-all duration-300 ${descExpanded ? '' : 'line-clamp-1'}`}>
-                                        {tournament.description}
-                                    </p>
-                                    {tournament.description.length > 100 && (
-                                        <button onClick={() => setDescExpanded(!descExpanded)} className="text-royal-400 hover:text-white text-[10px] uppercase tracking-widest font-bold mt-2 transition-colors">
-                                            {descExpanded ? 'Show Less' : 'Read More'}
-                                        </button>
-                                    )}
-                                </div>
-                            )}
-
                         </div>
                     </div>
-                    <ResolveMatchModal resolvingMatch={resolvingMatch} setResolvingMatch={setResolvingMatch} submitResult={submitResult} handleRandomize={handleRandomize} players={players} allTournaments={allTournaments} tournament={tournament} tierConf={tierConf} onNavigate={onNavigate} />
+                    
+                    {/* Expandable Description */}
+                    {tournament.description && (
+                        <div className="mt-4 px-6 py-4 bg-[#050508] border border-white/5 rounded-2xl text-white/60 text-sm shadow-inner relative z-20 transition-all">
+                            <h4 className="text-white/40 font-bold text-[10px] uppercase tracking-widest mb-1">Tournament Notes</h4>
+                            <p className={`whitespace-pre-wrap leading-relaxed ${descExpanded ? "" : "line-clamp-2"}`}>
+                                {tournament.description}
+                            </p>
+                            {tournament.description.length > 150 && (
+                                <button onClick={() => setDescExpanded(!descExpanded)} className="text-gold-400 hover:text-gold-300 text-xs mt-2 font-bold transition-colors">
+                                    {descExpanded ? "Show Less" : "Read More"}
+                                </button>
+                            )}
+                        </div>
+                    )}
                 </div>
             );
         }
