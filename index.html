@@ -1410,212 +1410,7 @@
             );
         };
 
-        function PlayerDataGrid({ players, tournaments, onSelectPlayer, onNavigate, rankKey = 'currentRank', showNationality = true }) {
-            const [sortConfig, setSortConfig] = useState({ key: rankKey, direction: 'asc' });
-
-            const handleSort = (key) => {
-                if (sortConfig.key === key) {
-                    setSortConfig({ key, direction: sortConfig.direction === 'asc' ? 'desc' : 'asc' });
-                } else {
-                    setSortConfig({ key, direction: ['currentRank', 'nationalRank', 'name', 'nationality'].includes(key) ? 'asc' : 'desc' });
-                }
-            };
-
-            const SortIcon = ({ column }) => {
-                if (sortConfig.key !== column) return null;
-                return <span className="text-gold-400 inline-block w-3 text-center ml-1 text-[10px]">{sortConfig.direction === 'asc' ? '▲' : '▼'}</span>;
-            };
-
-            const sortedPlayers = useMemo(() => {
-                return [...players].sort((a, b) => {
-                    let valA = a[sortConfig.key], valB = b[sortConfig.key];
-                    
-                    if (sortConfig.key === 'diff') { valA = a.diff; valB = b.diff; }
-                    if (sortConfig.key === 'name') { valA = a.name.toLowerCase(); valB = b.name.toLowerCase(); }
-                    if (sortConfig.key === 'nationality') { valA = (a.nationality||'').toLowerCase(); valB = (b.nationality||'').toLowerCase(); }
-                    if (sortConfig.key === 'recent') { valA = a.recentTournaments?.[0]?.result || ''; valB = b.recentTournaments?.[0]?.result || ''; }
-                    if (sortConfig.key === 'played') { valA = a.stats?.totalPlayed || 0; valB = b.stats?.totalPlayed || 0; }
-                    if (sortConfig.key === 'wl') { 
-                        valA = a.stats?.totalPlayed > 0 ? a.stats.wins / a.stats.totalPlayed : 0; 
-                        valB = b.stats?.totalPlayed > 0 ? b.stats.wins / b.stats.totalPlayed : 0; 
-                    }
-                    
-                    if (valA < valB) return sortConfig.direction === 'asc' ? -1 : 1;
-                    if (valA > valB) return sortConfig.direction === 'asc' ? 1 : -1;
-                    return 0;
-                });
-            }, [players, sortConfig]);
-
-            const active = sortedPlayers.filter(p => !p.retired);
-            const retired = sortedPlayers.filter(p => p.retired);
-
-            return (
-                <div className="bg-[#05100c] rounded-2xl shadow-[0_15px_40px_rgba(0,0,0,0.6)] border border-white/[0.05] overflow-hidden">
-                    <div className="overflow-x-auto custom-scrollbar">
-                        <table className="w-full text-left border-collapse whitespace-nowrap min-w-[900px] table-fixed">
-                            <thead>
-                                <tr className="bg-white/[0.02] text-white/40 text-[10px] font-bold uppercase tracking-widest select-none border-b border-white/[0.08]">
-                                    <th className="py-3 px-2 w-24 text-center cursor-pointer hover:text-white transition-colors" onClick={() => handleSort(rankKey)}>
-                                        Rank <SortIcon column={rankKey}/>
-                                    </th>
-                                    {showNationality && (
-                                        <th className="py-3 px-2 w-16 text-center cursor-pointer hover:text-white transition-colors" onClick={() => handleSort('nationality')}>
-                                            Nat <SortIcon column="nationality"/>
-                                        </th>
-                                    )}
-                                    <th className={`py-3 px-2 text-left cursor-pointer hover:text-white transition-colors ${showNationality ? 'w-[280px]' : 'w-[320px]'}`} onClick={() => handleSort('name')}>
-                                        Player <SortIcon column="name"/>
-                                    </th>
-                                    <th className="py-3 px-2 w-28 text-center cursor-pointer hover:text-white transition-colors" onClick={() => handleSort('points')}>
-                                        Points <SortIcon column="points"/>
-                                    </th>
-                                    <th className="py-3 px-2 w-28 text-center cursor-pointer hover:text-white transition-colors" onClick={() => handleSort('diff')}>
-                                        Net Change <SortIcon column="diff"/>
-                                    </th>
-                                    <th className="py-3 px-2 w-24 text-center cursor-pointer hover:text-white transition-colors">
-                                        Form
-                                    </th>
-                                    <th className="py-3 px-2 w-24 text-center cursor-pointer hover:text-white transition-colors" onClick={() => handleSort('wl')}>
-                                        W-L <SortIcon column="wl"/>
-                                    </th>
-                                    <th className="py-3 px-4 text-center w-48 cursor-pointer hover:text-white transition-colors" onClick={() => handleSort('recent')}>
-                                        Recent <SortIcon column="recent"/>
-                                    </th>
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y divide-white/[0.04]">
-                                {active.map((player) => {
-                                    const recent = player.recentTournaments?.[0];
-                                    let recentDisplay = <span className="text-white/20">-</span>;
-                                    if (recent) {
-                                        const recentT = tournaments.find(t => t.id === recent.tournamentId);
-                                        const rFlag = recentT ? getFlag(recentT.hostCountry) : '';
-                                        recentDisplay = (
-                                            <div className="flex items-center justify-center gap-2 text-sm cursor-pointer group/recent" 
-                                                 onClick={(e) => { e.stopPropagation(); window.dispatchEvent(new PopStateEvent('popstate', { state: { tab: 'tournaments', tournamentId: recent.tournamentId } })); }}>
-                                                <span className="font-bold text-white/90 w-6 text-right group-hover/recent:text-gold-400 transition-colors">{getRecentAbbr(recent.result)}</span>
-                                                <span className="text-white/20 font-black">-</span>
-                                                {rFlag && <span className="text-sm leading-none">{rFlag}</span>}
-                                                <span className="truncate max-w-[100px] text-white/70 font-medium group-hover/recent:text-white group-hover/recent:underline">{recent.tournamentName}</span>
-                                            </div>
-                                        );
-                                    }
-
-                                    return (
-                                        <tr key={player.id} onClick={() => onSelectPlayer(player.id)} className="hover:bg-white/[0.03] transition-colors duration-200 cursor-pointer group">
-                                            <td className="py-2.5 px-2 text-center">
-                                                <span className="text-2xl font-medium tabular-nums text-white/90 tracking-tight">{player[rankKey]}</span>
-                                            </td>
-                                            
-                                            {showNationality && (
-                                                <td className="py-2.5 px-2 text-center text-2xl drop-shadow-sm">
-                                                    {getFlag(player.nationality)}
-                                                </td>
-                                            )}
-                                            
-                                            <td className="py-2.5 px-2 text-left">
-                                                <div className="flex items-center gap-3">
-                                                    <div className="w-10 h-10 rounded-full overflow-hidden border border-white/10 group-hover:border-gold-500/50 transition-colors bg-royal-950 shrink-0 shadow-sm relative">
-                                                        <PlayerMedia url={player.imageUrl || (player.images ? player.images[0] : '')} className="w-full h-full object-cover" />
-                                                    </div>
-                                                    <div className="flex flex-col justify-center min-w-0">
-                                                        <div className="font-medium text-base text-white/95 truncate group-hover:text-gold-400 transition-colors tracking-wide">
-                                                            {player.name}
-                                                        </div>
-                                                        <div className="flex items-center gap-1.5 text-[10px] font-semibold text-white/40 uppercase tracking-widest mt-0.5">
-                                                            {!showNationality && <span className="text-xs leading-none drop-shadow-sm">{getFlag(player.nationality)}</span>}
-                                                            {player.nationality}
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </td>
-                                            
-                                            <td className="py-2.5 px-2 text-center">
-                                                <span className="text-xl font-medium tabular-nums text-gold-400 tracking-tight">{player.points.toLocaleString()}</span>
-                                            </td>
-                                            
-                                            <td className="py-2.5 px-2 text-center">
-                                                <Tooltip content={
-                                                    <>
-                                                        <div className="text-emerald-400 font-bold flex justify-between gap-4 mb-1"><span>Gained:</span> <span>+{player.bonusPoints || 0}</span></div>
-                                                        <div className="text-rose-400 font-bold flex justify-between gap-4 border-b border-white/10 pb-1 mb-1"><span>Dropped:</span> <span>-{player.droppingPoints || 0}</span></div>
-                                                        <div className="text-white font-black flex justify-between gap-4"><span>Net:</span> <span>{player.diff > 0 ? '+' : ''}{player.diff || 0}</span></div>
-                                                    </>
-                                                }>
-                                                    <span className={`text-sm font-semibold tabular-nums border-b border-dashed ${player.diff > 0 ? 'text-emerald-400 border-emerald-400/30 hover:border-emerald-400' : player.diff < 0 ? 'text-rose-400 border-rose-400/30 hover:border-rose-400' : 'text-white/30 border-white/10 hover:border-white/30'} transition-colors`}>
-                                                        {player.diff > 0 ? '+' : ''}{player.diff || '-'}
-                                                    </span>
-                                                </Tooltip>
-                                            </td>
-
-                                            <td className="py-2.5 px-2">
-                                                <PlayerFormIndicator matches={player.recentMatches} />
-                                            </td>
-
-                                            <td className="py-2.5 px-2 text-center text-white/85 font-medium text-sm tabular-nums">
-                                                {player.stats?.wins || 0} - {player.stats?.losses || 0}
-                                            </td>
-                                            <td className="py-2.5 px-4 text-center">
-                                                {recentDisplay}
-                                            </td>
-                                        </tr>
-                                    );
-                                })}
-
-                                {retired.length > 0 && (
-                                    <>
-                                        <tr className="bg-black/40 border-t border-white/10">
-                                            <td colSpan={showNationality ? "8" : "7"} className="p-5 text-center">
-                                                <div className="inline-flex items-center gap-4 opacity-70">
-                                                    <div className="h-px w-16 bg-white/20"></div>
-                                                    <span className="text-white/60 font-semibold uppercase tracking-widest text-[10px] flex items-center gap-2">
-                                                        <Trophy size={14} className="text-white/40" /> Hall of Fame
-                                                    </span>
-                                                    <div className="h-px w-16 bg-white/20"></div>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                        {retired.map((player) => (
-                                            <tr key={player.id} onClick={() => onSelectPlayer(player.id)} className="hover:bg-white/[0.03] transition-all duration-300 cursor-pointer group opacity-60 grayscale hover:grayscale-0 hover:opacity-100">
-                                                <td className="py-2.5 px-2 text-center text-3xl font-light text-white/30 tabular-nums">-</td>
-                                                {showNationality && <td className="py-2.5 px-2 text-center text-2xl drop-shadow-sm">{getFlag(player.nationality)}</td>}
-                                                
-                                                <td className="py-2.5 px-2 text-left">
-                                                    <div className="flex items-center gap-3">
-                                                        <div className="w-10 h-10 rounded-full overflow-hidden border border-white/10 bg-royal-950 shrink-0 shadow-sm relative">
-                                                            <PlayerMedia url={player.imageUrl || (player.images ? player.images[0] : '')} className="w-full h-full object-cover" />
-                                                        </div>
-                                                        <div className="font-medium text-base text-white/80 truncate flex items-center gap-2">
-                                                            {player.name}
-                                                            <span className="text-[8px] bg-rose-500/20 text-rose-300 px-1.5 py-0.5 rounded uppercase tracking-widest border border-rose-500/30">Ret</span>
-                                                        </div>
-                                                    </div>
-                                                </td>
-                                                
-                                                <td className="py-2.5 px-2 text-center">
-                                                    <div className="text-[8px] text-white/40 uppercase tracking-widest font-semibold">Peak Pts</div>
-                                                    <span className="text-xl font-medium text-white/60 tabular-nums">{player.peakPoints?.toLocaleString() || '-'}</span>
-                                                </td>
-                                                
-                                                <td className="py-2.5 px-2 text-center text-white/30">-</td>
-                                                <td className="py-2.5 px-2 text-center text-white/30">-</td>
-                                                <td className="py-2.5 px-2 text-center text-white/60 font-medium text-sm tabular-nums">{player.stats?.wins || 0} - {player.stats?.losses || 0}</td>
-                                                <td className="py-2.5 px-4 text-center">
-                                                    <div className="flex flex-col items-center justify-center">
-                                                        <span className="text-[8px] text-white/40 uppercase tracking-widest font-semibold">Peak Rank</span>
-                                                        <span className="text-white/60 font-medium text-base">#{player.peakRank || '-'}</span>
-                                                    </div>
-                                                </td>
-                                            </tr>
-                                        ))}
-                                    </>
-                                )}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            );
-        }
+        
 
         // --- HELPER FUNCTION: Standardize Diffs ---
         function attachDiffsAndForm(playersList, globalHist) {
@@ -3212,6 +3007,220 @@
             );
         }
         
+        function PlayerDataGrid({ players, tournaments, onSelectPlayer, onNavigate, rankKey = 'currentRank', showNationality = true }) {
+            const [sortConfig, setSortConfig] = useState({ key: rankKey, direction: 'asc' });
+
+            const handleSort = (key) => {
+                if (sortConfig.key === key) {
+                    setSortConfig({ key, direction: sortConfig.direction === 'asc' ? 'desc' : 'asc' });
+                } else {
+                    setSortConfig({ key, direction: ['currentRank', 'nationalRank', 'name', 'nationality'].includes(key) ? 'asc' : 'desc' });
+                }
+            };
+
+            const SortIcon = ({ column }) => {
+                if (sortConfig.key !== column) return null;
+                return <span className="text-gold-400 inline-block w-3 text-center ml-1 text-[10px]">{sortConfig.direction === 'asc' ? '▲' : '▼'}</span>;
+            };
+
+            const sortedPlayers = useMemo(() => {
+                return [...players].sort((a, b) => {
+                    let valA = a[sortConfig.key], valB = b[sortConfig.key];
+                    
+                    if (sortConfig.key === 'diff') { valA = a.diff; valB = b.diff; }
+                    if (sortConfig.key === 'name') { valA = a.name.toLowerCase(); valB = b.name.toLowerCase(); }
+                    if (sortConfig.key === 'nationality') { valA = (a.nationality||'').toLowerCase(); valB = (b.nationality||'').toLowerCase(); }
+                    if (sortConfig.key === 'recent') { valA = a.recentTournaments?.[0]?.result || ''; valB = b.recentTournaments?.[0]?.result || ''; }
+                    if (sortConfig.key === 'played') { valA = a.stats?.totalPlayed || 0; valB = b.stats?.totalPlayed || 0; }
+                    if (sortConfig.key === 'wl') { 
+                        valA = a.stats?.totalPlayed > 0 ? a.stats.wins / a.stats.totalPlayed : 0; 
+                        valB = b.stats?.totalPlayed > 0 ? b.stats.wins / b.stats.totalPlayed : 0; 
+                    }
+                    
+                    if (valA < valB) return sortConfig.direction === 'asc' ? -1 : 1;
+                    if (valA > valB) return sortConfig.direction === 'asc' ? 1 : -1;
+                    return 0;
+                });
+            }, [players, sortConfig]);
+
+            const active = sortedPlayers.filter(p => !p.retired);
+            const retired = sortedPlayers.filter(p => p.retired);
+
+            return (
+                <div className="bg-[#05100c] rounded-2xl shadow-[0_15px_40px_rgba(0,0,0,0.6)] border border-white/[0.05] overflow-hidden">
+                    <div className="overflow-x-auto custom-scrollbar">
+                        <table className="w-full text-left border-collapse whitespace-nowrap min-w-[900px] table-fixed">
+                            <thead>
+                                <tr className="bg-white/[0.02] text-white/40 text-[10px] font-bold uppercase tracking-widest select-none border-b border-white/[0.08]">
+                                    <th className="py-3 px-2 w-24 text-center cursor-pointer hover:text-white transition-colors" onClick={() => handleSort(rankKey)}>
+                                        Rank <SortIcon column={rankKey}/>
+                                    </th>
+                                    <th className={`py-3 px-2 text-left cursor-pointer hover:text-white transition-colors ${showNationality ? 'w-[280px]' : 'w-[320px]'}`} onClick={() => handleSort('name')}>
+                                        Player <SortIcon column="name"/>
+                                    </th>
+                                    {showNationality && (
+                                        <th className="py-3 px-2 w-20 text-center cursor-pointer hover:text-white transition-colors" onClick={() => handleSort('nationality')}>
+                                            Nat <SortIcon column="nationality"/>
+                                        </th>
+                                    )}
+                                    <th className="py-3 px-2 w-28 text-center cursor-pointer hover:text-white transition-colors" onClick={() => handleSort('points')}>
+                                        Points <SortIcon column="points"/>
+                                    </th>
+                                    <th className="py-3 px-2 w-28 text-center cursor-pointer hover:text-white transition-colors" onClick={() => handleSort('diff')}>
+                                        Net Change <SortIcon column="diff"/>
+                                    </th>
+                                    <th className="py-3 px-2 w-24 text-center cursor-pointer hover:text-white transition-colors">
+                                        Form
+                                    </th>
+                                    <th className="py-3 px-2 w-24 text-center cursor-pointer hover:text-white transition-colors" onClick={() => handleSort('wl')}>
+                                        W-L <SortIcon column="wl"/>
+                                    </th>
+                                    <th className="py-3 px-4 text-center w-48 cursor-pointer hover:text-white transition-colors" onClick={() => handleSort('recent')}>
+                                        Recent <SortIcon column="recent"/>
+                                    </th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-white/[0.04]">
+                                {active.map((player) => {
+                                    const recent = player.recentTournaments?.[0];
+                                    let recentDisplay = <span className="text-white/20">-</span>;
+                                    if (recent) {
+                                        const recentT = tournaments.find(t => t.id === recent.tournamentId);
+                                        const rFlag = recentT ? getFlag(recentT.hostCountry) : '';
+                                        recentDisplay = (
+                                            <div className="flex items-center justify-center gap-2 text-sm cursor-pointer group/recent" 
+                                                 onClick={(e) => { e.stopPropagation(); window.dispatchEvent(new PopStateEvent('popstate', { state: { tab: 'tournaments', tournamentId: recent.tournamentId } })); }}>
+                                                <span className="font-bold text-white/90 w-6 text-right group-hover/recent:text-gold-400 transition-colors">{getRecentAbbr(recent.result)}</span>
+                                                <span className="text-white/20 font-black">-</span>
+                                                {rFlag && <span className="text-sm leading-none">{rFlag}</span>}
+                                                <span className="truncate max-w-[100px] text-white/70 font-medium group-hover/recent:text-white group-hover/recent:underline">{recent.tournamentName}</span>
+                                            </div>
+                                        );
+                                    }
+
+                                    return (
+                                        <tr key={player.id} onClick={() => onSelectPlayer(player.id)} className="hover:bg-white/[0.03] transition-colors duration-200 cursor-pointer group">
+                                            <td className="py-2.5 px-2 text-center">
+                                                <span className="text-2xl font-medium tabular-nums text-white/90 tracking-tight">{player[rankKey]}</span>
+                                            </td>
+                                            
+                                            <td className="py-2.5 px-2 text-left">
+                                                <div className="flex items-center gap-3">
+                                                    <div className="w-10 h-10 rounded-full overflow-hidden border border-white/10 group-hover:border-gold-500/50 transition-colors bg-royal-950 shrink-0 shadow-sm relative">
+                                                        <PlayerMedia url={player.imageUrl || (player.images ? player.images[0] : '')} className="w-full h-full object-cover" />
+                                                    </div>
+                                                    <div className="flex flex-col justify-center min-w-0">
+                                                        <div className="font-medium text-base text-white/95 truncate group-hover:text-gold-400 transition-colors tracking-wide">
+                                                            {player.name}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </td>
+
+                                            {showNationality && (
+                                                <td className="py-2.5 px-2 text-center">
+                                                    <div className="flex flex-col items-center justify-center">
+                                                        <span className="text-2xl drop-shadow-sm leading-none">{getFlag(player.nationality)}</span>
+                                                        <span className="text-[10px] font-bold text-white/40 uppercase tracking-widest mt-0.5">{player.nationality}</span>
+                                                    </div>
+                                                </td>
+                                            )}
+                                            
+                                            <td className="py-2.5 px-2 text-center">
+                                                <span className="text-xl font-medium tabular-nums text-gold-400 tracking-tight">{player.points.toLocaleString()}</span>
+                                            </td>
+                                            
+                                            <td className="py-2.5 px-2 text-center">
+                                                <Tooltip content={
+                                                    <>
+                                                        <div className="text-emerald-400 font-bold flex justify-between gap-4 mb-1"><span>Gained:</span> <span>+{player.bonusPoints || 0}</span></div>
+                                                        <div className="text-rose-400 font-bold flex justify-between gap-4 border-b border-white/10 pb-1 mb-1"><span>Dropped:</span> <span>-{player.droppingPoints || 0}</span></div>
+                                                        <div className="text-white font-black flex justify-between gap-4"><span>Net:</span> <span>{player.diff > 0 ? '+' : ''}{player.diff || 0}</span></div>
+                                                    </>
+                                                }>
+                                                    <span className={`text-sm font-semibold tabular-nums border-b border-dashed ${player.diff > 0 ? 'text-emerald-400 border-emerald-400/30 hover:border-emerald-400' : player.diff < 0 ? 'text-rose-400 border-rose-400/30 hover:border-rose-400' : 'text-white/30 border-white/10 hover:border-white/30'} transition-colors`}>
+                                                        {player.diff > 0 ? '+' : ''}{player.diff || '-'}
+                                                    </span>
+                                                </Tooltip>
+                                            </td>
+
+                                            <td className="py-2.5 px-2">
+                                                <PlayerFormIndicator matches={player.recentMatches} />
+                                            </td>
+
+                                            <td className="py-2.5 px-2 text-center text-white/85 font-medium text-sm tabular-nums">
+                                                {player.stats?.wins || 0} - {player.stats?.losses || 0}
+                                            </td>
+                                            <td className="py-2.5 px-4 text-center">
+                                                {recentDisplay}
+                                            </td>
+                                        </tr>
+                                    );
+                                })}
+
+                                {retired.length > 0 && (
+                                    <>
+                                        <tr className="bg-black/40 border-t border-white/10">
+                                            <td colSpan={showNationality ? "8" : "7"} className="p-5 text-center">
+                                                <div className="inline-flex items-center gap-4 opacity-70">
+                                                    <div className="h-px w-16 bg-white/20"></div>
+                                                    <span className="text-white/60 font-semibold uppercase tracking-widest text-[10px] flex items-center gap-2">
+                                                        <Trophy size={14} className="text-white/40" /> Hall of Fame
+                                                    </span>
+                                                    <div className="h-px w-16 bg-white/20"></div>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                        {retired.map((player) => (
+                                            <tr key={player.id} onClick={() => onSelectPlayer(player.id)} className="hover:bg-white/[0.03] transition-all duration-300 cursor-pointer group opacity-60 grayscale hover:grayscale-0 hover:opacity-100">
+                                                <td className="py-2.5 px-2 text-center text-3xl font-light text-white/30 tabular-nums">-</td>
+                                                
+                                                <td className="py-2.5 px-2 text-left">
+                                                    <div className="flex items-center gap-3">
+                                                        <div className="w-10 h-10 rounded-full overflow-hidden border border-white/10 bg-royal-950 shrink-0 shadow-sm relative">
+                                                            <PlayerMedia url={player.imageUrl || (player.images ? player.images[0] : '')} className="w-full h-full object-cover" />
+                                                        </div>
+                                                        <div className="font-medium text-base text-white/80 truncate flex items-center gap-2">
+                                                            {player.name}
+                                                            <span className="text-[8px] bg-rose-500/20 text-rose-300 px-1.5 py-0.5 rounded uppercase tracking-widest border border-rose-500/30">Ret</span>
+                                                        </div>
+                                                    </div>
+                                                </td>
+
+                                                {showNationality && (
+                                                    <td className="py-2.5 px-2 text-center">
+                                                        <div className="flex flex-col items-center justify-center">
+                                                            <span className="text-2xl drop-shadow-sm leading-none">{getFlag(player.nationality)}</span>
+                                                            <span className="text-[10px] font-bold text-white/40 uppercase tracking-widest mt-0.5">{player.nationality}</span>
+                                                        </div>
+                                                    </td>
+                                                )}
+                                                
+                                                <td className="py-2.5 px-2 text-center">
+                                                    <div className="text-[8px] text-white/40 uppercase tracking-widest font-semibold">Peak Pts</div>
+                                                    <span className="text-xl font-medium text-white/60 tabular-nums">{player.peakPoints?.toLocaleString() || '-'}</span>
+                                                </td>
+                                                
+                                                <td className="py-2.5 px-2 text-center text-white/30">-</td>
+                                                <td className="py-2.5 px-2 text-center text-white/30">-</td>
+                                                <td className="py-2.5 px-2 text-center text-white/60 font-medium text-sm tabular-nums">{player.stats?.wins || 0} - {player.stats?.losses || 0}</td>
+                                                <td className="py-2.5 px-4 text-center">
+                                                    <div className="flex flex-col items-center justify-center">
+                                                        <span className="text-[8px] text-white/40 uppercase tracking-widest font-semibold">Peak Rank</span>
+                                                        <span className="text-white/60 font-medium text-base">#{player.peakRank || '-'}</span>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </>
+                                )}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            );
+        }
+
         function PlayersView({ players, onSelectPlayer, db, appId }) {
             const [newPlayerName, setNewPlayerName] = useState('');
             const [newPlayerNationality, setNewPlayerNationality] = useState('');
@@ -3369,13 +3378,16 @@
                                             : 'border-white/10 hover:border-gold-500/50 hover:shadow-[0_15px_35px_rgba(0,0,0,0.6)]'
                                         }`}
                                     >
+                                        {/* Background Image */}
                                         <div className="absolute inset-0 bg-[#030806]">
                                             <PlayerMedia url={p.imageUrl || (p.images ? p.images[0] : '')} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-[1.03]" />
                                         </div>
                                         
-                                        <div className="absolute inset-0 bg-gradient-to-t from-[#05100c] via-[#05100c]/50 to-transparent opacity-90 group-hover:opacity-100 transition-opacity duration-300"></div>
+                                        {/* Dark Gradient Overlay for Text Readability - HIDDEN UNTIL HOVER */}
+                                        <div className="absolute inset-0 bg-gradient-to-t from-[#05100c] via-[#05100c]/70 to-transparent opacity-0 group-hover:opacity-90 transition-opacity duration-500 ease-in-out"></div>
 
-                                        <div className="absolute top-3 left-3 right-3 flex justify-between items-start z-10">
+                                        {/* Top Badges - HIDDEN UNTIL HOVER */}
+                                        <div className="absolute top-3 left-3 right-3 flex justify-between items-start z-10 opacity-0 group-hover:opacity-100 transition-opacity duration-500 ease-in-out">
                                             {!p.retired ? (
                                                 <div className="bg-black/40 backdrop-blur-md px-2.5 py-1 rounded-lg border border-white/10 text-white font-bold text-[11px] shadow-sm">
                                                     #{p.rank}
@@ -3387,7 +3399,8 @@
                                             )}
                                         </div>
 
-                                        <div className="absolute bottom-0 left-0 w-full p-4 md:p-5 flex flex-col justify-end transition-transform duration-300 transform group-hover:translate-y-0 translate-y-1 z-10">
+                                        {/* Bottom Information - HIDDEN UNTIL HOVER AND SLIDES UP */}
+                                        <div className="absolute bottom-0 left-0 w-full p-4 md:p-5 flex flex-col justify-end transition-all duration-500 ease-in-out transform translate-y-4 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 z-10">
                                             <h3 className="text-xl md:text-2xl font-bold text-white leading-tight mb-1 group-hover:text-gold-400 transition-colors drop-shadow-md truncate tracking-tight">
                                                 {p.name}
                                             </h3>
