@@ -1642,7 +1642,7 @@
 
             const rawData = filterPlayed ? history.filter(d => d.played) : history.filter(d => d.isMajorPlus);
             const data = rawData.slice(range === 'all' ? 0 : -range);
-            if (data.length < 1) return <p className="text-royal-300 text-sm mt-4">Not enough tournament history.</p>;
+            if (data.length < 1) return <p className="text-white/40 text-sm mt-4 italic">Not enough tournament history.</p>;
 
             const width = 1000;
             const height = 350; 
@@ -1673,20 +1673,25 @@
             const labelStep = Math.max(1, Math.ceil(data.length / 15));
 
             const getAchColor = (ach) => {
-                if (!ach) return '#789e90';
+                if (!ach) return 'rgba(255,255,255,0.2)';
                 if (ach.result === 'Winner') return '#d4af37'; 
-                if (ach.result === 'Finalist' || ach.result === 'Final') return '#cde0d9'; 
+                if (ach.result === 'Finalist' || ach.result === 'Final') return '#e2e8f0'; 
                 return '#f97316'; 
             };
 
+            const rangeTabs = [
+                { id: 10, label: 'Last 10' },
+                { id: 20, label: 'Last 20' },
+                { id: 'all', label: 'All Time' }
+            ];
+
             return (
                 <div className="mt-4 flex flex-col items-center w-full">
-                    <div className="flex gap-2 mb-6 w-full justify-start">
-                        <button onClick={() => setRange(10)} className={`px-4 py-1.5 rounded-lg text-sm font-bold transition-colors ${range === 10 ? 'bg-gold-500 text-royal-950' : 'bg-royal-800 text-royal-300 hover:text-white'}`}>Last 10</button>
-                        <button onClick={() => setRange(20)} className={`px-4 py-1.5 rounded-lg text-sm font-bold transition-colors ${range === 20 ? 'bg-gold-500 text-royal-950' : 'bg-royal-800 text-royal-300 hover:text-white'}`}>Last 20</button>
-                        <button onClick={() => setRange('all')} className={`px-4 py-1.5 rounded-lg text-sm font-bold transition-colors ${range === 'all' ? 'bg-gold-500 text-royal-950' : 'bg-royal-800 text-royal-300 hover:text-white'}`}>All Time</button>
+                    <div className="mb-6 w-full flex justify-start">
+                        <GlassTabs tabs={rangeTabs} activeTab={range} onChange={setRange} />
                     </div>
-                    <div className="w-full bg-royal-900/50 rounded-xl border border-royal-700 pb-2 relative overflow-hidden">
+                    
+                    <div className="w-full bg-[#05100c] rounded-2xl border border-white/[0.05] pb-2 relative overflow-hidden shadow-inner">
                         <svg viewBox={`0 0 ${width} ${height}`} className="w-full h-auto overflow-visible">
                             {type === 'rank' ? (
                                 (() => {
@@ -1695,8 +1700,8 @@
                                     for (let i = step; i <= maxVal; i += step) lines.push(i);
                                     return lines.map((r, i) => (
                                         <g key={`grid-rank-${i}`}>
-                                            <line x1={pad.left} y1={getY(r)} x2={width - pad.right} y2={getY(r)} stroke="#13382d" strokeWidth="1" strokeDasharray="4 4" />
-                                            <text x={pad.left - 10} y={getY(r)} fill="#789e90" fontSize="12" fontWeight="bold" textAnchor="end" alignmentBaseline="middle">#{r}</text>
+                                            <line x1={pad.left} y1={getY(r)} x2={width - pad.right} y2={getY(r)} stroke="rgba(255,255,255,0.05)" strokeWidth="1" strokeDasharray="4 4" />
+                                            <text x={pad.left - 15} y={getY(r)} fill="rgba(255,255,255,0.4)" fontSize="12" fontWeight="600" textAnchor="end" alignmentBaseline="middle">#{r}</text>
                                         </g>
                                     ));
                                 })()
@@ -1707,8 +1712,8 @@
                                     for(let v = 0; v <= maxVal; v += step) yLines.push(v);
                                     return yLines.map((p, i) => (
                                         <g key={`grid-${i}`}>
-                                            <line x1={pad.left} y1={getY(p)} x2={width - pad.right} y2={getY(p)} stroke="#13382d" strokeWidth="1" strokeDasharray="4 4" />
-                                            <text x={pad.left - 10} y={getY(p)} fill="#789e90" fontSize="12" fontWeight="bold" textAnchor="end" alignmentBaseline="middle">{p.toLocaleString()}</text>
+                                            <line x1={pad.left} y1={getY(p)} x2={width - pad.right} y2={getY(p)} stroke="rgba(255,255,255,0.05)" strokeWidth="1" strokeDasharray="4 4" />
+                                            <text x={pad.left - 15} y={getY(p)} fill="rgba(255,255,255,0.4)" fontSize="12" fontWeight="600" textAnchor="end" alignmentBaseline="middle">{p.toLocaleString()}</text>
                                         </g>
                                     ));
                                 })()
@@ -1722,9 +1727,9 @@
                                 const showLabel = i % labelStep === 0 || i === data.length - 1;
                                 return (
                                     <g key={`tpt-${i}`}>
-                                        <circle cx={ptX} cy={ptY2} r={hoveredPointData && hoveredPointData.date === d.date ? "6" : "4"} fill="#051611" stroke="#38bdf8" strokeWidth="2" style={{ transition: 'r 0.2s ease' }} />
+                                        <circle cx={ptX} cy={ptY2} r={hoveredPointData && hoveredPointData.date === d.date ? "6" : "4"} fill="#05100c" stroke="#38bdf8" strokeWidth="2" style={{ transition: 'r 0.2s ease' }} />
                                         {showLabel && (
-                                            <text x={ptX} y={ptY2 - 10} fill="#38bdf8" fontSize="11" fontWeight="700" textAnchor="middle" stroke="#051611" strokeWidth="3" paintOrder="stroke">
+                                            <text x={ptX} y={ptY2 - 12} fill="#38bdf8" fontSize="11" fontWeight="700" textAnchor="middle" stroke="#05100c" strokeWidth="4" paintOrder="stroke">
                                                 +{d.tournamentPoints}
                                             </text>
                                         )}
@@ -1740,9 +1745,7 @@
                                 const val = type === 'rank' ? d.rank : (type === 'careerPoints' ? d.careerPoints : d.totalPoints);
                                 const dotRadius = isHovered ? "8" : (isMinor ? "3.5" : "5");
                                 const dotOpacity = isMinor ? "0.6" : "1";
-                                const dotStroke = isMinor ? "#a0bdb2" : "#d4af37";
-
-                                // NEW: Retirement Node Logic
+                                const dotStroke = isMinor ? "rgba(255,255,255,0.6)" : "#d4af37";
                                 const isRetirementNode = isRetired && i === data.length - 1;
 
                                 return (
@@ -1750,20 +1753,20 @@
                                         {isRetirementNode ? (
                                             <g transform={`translate(${ptX}, ${ptY})`}>
                                                 <polygon points="0,-6 6,0 0,6 -6,0" fill="#be123c" stroke="#fb7185" strokeWidth="1.5" />
-                                                <text x="0" y="16" fill="#fb7185" fontSize="9" fontWeight="900" textAnchor="middle" stroke="#051611" strokeWidth="3" paintOrder="stroke">RETIRED</text>
+                                                <text x="0" y="16" fill="#fb7185" fontSize="9" fontWeight="900" textAnchor="middle" stroke="#05100c" strokeWidth="4" paintOrder="stroke">RETIRED</text>
                                             </g>
                                         ) : (
-                                            <circle cx={ptX} cy={ptY} r={dotRadius} fill="#051611" stroke={dotStroke} strokeWidth={isMinor ? "1.5" : "2"} opacity={dotOpacity} style={{ transition: 'all 0.2s ease' }} />
+                                            <circle cx={ptX} cy={ptY} r={dotRadius} fill="#05100c" stroke={dotStroke} strokeWidth={isMinor ? "1.5" : "2"} opacity={dotOpacity} style={{ transition: 'all 0.2s ease' }} />
                                         )}
 
                                         {(showLabel || isMinor) && (
-                                            <text x={ptX} y={ptY - (isMinor ? 12 : 18)} fill={isRetirementNode ? "#fb7185" : (isMinor ? "#a0bdb2" : "#d4af37")} fontSize={isMinor ? "11" : "16"} fontWeight="900" textAnchor="middle" stroke="#051611" strokeWidth={isMinor ? "2" : "4"} paintOrder="stroke" opacity={isMinor && !isHovered ? 0 : 1} className={isMinor ? "group-hover:opacity-100 transition-opacity" : ""}>
+                                            <text x={ptX} y={ptY - (isMinor ? 12 : 18)} fill={isRetirementNode ? "#fb7185" : (isMinor ? "rgba(255,255,255,0.6)" : "#d4af37")} fontSize={isMinor ? "11" : "16"} fontWeight="800" textAnchor="middle" stroke="#05100c" strokeWidth={isMinor ? "3" : "4"} paintOrder="stroke" opacity={isMinor && !isHovered ? 0 : 1} className={isMinor ? "group-hover:opacity-100 transition-opacity" : ""}>
                                                 {type === 'rank' ? `#${d.rank}` : val.toLocaleString()}
                                             </text>
                                         )}
                                         {(type === 'points' || type === 'careerPoints') && d.achievement && !isMinor && !isRetirementNode && (
                                             <g transform={`translate(${ptX - 10}, ${ptY - 60})`}>
-                                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={getAchColor(d.achievement)} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={getAchColor(d.achievement)} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.5))' }}>
                                                     <path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6M18 9h1.5a2.5 2.5 0 0 0 0-5H18M4 22h16M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22M18 2H6v7a6 6 0 0 0 12 0V2Z"/>
                                                 </svg>
                                             </g>
@@ -1775,17 +1778,17 @@
                         </svg>
                     </div>
 
-                    <div className="h-10 mt-4 flex items-center justify-center bg-royal-900 border border-royal-800 rounded-full px-6 min-w-[300px] shadow-lg transition-all duration-200">
+                    <div className="h-12 mt-6 flex items-center justify-center bg-[#05100c]/80 backdrop-blur-xl border border-white/10 rounded-full px-8 min-w-[300px] shadow-2xl transition-all duration-200">
                         {hoveredPointData ? (
-                            <span className="text-white font-bold tracking-wide">
+                            <span className="text-white/90 font-bold tracking-wide text-sm">
                                 {hoveredPointData.tournamentName} 
-                                <span className={type === 'rank' ? "text-emerald-400 font-normal ml-2" : "text-gold-500 font-normal ml-2"}>
+                                <span className={type === 'rank' ? "text-emerald-400 font-medium ml-2" : "text-gold-400 font-medium ml-2"}>
                                     | {type === 'rank' ? `Rank #${hoveredPointData.rank}` : `${(type === 'careerPoints' ? hoveredPointData.careerPoints : hoveredPointData.totalPoints).toLocaleString()} pts`}
                                 </span>
-                                {type === 'points' && <span className="text-sky-400 font-normal ml-2">(+{hoveredPointData.tournamentPoints} this event)</span>}
+                                {type === 'points' && <span className="text-sky-400 font-medium ml-2">(+{hoveredPointData.tournamentPoints} this event)</span>}
                             </span>
                         ) : (
-                            <span className="text-royal-300 text-sm font-medium">Hover over a point for tournament details</span>
+                            <span className="text-white/40 text-sm font-medium tracking-wide">Hover over a point for tournament details</span>
                         )}
                     </div>
                 </div>
@@ -1824,7 +1827,7 @@
             const startIndex = windowSize === 'all' ? 0 : Math.max(0, endIndex - windowSize);
             const historyData = filteredHistory.slice(startIndex, endIndex);
 
-            if (historyData.length < 1) return <p className="text-royal-300 text-sm mt-4">Not enough Major+ tournament history.</p>;
+            if (historyData.length < 1) return <p className="text-white/40 text-sm mt-4 italic">Not enough Major+ tournament history.</p>;
 
             const playerDebuts = useMemo(() => {
                 const debuts = {};
@@ -1832,19 +1835,14 @@
                 return debuts;
             }, [filteredHistory]);
 
-            // THE RETIREMENT SNIP ENGINE: Find the exact index in global history where they played their final match
             const lastActiveIndices = useMemo(() => {
                 const indices = {};
                 playersRaw.forEach(p => {
                     if (p.retired) {
-                        let maxM = -1;
-                        let lastIdx = -1;
+                        let maxM = -1; let lastIdx = -1;
                         for (let i = 0; i < filteredHistory.length; i++) {
                             const st = filteredHistory[i].standings?.find(x => x.id === p.id);
-                            if (st && st.matchesPlayed > maxM) {
-                                maxM = st.matchesPlayed;
-                                lastIdx = i;
-                            }
+                            if (st && st.matchesPlayed > maxM) { maxM = st.matchesPlayed; lastIdx = i; }
                         }
                         indices[p.id] = lastIdx;
                     }
@@ -1927,12 +1925,9 @@
                 if (!player) return;
 
                 const timeline = [];
-                
                 for (let k = 0; k < historyData.length; k++) {
                     const h = historyData[k];
                     const s = h.standings?.find(st => st.id === pid);
-                    
-                    // THE MAGIC RETIREMENT SNIP: Line ends completely after they played their final match
                     const globalK = filteredHistory.findIndex(gh => gh.tournamentId === h.tournamentId);
                     const isPastRetirement = player.retired && globalK > lastActiveIndices[pid];
                     
@@ -1941,8 +1936,7 @@
                     timeline.push({ k, x: getX(k), y: getY(val), val, s, exists, isDebut: s && playerDebuts[pid] === h.tournamentId });
                 }
 
-                const segments = [];
-                let currentSeg = [];
+                const segments = []; let currentSeg = [];
 
                 const getIntersect = (p0, p1, t0, t1) => {
                     const D = (t1.y - p1.y) - (t0.y - p0.y);
@@ -2030,59 +2024,69 @@
                 return type === 'points' ? aL.actualVal - bL.actualVal : bL.actualVal - aL.actualVal;
             });
 
+            const windowTabs = [
+                { id: 10, label: '10 Events' },
+                { id: 20, label: '20 Events' },
+                { id: 50, label: '50 Events' },
+                { id: 'all', label: 'All-Time' }
+            ];
+
+            const cutoffTabs = [
+                { id: 8, label: 'Top 8' },
+                { id: 12, label: 'Top 12' },
+                { id: 24, label: 'Top 24' },
+                { id: 'all', label: 'All' }
+            ];
+
+            const layoutTabs = [
+                { id: 'compact', label: 'Compact' },
+                { id: 'extended', label: 'Extended' }
+            ];
+
             return (
                 <div className="w-full" id={`snb-chart-${type}`}>
-                    <div className="flex flex-wrap gap-4 items-center justify-between mb-6 bg-royal-900/40 p-2.5 rounded-xl border border-royal-800">
+                    <div className="flex flex-wrap gap-4 items-center justify-between mb-6 bg-white/[0.02] p-3 rounded-2xl border border-white/[0.05] shadow-sm">
                         <div className="flex items-center gap-4 flex-wrap">
-                            <div className="flex items-center gap-1.5 bg-royal-950 p-1.5 rounded-lg border border-royal-800">
-                                <span className="text-[10px] text-royal-400 uppercase tracking-widest font-bold px-2 hidden sm:block">Window</span>
-                                {[10, 20, 50, 'all'].map(ws => (
-                                    <button key={ws} onClick={() => updateSnbChartState({ windowSize: ws, offset: 0 })}
-                                        className={`px-3 py-1 rounded text-xs font-bold transition-all ${windowSize === ws ? 'bg-gold-500 text-royal-950 shadow-sm' : 'bg-transparent text-royal-400 hover:text-white hover:bg-royal-800'}`}>
-                                        {ws === 'all' ? 'All Time' : ws}
-                                    </button>
-                                ))}
-                            </div>
-                            {!isAll && windowSize !== 'all' && (
-                                <div className="flex items-center gap-2 bg-royal-950 p-1.5 rounded-lg border border-royal-800">
-                                    <button onClick={() => updateSnbChartState({ offset: Math.min(maxOffset, safeOffset + windowSize) })} disabled={safeOffset >= maxOffset} className="p-1 hover:bg-royal-800 text-royal-400 hover:text-white rounded disabled:opacity-30 transition-colors"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg></button>
-                                    <span className="text-xs font-bold text-royal-300 w-28 text-center tabular-nums">{startIndex + 1} - {endIndex} of {N}</span>
-                                    <button onClick={() => updateSnbChartState({ offset: Math.max(0, safeOffset - windowSize) })} disabled={safeOffset <= 0} className="p-1 hover:bg-royal-800 text-royal-400 hover:text-white rounded disabled:opacity-30 transition-colors"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg></button>
-                                </div>
-                            )}
-                            <div className="w-px h-6 bg-royal-700 hidden lg:block"></div>
-                            <div className="flex items-center gap-1.5 bg-royal-950 p-1.5 rounded-lg border border-royal-800">
-                                <span className="text-[10px] text-royal-400 uppercase tracking-widest font-bold px-2 hidden sm:block">Cutoff</span>
-                                {[8, 12, 24, 'all'].map(c => (
-                                    <button key={c} onClick={() => updateSnbChartState({ cutoff: c })}
-                                        className={`px-3 py-1 rounded text-xs font-bold transition-all ${cutoff === c ? 'bg-purple-500 text-white shadow-sm' : 'bg-transparent text-royal-400 hover:text-white hover:bg-royal-800'}`}>
-                                        {c === 'all' ? 'All' : `Top ${c}`}
-                                    </button>
-                                ))}
+                            <div className="flex items-center gap-2">
+                                <span className="text-[10px] text-white/40 uppercase tracking-widest font-bold px-2 hidden sm:block">Window</span>
+                                <GlassTabs tabs={windowTabs} activeTab={windowSize} onChange={(val) => updateSnbChartState({ windowSize: val, offset: 0 })} />
                             </div>
                             
-                            {/* SMART TOGGLE: Only appears on Points Progression when set to 'All' */}
+                            {!isAll && windowSize !== 'all' && (
+                                <div className="flex items-center gap-2 bg-black/20 p-1.5 rounded-xl border border-white/5">
+                                    <button onClick={() => updateSnbChartState({ offset: Math.min(maxOffset, safeOffset + windowSize) })} disabled={safeOffset >= maxOffset} className="p-1 hover:bg-white/5 text-white/40 hover:text-white rounded disabled:opacity-30 transition-colors"><ChevronLeft size={16} /></button>
+                                    <span className="text-xs font-bold text-white/60 w-28 text-center tabular-nums">{startIndex + 1} - {endIndex} of {N}</span>
+                                    <button onClick={() => updateSnbChartState({ offset: Math.max(0, safeOffset - windowSize) })} disabled={safeOffset <= 0} className="p-1 hover:bg-white/5 text-white/40 hover:text-white rounded disabled:opacity-30 transition-colors"><ChevronRight size={16} /></button>
+                                </div>
+                            )}
+                            
+                            <div className="w-px h-6 bg-white/10 hidden lg:block mx-1"></div>
+                            
+                            <div className="flex items-center gap-2">
+                                <span className="text-[10px] text-white/40 uppercase tracking-widest font-bold px-2 hidden sm:block">Cutoff</span>
+                                <GlassTabs tabs={cutoffTabs} activeTab={cutoff} onChange={(val) => updateSnbChartState({ cutoff: val })} />
+                            </div>
+                            
                             {type === 'points' && isAll && (
                                 <>
-                                    <div className="w-px h-6 bg-royal-700 hidden lg:block"></div>
-                                    <div className="flex items-center gap-1.5 bg-royal-950 p-1.5 rounded-lg border border-royal-800">
-                                        <button onClick={() => updateSnbChartState({ layoutMode: 'compact' })} className={`px-3 py-1 rounded text-xs font-bold transition-all ${layoutMode === 'compact' ? 'bg-sky-500 text-white shadow-sm' : 'bg-transparent text-royal-400 hover:text-white hover:bg-royal-800'}`}>Compact</button>
-                                        <button onClick={() => updateSnbChartState({ layoutMode: 'extended' })} className={`px-3 py-1 rounded text-xs font-bold transition-all ${layoutMode === 'extended' ? 'bg-sky-500 text-white shadow-sm' : 'bg-transparent text-royal-400 hover:text-white hover:bg-royal-800'}`}>Extended</button>
+                                    <div className="w-px h-6 bg-white/10 hidden lg:block mx-1"></div>
+                                    <div className="flex items-center gap-2">
+                                        <GlassTabs tabs={layoutTabs} activeTab={layoutMode} onChange={(val) => updateSnbChartState({ layoutMode: val })} />
                                     </div>
                                 </>
                             )}
                             
                             {hasCutoff && (
                                 <button onClick={() => updateSnbChartState({ showDropped: !showDropped })} 
-                                    className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all border shadow-sm ${showDropped ? 'bg-royal-800 border-royal-600 text-white' : 'bg-royal-950 border-royal-800 text-royal-400 hover:text-royal-300'}`}>
+                                    className={`px-5 py-2 rounded-xl text-xs font-bold transition-all border shadow-sm ml-2 ${showDropped ? 'bg-white/10 border-white/20 text-white' : 'bg-black/20 border-white/5 text-white/40 hover:text-white/80 hover:bg-white/5'}`}>
                                     {showDropped ? 'Hide Dropped' : 'Show Dropped'}
                                 </button>
                             )}
                         </div>
-                        {selectedLineId && <button onClick={() => setSelectedLineId(null)} className="text-xs font-medium text-gold-500 hover:text-white px-4 py-1.5 bg-royal-800 rounded-md border border-royal-700 transition-colors">Clear Selection</button>}
+                        {selectedLineId && <button onClick={() => setSelectedLineId(null)} className="text-xs font-medium text-white px-4 py-2 bg-rose-500/20 hover:bg-rose-500/40 rounded-xl border border-rose-500/30 transition-colors">Clear Selection</button>}
                     </div>
                     
-                    <div className="w-full bg-royal-900/50 rounded-xl border border-royal-700 pb-2 relative overflow-x-auto select-none custom-scrollbar" onClick={() => setSelectedLineId(null)}>
+                    <div className="w-full bg-[#05100c] rounded-2xl border border-white/[0.05] pb-2 relative overflow-x-auto select-none custom-scrollbar shadow-inner" onClick={() => setSelectedLineId(null)}>
                         <svg viewBox={`0 0 ${width} ${dynamicHeight}`} style={{ minWidth: `800px`, transition: 'viewBox 0.3s ease' }} className="w-full h-auto overflow-visible font-sans">
                             <defs>
                                 {lines.map(line => (
@@ -2094,10 +2098,10 @@
 
                             {hasCutoff && (
                                 <g className="threshold-layer">
-                                    <path d={dropZonePath} fill="#000000" opacity="0.3" style={{ transition: 'd 0.3s ease' }} />
-                                    <path d={thresholdPath} fill="none" stroke="#ef4444" strokeWidth="2.5" strokeDasharray="8 6" opacity="0.7" />
-                                    <text x={width - pad.right + 10} y={thresholdData[thresholdData.length - 1].y} fill="#ef4444" fontSize="12" fontWeight="bold" alignmentBaseline="middle" opacity="0.8">Top {cutoff} Cutoff</text>
-                                    <text x={pad.left - 15} y={thresholdData[0].y} fill="#ef4444" fontSize="12" fontWeight="bold" textAnchor="end" alignmentBaseline="middle" opacity="0.8">{type === 'rank' ? 'Drop' : `Top ${cutoff}`}</text>
+                                    <path d={dropZonePath} fill="#000000" opacity="0.4" style={{ transition: 'd 0.3s ease' }} />
+                                    <path d={thresholdPath} fill="none" stroke="rgba(244,63,94,0.5)" strokeWidth="2.5" strokeDasharray="8 6" />
+                                    <text x={width - pad.right + 10} y={thresholdData[thresholdData.length - 1].y} fill="rgba(244,63,94,0.7)" fontSize="12" fontWeight="bold" alignmentBaseline="middle">Top {cutoff} Cutoff</text>
+                                    <text x={pad.left - 15} y={thresholdData[0].y} fill="rgba(244,63,94,0.7)" fontSize="12" fontWeight="bold" textAnchor="end" alignmentBaseline="middle">{type === 'rank' ? 'Drop' : `Top ${cutoff}`}</text>
                                 </g>
                             )}
 
@@ -2110,8 +2114,8 @@
                                     if (isAll && !rLines.includes(effectiveCutoff)) rLines.push(effectiveCutoff);
                                     return rLines.map((r, i) => (
                                         <g key={`grid-${i}`}>
-                                            <line x1={pad.left} y1={pad.top + ((r - 1) / Math.max(1, effectiveCutoff - 1)) * plotHeight} x2={width - pad.right + 20} y2={pad.top + ((r - 1) / Math.max(1, effectiveCutoff - 1)) * plotHeight} stroke="#13382d" strokeWidth="1" strokeDasharray="4 4" />
-                                            <text x={pad.left - 15} y={pad.top + ((r - 1) / Math.max(1, effectiveCutoff - 1)) * plotHeight} fill="#789e90" fontSize="12" fontWeight="bold" textAnchor="end" alignmentBaseline="middle">#{r}</text>
+                                            <line x1={pad.left} y1={pad.top + ((r - 1) / Math.max(1, effectiveCutoff - 1)) * plotHeight} x2={width - pad.right + 20} y2={pad.top + ((r - 1) / Math.max(1, effectiveCutoff - 1)) * plotHeight} stroke="rgba(255,255,255,0.05)" strokeWidth="1" strokeDasharray="4 4" />
+                                            <text x={pad.left - 15} y={pad.top + ((r - 1) / Math.max(1, effectiveCutoff - 1)) * plotHeight} fill="rgba(255,255,255,0.4)" fontSize="12" fontWeight="600" textAnchor="end" alignmentBaseline="middle">#{r}</text>
                                         </g>
                                     ));
                                 })()
@@ -2123,8 +2127,8 @@
                                     const yLines = [0]; for(let v = step; v <= maxPointsVal; v += step) yLines.push(v);
                                     return yLines.map((p, i) => (
                                         <g key={`grid-${i}`}>
-                                            <line x1={pad.left} y1={getY(p)} x2={width - pad.right + 20} y2={getY(p)} stroke={p === 0 ? "#1e4033" : "#13382d"} strokeWidth={p === 0 ? "3" : "1"} strokeDasharray={p === 0 ? "none" : "4 4"} />
-                                            <text x={pad.left - 15} y={getY(p)} fill="#789e90" fontSize="12" fontWeight="bold" textAnchor="end" alignmentBaseline="middle">{Math.round(p).toLocaleString()}</text>
+                                            <line x1={pad.left} y1={getY(p)} x2={width - pad.right + 20} y2={getY(p)} stroke={p === 0 ? "rgba(255,255,255,0.15)" : "rgba(255,255,255,0.05)"} strokeWidth={p === 0 ? "2" : "1"} strokeDasharray={p === 0 ? "none" : "4 4"} />
+                                            <text x={pad.left - 15} y={getY(p)} fill="rgba(255,255,255,0.4)" fontSize="12" fontWeight="600" textAnchor="end" alignmentBaseline="middle">{Math.round(p).toLocaleString()}</text>
                                         </g>
                                     ));
                                 })()
@@ -2160,25 +2164,24 @@
 
                                             return (
                                                 <g key={`pt-${line.player.id}-${sIdx}-${i}`} className="group cursor-pointer" onClick={(e) => { e.stopPropagation(); setSelectedLineId(line.player.id === selectedLineId ? null : line.player.id); }} onMouseEnter={() => setHoveredLineId(line.player.id)} onMouseLeave={() => setHoveredLineId(null)}>
-                                                    <circle cx={pt.x} cy={pt.y} r={isSolidDebut ? debutR : rSize} fill={isSolidDebut ? line.color : "#051611"} stroke={line.color} strokeWidth={isSolidDebut ? 0 : sWidth} style={{ transition: 'r 0.2s ease, stroke-width 0.2s ease' }} />
-                                                    <text x={pt.x} y={pt.y - 12} fill={line.color} fontSize="12" fontWeight="900" textAnchor="middle" stroke="#051611" strokeWidth="4" paintOrder="stroke" className={shouldShowText ? "opacity-100" : "opacity-0 group-hover:opacity-100"}>{type === 'rank' ? `#${pt.val}` : Math.round(pt.val).toLocaleString()}</text>
+                                                    <circle cx={pt.x} cy={pt.y} r={isSolidDebut ? debutR : rSize} fill={isSolidDebut ? line.color : "#05100c"} stroke={line.color} strokeWidth={isSolidDebut ? 0 : sWidth} style={{ transition: 'r 0.2s ease, stroke-width 0.2s ease' }} />
+                                                    <text x={pt.x} y={pt.y - 12} fill={line.color} fontSize="12" fontWeight="900" textAnchor="middle" stroke="#05100c" strokeWidth="4" paintOrder="stroke" className={shouldShowText ? "opacity-100" : "opacity-0 group-hover:opacity-100"}>{type === 'rank' ? `#${pt.val}` : Math.round(pt.val).toLocaleString()}</text>
                                                     <circle cx={pt.x} cy={pt.y} r="20" fill="transparent" />
                                                 </g>
                                             );
                                         }))}
 
-                                        {/* RESTORED DASHED LINES */}
                                         {shouldShowLabel && (Math.abs(adjY - endPt.y) > 2 || isDropped || isExtendedMode) && (
                                             <path d={`M ${endPt.x} ${endPt.y} C ${endPt.x + 15} ${endPt.y}, ${endPt.x + 10} ${adjY}, ${endPt.x + (isAll ? 10 : 20)} ${adjY}`} fill="none" stroke={line.color} strokeWidth="1.5" opacity="0.6" strokeDasharray="4 4" style={{ transition: 'opacity 0.3s ease' }} />
                                         )}
 
                                         {shouldShowLabel && (
                                             <g transform={`translate(${endPt.x + (isAll ? 10 : 20)}, ${adjY})`} className="cursor-pointer" style={{ transition: 'opacity 0.3s ease, transform 0.3s ease' }} onClick={(e) => { e.stopPropagation(); onNavigate('players', line.player.id); }} onMouseEnter={() => setHoveredLineId(line.player.id)} onMouseLeave={() => setHoveredLineId(null)}>
-                                                <rect x="0" y={-cConf.rectH/2} width={cConf.rectW} height={cConf.rectH} rx={cConf.rectH/2} fill="#051611" fillOpacity={isHighlighted ? "1" : (isDropped ? "0.6" : "0.85")} stroke={line.color} strokeWidth={isHighlighted ? 2 : 1} style={{ filter: isHighlighted ? 'drop-shadow(0 0 8px rgba(255,255,255,0.3))' : 'drop-shadow(0 4px 6px rgba(0,0,0,0.5))' }} />
+                                                <rect x="0" y={-cConf.rectH/2} width={cConf.rectW} height={cConf.rectH} rx={cConf.rectH/2} fill="#05100c" fillOpacity={isHighlighted ? "1" : (isDropped ? "0.6" : "0.85")} stroke={line.color} strokeWidth={isHighlighted ? 2 : 1} style={{ filter: isHighlighted ? 'drop-shadow(0 0 8px rgba(255,255,255,0.3))' : 'drop-shadow(0 4px 6px rgba(0,0,0,0.5))' }} />
                                                 {line.player.imageUrl ? (
                                                     <image href={line.player.imageUrl} x="4" y={-cConf.img/2} width={cConf.img} height={cConf.img} clipPath={`url(#clip-${type}-${line.player.id})`} preserveAspectRatio="xMidYMid slice" style={{ filter: isDropped && !isHighlighted ? 'grayscale(0.7)' : 'none' }} />
-                                                ) : ( <circle cx={4 + cConf.img/2} cy="0" r={cConf.img/2} fill="#0a241c" /> )}
-                                                <text x={4 + cConf.img + 6} y={cConf.font * 0.35} fill={isDropped && !isHighlighted ? "#94a3b8" : "#f8fafc"} fontSize={cConf.font} fontWeight="bold" style={{ textShadow: "0px 2px 4px black" }}>{line.player.name}</text>
+                                                ) : ( <circle cx={4 + cConf.img/2} cy="0" r={cConf.img/2} fill="#1e293b" /> )}
+                                                <text x={4 + cConf.img + 6} y={cConf.font * 0.35} fill={isDropped && !isHighlighted ? "rgba(255,255,255,0.4)" : "#ffffff"} fontSize={cConf.font} fontWeight="600">{line.player.name}</text>
                                             </g>
                                         )}
                                     </g>
@@ -2211,7 +2214,7 @@
             const startIndex = windowSize === 'all' ? 0 : Math.max(0, endIndex - windowSize);
             const historyData = allHistory.slice(startIndex, endIndex);
 
-            if (historyData.length < 1) return <p className="text-royal-300 text-sm mt-4">Not enough Major+ tournament history.</p>;
+            if (historyData.length < 1) return <p className="text-white/40 text-sm mt-4 italic">Not enough Major+ tournament history.</p>;
 
             const NATION_COLORS = {
                 'USA': '#38bdf8', 'GBR': '#f87171', 'AUS': '#facc15', 'FRA': '#60a5fa', 'GER': '#f8fafc', 'ITA': '#60a5fa', 'ESP': '#facc15', 'NED': '#fb923c', 'BRA': '#4ade80', 'ARG': '#7dd3fc', 'JPN': '#818cf8', 'CAN': '#ef4444', 'CHN': '#f43f5e', 'RUS': '#f87171', 'SWE': '#fde047', 'NOR': '#ef4444', 'MEX': '#22c55e', 'KOR': '#38bdf8', 'NZL': '#94a3b8', 'RSA': '#10b981', 'SUI': '#ef4444', 'BEL': '#ef4444', 'AUT': '#ef4444', 'POR': '#10b981', 'POL': '#f8fafc', 'CZE': '#38bdf8', 'CRO': '#f87171', 'SRB': '#ef4444', 'DEN': '#ef4444', 'FIN': '#38bdf8', 'IRL': '#4ade80', 'UKR': '#facc15'
@@ -2227,10 +2230,7 @@
 
             const width = 1200;
             const cConf = { gap: 24, font: 12, rectH: 28, rectW: 100, ptR: 3, debutR: 4, stroke: 2 };
-            
-            // CLEAN NATIONS VIEW: Locked to a tall, comfortable compact mode. No layout toggle.
             const plotHeight = Math.max(600, nationCodes.size * cConf.gap * 1.5);
-            
             const pad = { top: 40, right: 140, left: 80, bottom: 40 }; 
             const gridBottomY = pad.top + plotHeight;
 
@@ -2272,8 +2272,7 @@
             const lines = [];
             Array.from(nationCodes).forEach(code => {
                 const timeline = rawNationTimelines[code];
-                const segments = [];
-                let currentSeg = [];
+                const segments = []; let currentSeg = [];
 
                 timeline.forEach((pt, i) => {
                     const isDebut = pt.val > 0 && nationDebuts[code] === historyData[pt.k].id;
@@ -2322,31 +2321,34 @@
                 return bL.actualVal - aL.actualVal;
             });
 
+            const windowTabs = [
+                { id: 10, label: '10 Events' },
+                { id: 20, label: '20 Events' },
+                { id: 50, label: '50 Events' },
+                { id: 'all', label: 'All-Time' }
+            ];
+
             return (
                 <div className="w-full">
-                    <div className="flex flex-wrap gap-4 items-center justify-between mb-6 bg-royal-900/40 p-2.5 rounded-xl border border-royal-800">
+                    <div className="flex flex-wrap gap-4 items-center justify-between mb-6 bg-white/[0.02] p-3 rounded-2xl border border-white/[0.05] shadow-sm">
                         <div className="flex items-center gap-4 flex-wrap">
-                            <div className="flex items-center gap-1.5 bg-royal-950 p-1.5 rounded-lg border border-royal-800">
-                                <span className="text-[10px] text-royal-400 uppercase tracking-widest font-bold px-2 hidden sm:block">Window</span>
-                                {[10, 20, 50, 'all'].map(ws => (
-                                    <button key={ws} onClick={() => updateSnbChartState({ windowSize: ws, offset: 0 })}
-                                        className={`px-3 py-1 rounded text-xs font-bold transition-all ${windowSize === ws ? 'bg-gold-500 text-royal-950 shadow-sm' : 'bg-transparent text-royal-400 hover:text-white hover:bg-royal-800'}`}>
-                                        {ws === 'all' ? 'All Time' : ws}
-                                    </button>
-                                ))}
+                            <div className="flex items-center gap-2">
+                                <span className="text-[10px] text-white/40 uppercase tracking-widest font-bold px-2 hidden sm:block">Window</span>
+                                <GlassTabs tabs={windowTabs} activeTab={windowSize} onChange={(val) => updateSnbChartState({ windowSize: val, offset: 0 })} />
                             </div>
+                            
                             {windowSize !== 'all' && (
-                                <div className="flex items-center gap-2 bg-royal-950 p-1.5 rounded-lg border border-royal-800">
-                                    <button onClick={() => updateSnbChartState({ offset: Math.min(maxOffset, safeOffset + windowSize) })} disabled={safeOffset >= maxOffset} className="p-1 hover:bg-royal-800 text-royal-400 hover:text-white rounded disabled:opacity-30 transition-colors"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg></button>
-                                    <span className="text-xs font-bold text-royal-300 w-28 text-center tabular-nums">{startIndex + 1} - {endIndex} of {N}</span>
-                                    <button onClick={() => updateSnbChartState({ offset: Math.max(0, safeOffset - windowSize) })} disabled={safeOffset <= 0} className="p-1 hover:bg-royal-800 text-royal-400 hover:text-white rounded disabled:opacity-30 transition-colors"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg></button>
+                                <div className="flex items-center gap-2 bg-black/20 p-1.5 rounded-xl border border-white/5">
+                                    <button onClick={() => updateSnbChartState({ offset: Math.min(maxOffset, safeOffset + windowSize) })} disabled={safeOffset >= maxOffset} className="p-1 hover:bg-white/5 text-white/40 hover:text-white rounded disabled:opacity-30 transition-colors"><ChevronLeft size={16} /></button>
+                                    <span className="text-xs font-bold text-white/60 w-28 text-center tabular-nums">{startIndex + 1} - {endIndex} of {N}</span>
+                                    <button onClick={() => updateSnbChartState({ offset: Math.max(0, safeOffset - windowSize) })} disabled={safeOffset <= 0} className="p-1 hover:bg-white/5 text-white/40 hover:text-white rounded disabled:opacity-30 transition-colors"><ChevronRight size={16} /></button>
                                 </div>
                             )}
                         </div>
-                        {selectedCode && <button onClick={() => setSelectedCode(null)} className="text-xs font-medium text-gold-500 hover:text-white px-4 py-1.5 bg-royal-800 rounded-md border border-royal-700 transition-colors">Clear Selection</button>}
+                        {selectedCode && <button onClick={() => setSelectedCode(null)} className="text-xs font-medium text-white px-4 py-2 bg-rose-500/20 hover:bg-rose-500/40 rounded-xl border border-rose-500/30 transition-colors">Clear Selection</button>}
                     </div>
                     
-                    <div className="w-full bg-royal-900/50 rounded-xl border border-royal-700 pb-2 relative overflow-x-auto select-none custom-scrollbar" onClick={() => setSelectedCode(null)}>
+                    <div className="w-full bg-[#05100c] rounded-2xl border border-white/[0.05] pb-2 relative overflow-x-auto select-none custom-scrollbar shadow-inner" onClick={() => setSelectedCode(null)}>
                         <svg viewBox={`0 0 ${width} ${gridBottomY + pad.bottom}`} style={{ minWidth: `800px`, transition: 'viewBox 0.3s ease' }} className="w-full h-auto overflow-visible font-sans">
                             {(() => {
                                 const rawStep = maxPointsVal / (windowSize === 'all' ? 20 : 15);
@@ -2355,8 +2357,8 @@
                                 const yLines = [0]; for(let v = step; v <= maxPointsVal; v += step) yLines.push(v);
                                 return yLines.map((p, i) => (
                                     <g key={`grid-${i}`}>
-                                        <line x1={pad.left} y1={getY(p)} x2={width - pad.right + 20} y2={getY(p)} stroke={p === 0 ? "#1e4033" : "#13382d"} strokeWidth={p === 0 ? "3" : "1"} strokeDasharray={p === 0 ? "none" : "4 4"} />
-                                        <text x={pad.left - 15} y={getY(p)} fill="#789e90" fontSize="12" fontWeight="bold" textAnchor="end" alignmentBaseline="middle">{Math.round(p).toLocaleString()}</text>
+                                        <line x1={pad.left} y1={getY(p)} x2={width - pad.right + 20} y2={getY(p)} stroke={p === 0 ? "rgba(255,255,255,0.15)" : "rgba(255,255,255,0.05)"} strokeWidth={p === 0 ? "2" : "1"} strokeDasharray={p === 0 ? "none" : "4 4"} />
+                                        <text x={pad.left - 15} y={getY(p)} fill="rgba(255,255,255,0.4)" fontSize="12" fontWeight="600" textAnchor="end" alignmentBaseline="middle">{Math.round(p).toLocaleString()}</text>
                                     </g>
                                 ));
                             })()}
@@ -2387,8 +2389,8 @@
                                             
                                             return (
                                                 <g key={`pt-${line.code}-${sIdx}-${i}`} className="group cursor-pointer" onClick={(e) => { e.stopPropagation(); setSelectedCode(line.code === selectedCode ? null : line.code); }} onMouseEnter={() => setHoveredCode(line.code)} onMouseLeave={() => setHoveredCode(null)}>
-                                                    <circle cx={pt.x} cy={pt.y} r={isSolidDebut ? debutR : rSize} fill={isSolidDebut ? line.color : "#051611"} stroke={line.color} strokeWidth={isSolidDebut ? 0 : sWidth} />
-                                                    <text x={pt.x} y={pt.y - 12} fill={line.color} fontSize="12" fontWeight="900" textAnchor="middle" stroke="#051611" strokeWidth="4" paintOrder="stroke" className={shouldShowText ? "opacity-100" : "opacity-0 group-hover:opacity-100"}>{Math.round(pt.val).toLocaleString()}</text>
+                                                    <circle cx={pt.x} cy={pt.y} r={isSolidDebut ? debutR : rSize} fill={isSolidDebut ? line.color : "#05100c"} stroke={line.color} strokeWidth={isSolidDebut ? 0 : sWidth} />
+                                                    <text x={pt.x} y={pt.y - 12} fill={line.color} fontSize="12" fontWeight="900" textAnchor="middle" stroke="#05100c" strokeWidth="4" paintOrder="stroke" className={shouldShowText ? "opacity-100" : "opacity-0 group-hover:opacity-100"}>{Math.round(pt.val).toLocaleString()}</text>
                                                     <circle cx={pt.x} cy={pt.y} r="20" fill="transparent" />
                                                 </g>
                                             );
@@ -2397,9 +2399,9 @@
                                         {(Math.abs(lObj.currentY - lObj.endY) > 2) && <path d={`M ${lObj.endX} ${lObj.endY} C ${lObj.endX + 15} ${lObj.endY}, ${lObj.endX + 10} ${lObj.currentY}, ${lObj.endX + 20} ${lObj.currentY}`} fill="none" stroke={line.color} strokeWidth="1.5" opacity="0.4" strokeDasharray="2 2" />}
                                         
                                         <g transform={`translate(${lObj.endX + 20}, ${lObj.currentY})`} className="cursor-pointer" onClick={(e) => { e.stopPropagation(); onNavigate('nations', null, null, line.code); }} onMouseEnter={() => setHoveredCode(line.code)} onMouseLeave={() => setHoveredCode(null)}>
-                                            <rect x="0" y={-cConf.rectH/2} width={cConf.rectW} height={cConf.rectH} rx={cConf.rectH/2} fill="#051611" fillOpacity="0.9" stroke={line.color} strokeWidth={isHighlighted ? 2 : 1} style={{ filter: isHighlighted ? 'drop-shadow(0 0 8px rgba(255,255,255,0.3))' : 'none' }} />
+                                            <rect x="0" y={-cConf.rectH/2} width={cConf.rectW} height={cConf.rectH} rx={cConf.rectH/2} fill="#05100c" fillOpacity="0.9" stroke={line.color} strokeWidth={isHighlighted ? 2 : 1} style={{ filter: isHighlighted ? 'drop-shadow(0 0 8px rgba(255,255,255,0.3))' : 'none' }} />
                                             <text x={10} y={cConf.font * 0.35} fontSize={cConf.font + 1}>{getFlag(line.code)}</text>
-                                            <text x={32} y={cConf.font * 0.35} fill={isHighlighted ? "#ffffff" : "#cbd5e1"} fontSize={cConf.font} fontWeight="bold">{line.code}</text>
+                                            <text x={32} y={cConf.font * 0.35} fill={isHighlighted ? "#ffffff" : "rgba(255,255,255,0.7)"} fontSize={cConf.font} fontWeight="600">{line.code}</text>
                                         </g>
                                     </g>
                                 );
@@ -2409,102 +2411,248 @@
                 </div>
             );
         }
-    
 
-        function FloatingChartNav() {
-            const scrollToSection = (id) => document.getElementById(id)?.scrollIntoView({behavior: 'smooth', block: 'start'});
-            const scrollToTop = () => document.querySelector('main .overflow-auto')?.scrollTo({ top: 0, behavior: 'smooth' });
-
-            return (
-                <div className="fixed right-8 top-1/2 -translate-y-1/2 flex flex-col gap-3 z-50 bg-royal-950/90 backdrop-blur-md p-3 rounded-2xl border border-royal-800 shadow-[0_10px_30px_rgba(0,0,0,0.8)] hidden xl:flex w-24">
-                    <div className="text-[10px] text-royal-400 uppercase tracking-widest font-bold text-center pb-2 border-b border-royal-800 w-full mb-1">Jump</div>
-                    
-                    <button onClick={() => scrollToSection('snb-chart-wrapper-rank')} className="p-3 w-full bg-royal-900 hover:bg-gold-500 hover:text-royal-950 text-royal-200 rounded-xl transition-all hover:scale-110 group flex flex-col items-center justify-center gap-1.5 shadow-inner">
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"></polyline><polyline points="16 7 22 7 22 13"></polyline></svg>
-                        <span className="text-[9px] font-black uppercase tracking-wider text-center">Rank</span>
-                    </button>
-                    
-                    <button onClick={() => scrollToSection('snb-chart-wrapper-points')} className="p-3 w-full bg-royal-900 hover:bg-gold-500 hover:text-royal-950 text-royal-200 rounded-xl transition-all hover:scale-110 group flex flex-col items-center justify-center gap-1.5 shadow-inner">
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>
-                        <span className="text-[9px] font-black uppercase tracking-wider text-center">Points</span>
-                    </button>
-
-                    <div className="mt-2 pt-4 border-t border-royal-800 w-full">
-                        <button onClick={scrollToTop} className="p-3 w-full bg-royal-900 hover:bg-gold-500 hover:text-royal-950 text-gold-500 rounded-xl transition-all hover:scale-110 group flex flex-col items-center justify-center gap-1.5 shadow-inner">
-                            <ArrowUpIcon size={20}/>
-                            <span className="text-[9px] font-black uppercase tracking-wider text-center">Top</span>
-                        </button>
-                    </div>
-                </div>
-            );
-        }
-
-        function FloatingNationNav() {
-            const scrollToSection = (id) => document.getElementById(id)?.scrollIntoView({behavior: 'smooth', block: 'start'});
-            const scrollToTop = () => document.querySelector('main .overflow-auto')?.scrollTo({ top: 0, behavior: 'smooth' });
-            
-            return (
-                <div className="fixed right-8 top-1/2 -translate-y-1/2 flex flex-col gap-3 z-50 bg-royal-950/90 backdrop-blur-md p-3 rounded-2xl border border-royal-800 shadow-[0_10px_30px_rgba(0,0,0,0.8)] hidden xl:flex w-24">
-                    <div className="text-[10px] text-royal-400 uppercase tracking-widest font-bold text-center pb-2 border-b border-royal-800 w-full mb-1">Jump</div>
-                    
-                    <button onClick={() => scrollToSection('nation-chart')} className="p-3 w-full bg-royal-900 hover:bg-gold-500 hover:text-royal-950 text-royal-200 rounded-xl transition-all hover:scale-110 group flex flex-col items-center justify-center gap-1.5 shadow-inner">
-                        <AnalyticsIcon size={24}/>
-                        <span className="text-[9px] font-black uppercase tracking-wider text-center">Chart</span>
-                    </button>
-                    
-                    <button onClick={() => scrollToSection('nation-roster')} className="p-3 w-full bg-royal-900 hover:bg-gold-500 hover:text-royal-950 text-royal-200 rounded-xl transition-all hover:scale-110 group flex flex-col items-center justify-center gap-1.5 shadow-inner">
-                        <PlayersIcon size={24}/>
-                        <span className="text-[9px] font-black uppercase tracking-wider text-center">Roster</span>
-                    </button>
-                    
-                    <button onClick={() => scrollToSection('nation-trophies')} className="p-3 w-full bg-royal-900 hover:bg-gold-500 hover:text-royal-950 text-royal-200 rounded-xl transition-all hover:scale-110 group flex flex-col items-center justify-center gap-1.5 shadow-inner">
-                        <Trophy size={24}/>
-                        <span className="text-[9px] font-black uppercase tracking-wider text-center">Trophies</span>
-                    </button>
-                    
-                    <div className="mt-2 pt-4 border-t border-royal-800 w-full">
-                        <button onClick={scrollToTop} className="p-3 w-full bg-royal-900 hover:bg-gold-500 hover:text-royal-950 text-gold-500 rounded-xl transition-all hover:scale-110 group flex flex-col items-center justify-center gap-1.5 shadow-inner">
-                            <ArrowUpIcon size={20}/>
-                            <span className="text-[9px] font-black uppercase tracking-wider text-center">Top</span>
-                        </button>
-                    </div>
-                </div>
-            );
-        }
-
-        function AnalyticsView({ playersRaw, tournaments, players, onNavigate }) {
-            const globalHistory = useMemo(() => getGlobalHistory(playersRaw, tournaments), [playersRaw, tournaments]);
+        function NationPointsChart({ code, globalHistory, playersRaw, onNavigate }) {
             const [, setTick] = useState(0);
+            const [selectedId, setSelectedId] = useState(null);
+            const [hoveredId, setHoveredId] = useState(null);
 
-            // Subscribe to the global chart state so the titles dynamically update!
             useEffect(() => {
                 const l = () => setTick(t => t + 1);
                 __snbChartListeners.add(l);
                 return () => __snbChartListeners.delete(l);
             }, []);
 
-            const currentCutoff = typeof __snbSharedChartState !== 'undefined' ? __snbSharedChartState.cutoff : 12;
-            const titlePrefix = currentCutoff === 'all' ? 'All-Time' : `Top ${currentCutoff}`;
+            const { windowSize, offset, layoutMode, showDropped } = __snbSharedChartState;
+            const allHistory = globalHistory.filter(h => h.isMajorPlus);
+            const N = allHistory.length;
+
+            const maxOffset = windowSize === 'all' ? 0 : Math.max(0, N - windowSize);
+            const safeOffset = Math.min(offset, maxOffset);
+            const endIndex = N - safeOffset;
+            const startIndex = windowSize === 'all' ? 0 : Math.max(0, endIndex - windowSize);
+            const historyData = allHistory.slice(startIndex, endIndex);
+
+            if (historyData.length < 1) return null;
+
+            const NATION_COLORS = {
+                'USA': '#38bdf8', 'GBR': '#f87171', 'AUS': '#facc15', 'FRA': '#60a5fa', 'GER': '#f8fafc', 'ITA': '#60a5fa', 'ESP': '#facc15', 'NED': '#fb923c', 'BRA': '#4ade80', 'ARG': '#7dd3fc', 'JPN': '#818cf8', 'CAN': '#ef4444', 'CHN': '#f43f5e', 'RUS': '#f87171', 'SWE': '#fde047', 'NOR': '#ef4444', 'MEX': '#22c55e', 'KOR': '#38bdf8', 'NZL': '#94a3b8', 'RSA': '#10b981', 'SUI': '#ef4444', 'BEL': '#ef4444', 'AUT': '#ef4444', 'POR': '#10b981', 'POL': '#f8fafc', 'CZE': '#38bdf8', 'CRO': '#f87171', 'SRB': '#ef4444', 'DEN': '#ef4444', 'FIN': '#38bdf8', 'IRL': '#4ade80', 'UKR': '#facc15'
+            };
+            const nationColor = NATION_COLORS[code] || '#facc15';
+
+            const playerDebuts = {};
+            allHistory.forEach(h => h.standings?.forEach(s => { if (!playerDebuts[s.id]) playerDebuts[s.id] = h.id; }));
+
+            const allNationPlayerIds = new Set();
+            historyData.forEach(h => h.standings?.forEach(s => {
+                const p = playersRaw.find(x => x.id === s.id);
+                if (p && p.nationality === code) allNationPlayerIds.add(s.id);
+            }));
+
+            const width = 1200;
+            const LABEL_GAP = 18; 
+            
+            let plotHeight = layoutMode === 'extended' ? Math.max(450, allNationPlayerIds.size * LABEL_GAP * 1.8) : 350;
+            const pad = { top: 40, right: 180, left: 80, bottom: 40 }; 
+            const gridBottomY = pad.top + plotHeight;
+
+            let maxPointsVal = 10;
+            const timelines = { total: [] };
+            Array.from(allNationPlayerIds).forEach(pid => timelines[pid] = []);
+
+            for (let k = 0; k < historyData.length; k++) {
+                let stepTotal = 0;
+                historyData[k].standings?.forEach(s => {
+                    if (allNationPlayerIds.has(s.id)) {
+                        timelines[s.id].push({ k, val: s.pts });
+                        stepTotal += s.pts;
+                    }
+                });
+                Array.from(allNationPlayerIds).forEach(pid => {
+                    if (timelines[pid].length === k) timelines[pid].push({ k, val: 0 });
+                });
+                timelines.total.push({ k, val: stepTotal });
+                if (stepTotal > maxPointsVal) maxPointsVal = stepTotal;
+            }
+            maxPointsVal = Math.ceil(maxPointsVal * 1.05);
+
+            const getX = (i) => historyData.length <= 1 ? (pad.left + (width - pad.left - pad.right) / 2) : pad.left + (i * ((width - pad.left - pad.right) / (historyData.length - 1)));
+            const getY = (val) => gridBottomY - (val / Math.max(1, maxPointsVal)) * plotHeight;
+
+            const lines = [];
+            
+            const tSegs = []; let cSeg = [];
+            timelines.total.forEach((pt, i) => {
+                const mapped = { ...pt, x: getX(pt.k), y: getY(pt.val), isDot: true };
+                if (pt.val > 0) cSeg.push(mapped); else if (cSeg.length > 0) { tSegs.push(cSeg); cSeg = []; }
+            });
+            if (cSeg.length > 0) tSegs.push(cSeg);
+            if (tSegs.length > 0) lines.push({ id: 'total', name: 'National Total', color: nationColor, isTotal: true, paths: tSegs.map(seg => seg.map((pt, i) => `${i===0?'M':'L'} ${pt.x} ${pt.y}`).join(' ')), segments: tSegs });
+
+            Array.from(allNationPlayerIds).forEach(pid => {
+                const p = playersRaw.find(x => x.id === pid);
+                const pSegs = []; let pCSeg = [];
+                timelines[pid].forEach((pt, i) => {
+                    const isDebut = pt.val > 0 && playerDebuts[pid] === historyData[pt.k].id;
+                    const mapped = { ...pt, x: getX(pt.k), y: getY(pt.val), isDot: true, isDebut };
+                    
+                    if (pt.val > 0) pCSeg.push(mapped); else if (pCSeg.length > 0) { pSegs.push(pCSeg); pCSeg = []; }
+                });
+                if (pCSeg.length > 0) pSegs.push(pCSeg);
+                if (pSegs.length > 0) lines.push({ id: pid, name: p.name, img: p.imageUrl, color: nationColor, isTotal: false, paths: pSegs.map(seg => seg.map((pt, i) => `${i===0?'M':'L'} ${pt.x} ${pt.y}`).join(' ')), segments: pSegs, retired: !!p.retired });
+            });
+
+            // --- COLUMN-BASED CASCADE PHYSICS ---
+            const labels = [];
+            lines.forEach(line => {
+                const endPt = line.segments[line.segments.length - 1].slice(-1)[0];
+                const isDropped = !line.isTotal && endPt.k < historyData.length - 1;
+                labels.push({ id: line.id, endX: endPt.x, endY: endPt.y, actualVal: endPt.val, isDropped, line });
+            });
+            
+            const columns = [];
+            labels.forEach(l => {
+                let placed = false;
+                for (let c of columns) {
+                    if (Math.abs(c.x - l.endX) < 10) { c.labels.push(l); placed = true; break; }
+                }
+                if (!placed) columns.push({ x: l.endX, labels: [l] });
+            });
+
+            const physicsGap = layoutMode === 'extended' ? LABEL_GAP : LABEL_GAP * 0.5;
+
+            columns.forEach(col => {
+                const colLabels = col.labels;
+                colLabels.sort((a,b) => b.actualVal - a.actualVal);
+
+                if (colLabels.length > 0) {
+                    colLabels[0].currentY = colLabels[0].endY;
+                    for (let i = 1; i < colLabels.length; i++) {
+                        colLabels[i].currentY = Math.max(colLabels[i].endY, colLabels[i-1].currentY + physicsGap);
+                    }
+                    if (colLabels[colLabels.length - 1].currentY > gridBottomY) {
+                        colLabels[colLabels.length - 1].currentY = gridBottomY;
+                        for (let i = colLabels.length - 2; i >= 0; i--) {
+                            colLabels[i].currentY = Math.min(colLabels[i].currentY, colLabels[i+1].currentY - physicsGap);
+                        }
+                    }
+                }
+            });
+
+            const labelPositions = {};
+            labels.forEach(el => labelPositions[el.id] = el.currentY);
+
+            const sortedLines = [...lines].sort((a, b) => {
+                const aH = a.id === selectedId || a.id === hoveredId, bH = b.id === selectedId || b.id === hoveredId;
+                if (aH && !bH) return 1; if (!aH && bH) return -1;
+                const aL = labels.find(l => l.id === a.id), bL = labels.find(l => l.id === b.id);
+                if (aL.isDropped && !bL.isDropped) return -1; if (!aL.isDropped && bL.isDropped) return 1;
+                return bL.actualVal - aL.actualVal;
+            });
+
+            const windowTabs = [
+                { id: 10, label: '10 Events' },
+                { id: 20, label: '20 Events' },
+                { id: 50, label: '50 Events' },
+                { id: 'all', label: 'All-Time' }
+            ];
+
+            const layoutTabs = [
+                { id: 'compact', label: 'Compact' },
+                { id: 'extended', label: 'Extended' }
+            ];
 
             return (
-                <div className="max-w-[1400px] mx-auto space-y-8 pb-20 relative">
-                    {/* INJECTED FLOATING SIDEBAR */}
-                    <FloatingChartNav />
-
-                    <header className="mb-4 pl-0 xl:pl-4">
-                        <h1 className="text-3xl font-bold text-white flex items-center gap-3"><AnalyticsIcon size={32} className="text-gold-500"/> Global Analytics</h1>
-                        <p className="text-royal-300 mt-2">Click or hover on any line or profile picture to isolate their trajectory. Official Rankings only update after Major+ events.</p>
-                    </header>
-
-                    {/* Notice the ID tags added here so the sidebar links can jump right to them! */}
-                    <div id="snb-chart-wrapper-rank" className="bg-royal-900 p-6 rounded-2xl border border-royal-800 shadow-xl scroll-mt-8">
-                        <h2 className="text-2xl font-bold text-white flex items-center gap-3 mb-6"><AnalyticsIcon size={28} className="text-gold-500"/> {titlePrefix} Rank Progression</h2>
-                        <TopPlayersChart globalHistory={globalHistory} playersRaw={playersRaw} type="rank" onNavigate={onNavigate} />
+                <div className="w-full bg-[#05100c] rounded-2xl border border-white/[0.05] p-6 shadow-xl mb-8" id="nation-chart">
+                    <div className="flex flex-wrap justify-between items-center mb-6 gap-4">
+                        <h3 className="text-xl font-bold text-white flex items-center gap-3"><AnalyticsIcon size={24} className="text-gold-500"/> Internal Progression</h3>
+                        
+                        <div className="flex items-center gap-4 flex-wrap bg-white/[0.02] p-2.5 rounded-xl border border-white/[0.05] shadow-sm">
+                            <div className="flex items-center gap-2">
+                                <span className="text-[10px] text-white/40 uppercase tracking-widest font-bold px-2 hidden sm:block">Window</span>
+                                <GlassTabs tabs={windowTabs} activeTab={windowSize} onChange={(val) => updateSnbChartState({ windowSize: val, offset: 0 })} />
+                            </div>
+                            
+                            {windowSize !== 'all' && (
+                                <div className="flex items-center gap-2 bg-black/20 p-1.5 rounded-xl border border-white/5">
+                                    <button onClick={() => updateSnbChartState({ offset: Math.min(maxOffset, safeOffset + windowSize) })} disabled={safeOffset >= maxOffset} className="p-1 hover:bg-white/5 text-white/40 hover:text-white rounded disabled:opacity-30 transition-colors"><ChevronLeft size={16} /></button>
+                                    <span className="text-xs font-bold text-white/60 w-28 text-center tabular-nums">{startIndex + 1} - {endIndex} of {N}</span>
+                                    <button onClick={() => updateSnbChartState({ offset: Math.max(0, safeOffset - windowSize) })} disabled={safeOffset <= 0} className="p-1 hover:bg-white/5 text-white/40 hover:text-white rounded disabled:opacity-30 transition-colors"><ChevronRight size={16} /></button>
+                                </div>
+                            )}
+                            <div className="w-px h-6 bg-white/10 hidden lg:block mx-1"></div>
+                            <div className="flex items-center gap-2">
+                                <GlassTabs tabs={layoutTabs} activeTab={layoutMode} onChange={(val) => updateSnbChartState({ layoutMode: val })} />
+                            </div>
+                            <button onClick={() => updateSnbChartState({ showDropped: !showDropped })} 
+                                className={`px-5 py-2 rounded-xl text-xs font-bold transition-all border shadow-sm ml-2 ${showDropped ? 'bg-white/10 border-white/20 text-white' : 'bg-black/20 border-white/5 text-white/40 hover:text-white/80 hover:bg-white/5'}`}>
+                                {showDropped ? 'Hide Dropped' : 'Show Dropped'}
+                            </button>
+                        </div>
                     </div>
                     
-                    <div id="snb-chart-wrapper-points" className="bg-royal-900 p-6 rounded-2xl border border-royal-800 shadow-xl scroll-mt-8">
-                        <h2 className="text-2xl font-bold text-white flex items-center gap-3 mb-6"><AnalyticsIcon size={28} className="text-gold-500"/> {titlePrefix} Points Progression</h2>
-                        <TopPlayersChart globalHistory={globalHistory} playersRaw={playersRaw} type="points" onNavigate={onNavigate} />
+                    <div className="w-full overflow-x-auto custom-scrollbar pb-2 shadow-inner" onClick={() => setSelectedId(null)}>
+                        <svg viewBox={`0 0 ${width} ${gridBottomY + pad.bottom}`} style={{ minWidth: `800px`, transition: 'viewBox 0.3s ease' }} className="w-full h-auto overflow-visible font-sans">
+                            {(() => {
+                                const rawStep = maxPointsVal / 12;
+                                const mag = Math.pow(10, Math.floor(Math.log10(rawStep || 1)));
+                                const step = Math.max(100, Math.ceil(rawStep / mag) * mag);
+                                const yLines = [0]; for(let v=step; v<=maxPointsVal; v+=step) yLines.push(v);
+                                return yLines.map((p, i) => (
+                                    <g key={`g-${i}`}>
+                                        <line x1={pad.left} y1={getY(p)} x2={width - pad.right + 20} y2={getY(p)} stroke={i===0?"rgba(255,255,255,0.15)":"rgba(255,255,255,0.05)"} strokeWidth={i===0?"2":"1"} strokeDasharray={i===0?"none":"4 4"} />
+                                        <text x={pad.left - 15} y={getY(p)} fill="rgba(255,255,255,0.4)" fontSize="11" fontWeight="600" textAnchor="end" alignmentBaseline="middle">{p.toLocaleString()}</text>
+                                    </g>
+                                ));
+                            })()}
+
+                            {sortedLines.map(line => {
+                                const isHighlighted = selectedId === line.id || hoveredId === line.id;
+                                const isFaded = (selectedId || hoveredId) && !isHighlighted;
+                                return line.paths.map((pStr, pIdx) => (
+                                    <path key={`p-${line.id}-${pIdx}`} d={pStr} fill="none" stroke={line.color} strokeWidth={line.isTotal ? 4 : (isHighlighted ? 3 : 1.5)} opacity={isFaded ? 0.15 : (line.isTotal ? 1 : 0.6)} strokeLinejoin="round" className="cursor-pointer" onClick={(e) => { e.stopPropagation(); setSelectedId(line.id === selectedId ? null : line.id); }} onMouseEnter={() => setHoveredId(line.id)} onMouseLeave={() => setHoveredId(null)} />
+                                ));
+                            })}
+
+                            {sortedLines.map(line => {
+                                const lObj = labels.find(l => l.id === line.id);
+                                const isHighlighted = selectedId === line.id || hoveredId === line.id;
+                                const isFaded = (selectedId || hoveredId) && !isHighlighted;
+                                const shouldShowLabel = !lObj.isDropped || showDropped || isHighlighted;
+
+                                return (
+                                    <g key={`o-${line.id}`} opacity={isFaded ? 0.2 : 1} style={{ transition: 'opacity 0.2s ease' }}>
+                                        {line.segments.map((seg, sI) => seg.map((pt, i) => {
+                                            const isSolidDebut = pt.isDebut && sI === 0 && i === 0;
+                                            const r = line.isTotal ? 3 : (isHighlighted ? 2.5 : 1.5);
+                                            const debutR = line.isTotal ? 4 : (isHighlighted ? 3.5 : 2.5);
+                                            const sWidth = isHighlighted ? 2 : 1.5;
+
+                                            return (
+                                                <g key={`d-${line.id}-${sI}-${i}`} className="group cursor-pointer" onClick={(e) => { e.stopPropagation(); setSelectedId(line.id === selectedId ? null : line.id); }} onMouseEnter={() => setHoveredId(line.id)} onMouseLeave={() => setHoveredId(null)}>
+                                                    <circle cx={pt.x} cy={pt.y} r={isSolidDebut ? debutR : r} fill={isSolidDebut ? line.color : "#05100c"} stroke={line.color} strokeWidth={isSolidDebut ? 0 : sWidth} />
+                                                    <circle cx={pt.x} cy={pt.y} r="20" fill="transparent" />
+                                                    <title>{`${line.name}: ${pt.val.toLocaleString()}`}</title>
+                                                </g>
+                                            );
+                                        }))}
+                                        
+                                        {shouldShowLabel && (Math.abs(lObj.currentY - lObj.endY) > 2 || lObj.isDropped) && <path d={`M ${lObj.endX} ${lObj.endY} C ${lObj.endX+15} ${lObj.endY}, ${lObj.endX+10} ${lObj.currentY}, ${lObj.endX+20} ${lObj.currentY}`} fill="none" stroke={line.color} strokeWidth="1.5" opacity="0.4" strokeDasharray="3 3" />}
+                                        
+                                        {shouldShowLabel && (
+                                            <g transform={`translate(${lObj.endX + 20}, ${lObj.currentY})`} className="cursor-pointer" onClick={(e) => { if (!line.isTotal) { e.stopPropagation(); onNavigate('players', line.id); } }} onMouseEnter={() => setHoveredId(line.id)} onMouseLeave={() => setHoveredId(null)}>
+                                                <rect x="0" y={-10} width={140} height={20} rx={10} fill="#05100c" fillOpacity={isHighlighted ? "1" : (lObj.isDropped ? "0.6" : "0.9")} stroke={line.color} strokeWidth={line.isTotal || isHighlighted ? 2 : 1} style={{ filter: isHighlighted ? 'drop-shadow(0 0 8px rgba(255,255,255,0.3))' : 'none' }} />
+                                                
+                                                {line.isTotal ? <circle cx="10" cy="0" r="3" fill={line.color} /> : (line.img ? <image href={line.img} x="4" y="-7" width={14} height={14} preserveAspectRatio="xMidYMid slice" clipPath={`url(#clip-nat-${line.id})`} style={{ filter: lObj.isDropped && !isHighlighted ? 'grayscale(0.7)' : 'none' }} /> : <circle cx="10" cy="0" r="6" fill="#1e293b"/>)}
+                                                {line.img && <defs><clipPath id={`clip-nat-${line.id}`}><circle cx="11" cy="0" r="7" /></clipPath></defs>}
+                                                
+                                                <text x={24} y={3} fill={line.isTotal ? line.color : (lObj.isDropped && !isHighlighted ? "rgba(255,255,255,0.4)" : "#ffffff")} fontSize={10} fontWeight="600">{line.name}</text>
+                                            </g>
+                                        )}
+                                    </g>
+                                );
+                            })}
+                        </svg>
                     </div>
                 </div>
             );
@@ -2646,246 +2794,6 @@
             );
         }
 
-        
-        function NationPointsChart({ code, globalHistory, playersRaw, onNavigate }) {
-            const [, setTick] = useState(0);
-            const [selectedId, setSelectedId] = useState(null);
-            const [hoveredId, setHoveredId] = useState(null);
-
-            useEffect(() => {
-                const l = () => setTick(t => t + 1);
-                __snbChartListeners.add(l);
-                return () => __snbChartListeners.delete(l);
-            }, []);
-
-            const { windowSize, offset, layoutMode, showDropped } = __snbSharedChartState;
-            const allHistory = globalHistory.filter(h => h.isMajorPlus);
-            const N = allHistory.length;
-
-            const maxOffset = windowSize === 'all' ? 0 : Math.max(0, N - windowSize);
-            const safeOffset = Math.min(offset, maxOffset);
-            const endIndex = N - safeOffset;
-            const startIndex = windowSize === 'all' ? 0 : Math.max(0, endIndex - windowSize);
-            const historyData = allHistory.slice(startIndex, endIndex);
-
-            if (historyData.length < 1) return null;
-
-            const NATION_COLORS = {
-                'USA': '#38bdf8', 'GBR': '#f87171', 'AUS': '#facc15', 'FRA': '#60a5fa', 'GER': '#f8fafc', 'ITA': '#60a5fa', 'ESP': '#facc15', 'NED': '#fb923c', 'BRA': '#4ade80', 'ARG': '#7dd3fc', 'JPN': '#818cf8', 'CAN': '#ef4444', 'CHN': '#f43f5e', 'RUS': '#f87171', 'SWE': '#fde047', 'NOR': '#ef4444', 'MEX': '#22c55e', 'KOR': '#38bdf8', 'NZL': '#94a3b8', 'RSA': '#10b981', 'SUI': '#ef4444', 'BEL': '#ef4444', 'AUT': '#ef4444', 'POR': '#10b981', 'POL': '#f8fafc', 'CZE': '#38bdf8', 'CRO': '#f87171', 'SRB': '#ef4444', 'DEN': '#ef4444', 'FIN': '#38bdf8', 'IRL': '#4ade80', 'UKR': '#facc15'
-            };
-            const nationColor = NATION_COLORS[code] || '#facc15';
-
-            const playerDebuts = {};
-            allHistory.forEach(h => h.standings?.forEach(s => { if (!playerDebuts[s.id]) playerDebuts[s.id] = h.id; }));
-
-            // NEW: Gather ALL players from this nation (Active AND Retired) who appear in this window
-            const allNationPlayerIds = new Set();
-            historyData.forEach(h => h.standings?.forEach(s => {
-                const p = playersRaw.find(x => x.id === s.id);
-                if (p && p.nationality === code) allNationPlayerIds.add(s.id);
-            }));
-
-            const width = 1200;
-            const LABEL_GAP = 18; 
-            
-            let plotHeight = layoutMode === 'extended' ? Math.max(450, allNationPlayerIds.size * LABEL_GAP * 1.8) : 350;
-            const pad = { top: 40, right: 180, left: 80, bottom: 40 }; 
-            const gridBottomY = pad.top + plotHeight;
-
-            let maxPointsVal = 10;
-            const timelines = { total: [] };
-            Array.from(allNationPlayerIds).forEach(pid => timelines[pid] = []);
-
-            for (let k = 0; k < historyData.length; k++) {
-                let stepTotal = 0;
-                historyData[k].standings?.forEach(s => {
-                    if (allNationPlayerIds.has(s.id)) {
-                        timelines[s.id].push({ k, val: s.pts });
-                        stepTotal += s.pts;
-                    }
-                });
-                Array.from(allNationPlayerIds).forEach(pid => {
-                    if (timelines[pid].length === k) timelines[pid].push({ k, val: 0 });
-                });
-                timelines.total.push({ k, val: stepTotal });
-                if (stepTotal > maxPointsVal) maxPointsVal = stepTotal;
-            }
-            maxPointsVal = Math.ceil(maxPointsVal * 1.05);
-
-            const getX = (i) => historyData.length <= 1 ? (pad.left + (width - pad.left - pad.right) / 2) : pad.left + (i * ((width - pad.left - pad.right) / (historyData.length - 1)));
-            const getY = (val) => gridBottomY - (val / Math.max(1, maxPointsVal)) * plotHeight;
-
-            const lines = [];
-            
-            const tSegs = []; let cSeg = [];
-            timelines.total.forEach((pt, i) => {
-                const mapped = { ...pt, x: getX(pt.k), y: getY(pt.val), isDot: true };
-                if (pt.val > 0) cSeg.push(mapped); else if (cSeg.length > 0) { tSegs.push(cSeg); cSeg = []; }
-            });
-            if (cSeg.length > 0) tSegs.push(cSeg);
-            if (tSegs.length > 0) lines.push({ id: 'total', name: 'National Total', color: nationColor, isTotal: true, paths: tSegs.map(seg => seg.map((pt, i) => `${i===0?'M':'L'} ${pt.x} ${pt.y}`).join(' ')), segments: tSegs });
-
-            Array.from(allNationPlayerIds).forEach(pid => {
-                const p = playersRaw.find(x => x.id === pid);
-                const pSegs = []; let pCSeg = [];
-                timelines[pid].forEach((pt, i) => {
-                    const isDebut = pt.val > 0 && playerDebuts[pid] === historyData[pt.k].id;
-                    const mapped = { ...pt, x: getX(pt.k), y: getY(pt.val), isDot: true, isDebut };
-                    
-                    // Visual Ghosting
-                    if (pt.val > 0) pCSeg.push(mapped); else if (pCSeg.length > 0) { pSegs.push(pCSeg); pCSeg = []; }
-                });
-                if (pCSeg.length > 0) pSegs.push(pCSeg);
-                if (pSegs.length > 0) lines.push({ id: pid, name: p.name, img: p.imageUrl, color: nationColor, isTotal: false, paths: pSegs.map(seg => seg.map((pt, i) => `${i===0?'M':'L'} ${pt.x} ${pt.y}`).join(' ')), segments: pSegs, retired: !!p.retired });
-            });
-
-            // --- COLUMN-BASED CASCADE PHYSICS (Allows drops mid-chart without overlapping) ---
-            const labels = [];
-            lines.forEach(line => {
-                const endPt = line.segments[line.segments.length - 1].slice(-1)[0];
-                const isDropped = !line.isTotal && endPt.k < historyData.length - 1;
-                labels.push({ id: line.id, endX: endPt.x, endY: endPt.y, actualVal: endPt.val, isDropped, line });
-            });
-            
-            const columns = [];
-            labels.forEach(l => {
-                let placed = false;
-                for (let c of columns) {
-                    if (Math.abs(c.x - l.endX) < 10) { c.labels.push(l); placed = true; break; }
-                }
-                if (!placed) columns.push({ x: l.endX, labels: [l] });
-            });
-
-            const physicsGap = layoutMode === 'extended' ? LABEL_GAP : LABEL_GAP * 0.5;
-
-            columns.forEach(col => {
-                const colLabels = col.labels;
-                colLabels.sort((a,b) => b.actualVal - a.actualVal);
-
-                if (colLabels.length > 0) {
-                    colLabels[0].currentY = colLabels[0].endY;
-                    for (let i = 1; i < colLabels.length; i++) {
-                        colLabels[i].currentY = Math.max(colLabels[i].endY, colLabels[i-1].currentY + physicsGap);
-                    }
-                    if (colLabels[colLabels.length - 1].currentY > gridBottomY) {
-                        colLabels[colLabels.length - 1].currentY = gridBottomY;
-                        for (let i = colLabels.length - 2; i >= 0; i--) {
-                            colLabels[i].currentY = Math.min(colLabels[i].currentY, colLabels[i+1].currentY - physicsGap);
-                        }
-                    }
-                }
-            });
-
-            const labelPositions = {};
-            labels.forEach(el => labelPositions[el.id] = el.currentY);
-
-            const sortedLines = [...lines].sort((a, b) => {
-                const aH = a.id === selectedId || a.id === hoveredId, bH = b.id === selectedId || b.id === hoveredId;
-                if (aH && !bH) return 1; if (!aH && bH) return -1;
-                const aL = labels.find(l => l.id === a.id), bL = labels.find(l => l.id === b.id);
-                if (aL.isDropped && !bL.isDropped) return -1; if (!aL.isDropped && bL.isDropped) return 1;
-                return bL.actualVal - aL.actualVal;
-            });
-
-            return (
-                <div className="w-full bg-royal-900/50 rounded-2xl border border-royal-800 p-6 shadow-xl mb-8" id="nation-chart">
-                    <div className="flex flex-wrap justify-between items-center mb-6 gap-4">
-                        <h3 className="text-xl font-bold text-white flex items-center gap-3"><AnalyticsIcon size={24} className="text-gold-500"/> Internal Progression</h3>
-                        
-                        <div className="flex items-center gap-4 flex-wrap">
-                            <div className="flex items-center gap-1.5 bg-royal-950 p-1.5 rounded-lg border border-royal-800">
-                                <span className="text-[10px] text-royal-400 uppercase tracking-widest font-bold px-2 hidden sm:block">Window</span>
-                                {[10, 20, 50, 'all'].map(ws => (
-                                    <button key={ws} onClick={() => updateSnbChartState({ windowSize: ws, offset: 0 })} className={`px-3 py-1 rounded text-xs font-bold transition-all ${windowSize === ws ? 'bg-gold-500 text-royal-950 shadow-sm' : 'bg-transparent text-royal-400 hover:text-white hover:bg-royal-800'}`}>
-                                        {ws === 'all' ? 'All Time' : ws}
-                                    </button>
-                                ))}
-                            </div>
-                            {windowSize !== 'all' && (
-                                <div className="flex items-center gap-2 bg-royal-950 p-1.5 rounded-lg border border-royal-800">
-                                    <button onClick={() => updateSnbChartState({ offset: Math.min(maxOffset, safeOffset + windowSize) })} disabled={safeOffset >= maxOffset} className="p-1 hover:bg-royal-800 text-royal-400 hover:text-white rounded disabled:opacity-30 transition-colors"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg></button>
-                                    <span className="text-xs font-bold text-royal-300 w-28 text-center tabular-nums">{startIndex + 1} - {endIndex} of {N}</span>
-                                    <button onClick={() => updateSnbChartState({ offset: Math.max(0, safeOffset - windowSize) })} disabled={safeOffset <= 0} className="p-1 hover:bg-royal-800 text-royal-400 hover:text-white rounded disabled:opacity-30 transition-colors"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg></button>
-                                </div>
-                            )}
-                            <div className="w-px h-6 bg-royal-700 hidden lg:block"></div>
-                            <div className="flex items-center gap-1.5 bg-royal-950 p-1.5 rounded-lg border border-royal-800">
-                                <button onClick={() => updateSnbChartState({ layoutMode: 'compact' })} className={`px-3 py-1 rounded text-xs font-bold transition-all ${layoutMode === 'compact' ? 'bg-sky-500 text-white shadow-sm' : 'bg-transparent text-royal-400 hover:text-white hover:bg-royal-800'}`}>Compact</button>
-                                <button onClick={() => updateSnbChartState({ layoutMode: 'extended' })} className={`px-3 py-1 rounded text-xs font-bold transition-all ${layoutMode === 'extended' ? 'bg-sky-500 text-white shadow-sm' : 'bg-transparent text-royal-400 hover:text-white hover:bg-royal-800'}`}>Extended</button>
-                            </div>
-                            <button onClick={() => updateSnbChartState({ showDropped: !showDropped })} 
-                                className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all border shadow-sm ${showDropped ? 'bg-royal-800 border-royal-600 text-white' : 'bg-royal-950 border-royal-800 text-royal-400 hover:text-royal-300'}`}>
-                                {showDropped ? 'Hide Dropped' : 'Show Dropped'}
-                            </button>
-                        </div>
-                    </div>
-                    
-                    <div className="w-full overflow-x-auto custom-scrollbar pb-2" onClick={() => setSelectedId(null)}>
-                        <svg viewBox={`0 0 ${width} ${gridBottomY + pad.bottom}`} style={{ minWidth: `800px`, transition: 'viewBox 0.3s ease' }} className="w-full h-auto overflow-visible font-sans">
-                            {(() => {
-                                const rawStep = maxPointsVal / 12;
-                                const mag = Math.pow(10, Math.floor(Math.log10(rawStep || 1)));
-                                const step = Math.max(100, Math.ceil(rawStep / mag) * mag);
-                                const yLines = [0]; for(let v=step; v<=maxPointsVal; v+=step) yLines.push(v);
-                                return yLines.map((p, i) => (
-                                    <g key={`g-${i}`}>
-                                        <line x1={pad.left} y1={getY(p)} x2={width - pad.right + 20} y2={getY(p)} stroke={i===0?"#1e4033":"#13382d"} strokeWidth={i===0?"3":"1"} strokeDasharray={i===0?"none":"4 4"} />
-                                        <text x={pad.left - 15} y={getY(p)} fill="#789e90" fontSize="11" fontWeight="bold" textAnchor="end" alignmentBaseline="middle">{p.toLocaleString()}</text>
-                                    </g>
-                                ));
-                            })()}
-
-                            {sortedLines.map(line => {
-                                const isHighlighted = selectedId === line.id || hoveredId === line.id;
-                                const isFaded = (selectedId || hoveredId) && !isHighlighted;
-                                return line.paths.map((pStr, pIdx) => (
-                                    <path key={`p-${line.id}-${pIdx}`} d={pStr} fill="none" stroke={line.color} strokeWidth={line.isTotal ? 4 : (isHighlighted ? 3 : 1.5)} opacity={isFaded ? 0.15 : (line.isTotal ? 1 : 0.6)} strokeLinejoin="round" className="cursor-pointer" onClick={(e) => { e.stopPropagation(); setSelectedId(line.id === selectedId ? null : line.id); }} onMouseEnter={() => setHoveredId(line.id)} onMouseLeave={() => setHoveredId(null)} />
-                                ));
-                            })}
-
-                            {sortedLines.map(line => {
-                                const lObj = labels.find(l => l.id === line.id);
-                                const isHighlighted = selectedId === line.id || hoveredId === line.id;
-                                const isFaded = (selectedId || hoveredId) && !isHighlighted;
-                                const shouldShowLabel = !lObj.isDropped || showDropped || isHighlighted;
-
-                                return (
-                                    <g key={`o-${line.id}`} opacity={isFaded ? 0.2 : 1} style={{ transition: 'opacity 0.2s ease' }}>
-                                        {line.segments.map((seg, sI) => seg.map((pt, i) => {
-                                            const isSolidDebut = pt.isDebut && sI === 0 && i === 0;
-                                            const r = line.isTotal ? 3 : (isHighlighted ? 2.5 : 1.5);
-                                            const debutR = line.isTotal ? 4 : (isHighlighted ? 3.5 : 2.5);
-                                            const sWidth = isHighlighted ? 2 : 1.5;
-
-                                            return (
-                                                <g key={`d-${line.id}-${sI}-${i}`} className="group cursor-pointer" onClick={(e) => { e.stopPropagation(); setSelectedId(line.id === selectedId ? null : line.id); }} onMouseEnter={() => setHoveredId(line.id)} onMouseLeave={() => setHoveredId(null)}>
-                                                    <circle cx={pt.x} cy={pt.y} r={isSolidDebut ? debutR : r} fill={isSolidDebut ? line.color : "#051611"} stroke={line.color} strokeWidth={isSolidDebut ? 0 : sWidth} />
-                                                    <circle cx={pt.x} cy={pt.y} r="20" fill="transparent" />
-                                                    <title>{`${line.name}: ${pt.val.toLocaleString()}`}</title>
-                                                </g>
-                                            );
-                                        }))}
-                                        
-                                        {shouldShowLabel && (Math.abs(lObj.currentY - lObj.endY) > 2 || lObj.isDropped) && <path d={`M ${lObj.endX} ${lObj.endY} C ${lObj.endX+15} ${lObj.endY}, ${lObj.endX+10} ${lObj.currentY}, ${lObj.endX+20} ${lObj.currentY}`} fill="none" stroke={line.color} strokeWidth="1.5" opacity="0.5" strokeDasharray="3 3" />}
-                                        
-                                        {shouldShowLabel && (
-                                            <g transform={`translate(${lObj.endX + 20}, ${lObj.currentY})`} className="cursor-pointer" onClick={(e) => { if (!line.isTotal) { e.stopPropagation(); onNavigate('players', line.id); } }} onMouseEnter={() => setHoveredId(line.id)} onMouseLeave={() => setHoveredId(null)}>
-                                                <rect x="0" y={-10} width={140} height={20} rx={10} fill="#051611" fillOpacity={isHighlighted ? "1" : (lObj.isDropped ? "0.6" : "0.9")} stroke={line.color} strokeWidth={line.isTotal || isHighlighted ? 2 : 1} style={{ filter: isHighlighted ? 'drop-shadow(0 0 8px rgba(255,255,255,0.3))' : 'none' }} />
-                                                
-                                                {line.isTotal ? <circle cx="10" cy="0" r="3" fill={line.color} /> : (line.img ? <image href={line.img} x="4" y="-7" width={14} height={14} preserveAspectRatio="xMidYMid slice" clipPath={`url(#clip-nat-${line.id})`} style={{ filter: lObj.isDropped && !isHighlighted ? 'grayscale(0.7)' : 'none' }} /> : <circle cx="10" cy="0" r="6" fill="#1e293b"/>)}
-                                                {line.img && <defs><clipPath id={`clip-nat-${line.id}`}><circle cx="11" cy="0" r="7" /></clipPath></defs>}
-                                                
-                                                <text x={24} y={3} fill={line.isTotal ? line.color : (lObj.isDropped && !isHighlighted ? "#94a3b8" : "#ffffff")} fontSize={10} fontWeight="bold">{line.name}</text>
-                                            </g>
-                                        )}
-                                    </g>
-                                );
-                            })}
-                        </svg>
-                    </div>
-                </div>
-            );
-        }
 
 
         function CountrySelect({ value, onChange, disabled }) {
