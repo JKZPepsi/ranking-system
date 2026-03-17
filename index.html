@@ -1446,7 +1446,7 @@
 
             const rawData = filterPlayed ? history.filter(d => d.played) : history.filter(d => d.isMajorPlus);
             const data = rawData.slice(range === 'all' ? 0 : -range);
-            if (data.length < 1) return <p className="text-royal-300 text-sm mt-4">Not enough tournament history.</p>;
+            if (data.length < 1) return <p className="text-white/40 text-sm mt-8 font-medium italic text-center w-full">Not enough tournament history.</p>;
 
             const width = 1000;
             const height = 350; 
@@ -1477,21 +1477,27 @@
             const labelStep = Math.max(1, Math.ceil(data.length / 15));
 
             const getAchColor = (ach) => {
-                if (!ach) return '#789e90';
-                if (ach.result === 'Winner') return '#d4af37'; 
-                if (ach.result === 'Finalist' || ach.result === 'Final') return '#cde0d9'; 
-                return '#f97316'; 
+                if (!ach) return '#a1a1aa'; // Slate
+                if (ach.result === 'Winner') return '#d4af37'; // Gold
+                if (ach.result === 'Finalist' || ach.result === 'Final') return '#cbd5e1'; // Silver
+                return '#cd7f32'; // Bronze
             };
 
             return (
-                <div className="mt-4 flex flex-col items-center w-full">
-                    <div className="flex gap-2 mb-6 w-full justify-start">
-                        <button onClick={() => setRange(10)} className={`px-4 py-1.5 rounded-lg text-sm font-bold transition-colors ${range === 10 ? 'bg-gold-500 text-royal-950' : 'bg-royal-800 text-royal-300 hover:text-white'}`}>Last 10</button>
-                        <button onClick={() => setRange(20)} className={`px-4 py-1.5 rounded-lg text-sm font-bold transition-colors ${range === 20 ? 'bg-gold-500 text-royal-950' : 'bg-royal-800 text-royal-300 hover:text-white'}`}>Last 20</button>
-                        <button onClick={() => setRange('all')} className={`px-4 py-1.5 rounded-lg text-sm font-bold transition-colors ${range === 'all' ? 'bg-gold-500 text-royal-950' : 'bg-royal-800 text-royal-300 hover:text-white'}`}>All Time</button>
+                <div className="mt-8 flex flex-col items-center w-full animate-in fade-in duration-500">
+                    
+                    {/* GLASSMORPHISM CONTROLS */}
+                    <div className="flex gap-3 mb-6 w-full justify-start">
+                        <button onClick={() => setRange(10)} className={`px-5 py-2 rounded-xl text-xs font-black uppercase tracking-widest transition-all border ${range === 10 ? 'bg-gold-500 text-black border-gold-400 shadow-[0_0_20px_rgba(212,175,55,0.3)]' : 'bg-white/5 text-white/60 border-white/10 hover:bg-white/10 hover:text-white backdrop-blur-md'}`}>Last 10</button>
+                        <button onClick={() => setRange(20)} className={`px-5 py-2 rounded-xl text-xs font-black uppercase tracking-widest transition-all border ${range === 20 ? 'bg-gold-500 text-black border-gold-400 shadow-[0_0_20px_rgba(212,175,55,0.3)]' : 'bg-white/5 text-white/60 border-white/10 hover:bg-white/10 hover:text-white backdrop-blur-md'}`}>Last 20</button>
+                        <button onClick={() => setRange('all')} className={`px-5 py-2 rounded-xl text-xs font-black uppercase tracking-widest transition-all border ${range === 'all' ? 'bg-gold-500 text-black border-gold-400 shadow-[0_0_20px_rgba(212,175,55,0.3)]' : 'bg-white/5 text-white/60 border-white/10 hover:bg-white/10 hover:text-white backdrop-blur-md'}`}>All Time</button>
                     </div>
-                    <div className="w-full bg-royal-900/50 rounded-xl border border-royal-700 pb-2 relative overflow-hidden">
+                    
+                    {/* HEAVY MATTE GLASS CHART CONTAINER */}
+                    <div className="w-full bg-white/5 backdrop-blur-2xl rounded-3xl border border-white/10 pt-4 pb-2 relative overflow-hidden shadow-2xl">
                         <svg viewBox={`0 0 ${width} ${height}`} className="w-full h-auto overflow-visible">
+                            
+                            {/* Restyled Dark-Theme Grid Lines */}
                             {type === 'rank' ? (
                                 (() => {
                                     const lines = [1];
@@ -1499,8 +1505,8 @@
                                     for (let i = step; i <= maxVal; i += step) lines.push(i);
                                     return lines.map((r, i) => (
                                         <g key={`grid-rank-${i}`}>
-                                            <line x1={pad.left} y1={getY(r)} x2={width - pad.right} y2={getY(r)} stroke="#13382d" strokeWidth="1" strokeDasharray="4 4" />
-                                            <text x={pad.left - 10} y={getY(r)} fill="#789e90" fontSize="12" fontWeight="bold" textAnchor="end" alignmentBaseline="middle">#{r}</text>
+                                            <line x1={pad.left} y1={getY(r)} x2={width - pad.right} y2={getY(r)} stroke="rgba(255,255,255,0.1)" strokeWidth="1" strokeDasharray="4 4" />
+                                            <text x={pad.left - 10} y={getY(r)} fill="rgba(255,255,255,0.3)" fontSize="12" fontWeight="bold" textAnchor="end" alignmentBaseline="middle">#{r}</text>
                                         </g>
                                     ));
                                 })()
@@ -1511,24 +1517,24 @@
                                     for(let v = 0; v <= maxVal; v += step) yLines.push(v);
                                     return yLines.map((p, i) => (
                                         <g key={`grid-${i}`}>
-                                            <line x1={pad.left} y1={getY(p)} x2={width - pad.right} y2={getY(p)} stroke="#13382d" strokeWidth="1" strokeDasharray="4 4" />
-                                            <text x={pad.left - 10} y={getY(p)} fill="#789e90" fontSize="12" fontWeight="bold" textAnchor="end" alignmentBaseline="middle">{p.toLocaleString()}</text>
+                                            <line x1={pad.left} y1={getY(p)} x2={width - pad.right} y2={getY(p)} stroke="rgba(255,255,255,0.1)" strokeWidth="1" strokeDasharray="4 4" />
+                                            <text x={pad.left - 10} y={getY(p)} fill="rgba(255,255,255,0.3)" fontSize="12" fontWeight="bold" textAnchor="end" alignmentBaseline="middle">{p.toLocaleString()}</text>
                                         </g>
                                     ));
                                 })()
                             )}
                             
                             {type === 'points' && data.length > 1 && <path d={pathD2} fill="none" stroke="#38bdf8" strokeWidth="2" strokeDasharray="5 5" strokeLinejoin="round" />}
-                            {data.length > 1 && <path d={pathD} fill="none" stroke="#d4af37" strokeWidth="3" strokeLinejoin="round" />}
+                            {data.length > 1 && <path d={pathD} fill="none" stroke="#d4af37" strokeWidth="3" strokeLinejoin="round" style={{ filter: 'drop-shadow(0 0 10px rgba(212,175,55,0.4))' }} />}
                             
                             {type === 'points' && data.map((d, i) => {
                                 const ptX = getX(i); const ptY2 = getY(d.tournamentPoints);
                                 const showLabel = i % labelStep === 0 || i === data.length - 1;
                                 return (
                                     <g key={`tpt-${i}`}>
-                                        <circle cx={ptX} cy={ptY2} r={hoveredPointData && hoveredPointData.date === d.date ? "6" : "4"} fill="#051611" stroke="#38bdf8" strokeWidth="2" style={{ transition: 'r 0.2s ease' }} />
+                                        <circle cx={ptX} cy={ptY2} r={hoveredPointData && hoveredPointData.date === d.date ? "6" : "4"} fill="#0f172a" stroke="#38bdf8" strokeWidth="2" style={{ transition: 'r 0.2s ease' }} />
                                         {showLabel && (
-                                            <text x={ptX} y={ptY2 - 10} fill="#38bdf8" fontSize="11" fontWeight="700" textAnchor="middle" stroke="#051611" strokeWidth="3" paintOrder="stroke">
+                                            <text x={ptX} y={ptY2 - 12} fill="#38bdf8" fontSize="11" fontWeight="900" textAnchor="middle" stroke="#0f172a" strokeWidth="4" paintOrder="stroke">
                                                 +{d.tournamentPoints}
                                             </text>
                                         )}
@@ -1544,30 +1550,29 @@
                                 const val = type === 'rank' ? d.rank : (type === 'careerPoints' ? d.careerPoints : d.totalPoints);
                                 const dotRadius = isHovered ? "8" : (isMinor ? "3.5" : "5");
                                 const dotOpacity = isMinor ? "0.6" : "1";
-                                const dotStroke = isMinor ? "#a0bdb2" : "#d4af37";
-
-                                // NEW: Retirement Node Logic
+                                const dotStroke = isMinor ? "#94a3b8" : "#d4af37";
                                 const isRetirementNode = isRetired && i === data.length - 1;
 
                                 return (
                                     <g key={i}>
                                         {isRetirementNode ? (
                                             <g transform={`translate(${ptX}, ${ptY})`}>
-                                                <polygon points="0,-6 6,0 0,6 -6,0" fill="#be123c" stroke="#fb7185" strokeWidth="1.5" />
-                                                <text x="0" y="16" fill="#fb7185" fontSize="9" fontWeight="900" textAnchor="middle" stroke="#051611" strokeWidth="3" paintOrder="stroke">RETIRED</text>
+                                                <polygon points="0,-6 6,0 0,6 -6,0" fill="#be123c" stroke="#fb7185" strokeWidth="1.5" style={{ filter: 'drop-shadow(0 0 5px rgba(251,113,133,0.5))' }} />
+                                                <text x="0" y="16" fill="#fb7185" fontSize="9" fontWeight="900" textAnchor="middle" stroke="#0f172a" strokeWidth="4" paintOrder="stroke">RETIRED</text>
                                             </g>
                                         ) : (
-                                            <circle cx={ptX} cy={ptY} r={dotRadius} fill="#051611" stroke={dotStroke} strokeWidth={isMinor ? "1.5" : "2"} opacity={dotOpacity} style={{ transition: 'all 0.2s ease' }} />
+                                            <circle cx={ptX} cy={ptY} r={dotRadius} fill="#0f172a" stroke={dotStroke} strokeWidth={isMinor ? "1.5" : "2"} opacity={dotOpacity} style={{ transition: 'all 0.2s ease', filter: isHovered ? 'drop-shadow(0 0 8px rgba(255,255,255,0.5))' : 'none' }} />
                                         )}
 
                                         {(showLabel || isMinor) && (
-                                            <text x={ptX} y={ptY - (isMinor ? 12 : 18)} fill={isRetirementNode ? "#fb7185" : (isMinor ? "#a0bdb2" : "#d4af37")} fontSize={isMinor ? "11" : "16"} fontWeight="900" textAnchor="middle" stroke="#051611" strokeWidth={isMinor ? "2" : "4"} paintOrder="stroke" opacity={isMinor && !isHovered ? 0 : 1} className={isMinor ? "group-hover:opacity-100 transition-opacity" : ""}>
+                                            <text x={ptX} y={ptY - (isMinor ? 12 : 18)} fill={isRetirementNode ? "#fb7185" : (isMinor ? "rgba(255,255,255,0.4)" : "#d4af37")} fontSize={isMinor ? "10" : "14"} fontWeight="900" textAnchor="middle" stroke="#0f172a" strokeWidth={isMinor ? "3" : "4"} paintOrder="stroke" opacity={isMinor && !isHovered ? 0 : 1} className={isMinor ? "group-hover:opacity-100 transition-opacity" : ""}>
                                                 {type === 'rank' ? `#${d.rank}` : val.toLocaleString()}
                                             </text>
                                         )}
+                                        
                                         {(type === 'points' || type === 'careerPoints') && d.achievement && !isMinor && !isRetirementNode && (
-                                            <g transform={`translate(${ptX - 10}, ${ptY - 60})`}>
-                                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={getAchColor(d.achievement)} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                            <g transform={`translate(${ptX - 10}, ${ptY - 50})`}>
+                                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={getAchColor(d.achievement)} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ filter: 'drop-shadow(0 4px 6px rgba(0,0,0,0.5))' }}>
                                                     <path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6M18 9h1.5a2.5 2.5 0 0 0 0-5H18M4 22h16M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22M18 2H6v7a6 6 0 0 0 12 0V2Z"/>
                                                 </svg>
                                             </g>
@@ -1579,17 +1584,25 @@
                         </svg>
                     </div>
 
-                    <div className="h-10 mt-4 flex items-center justify-center bg-royal-900 border border-royal-800 rounded-full px-6 min-w-[300px] shadow-lg transition-all duration-200">
+                    {/* NEW GLASSMORPHISM HOVER TOOLTIP */}
+                    <div className={`h-12 mt-6 flex items-center justify-center rounded-2xl px-8 min-w-[400px] transition-all duration-300 border ${hoveredPointData ? 'bg-black/60 backdrop-blur-2xl border-white/20 shadow-[0_10px_30px_rgba(0,0,0,0.5)]' : 'bg-white/5 border-transparent opacity-50'}`}>
                         {hoveredPointData ? (
-                            <span className="text-white font-bold tracking-wide">
+                            <span className="text-white font-black tracking-wide flex items-center gap-3">
                                 {hoveredPointData.tournamentName} 
-                                <span className={type === 'rank' ? "text-emerald-400 font-normal ml-2" : "text-gold-500 font-normal ml-2"}>
-                                    | {type === 'rank' ? `Rank #${hoveredPointData.rank}` : `${(type === 'careerPoints' ? hoveredPointData.careerPoints : hoveredPointData.totalPoints).toLocaleString()} pts`}
+                                <span className="text-white/20">|</span>
+                                <span className={type === 'rank' ? "text-white" : "text-gold-400"}>
+                                    {type === 'rank' ? `Rank #${hoveredPointData.rank}` : `${(type === 'careerPoints' ? hoveredPointData.careerPoints : hoveredPointData.totalPoints).toLocaleString()} pts`}
                                 </span>
-                                {type === 'points' && <span className="text-sky-400 font-normal ml-2">(+{hoveredPointData.tournamentPoints} this event)</span>}
+                                {type === 'points' && (
+                                    <span className="text-sky-400 font-bold bg-sky-500/10 px-2 py-0.5 rounded-md border border-sky-500/20 flex items-center gap-1">
+                                        +{hoveredPointData.tournamentPoints}
+                                        {/* Highlight if it's a Major+ */}
+                                        {hoveredPointData.isMajorPlus && <span className="text-[9px] uppercase tracking-widest bg-sky-400 text-black px-1 rounded-sm ml-1">Major+</span>}
+                                    </span>
+                                )}
                             </span>
                         ) : (
-                            <span className="text-royal-300 text-sm font-medium">Hover over a point for tournament details</span>
+                            <span className="text-white/40 text-xs font-bold uppercase tracking-widest">Hover over a point for details</span>
                         )}
                     </div>
                 </div>
@@ -3056,70 +3069,78 @@
             const retired = sortedPlayers.filter(p => p.retired);
 
             return (
-                <div className="bg-[#05100c] rounded-2xl shadow-[0_15px_40px_rgba(0,0,0,0.6)] border border-white/[0.05] overflow-hidden">
+                // GLASS TABLE CONTAINER
+                <div className="bg-white/5 backdrop-blur-2xl rounded-3xl shadow-[0_20px_50px_rgba(0,0,0,0.6)] border border-white/10 overflow-hidden">
                     <div className="overflow-x-auto custom-scrollbar">
                         <table className="w-full text-left border-collapse whitespace-nowrap min-w-[900px] table-fixed">
                             <thead>
-                                <tr className="bg-white/[0.02] text-white/40 text-[10px] font-bold uppercase tracking-widest select-none border-b border-white/[0.08]">
-                                    <th className="py-3 px-2 w-24 text-center cursor-pointer hover:text-white transition-colors" onClick={() => handleSort(rankKey)}>
+                                <tr className="bg-black/40 text-white/50 text-[10px] font-bold uppercase tracking-widest select-none border-b border-white/10 backdrop-blur-md">
+                                    <th className="py-4 px-2 w-24 text-center cursor-pointer hover:text-white transition-colors group" onClick={() => handleSort(rankKey)}>
                                         Rank <SortIcon column={rankKey}/>
                                     </th>
-                                    <th className={`py-3 px-2 text-left cursor-pointer hover:text-white transition-colors ${showNationality ? 'w-[280px]' : 'w-[320px]'}`} onClick={() => handleSort('name')}>
+                                    <th className={`py-4 px-2 text-left cursor-pointer hover:text-white transition-colors group ${showNationality ? 'w-[280px]' : 'w-[320px]'}`} onClick={() => handleSort('name')}>
                                         Player <SortIcon column="name"/>
                                     </th>
                                     {showNationality && (
-                                        <th className="py-3 px-2 w-20 text-center cursor-pointer hover:text-white transition-colors" onClick={() => handleSort('nationality')}>
+                                        <th className="py-4 px-2 w-20 text-center cursor-pointer hover:text-white transition-colors group" onClick={() => handleSort('nationality')}>
                                             Nat <SortIcon column="nationality"/>
                                         </th>
                                     )}
-                                    <th className="py-3 px-2 w-28 text-center cursor-pointer hover:text-white transition-colors" onClick={() => handleSort('points')}>
+                                    <th className="py-4 px-2 w-28 text-center cursor-pointer hover:text-white transition-colors group" onClick={() => handleSort('points')}>
                                         Points <SortIcon column="points"/>
                                     </th>
-                                    <th className="py-3 px-2 w-28 text-center cursor-pointer hover:text-white transition-colors" onClick={() => handleSort('diff')}>
+                                    <th className="py-4 px-2 w-32 text-center cursor-pointer hover:text-white transition-colors group" onClick={() => handleSort('diff')}>
                                         Net Change <SortIcon column="diff"/>
                                     </th>
-                                    <th className="py-3 px-2 w-24 text-center cursor-pointer hover:text-white transition-colors">
+                                    <th className="py-4 px-2 w-24 text-center cursor-pointer hover:text-white transition-colors group">
                                         Form
                                     </th>
-                                    <th className="py-3 px-2 w-24 text-center cursor-pointer hover:text-white transition-colors" onClick={() => handleSort('wl')}>
+                                    <th className="py-4 px-2 w-24 text-center cursor-pointer hover:text-white transition-colors group" onClick={() => handleSort('wl')}>
                                         W-L <SortIcon column="wl"/>
                                     </th>
-                                    <th className="py-3 px-4 text-center w-48 cursor-pointer hover:text-white transition-colors" onClick={() => handleSort('recent')}>
+                                    <th className="py-4 px-4 text-center w-48 cursor-pointer hover:text-white transition-colors group" onClick={() => handleSort('recent')}>
                                         Recent <SortIcon column="recent"/>
                                     </th>
                                 </tr>
                             </thead>
-                            <tbody className="divide-y divide-white/[0.04]">
+                            <tbody className="divide-y divide-white/[0.05]">
                                 {active.map((player) => {
                                     const recent = player.recentTournaments?.[0];
                                     let recentDisplay = <span className="text-white/20">-</span>;
+                                    let recentTier = null;
+                                    
                                     if (recent) {
                                         const recentT = tournaments.find(t => t.id === recent.tournamentId);
                                         const rFlag = recentT ? getFlag(recentT.hostCountry) : '';
+                                        recentTier = recentT ? getTournamentTier(recentT) : null;
+                                        
                                         recentDisplay = (
                                             <div className="flex items-center justify-center gap-2 text-sm cursor-pointer group/recent" 
                                                  onClick={(e) => { e.stopPropagation(); window.dispatchEvent(new PopStateEvent('popstate', { state: { tab: 'tournaments', tournamentId: recent.tournamentId } })); }}>
                                                 <span className="font-bold text-white/90 w-6 text-right group-hover/recent:text-gold-400 transition-colors">{getRecentAbbr(recent.result)}</span>
                                                 <span className="text-white/20 font-black">-</span>
-                                                {rFlag && <span className="text-sm leading-none">{rFlag}</span>}
+                                                {rFlag && <span className="text-sm leading-none drop-shadow-md">{rFlag}</span>}
                                                 <span className="truncate max-w-[100px] text-white/70 font-medium group-hover/recent:text-white group-hover/recent:underline">{recent.tournamentName}</span>
                                             </div>
                                         );
                                     }
 
+                                    // Check if the most recent tournament was a Major+ for the Tooltip logic
+                                    const isRecentMajorPlus = ['grand_slam', 'major', 'finals'].includes(recentTier);
+
                                     return (
-                                        <tr key={player.id} onClick={() => onSelectPlayer(player.id)} className="hover:bg-white/[0.03] transition-colors duration-200 cursor-pointer group">
-                                            <td className="py-2.5 px-2 text-center">
-                                                <span className="text-2xl font-medium tabular-nums text-white/90 tracking-tight">{player[rankKey]}</span>
+                                        <tr key={player.id} onClick={() => onSelectPlayer(player.id)} className="hover:bg-white/5 transition-all duration-200 cursor-pointer group">
+                                            <td className="py-3 px-2 text-center">
+                                                <span className="text-2xl font-light tabular-nums text-white/80 group-hover:text-white transition-colors tracking-tight">{player[rankKey]}</span>
                                             </td>
                                             
-                                            <td className="py-2.5 px-2 text-left">
+                                            <td className="py-3 px-2 text-left">
                                                 <div className="flex items-center gap-3">
-                                                    <div className="w-10 h-10 rounded-full overflow-hidden border border-white/10 group-hover:border-gold-500/50 transition-colors bg-royal-950 shrink-0 shadow-sm relative">
+                                                    <div className="w-10 h-10 rounded-full overflow-hidden border border-white/20 group-hover:border-gold-400 transition-colors bg-black/40 shrink-0 shadow-md relative">
                                                         <PlayerMedia url={player.imageUrl || (player.images ? player.images[0] : '')} className="w-full h-full object-cover" />
                                                     </div>
                                                     <div className="flex flex-col justify-center min-w-0">
-                                                        <div className="font-medium text-base text-white/95 truncate group-hover:text-gold-400 transition-colors tracking-wide">
+                                                        <div className="font-black text-base text-white/90 truncate group-hover:text-gold-400 transition-colors tracking-tight">
                                                             {player.name}
                                                         </div>
                                                     </div>
@@ -3127,40 +3148,47 @@
                                             </td>
 
                                             {showNationality && (
-                                                <td className="py-2.5 px-2 text-center">
-                                                    <div className="flex flex-col items-center justify-center">
-                                                        <span className="text-2xl drop-shadow-sm leading-none">{getFlag(player.nationality)}</span>
-                                                        <span className="text-[10px] font-bold text-white/40 uppercase tracking-widest mt-0.5">{player.nationality}</span>
+                                                <td className="py-3 px-2 text-center">
+                                                    <div className="flex flex-col items-center justify-center group-hover:scale-110 transition-transform">
+                                                        <span className="text-2xl drop-shadow-md leading-none">{getFlag(player.nationality)}</span>
                                                     </div>
                                                 </td>
                                             )}
                                             
-                                            <td className="py-2.5 px-2 text-center">
-                                                <span className="text-xl font-medium tabular-nums text-gold-400 tracking-tight">{player.points.toLocaleString()}</span>
+                                            <td className="py-3 px-2 text-center">
+                                                <span className="text-lg font-black tabular-nums text-gold-400 drop-shadow-[0_0_8px_rgba(212,175,55,0.4)] tracking-tight">{player.points.toLocaleString()}</span>
                                             </td>
                                             
-                                            <td className="py-2.5 px-2 text-center">
+                                            <td className="py-3 px-2 text-center">
                                                 <Tooltip content={
-                                                    <>
-                                                        <div className="text-emerald-400 font-bold flex justify-between gap-4 mb-1"><span>Gained:</span> <span>+{player.bonusPoints || 0}</span></div>
-                                                        <div className="text-rose-400 font-bold flex justify-between gap-4 border-b border-white/10 pb-1 mb-1"><span>Dropped:</span> <span>-{player.droppingPoints || 0}</span></div>
-                                                        <div className="text-white font-black flex justify-between gap-4"><span>Net:</span> <span>{player.diff > 0 ? '+' : ''}{player.diff || 0}</span></div>
-                                                    </>
+                                                    <div className="min-w-[200px]">
+                                                        {/* CUSTOM "MAJOR+" TOOLTIP LOGIC */}
+                                                        <div className="text-emerald-400 font-bold flex flex-col gap-1 mb-2">
+                                                            <div className="flex justify-between"><span>Gained:</span> <span>+{player.bonusPoints || 0}</span></div>
+                                                            {player.bonusPoints > 0 && recent && (
+                                                                <span className="text-[10px] text-emerald-400/60 uppercase tracking-widest leading-tight">
+                                                                    From {recent.tournamentName} {isRecentMajorPlus && <span className="bg-emerald-500/20 text-emerald-300 px-1 py-0.5 rounded border border-emerald-500/30 ml-1">Major+</span>}
+                                                                </span>
+                                                            )}
+                                                        </div>
+                                                        <div className="text-rose-400 font-bold flex justify-between gap-4 border-b border-white/10 pb-2 mb-2"><span>Dropped:</span> <span>-{player.droppingPoints || 0}</span></div>
+                                                        <div className="text-white font-black flex justify-between gap-4 text-sm"><span>Net:</span> <span>{player.diff > 0 ? '+' : ''}{player.diff || 0}</span></div>
+                                                    </div>
                                                 }>
-                                                    <span className={`text-sm font-semibold tabular-nums border-b border-dashed ${player.diff > 0 ? 'text-emerald-400 border-emerald-400/30 hover:border-emerald-400' : player.diff < 0 ? 'text-rose-400 border-rose-400/30 hover:border-rose-400' : 'text-white/30 border-white/10 hover:border-white/30'} transition-colors`}>
+                                                    <span className={`text-sm font-black tabular-nums border-b border-dashed ${player.diff > 0 ? 'text-emerald-400 border-emerald-400/30 hover:border-emerald-400' : player.diff < 0 ? 'text-rose-400 border-rose-400/30 hover:border-rose-400' : 'text-white/30 border-white/10 hover:border-white/30'} transition-colors cursor-help`}>
                                                         {player.diff > 0 ? '+' : ''}{player.diff || '-'}
                                                     </span>
                                                 </Tooltip>
                                             </td>
 
-                                            <td className="py-2.5 px-2">
+                                            <td className="py-3 px-2">
                                                 <PlayerFormIndicator matches={player.recentMatches} />
                                             </td>
 
-                                            <td className="py-2.5 px-2 text-center text-white/85 font-medium text-sm tabular-nums">
+                                            <td className="py-3 px-2 text-center text-white/70 font-bold text-sm tabular-nums group-hover:text-white transition-colors">
                                                 {player.stats?.wins || 0} - {player.stats?.losses || 0}
                                             </td>
-                                            <td className="py-2.5 px-4 text-center">
+                                            <td className="py-3 px-4 text-center">
                                                 {recentDisplay}
                                             </td>
                                         </tr>
@@ -3169,27 +3197,27 @@
 
                                 {retired.length > 0 && (
                                     <>
-                                        <tr className="bg-black/40 border-t border-white/10">
-                                            <td colSpan={showNationality ? "8" : "7"} className="p-5 text-center">
-                                                <div className="inline-flex items-center gap-4 opacity-70">
-                                                    <div className="h-px w-16 bg-white/20"></div>
-                                                    <span className="text-white/60 font-semibold uppercase tracking-widest text-[10px] flex items-center gap-2">
+                                        <tr className="bg-black/60 border-t border-white/20 backdrop-blur-xl">
+                                            <td colSpan={showNationality ? "8" : "7"} className="p-4 text-center">
+                                                <div className="inline-flex items-center gap-4 opacity-80">
+                                                    <div className="h-px w-24 bg-white/20"></div>
+                                                    <span className="text-white/60 font-black uppercase tracking-widest text-[10px] flex items-center gap-2">
                                                         <Trophy size={14} className="text-white/40" /> Hall of Fame
                                                     </span>
-                                                    <div className="h-px w-16 bg-white/20"></div>
+                                                    <div className="h-px w-24 bg-white/20"></div>
                                                 </div>
                                             </td>
                                         </tr>
                                         {retired.map((player) => (
-                                            <tr key={player.id} onClick={() => onSelectPlayer(player.id)} className="hover:bg-white/[0.03] transition-all duration-300 cursor-pointer group opacity-60 grayscale hover:grayscale-0 hover:opacity-100">
-                                                <td className="py-2.5 px-2 text-center text-3xl font-light text-white/30 tabular-nums">-</td>
+                                            <tr key={player.id} onClick={() => onSelectPlayer(player.id)} className="hover:bg-white/[0.03] transition-all duration-300 cursor-pointer group opacity-50 grayscale hover:grayscale-0 hover:opacity-100">
+                                                <td className="py-3 px-2 text-center text-3xl font-light text-white/30 tabular-nums">-</td>
                                                 
-                                                <td className="py-2.5 px-2 text-left">
+                                                <td className="py-3 px-2 text-left">
                                                     <div className="flex items-center gap-3">
-                                                        <div className="w-10 h-10 rounded-full overflow-hidden border border-white/10 bg-royal-950 shrink-0 shadow-sm relative">
+                                                        <div className="w-10 h-10 rounded-full overflow-hidden border border-white/10 bg-black shrink-0 shadow-sm relative">
                                                             <PlayerMedia url={player.imageUrl || (player.images ? player.images[0] : '')} className="w-full h-full object-cover" />
                                                         </div>
-                                                        <div className="font-medium text-base text-white/80 truncate flex items-center gap-2">
+                                                        <div className="font-bold text-base text-white/70 truncate flex items-center gap-2 group-hover:text-white transition-colors">
                                                             {player.name}
                                                             <span className="text-[8px] bg-rose-500/20 text-rose-300 px-1.5 py-0.5 rounded uppercase tracking-widest border border-rose-500/30">Ret</span>
                                                         </div>
@@ -3197,26 +3225,25 @@
                                                 </td>
 
                                                 {showNationality && (
-                                                    <td className="py-2.5 px-2 text-center">
+                                                    <td className="py-3 px-2 text-center">
                                                         <div className="flex flex-col items-center justify-center">
                                                             <span className="text-2xl drop-shadow-sm leading-none">{getFlag(player.nationality)}</span>
-                                                            <span className="text-[10px] font-bold text-white/40 uppercase tracking-widest mt-0.5">{player.nationality}</span>
                                                         </div>
                                                     </td>
                                                 )}
                                                 
-                                                <td className="py-2.5 px-2 text-center">
-                                                    <div className="text-[8px] text-white/40 uppercase tracking-widest font-semibold">Peak Pts</div>
-                                                    <span className="text-xl font-medium text-white/60 tabular-nums">{player.peakPoints?.toLocaleString() || '-'}</span>
+                                                <td className="py-3 px-2 text-center">
+                                                    <div className="text-[8px] text-white/30 uppercase tracking-widest font-black mb-0.5">Peak Pts</div>
+                                                    <span className="text-lg font-medium text-white/50 tabular-nums">{player.peakPoints?.toLocaleString() || '-'}</span>
                                                 </td>
                                                 
-                                                <td className="py-2.5 px-2 text-center text-white/30">-</td>
-                                                <td className="py-2.5 px-2 text-center text-white/30">-</td>
-                                                <td className="py-2.5 px-2 text-center text-white/60 font-medium text-sm tabular-nums">{player.stats?.wins || 0} - {player.stats?.losses || 0}</td>
-                                                <td className="py-2.5 px-4 text-center">
+                                                <td className="py-3 px-2 text-center text-white/20">-</td>
+                                                <td className="py-3 px-2 text-center text-white/20">-</td>
+                                                <td className="py-3 px-2 text-center text-white/40 font-medium text-sm tabular-nums">{player.stats?.wins || 0} - {player.stats?.losses || 0}</td>
+                                                <td className="py-3 px-4 text-center">
                                                     <div className="flex flex-col items-center justify-center">
-                                                        <span className="text-[8px] text-white/40 uppercase tracking-widest font-semibold">Peak Rank</span>
-                                                        <span className="text-white/60 font-medium text-base">#{player.peakRank || '-'}</span>
+                                                        <span className="text-[8px] text-white/30 uppercase tracking-widest font-black mb-0.5">Peak Rank</span>
+                                                        <span className="text-white/50 font-bold text-sm">#{player.peakRank || '-'}</span>
                                                     </div>
                                                 </td>
                                             </tr>
