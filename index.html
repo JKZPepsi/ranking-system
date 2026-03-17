@@ -3162,12 +3162,14 @@
                                             <td className="py-3 px-2 text-center">
                                                 <Tooltip content={
                                                     <div className="min-w-[200px]">
-                                                        {/* CUSTOM "MAJOR+" TOOLTIP LOGIC */}
                                                         <div className="text-emerald-400 font-bold flex flex-col gap-1 mb-2">
-                                                            <div className="flex justify-between"><span>Gained:</span> <span>+{player.bonusPoints || 0}</span></div>
-                                                            {player.bonusPoints > 0 && recent && (
+                                                            {/* MATHEMATICALLY PERFECT GAINED: (Net Change + Dropped) */}
+                                                            <div className="flex justify-between"><span>Gained:</span> <span>+{(player.diff || 0) + (player.droppingPoints || 0)}</span></div>
+                                                            
+                                                            {/* Contextual Tag */}
+                                                            {recent && (
                                                                 <span className="text-[10px] text-emerald-400/60 uppercase tracking-widest leading-tight">
-                                                                    From {recent.tournamentName} {isRecentMajorPlus && <span className="bg-emerald-500/20 text-emerald-300 px-1 py-0.5 rounded border border-emerald-500/30 ml-1">Major+</span>}
+                                                                    Incl. {recent.tournamentName} {isRecentMajorPlus && <span className="bg-emerald-500/20 text-emerald-300 px-1 py-0.5 rounded border border-emerald-500/30 ml-1">Major+</span>}
                                                                 </span>
                                                             )}
                                                         </div>
