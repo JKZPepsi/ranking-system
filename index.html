@@ -1641,7 +1641,7 @@
             const startIndex = windowSize === 'all' ? 0 : Math.max(0, endIndex - windowSize);
             const historyData = filteredHistory.slice(startIndex, endIndex);
 
-            if (historyData.length < 1) return <p className="text-royal-300 text-sm mt-4">Not enough Major+ tournament history.</p>;
+            if (historyData.length < 1) return <p className="text-white/40 italic font-medium text-sm mt-4 text-center">Not enough Major+ tournament history.</p>;
 
             const playerDebuts = useMemo(() => {
                 const debuts = {};
@@ -1649,19 +1649,14 @@
                 return debuts;
             }, [filteredHistory]);
 
-            // THE RETIREMENT SNIP ENGINE: Find the exact index in global history where they played their final match
             const lastActiveIndices = useMemo(() => {
                 const indices = {};
                 playersRaw.forEach(p => {
                     if (p.retired) {
-                        let maxM = -1;
-                        let lastIdx = -1;
+                        let maxM = -1; let lastIdx = -1;
                         for (let i = 0; i < filteredHistory.length; i++) {
                             const st = filteredHistory[i].standings?.find(x => x.id === p.id);
-                            if (st && st.matchesPlayed > maxM) {
-                                maxM = st.matchesPlayed;
-                                lastIdx = i;
-                            }
+                            if (st && st.matchesPlayed > maxM) { maxM = st.matchesPlayed; lastIdx = i; }
                         }
                         indices[p.id] = lastIdx;
                     }
@@ -1744,12 +1739,9 @@
                 if (!player) return;
 
                 const timeline = [];
-                
                 for (let k = 0; k < historyData.length; k++) {
                     const h = historyData[k];
                     const s = h.standings?.find(st => st.id === pid);
-                    
-                    // THE MAGIC RETIREMENT SNIP: Line ends completely after they played their final match
                     const globalK = filteredHistory.findIndex(gh => gh.tournamentId === h.tournamentId);
                     const isPastRetirement = player.retired && globalK > lastActiveIndices[pid];
                     
@@ -1849,57 +1841,59 @@
 
             return (
                 <div className="w-full" id={`snb-chart-${type}`}>
-                    <div className="flex flex-wrap gap-4 items-center justify-between mb-6 bg-royal-900/40 p-2.5 rounded-xl border border-royal-800">
+                    
+                    {/* GLASS CONTROLS DASHBOARD */}
+                    <div className="flex flex-wrap gap-4 items-center justify-between mb-6 bg-black/20 backdrop-blur-md p-3 rounded-2xl border border-white/5 shadow-inner">
                         <div className="flex items-center gap-4 flex-wrap">
-                            <div className="flex items-center gap-1.5 bg-royal-950 p-1.5 rounded-lg border border-royal-800">
-                                <span className="text-[10px] text-royal-400 uppercase tracking-widest font-bold px-2 hidden sm:block">Window</span>
+                            <div className="flex items-center gap-1.5 bg-black/40 p-1.5 rounded-xl border border-white/5 shadow-inner">
+                                <span className="text-[10px] text-white/30 uppercase tracking-widest font-black px-2 hidden sm:block">Window</span>
                                 {[10, 20, 50, 'all'].map(ws => (
                                     <button key={ws} onClick={() => updateSnbChartState({ windowSize: ws, offset: 0 })}
-                                        className={`px-3 py-1 rounded text-xs font-bold transition-all ${windowSize === ws ? 'bg-gold-500 text-royal-950 shadow-sm' : 'bg-transparent text-royal-400 hover:text-white hover:bg-royal-800'}`}>
+                                        className={`px-4 py-1.5 rounded-lg text-xs font-black uppercase tracking-widest transition-all ${windowSize === ws ? 'bg-gold-500 text-black shadow-[0_0_15px_rgba(212,175,55,0.4)]' : 'bg-transparent text-white/50 hover:text-white hover:bg-white/10'}`}>
                                         {ws === 'all' ? 'All Time' : ws}
                                     </button>
                                 ))}
                             </div>
                             {!isAll && windowSize !== 'all' && (
-                                <div className="flex items-center gap-2 bg-royal-950 p-1.5 rounded-lg border border-royal-800">
-                                    <button onClick={() => updateSnbChartState({ offset: Math.min(maxOffset, safeOffset + windowSize) })} disabled={safeOffset >= maxOffset} className="p-1 hover:bg-royal-800 text-royal-400 hover:text-white rounded disabled:opacity-30 transition-colors"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg></button>
-                                    <span className="text-xs font-bold text-royal-300 w-28 text-center tabular-nums">{startIndex + 1} - {endIndex} of {N}</span>
-                                    <button onClick={() => updateSnbChartState({ offset: Math.max(0, safeOffset - windowSize) })} disabled={safeOffset <= 0} className="p-1 hover:bg-royal-800 text-royal-400 hover:text-white rounded disabled:opacity-30 transition-colors"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg></button>
+                                <div className="flex items-center gap-2 bg-black/40 p-1.5 rounded-xl border border-white/5 shadow-inner">
+                                    <button onClick={() => updateSnbChartState({ offset: Math.min(maxOffset, safeOffset + windowSize) })} disabled={safeOffset >= maxOffset} className="p-1 hover:bg-white/10 text-white/50 hover:text-white rounded-lg disabled:opacity-30 transition-colors"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg></button>
+                                    <span className="text-xs font-bold text-white/70 w-28 text-center tabular-nums">{startIndex + 1} - {endIndex} of {N}</span>
+                                    <button onClick={() => updateSnbChartState({ offset: Math.max(0, safeOffset - windowSize) })} disabled={safeOffset <= 0} className="p-1 hover:bg-white/10 text-white/50 hover:text-white rounded-lg disabled:opacity-30 transition-colors"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg></button>
                                 </div>
                             )}
-                            <div className="w-px h-6 bg-royal-700 hidden lg:block"></div>
-                            <div className="flex items-center gap-1.5 bg-royal-950 p-1.5 rounded-lg border border-royal-800">
-                                <span className="text-[10px] text-royal-400 uppercase tracking-widest font-bold px-2 hidden sm:block">Cutoff</span>
+                            <div className="w-px h-6 bg-white/10 hidden lg:block"></div>
+                            <div className="flex items-center gap-1.5 bg-black/40 p-1.5 rounded-xl border border-white/5 shadow-inner">
+                                <span className="text-[10px] text-white/30 uppercase tracking-widest font-black px-2 hidden sm:block">Cutoff</span>
                                 {[8, 12, 24, 'all'].map(c => (
                                     <button key={c} onClick={() => updateSnbChartState({ cutoff: c })}
-                                        className={`px-3 py-1 rounded text-xs font-bold transition-all ${cutoff === c ? 'bg-purple-500 text-white shadow-sm' : 'bg-transparent text-royal-400 hover:text-white hover:bg-royal-800'}`}>
+                                        className={`px-4 py-1.5 rounded-lg text-xs font-black uppercase tracking-widest transition-all ${cutoff === c ? 'bg-gold-500 text-black shadow-[0_0_15px_rgba(212,175,55,0.4)]' : 'bg-transparent text-white/50 hover:text-white hover:bg-white/10'}`}>
                                         {c === 'all' ? 'All' : `Top ${c}`}
                                     </button>
                                 ))}
                             </div>
                             
-                            {/* SMART TOGGLE: Only appears on Points Progression when set to 'All' */}
                             {type === 'points' && isAll && (
                                 <>
-                                    <div className="w-px h-6 bg-royal-700 hidden lg:block"></div>
-                                    <div className="flex items-center gap-1.5 bg-royal-950 p-1.5 rounded-lg border border-royal-800">
-                                        <button onClick={() => updateSnbChartState({ layoutMode: 'compact' })} className={`px-3 py-1 rounded text-xs font-bold transition-all ${layoutMode === 'compact' ? 'bg-sky-500 text-white shadow-sm' : 'bg-transparent text-royal-400 hover:text-white hover:bg-royal-800'}`}>Compact</button>
-                                        <button onClick={() => updateSnbChartState({ layoutMode: 'extended' })} className={`px-3 py-1 rounded text-xs font-bold transition-all ${layoutMode === 'extended' ? 'bg-sky-500 text-white shadow-sm' : 'bg-transparent text-royal-400 hover:text-white hover:bg-royal-800'}`}>Extended</button>
+                                    <div className="w-px h-6 bg-white/10 hidden lg:block"></div>
+                                    <div className="flex items-center gap-1.5 bg-black/40 p-1.5 rounded-xl border border-white/5 shadow-inner">
+                                        <button onClick={() => updateSnbChartState({ layoutMode: 'compact' })} className={`px-4 py-1.5 rounded-lg text-xs font-black uppercase tracking-widest transition-all ${layoutMode === 'compact' ? 'bg-gold-500 text-black shadow-sm' : 'bg-transparent text-white/50 hover:text-white hover:bg-white/10'}`}>Compact</button>
+                                        <button onClick={() => updateSnbChartState({ layoutMode: 'extended' })} className={`px-4 py-1.5 rounded-lg text-xs font-black uppercase tracking-widest transition-all ${layoutMode === 'extended' ? 'bg-gold-500 text-black shadow-sm' : 'bg-transparent text-white/50 hover:text-white hover:bg-white/10'}`}>Extended</button>
                                     </div>
                                 </>
                             )}
                             
                             {hasCutoff && (
                                 <button onClick={() => updateSnbChartState({ showDropped: !showDropped })} 
-                                    className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all border shadow-sm ${showDropped ? 'bg-royal-800 border-royal-600 text-white' : 'bg-royal-950 border-royal-800 text-royal-400 hover:text-royal-300'}`}>
+                                    className={`px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest transition-all border shadow-sm ${showDropped ? 'bg-white/20 border-white/40 text-white' : 'bg-white/5 border-white/10 text-white/60 hover:text-white hover:bg-white/10'}`}>
                                     {showDropped ? 'Hide Dropped' : 'Show Dropped'}
                                 </button>
                             )}
                         </div>
-                        {selectedLineId && <button onClick={() => setSelectedLineId(null)} className="text-xs font-medium text-gold-500 hover:text-white px-4 py-1.5 bg-royal-800 rounded-md border border-royal-700 transition-colors">Clear Selection</button>}
+                        {selectedLineId && <button onClick={() => setSelectedLineId(null)} className="text-xs font-black uppercase tracking-widest text-rose-400 hover:text-rose-300 px-4 py-2 bg-rose-500/10 rounded-xl border border-rose-500/20 transition-colors shadow-sm">Clear Selection</button>}
                     </div>
                     
-                    <div className="w-full bg-royal-900/50 rounded-xl border border-royal-700 pb-2 relative overflow-x-auto select-none custom-scrollbar" onClick={() => setSelectedLineId(null)}>
+                    {/* SVG WRAPPER */}
+                    <div className="w-full bg-black/20 rounded-3xl border border-white/5 pt-4 pb-2 relative overflow-x-auto select-none custom-scrollbar" onClick={() => setSelectedLineId(null)}>
                         <svg viewBox={`0 0 ${width} ${dynamicHeight}`} style={{ minWidth: `800px`, transition: 'viewBox 0.3s ease' }} className="w-full h-auto overflow-visible font-sans">
                             <defs>
                                 {lines.map(line => (
@@ -1912,12 +1906,13 @@
                             {hasCutoff && (
                                 <g className="threshold-layer">
                                     <path d={dropZonePath} fill="#000000" opacity="0.3" style={{ transition: 'd 0.3s ease' }} />
-                                    <path d={thresholdPath} fill="none" stroke="#ef4444" strokeWidth="2.5" strokeDasharray="8 6" opacity="0.7" />
-                                    <text x={width - pad.right + 10} y={thresholdData[thresholdData.length - 1].y} fill="#ef4444" fontSize="12" fontWeight="bold" alignmentBaseline="middle" opacity="0.8">Top {cutoff} Cutoff</text>
-                                    <text x={pad.left - 15} y={thresholdData[0].y} fill="#ef4444" fontSize="12" fontWeight="bold" textAnchor="end" alignmentBaseline="middle" opacity="0.8">{type === 'rank' ? 'Drop' : `Top ${cutoff}`}</text>
+                                    <path d={thresholdPath} fill="none" stroke="#fb7185" strokeWidth="2.5" strokeDasharray="8 6" opacity="0.6" />
+                                    <text x={width - pad.right + 10} y={thresholdData[thresholdData.length - 1].y} fill="#fb7185" fontSize="12" fontWeight="bold" alignmentBaseline="middle" opacity="0.8">Top {cutoff} Cutoff</text>
+                                    <text x={pad.left - 15} y={thresholdData[0].y} fill="#fb7185" fontSize="12" fontWeight="bold" textAnchor="end" alignmentBaseline="middle" opacity="0.8">{type === 'rank' ? 'Drop' : `Top ${cutoff}`}</text>
                                 </g>
                             )}
 
+                            {/* REFINED GLASS GRID LINES */}
                             {type === 'rank' ? (
                                 (() => {
                                     const rLines = [];
@@ -1927,8 +1922,8 @@
                                     if (isAll && !rLines.includes(effectiveCutoff)) rLines.push(effectiveCutoff);
                                     return rLines.map((r, i) => (
                                         <g key={`grid-${i}`}>
-                                            <line x1={pad.left} y1={pad.top + ((r - 1) / Math.max(1, effectiveCutoff - 1)) * plotHeight} x2={width - pad.right + 20} y2={pad.top + ((r - 1) / Math.max(1, effectiveCutoff - 1)) * plotHeight} stroke="#13382d" strokeWidth="1" strokeDasharray="4 4" />
-                                            <text x={pad.left - 15} y={pad.top + ((r - 1) / Math.max(1, effectiveCutoff - 1)) * plotHeight} fill="#789e90" fontSize="12" fontWeight="bold" textAnchor="end" alignmentBaseline="middle">#{r}</text>
+                                            <line x1={pad.left} y1={pad.top + ((r - 1) / Math.max(1, effectiveCutoff - 1)) * plotHeight} x2={width - pad.right + 20} y2={pad.top + ((r - 1) / Math.max(1, effectiveCutoff - 1)) * plotHeight} stroke="rgba(255,255,255,0.05)" strokeWidth="1.5" strokeDasharray="4 4" />
+                                            <text x={pad.left - 15} y={pad.top + ((r - 1) / Math.max(1, effectiveCutoff - 1)) * plotHeight} fill="rgba(255,255,255,0.3)" fontSize="12" fontWeight="bold" textAnchor="end" alignmentBaseline="middle">#{r}</text>
                                         </g>
                                     ));
                                 })()
@@ -1940,8 +1935,8 @@
                                     const yLines = [0]; for(let v = step; v <= maxPointsVal; v += step) yLines.push(v);
                                     return yLines.map((p, i) => (
                                         <g key={`grid-${i}`}>
-                                            <line x1={pad.left} y1={getY(p)} x2={width - pad.right + 20} y2={getY(p)} stroke={p === 0 ? "#1e4033" : "#13382d"} strokeWidth={p === 0 ? "3" : "1"} strokeDasharray={p === 0 ? "none" : "4 4"} />
-                                            <text x={pad.left - 15} y={getY(p)} fill="#789e90" fontSize="12" fontWeight="bold" textAnchor="end" alignmentBaseline="middle">{Math.round(p).toLocaleString()}</text>
+                                            <line x1={pad.left} y1={getY(p)} x2={width - pad.right + 20} y2={getY(p)} stroke={p === 0 ? "rgba(255,255,255,0.2)" : "rgba(255,255,255,0.05)"} strokeWidth={p === 0 ? "2" : "1.5"} strokeDasharray={p === 0 ? "none" : "4 4"} />
+                                            <text x={pad.left - 15} y={getY(p)} fill="rgba(255,255,255,0.3)" fontSize="12" fontWeight="bold" textAnchor="end" alignmentBaseline="middle">{Math.round(p).toLocaleString()}</text>
                                         </g>
                                     ));
                                 })()
@@ -1951,7 +1946,7 @@
                                 const isHighlighted = selectedLineId === line.player.id || hoveredLineId === line.player.id;
                                 const isFaded = (selectedLineId || hoveredLineId) && !isHighlighted;
                                 return line.paths.map((pStr, pIdx) => (
-                                    <path key={`path-${line.player.id}-${pIdx}`} d={pStr} fill="none" stroke={line.color} strokeWidth={isHighlighted ? cConf.stroke * 1.5 : cConf.stroke} opacity={isFaded ? 0.15 : 0.9} strokeLinejoin="round" strokeLinecap="round" className="cursor-pointer" onClick={(e) => { e.stopPropagation(); setSelectedLineId(line.player.id === selectedLineId ? null : line.player.id); }} onMouseEnter={() => setHoveredLineId(line.player.id)} onMouseLeave={() => setHoveredLineId(null)} />
+                                    <path key={`path-${line.player.id}-${pIdx}`} d={pStr} fill="none" stroke={line.color} strokeWidth={isHighlighted ? cConf.stroke * 2 : cConf.stroke} opacity={isFaded ? 0.15 : 0.9} strokeLinejoin="round" strokeLinecap="round" className="cursor-pointer" onClick={(e) => { e.stopPropagation(); setSelectedLineId(line.player.id === selectedLineId ? null : line.player.id); }} onMouseEnter={() => setHoveredLineId(line.player.id)} onMouseLeave={() => setHoveredLineId(null)} style={{ filter: isHighlighted ? `drop-shadow(0 0 6px ${line.color}60)` : 'none' }} />
                                 ));
                             })}
                             
@@ -1977,25 +1972,24 @@
 
                                             return (
                                                 <g key={`pt-${line.player.id}-${sIdx}-${i}`} className="group cursor-pointer" onClick={(e) => { e.stopPropagation(); setSelectedLineId(line.player.id === selectedLineId ? null : line.player.id); }} onMouseEnter={() => setHoveredLineId(line.player.id)} onMouseLeave={() => setHoveredLineId(null)}>
-                                                    <circle cx={pt.x} cy={pt.y} r={isSolidDebut ? debutR : rSize} fill={isSolidDebut ? line.color : "#051611"} stroke={line.color} strokeWidth={isSolidDebut ? 0 : sWidth} style={{ transition: 'r 0.2s ease, stroke-width 0.2s ease' }} />
-                                                    <text x={pt.x} y={pt.y - 12} fill={line.color} fontSize="12" fontWeight="900" textAnchor="middle" stroke="#051611" strokeWidth="4" paintOrder="stroke" className={shouldShowText ? "opacity-100" : "opacity-0 group-hover:opacity-100"}>{type === 'rank' ? `#${pt.val}` : Math.round(pt.val).toLocaleString()}</text>
+                                                    <circle cx={pt.x} cy={pt.y} r={isSolidDebut ? debutR : rSize} fill={isSolidDebut ? line.color : "#0f172a"} stroke={line.color} strokeWidth={isSolidDebut ? 0 : sWidth} style={{ transition: 'r 0.2s ease, stroke-width 0.2s ease' }} />
+                                                    <text x={pt.x} y={pt.y - 12} fill={line.color} fontSize="12" fontWeight="900" textAnchor="middle" stroke="#000000" strokeWidth="4" paintOrder="stroke" className={shouldShowText ? "opacity-100" : "opacity-0 group-hover:opacity-100"}>{type === 'rank' ? `#${pt.val}` : Math.round(pt.val).toLocaleString()}</text>
                                                     <circle cx={pt.x} cy={pt.y} r="20" fill="transparent" />
                                                 </g>
                                             );
                                         }))}
 
-                                        {/* RESTORED DASHED LINES */}
                                         {shouldShowLabel && (Math.abs(adjY - endPt.y) > 2 || isDropped || isExtendedMode) && (
-                                            <path d={`M ${endPt.x} ${endPt.y} C ${endPt.x + 15} ${endPt.y}, ${endPt.x + 10} ${adjY}, ${endPt.x + (isAll ? 10 : 20)} ${adjY}`} fill="none" stroke={line.color} strokeWidth="1.5" opacity="0.6" strokeDasharray="4 4" style={{ transition: 'opacity 0.3s ease' }} />
+                                            <path d={`M ${endPt.x} ${endPt.y} C ${endPt.x + 15} ${endPt.y}, ${endPt.x + 10} ${adjY}, ${endPt.x + (isAll ? 10 : 20)} ${adjY}`} fill="none" stroke={line.color} strokeWidth="1.5" opacity="0.5" strokeDasharray="4 4" style={{ transition: 'opacity 0.3s ease' }} />
                                         )}
 
                                         {shouldShowLabel && (
                                             <g transform={`translate(${endPt.x + (isAll ? 10 : 20)}, ${adjY})`} className="cursor-pointer" style={{ transition: 'opacity 0.3s ease, transform 0.3s ease' }} onClick={(e) => { e.stopPropagation(); onNavigate('players', line.player.id); }} onMouseEnter={() => setHoveredLineId(line.player.id)} onMouseLeave={() => setHoveredLineId(null)}>
-                                                <rect x="0" y={-cConf.rectH/2} width={cConf.rectW} height={cConf.rectH} rx={cConf.rectH/2} fill="#051611" fillOpacity={isHighlighted ? "1" : (isDropped ? "0.6" : "0.85")} stroke={line.color} strokeWidth={isHighlighted ? 2 : 1} style={{ filter: isHighlighted ? 'drop-shadow(0 0 8px rgba(255,255,255,0.3))' : 'drop-shadow(0 4px 6px rgba(0,0,0,0.5))' }} />
+                                                <rect x="0" y={-cConf.rectH/2} width={cConf.rectW} height={cConf.rectH} rx={cConf.rectH/2} fill="#000000" fillOpacity={isHighlighted ? "0.9" : (isDropped ? "0.5" : "0.7")} stroke={line.color} strokeWidth={isHighlighted ? 2 : 1} style={{ filter: isHighlighted ? `drop-shadow(0 0 10px ${line.color}60)` : 'none' }} />
                                                 {line.player.imageUrl ? (
-                                                    <image href={line.player.imageUrl} x="4" y={-cConf.img/2} width={cConf.img} height={cConf.img} clipPath={`url(#clip-${type}-${line.player.id})`} preserveAspectRatio="xMidYMid slice" style={{ filter: isDropped && !isHighlighted ? 'grayscale(0.7)' : 'none' }} />
-                                                ) : ( <circle cx={4 + cConf.img/2} cy="0" r={cConf.img/2} fill="#0a241c" /> )}
-                                                <text x={4 + cConf.img + 6} y={cConf.font * 0.35} fill={isDropped && !isHighlighted ? "#94a3b8" : "#f8fafc"} fontSize={cConf.font} fontWeight="bold" style={{ textShadow: "0px 2px 4px black" }}>{line.player.name}</text>
+                                                    <image href={line.player.imageUrl} x="4" y={-cConf.img/2} width={cConf.img} height={cConf.img} clipPath={`url(#clip-${type}-${line.player.id})`} preserveAspectRatio="xMidYMid slice" style={{ filter: isDropped && !isHighlighted ? 'grayscale(0.8)' : 'none' }} />
+                                                ) : ( <circle cx={4 + cConf.img/2} cy="0" r={cConf.img/2} fill="#1e293b" /> )}
+                                                <text x={4 + cConf.img + 6} y={cConf.font * 0.35} fill={isHighlighted ? "#ffffff" : (isDropped ? "rgba(255,255,255,0.4)" : "rgba(255,255,255,0.8)")} fontSize={cConf.font} fontWeight="bold">{line.player.name}</text>
                                             </g>
                                         )}
                                     </g>
@@ -2028,7 +2022,7 @@
             const startIndex = windowSize === 'all' ? 0 : Math.max(0, endIndex - windowSize);
             const historyData = allHistory.slice(startIndex, endIndex);
 
-            if (historyData.length < 1) return <p className="text-royal-300 text-sm mt-4">Not enough Major+ tournament history.</p>;
+            if (historyData.length < 1) return <p className="text-white/40 italic font-medium text-sm mt-4 text-center">Not enough Major+ tournament history.</p>;
 
             const NATION_COLORS = {
                 'USA': '#38bdf8', 'GBR': '#f87171', 'AUS': '#facc15', 'FRA': '#60a5fa', 'GER': '#f8fafc', 'ITA': '#60a5fa', 'ESP': '#facc15', 'NED': '#fb923c', 'BRA': '#4ade80', 'ARG': '#7dd3fc', 'JPN': '#818cf8', 'CAN': '#ef4444', 'CHN': '#f43f5e', 'RUS': '#f87171', 'SWE': '#fde047', 'NOR': '#ef4444', 'MEX': '#22c55e', 'KOR': '#38bdf8', 'NZL': '#94a3b8', 'RSA': '#10b981', 'SUI': '#ef4444', 'BEL': '#ef4444', 'AUT': '#ef4444', 'POR': '#10b981', 'POL': '#f8fafc', 'CZE': '#38bdf8', 'CRO': '#f87171', 'SRB': '#ef4444', 'DEN': '#ef4444', 'FIN': '#38bdf8', 'IRL': '#4ade80', 'UKR': '#facc15'
@@ -2045,9 +2039,7 @@
             const width = 1200;
             const cConf = { gap: 24, font: 12, rectH: 28, rectW: 100, ptR: 3, debutR: 4, stroke: 2 };
             
-            // CLEAN NATIONS VIEW: Locked to a tall, comfortable compact mode. No layout toggle.
             const plotHeight = Math.max(600, nationCodes.size * cConf.gap * 1.5);
-            
             const pad = { top: 40, right: 140, left: 80, bottom: 40 }; 
             const gridBottomY = pad.top + plotHeight;
 
@@ -2076,10 +2068,7 @@
                         const p = playersRaw.find(x => x.id === s.id);
                         if (p && p.nationality === code && !p.retired) hasPoints = true;
                     });
-                    if (hasPoints) {
-                        nationDebuts[code] = allHistory[i].id;
-                        break;
-                    }
+                    if (hasPoints) { nationDebuts[code] = allHistory[i].id; break; }
                 }
             });
 
@@ -2089,18 +2078,14 @@
             const lines = [];
             Array.from(nationCodes).forEach(code => {
                 const timeline = rawNationTimelines[code];
-                const segments = [];
-                let currentSeg = [];
+                const segments = []; let currentSeg = [];
 
                 timeline.forEach((pt, i) => {
                     const isDebut = pt.val > 0 && nationDebuts[code] === historyData[pt.k].id;
                     const mappedPt = { ...pt, x: getX(pt.k), y: getY(pt.val), isDot: true, isDebut };
                     
-                    if (pt.val > 0 || (i > 0 && timeline[i-1].val > 0)) {
-                        currentSeg.push(mappedPt);
-                    } else if (currentSeg.length > 0) {
-                        segments.push(currentSeg); currentSeg = [];
-                    }
+                    if (pt.val > 0 || (i > 0 && timeline[i-1].val > 0)) { currentSeg.push(mappedPt); } 
+                    else if (currentSeg.length > 0) { segments.push(currentSeg); currentSeg = []; }
                 });
                 if (currentSeg.length > 0) segments.push(currentSeg);
                 if (segments.length > 0) {
@@ -2114,21 +2099,15 @@
                 const endPt = line.segments[line.segments.length - 1].slice(-1)[0];
                 labels.push({ id: line.code, endX: endPt.x, endY: endPt.y, actualVal: endPt.val, line });
             });
-
             labels.sort((a, b) => b.actualVal - a.actualVal);
 
             const physicsGap = cConf.gap * 0.8;
-
             if (labels.length > 0) {
                 labels[0].currentY = labels[0].endY;
-                for (let i = 1; i < labels.length; i++) {
-                    labels[i].currentY = Math.max(labels[i].endY, labels[i-1].currentY + physicsGap);
-                }
+                for (let i = 1; i < labels.length; i++) labels[i].currentY = Math.max(labels[i].endY, labels[i-1].currentY + physicsGap);
                 if (labels[labels.length - 1].currentY > gridBottomY) {
                     labels[labels.length - 1].currentY = gridBottomY;
-                    for (let i = labels.length - 2; i >= 0; i--) {
-                        labels[i].currentY = Math.min(labels[i].currentY, labels[i+1].currentY - physicsGap);
-                    }
+                    for (let i = labels.length - 2; i >= 0; i--) labels[i].currentY = Math.min(labels[i].currentY, labels[i+1].currentY - physicsGap);
                 }
             }
 
@@ -2141,29 +2120,31 @@
 
             return (
                 <div className="w-full">
-                    <div className="flex flex-wrap gap-4 items-center justify-between mb-6 bg-royal-900/40 p-2.5 rounded-xl border border-royal-800">
+                    {/* GLASS CONTROLS DASHBOARD */}
+                    <div className="flex flex-wrap gap-4 items-center justify-between mb-6 bg-black/20 backdrop-blur-md p-3 rounded-2xl border border-white/5 shadow-inner">
                         <div className="flex items-center gap-4 flex-wrap">
-                            <div className="flex items-center gap-1.5 bg-royal-950 p-1.5 rounded-lg border border-royal-800">
-                                <span className="text-[10px] text-royal-400 uppercase tracking-widest font-bold px-2 hidden sm:block">Window</span>
+                            <div className="flex items-center gap-1.5 bg-black/40 p-1.5 rounded-xl border border-white/5 shadow-inner">
+                                <span className="text-[10px] text-white/30 uppercase tracking-widest font-black px-2 hidden sm:block">Window</span>
                                 {[10, 20, 50, 'all'].map(ws => (
                                     <button key={ws} onClick={() => updateSnbChartState({ windowSize: ws, offset: 0 })}
-                                        className={`px-3 py-1 rounded text-xs font-bold transition-all ${windowSize === ws ? 'bg-gold-500 text-royal-950 shadow-sm' : 'bg-transparent text-royal-400 hover:text-white hover:bg-royal-800'}`}>
+                                        className={`px-4 py-1.5 rounded-lg text-xs font-black uppercase tracking-widest transition-all ${windowSize === ws ? 'bg-gold-500 text-black shadow-[0_0_15px_rgba(212,175,55,0.4)]' : 'bg-transparent text-white/50 hover:text-white hover:bg-white/10'}`}>
                                         {ws === 'all' ? 'All Time' : ws}
                                     </button>
                                 ))}
                             </div>
                             {windowSize !== 'all' && (
-                                <div className="flex items-center gap-2 bg-royal-950 p-1.5 rounded-lg border border-royal-800">
-                                    <button onClick={() => updateSnbChartState({ offset: Math.min(maxOffset, safeOffset + windowSize) })} disabled={safeOffset >= maxOffset} className="p-1 hover:bg-royal-800 text-royal-400 hover:text-white rounded disabled:opacity-30 transition-colors"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg></button>
-                                    <span className="text-xs font-bold text-royal-300 w-28 text-center tabular-nums">{startIndex + 1} - {endIndex} of {N}</span>
-                                    <button onClick={() => updateSnbChartState({ offset: Math.max(0, safeOffset - windowSize) })} disabled={safeOffset <= 0} className="p-1 hover:bg-royal-800 text-royal-400 hover:text-white rounded disabled:opacity-30 transition-colors"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg></button>
+                                <div className="flex items-center gap-2 bg-black/40 p-1.5 rounded-xl border border-white/5 shadow-inner">
+                                    <button onClick={() => updateSnbChartState({ offset: Math.min(maxOffset, safeOffset + windowSize) })} disabled={safeOffset >= maxOffset} className="p-1 hover:bg-white/10 text-white/50 hover:text-white rounded-lg disabled:opacity-30 transition-colors"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg></button>
+                                    <span className="text-xs font-bold text-white/70 w-28 text-center tabular-nums">{startIndex + 1} - {endIndex} of {N}</span>
+                                    <button onClick={() => updateSnbChartState({ offset: Math.max(0, safeOffset - windowSize) })} disabled={safeOffset <= 0} className="p-1 hover:bg-white/10 text-white/50 hover:text-white rounded-lg disabled:opacity-30 transition-colors"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg></button>
                                 </div>
                             )}
                         </div>
-                        {selectedCode && <button onClick={() => setSelectedCode(null)} className="text-xs font-medium text-gold-500 hover:text-white px-4 py-1.5 bg-royal-800 rounded-md border border-royal-700 transition-colors">Clear Selection</button>}
+                        {selectedCode && <button onClick={() => setSelectedCode(null)} className="text-xs font-black uppercase tracking-widest text-rose-400 hover:text-rose-300 px-4 py-2 bg-rose-500/10 rounded-xl border border-rose-500/20 transition-colors shadow-sm">Clear Selection</button>}
                     </div>
                     
-                    <div className="w-full bg-royal-900/50 rounded-xl border border-royal-700 pb-2 relative overflow-x-auto select-none custom-scrollbar" onClick={() => setSelectedCode(null)}>
+                    {/* SVG WRAPPER */}
+                    <div className="w-full bg-black/20 rounded-3xl border border-white/5 pt-4 pb-2 relative overflow-x-auto select-none custom-scrollbar" onClick={() => setSelectedCode(null)}>
                         <svg viewBox={`0 0 ${width} ${gridBottomY + pad.bottom}`} style={{ minWidth: `800px`, transition: 'viewBox 0.3s ease' }} className="w-full h-auto overflow-visible font-sans">
                             {(() => {
                                 const rawStep = maxPointsVal / (windowSize === 'all' ? 20 : 15);
@@ -2172,8 +2153,8 @@
                                 const yLines = [0]; for(let v = step; v <= maxPointsVal; v += step) yLines.push(v);
                                 return yLines.map((p, i) => (
                                     <g key={`grid-${i}`}>
-                                        <line x1={pad.left} y1={getY(p)} x2={width - pad.right + 20} y2={getY(p)} stroke={p === 0 ? "#1e4033" : "#13382d"} strokeWidth={p === 0 ? "3" : "1"} strokeDasharray={p === 0 ? "none" : "4 4"} />
-                                        <text x={pad.left - 15} y={getY(p)} fill="#789e90" fontSize="12" fontWeight="bold" textAnchor="end" alignmentBaseline="middle">{Math.round(p).toLocaleString()}</text>
+                                        <line x1={pad.left} y1={getY(p)} x2={width - pad.right + 20} y2={getY(p)} stroke={p === 0 ? "rgba(255,255,255,0.2)" : "rgba(255,255,255,0.05)"} strokeWidth={p === 0 ? "2" : "1.5"} strokeDasharray={p === 0 ? "none" : "4 4"} />
+                                        <text x={pad.left - 15} y={getY(p)} fill="rgba(255,255,255,0.3)" fontSize="12" fontWeight="bold" textAnchor="end" alignmentBaseline="middle">{Math.round(p).toLocaleString()}</text>
                                     </g>
                                 ));
                             })()}
@@ -2182,7 +2163,7 @@
                                 const isHighlighted = selectedCode === line.code || hoveredCode === line.code;
                                 const isFaded = (selectedCode || hoveredCode) && !isHighlighted;
                                 return line.paths.map((pStr, pIdx) => (
-                                    <path key={`path-${line.code}-${pIdx}`} d={pStr} fill="none" stroke={line.color} strokeWidth={isHighlighted ? cConf.stroke * 2 : cConf.stroke} opacity={isFaded ? 0.15 : 0.9} strokeLinejoin="round" strokeLinecap="round" className="cursor-pointer" onClick={(e) => { e.stopPropagation(); setSelectedCode(line.code === selectedCode ? null : line.code); }} onMouseEnter={() => setHoveredCode(line.code)} onMouseLeave={() => setHoveredCode(null)} />
+                                    <path key={`path-${line.code}-${pIdx}`} d={pStr} fill="none" stroke={line.color} strokeWidth={isHighlighted ? cConf.stroke * 2 : cConf.stroke} opacity={isFaded ? 0.15 : 0.9} strokeLinejoin="round" strokeLinecap="round" className="cursor-pointer" onClick={(e) => { e.stopPropagation(); setSelectedCode(line.code === selectedCode ? null : line.code); }} onMouseEnter={() => setHoveredCode(line.code)} onMouseLeave={() => setHoveredCode(null)} style={{ filter: isHighlighted ? `drop-shadow(0 0 6px ${line.color}60)` : 'none' }} />
                                 ));
                             })}
                             
@@ -2204,19 +2185,19 @@
                                             
                                             return (
                                                 <g key={`pt-${line.code}-${sIdx}-${i}`} className="group cursor-pointer" onClick={(e) => { e.stopPropagation(); setSelectedCode(line.code === selectedCode ? null : line.code); }} onMouseEnter={() => setHoveredCode(line.code)} onMouseLeave={() => setHoveredCode(null)}>
-                                                    <circle cx={pt.x} cy={pt.y} r={isSolidDebut ? debutR : rSize} fill={isSolidDebut ? line.color : "#051611"} stroke={line.color} strokeWidth={isSolidDebut ? 0 : sWidth} />
-                                                    <text x={pt.x} y={pt.y - 12} fill={line.color} fontSize="12" fontWeight="900" textAnchor="middle" stroke="#051611" strokeWidth="4" paintOrder="stroke" className={shouldShowText ? "opacity-100" : "opacity-0 group-hover:opacity-100"}>{Math.round(pt.val).toLocaleString()}</text>
+                                                    <circle cx={pt.x} cy={pt.y} r={isSolidDebut ? debutR : rSize} fill={isSolidDebut ? line.color : "#0f172a"} stroke={line.color} strokeWidth={isSolidDebut ? 0 : sWidth} />
+                                                    <text x={pt.x} y={pt.y - 12} fill={line.color} fontSize="12" fontWeight="900" textAnchor="middle" stroke="#000000" strokeWidth="4" paintOrder="stroke" className={shouldShowText ? "opacity-100" : "opacity-0 group-hover:opacity-100"}>{Math.round(pt.val).toLocaleString()}</text>
                                                     <circle cx={pt.x} cy={pt.y} r="20" fill="transparent" />
                                                 </g>
                                             );
                                         }))}
                                         
-                                        {(Math.abs(lObj.currentY - lObj.endY) > 2) && <path d={`M ${lObj.endX} ${lObj.endY} C ${lObj.endX + 15} ${lObj.endY}, ${lObj.endX + 10} ${lObj.currentY}, ${lObj.endX + 20} ${lObj.currentY}`} fill="none" stroke={line.color} strokeWidth="1.5" opacity="0.4" strokeDasharray="2 2" />}
+                                        {(Math.abs(lObj.currentY - lObj.endY) > 2) && <path d={`M ${lObj.endX} ${lObj.endY} C ${lObj.endX + 15} ${lObj.endY}, ${lObj.endX + 10} ${lObj.currentY}, ${lObj.endX + 20} ${lObj.currentY}`} fill="none" stroke={line.color} strokeWidth="1.5" opacity="0.4" strokeDasharray="3 3" />}
                                         
                                         <g transform={`translate(${lObj.endX + 20}, ${lObj.currentY})`} className="cursor-pointer" onClick={(e) => { e.stopPropagation(); onNavigate('nations', null, null, line.code); }} onMouseEnter={() => setHoveredCode(line.code)} onMouseLeave={() => setHoveredCode(null)}>
-                                            <rect x="0" y={-cConf.rectH/2} width={cConf.rectW} height={cConf.rectH} rx={cConf.rectH/2} fill="#051611" fillOpacity="0.9" stroke={line.color} strokeWidth={isHighlighted ? 2 : 1} style={{ filter: isHighlighted ? 'drop-shadow(0 0 8px rgba(255,255,255,0.3))' : 'none' }} />
+                                            <rect x="0" y={-cConf.rectH/2} width={cConf.rectW} height={cConf.rectH} rx={cConf.rectH/2} fill="#000000" fillOpacity={isHighlighted ? "0.9" : "0.7"} stroke={line.color} strokeWidth={isHighlighted ? 2 : 1} style={{ filter: isHighlighted ? `drop-shadow(0 0 10px ${line.color}60)` : 'none' }} />
                                             <text x={10} y={cConf.font * 0.35} fontSize={cConf.font + 1}>{getFlag(line.code)}</text>
-                                            <text x={32} y={cConf.font * 0.35} fill={isHighlighted ? "#ffffff" : "#cbd5e1"} fontSize={cConf.font} fontWeight="bold">{line.code}</text>
+                                            <text x={32} y={cConf.font * 0.35} fill={isHighlighted ? "#ffffff" : "rgba(255,255,255,0.8)"} fontSize={cConf.font} fontWeight="bold">{line.code}</text>
                                         </g>
                                     </g>
                                 );
@@ -2233,21 +2214,21 @@
             const scrollToTop = () => document.querySelector('main .overflow-auto')?.scrollTo({ top: 0, behavior: 'smooth' });
 
             return (
-                <div className="fixed right-8 top-1/2 -translate-y-1/2 flex flex-col gap-3 z-50 bg-royal-950/90 backdrop-blur-md p-3 rounded-2xl border border-royal-800 shadow-[0_10px_30px_rgba(0,0,0,0.8)] hidden xl:flex w-24">
-                    <div className="text-[10px] text-royal-400 uppercase tracking-widest font-bold text-center pb-2 border-b border-royal-800 w-full mb-1">Jump</div>
+                <div className="fixed right-8 top-1/2 -translate-y-1/2 flex flex-col gap-3 z-50 bg-black/40 backdrop-blur-2xl p-3 rounded-2xl border border-white/10 shadow-[0_20px_50px_rgba(0,0,0,0.5)] hidden xl:flex w-24">
+                    <div className="text-[10px] text-white/40 uppercase tracking-widest font-bold text-center pb-2 border-b border-white/10 w-full mb-1">Jump</div>
                     
-                    <button onClick={() => scrollToSection('snb-chart-wrapper-rank')} className="p-3 w-full bg-royal-900 hover:bg-gold-500 hover:text-royal-950 text-royal-200 rounded-xl transition-all hover:scale-110 group flex flex-col items-center justify-center gap-1.5 shadow-inner">
+                    <button onClick={() => scrollToSection('snb-chart-wrapper-rank')} className="p-3 w-full bg-white/5 hover:bg-white/20 text-white/70 hover:text-white rounded-xl transition-all hover:scale-105 group flex flex-col items-center justify-center gap-1.5 shadow-inner border border-transparent hover:border-white/20">
                         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"></polyline><polyline points="16 7 22 7 22 13"></polyline></svg>
                         <span className="text-[9px] font-black uppercase tracking-wider text-center">Rank</span>
                     </button>
                     
-                    <button onClick={() => scrollToSection('snb-chart-wrapper-points')} className="p-3 w-full bg-royal-900 hover:bg-gold-500 hover:text-royal-950 text-royal-200 rounded-xl transition-all hover:scale-110 group flex flex-col items-center justify-center gap-1.5 shadow-inner">
+                    <button onClick={() => scrollToSection('snb-chart-wrapper-points')} className="p-3 w-full bg-white/5 hover:bg-white/20 text-white/70 hover:text-white rounded-xl transition-all hover:scale-105 group flex flex-col items-center justify-center gap-1.5 shadow-inner border border-transparent hover:border-white/20">
                         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>
                         <span className="text-[9px] font-black uppercase tracking-wider text-center">Points</span>
                     </button>
 
-                    <div className="mt-2 pt-4 border-t border-royal-800 w-full">
-                        <button onClick={scrollToTop} className="p-3 w-full bg-royal-900 hover:bg-gold-500 hover:text-royal-950 text-gold-500 rounded-xl transition-all hover:scale-110 group flex flex-col items-center justify-center gap-1.5 shadow-inner">
+                    <div className="mt-2 pt-4 border-t border-white/10 w-full">
+                        <button onClick={scrollToTop} className="p-3 w-full bg-white/5 hover:bg-white/20 text-white/40 hover:text-white rounded-xl transition-all hover:scale-105 group flex flex-col items-center justify-center gap-1.5 shadow-inner border border-transparent hover:border-white/20">
                             <ArrowUpIcon size={20}/>
                             <span className="text-[9px] font-black uppercase tracking-wider text-center">Top</span>
                         </button>
@@ -2261,26 +2242,26 @@
             const scrollToTop = () => document.querySelector('main .overflow-auto')?.scrollTo({ top: 0, behavior: 'smooth' });
             
             return (
-                <div className="fixed right-8 top-1/2 -translate-y-1/2 flex flex-col gap-3 z-50 bg-royal-950/90 backdrop-blur-md p-3 rounded-2xl border border-royal-800 shadow-[0_10px_30px_rgba(0,0,0,0.8)] hidden xl:flex w-24">
-                    <div className="text-[10px] text-royal-400 uppercase tracking-widest font-bold text-center pb-2 border-b border-royal-800 w-full mb-1">Jump</div>
+                <div className="fixed right-8 top-1/2 -translate-y-1/2 flex flex-col gap-3 z-50 bg-black/40 backdrop-blur-2xl p-3 rounded-2xl border border-white/10 shadow-[0_20px_50px_rgba(0,0,0,0.5)] hidden xl:flex w-24">
+                    <div className="text-[10px] text-white/40 uppercase tracking-widest font-bold text-center pb-2 border-b border-white/10 w-full mb-1">Jump</div>
                     
-                    <button onClick={() => scrollToSection('nation-chart')} className="p-3 w-full bg-royal-900 hover:bg-gold-500 hover:text-royal-950 text-royal-200 rounded-xl transition-all hover:scale-110 group flex flex-col items-center justify-center gap-1.5 shadow-inner">
+                    <button onClick={() => scrollToSection('nation-chart')} className="p-3 w-full bg-white/5 hover:bg-white/20 text-white/70 hover:text-white rounded-xl transition-all hover:scale-105 group flex flex-col items-center justify-center gap-1.5 shadow-inner border border-transparent hover:border-white/20">
                         <AnalyticsIcon size={24}/>
                         <span className="text-[9px] font-black uppercase tracking-wider text-center">Chart</span>
                     </button>
                     
-                    <button onClick={() => scrollToSection('nation-roster')} className="p-3 w-full bg-royal-900 hover:bg-gold-500 hover:text-royal-950 text-royal-200 rounded-xl transition-all hover:scale-110 group flex flex-col items-center justify-center gap-1.5 shadow-inner">
+                    <button onClick={() => scrollToSection('nation-roster')} className="p-3 w-full bg-white/5 hover:bg-white/20 text-white/70 hover:text-white rounded-xl transition-all hover:scale-105 group flex flex-col items-center justify-center gap-1.5 shadow-inner border border-transparent hover:border-white/20">
                         <PlayersIcon size={24}/>
                         <span className="text-[9px] font-black uppercase tracking-wider text-center">Roster</span>
                     </button>
                     
-                    <button onClick={() => scrollToSection('nation-trophies')} className="p-3 w-full bg-royal-900 hover:bg-gold-500 hover:text-royal-950 text-royal-200 rounded-xl transition-all hover:scale-110 group flex flex-col items-center justify-center gap-1.5 shadow-inner">
+                    <button onClick={() => scrollToSection('nation-trophies')} className="p-3 w-full bg-white/5 hover:bg-white/20 text-white/70 hover:text-white rounded-xl transition-all hover:scale-105 group flex flex-col items-center justify-center gap-1.5 shadow-inner border border-transparent hover:border-white/20">
                         <Trophy size={24}/>
                         <span className="text-[9px] font-black uppercase tracking-wider text-center">Trophies</span>
                     </button>
                     
-                    <div className="mt-2 pt-4 border-t border-royal-800 w-full">
-                        <button onClick={scrollToTop} className="p-3 w-full bg-royal-900 hover:bg-gold-500 hover:text-royal-950 text-gold-500 rounded-xl transition-all hover:scale-110 group flex flex-col items-center justify-center gap-1.5 shadow-inner">
+                    <div className="mt-2 pt-4 border-t border-white/10 w-full">
+                        <button onClick={scrollToTop} className="p-3 w-full bg-white/5 hover:bg-white/20 text-white/40 hover:text-white rounded-xl transition-all hover:scale-105 group flex flex-col items-center justify-center gap-1.5 shadow-inner border border-transparent hover:border-white/20">
                             <ArrowUpIcon size={20}/>
                             <span className="text-[9px] font-black uppercase tracking-wider text-center">Top</span>
                         </button>
@@ -2293,7 +2274,6 @@
             const globalHistory = useMemo(() => getGlobalHistory(playersRaw, tournaments), [playersRaw, tournaments]);
             const [, setTick] = useState(0);
 
-            // Subscribe to the global chart state so the titles dynamically update!
             useEffect(() => {
                 const l = () => setTick(t => t + 1);
                 __snbChartListeners.add(l);
@@ -2304,23 +2284,22 @@
             const titlePrefix = currentCutoff === 'all' ? 'All-Time' : `Top ${currentCutoff}`;
 
             return (
-                <div className="max-w-[1400px] mx-auto space-y-8 pb-20 relative">
-                    {/* INJECTED FLOATING SIDEBAR */}
+                <div className="max-w-[1400px] mx-auto space-y-8 pb-20 relative animate-in fade-in duration-500">
                     <FloatingChartNav />
 
-                    <header className="mb-4 pl-0 xl:pl-4">
-                        <h1 className="text-3xl font-bold text-white flex items-center gap-3"><AnalyticsIcon size={32} className="text-gold-500"/> Global Analytics</h1>
-                        <p className="text-royal-300 mt-2">Click or hover on any line or profile picture to isolate their trajectory. Official Rankings only update after Major+ events.</p>
+                    <header className="mb-6 pl-0 xl:pl-4">
+                        <h1 className="text-3xl md:text-4xl font-black text-white flex items-center gap-3 drop-shadow-md"><AnalyticsIcon size={32} className="text-gold-500 drop-shadow-[0_0_10px_rgba(212,175,55,0.4)]"/> Global Analytics</h1>
+                        <p className="text-white/50 mt-2 font-medium">Click or hover on any line or profile picture to isolate their trajectory. Official Rankings only update after Major+ events.</p>
                     </header>
 
-                    {/* Notice the ID tags added here so the sidebar links can jump right to them! */}
-                    <div id="snb-chart-wrapper-rank" className="bg-royal-900 p-6 rounded-2xl border border-royal-800 shadow-xl scroll-mt-8">
-                        <h2 className="text-2xl font-bold text-white flex items-center gap-3 mb-6"><AnalyticsIcon size={28} className="text-gold-500"/> {titlePrefix} Rank Progression</h2>
+                    {/* HEAVY MATTE GLASS WRAPPERS */}
+                    <div id="snb-chart-wrapper-rank" className="bg-white/5 backdrop-blur-2xl p-6 md:p-8 rounded-3xl border border-white/10 shadow-[0_20px_50px_rgba(0,0,0,0.5)] scroll-mt-8">
+                        <h2 className="text-2xl font-black text-white flex items-center gap-3 mb-8 tracking-tight"><AnalyticsIcon size={24} className="text-white/40"/> {titlePrefix} Rank Progression</h2>
                         <TopPlayersChart globalHistory={globalHistory} playersRaw={playersRaw} type="rank" onNavigate={onNavigate} />
                     </div>
                     
-                    <div id="snb-chart-wrapper-points" className="bg-royal-900 p-6 rounded-2xl border border-royal-800 shadow-xl scroll-mt-8">
-                        <h2 className="text-2xl font-bold text-white flex items-center gap-3 mb-6"><AnalyticsIcon size={28} className="text-gold-500"/> {titlePrefix} Points Progression</h2>
+                    <div id="snb-chart-wrapper-points" className="bg-white/5 backdrop-blur-2xl p-6 md:p-8 rounded-3xl border border-white/10 shadow-[0_20px_50px_rgba(0,0,0,0.5)] scroll-mt-8">
+                        <h2 className="text-2xl font-black text-white flex items-center gap-3 mb-8 tracking-tight"><AnalyticsIcon size={24} className="text-white/40"/> {titlePrefix} Points Progression</h2>
                         <TopPlayersChart globalHistory={globalHistory} playersRaw={playersRaw} type="points" onNavigate={onNavigate} />
                     </div>
                 </div>
@@ -2334,7 +2313,6 @@
             const nationStats = useMemo(() => {
                 const stats = {};
                 
-                // FIXED: Use the fully calculated `players` array to get actual points!
                 players.forEach(p => {
                     const code = p.nationality || 'UNK';
                     if (!stats[code]) stats[code] = { code, players: 0, activePlayers: 0, points: 0, titles: 0 };
@@ -2363,47 +2341,47 @@
             }, [players, tournaments]);
 
             return (
-                <div className="max-w-[1400px] mx-auto space-y-8 pb-20">
-                    <header className="mb-4">
-                        <h1 className="text-3xl font-bold text-white flex items-center gap-3"><NationsIcon size={32} className="text-blue-400"/> Global Nations</h1>
-                        <p className="text-royal-300 mt-2">The arms race for international dominance. Only active players contribute to the current National Points total.</p>
+                <div className="max-w-[1400px] mx-auto space-y-8 pb-20 animate-in fade-in duration-500">
+                    <header className="mb-6 pl-0 xl:pl-4">
+                        <h1 className="text-3xl md:text-4xl font-black text-white flex items-center gap-3 drop-shadow-md"><NationsIcon size={32} className="text-sky-400 drop-shadow-[0_0_10px_rgba(56,189,248,0.4)]"/> Global Nations</h1>
+                        <p className="text-white/50 mt-2 font-medium">The arms race for international dominance. Only active players contribute to the current National Points total.</p>
                     </header>
 
-                    <div className="bg-royal-900 p-6 rounded-2xl border border-royal-800 shadow-xl mb-8">
-                        <h2 className="text-2xl font-bold text-white flex items-center gap-3 mb-6"><AnalyticsIcon size={28} className="text-emerald-400"/> Top Nations Trajectory</h2>
+                    <div className="bg-white/5 backdrop-blur-2xl p-6 md:p-8 rounded-3xl border border-white/10 shadow-[0_20px_50px_rgba(0,0,0,0.5)] mb-8">
+                        <h2 className="text-2xl font-black text-white flex items-center gap-3 mb-8 tracking-tight"><AnalyticsIcon size={24} className="text-white/40"/> Top Nations Trajectory</h2>
                         <TopNationsChart globalHistory={globalHistory} playersRaw={safePlayers} onNavigate={onNavigate} />
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 px-2 xl:px-4">
                         {nationStats.map((nat, idx) => (
-                            <div key={nat.code} onClick={() => onNavigate('nations', null, null, nat.code)} className="bg-royal-900 rounded-xl border border-royal-800 p-6 hover:bg-royal-800/80 transition-all cursor-pointer group shadow-lg relative overflow-hidden">
-                                <div className="absolute -right-6 -bottom-6 text-9xl opacity-5 group-hover:opacity-10 transition-opacity pointer-events-none drop-shadow-md">
+                            <div key={nat.code} onClick={() => onNavigate('nations', null, null, nat.code)} className="bg-white/5 backdrop-blur-xl rounded-3xl border border-white/10 p-6 hover:bg-white/10 hover:-translate-y-1.5 transition-all duration-300 cursor-pointer group shadow-lg hover:shadow-[0_15px_40px_rgba(0,0,0,0.4)] relative overflow-hidden">
+                                <div className="absolute -right-6 -bottom-6 text-9xl opacity-[0.03] group-hover:opacity-10 transition-opacity pointer-events-none drop-shadow-md">
                                     {getFlag(nat.code)}
                                 </div>
-                                <div className="flex justify-between items-start mb-4 relative z-10">
-                                    <div className="flex items-center gap-3">
-                                        <span className="text-4xl drop-shadow-md">{getFlag(nat.code)}</span>
+                                <div className="flex justify-between items-start mb-6 relative z-10">
+                                    <div className="flex items-center gap-4">
+                                        <span className="text-4xl drop-shadow-md group-hover:scale-110 transition-transform duration-300">{getFlag(nat.code)}</span>
                                         <div>
-                                            <h3 className="text-xl font-bold text-white leading-tight">{getCountryName(nat.code)}</h3>
-                                            <span className="text-xs font-bold text-royal-400 uppercase tracking-widest">{nat.code}</span>
+                                            <h3 className="text-xl font-black text-white leading-tight tracking-tight group-hover:text-sky-400 transition-colors">{getCountryName(nat.code)}</h3>
+                                            <span className="text-[10px] font-black text-white/40 uppercase tracking-widest">{nat.code}</span>
                                         </div>
                                     </div>
-                                    <div className="bg-royal-950 px-3 py-1 rounded-lg border border-royal-800 shadow-inner">
+                                    <div className="bg-black/40 px-3 py-1.5 rounded-xl border border-white/5 shadow-inner">
                                         <span className="text-gold-500 font-black text-lg">#{idx + 1}</span>
                                     </div>
                                 </div>
-                                <div className="space-y-3 relative z-10">
-                                    <div className="flex justify-between items-center bg-royal-950/50 p-2.5 rounded-lg border border-royal-800/50">
-                                        <span className="text-royal-300 text-sm font-medium">Active Points</span>
-                                        <span className="text-white font-bold">{nat.points.toLocaleString()}</span>
+                                <div className="space-y-2 relative z-10">
+                                    <div className="flex justify-between items-center bg-black/20 p-3 rounded-xl border border-white/5 shadow-inner">
+                                        <span className="text-white/50 text-[11px] uppercase tracking-widest font-bold">Active Pts</span>
+                                        <span className="text-gold-400 font-black text-base drop-shadow-sm">{nat.points.toLocaleString()}</span>
                                     </div>
-                                    <div className="flex justify-between items-center bg-royal-950/50 p-2.5 rounded-lg border border-royal-800/50">
-                                        <span className="text-royal-300 text-sm font-medium">Active Roster</span>
-                                        <span className="text-white font-bold">{nat.activePlayers} <span className="text-royal-500 text-xs">/ {nat.players} total</span></span>
+                                    <div className="flex justify-between items-center bg-black/20 p-3 rounded-xl border border-white/5 shadow-inner">
+                                        <span className="text-white/50 text-[11px] uppercase tracking-widest font-bold">Active Roster</span>
+                                        <span className="text-white font-black text-base">{nat.activePlayers} <span className="text-white/30 text-xs font-bold">/ {nat.players}</span></span>
                                     </div>
-                                    <div className="flex justify-between items-center bg-royal-950/50 p-2.5 rounded-lg border border-royal-800/50">
-                                        <span className="text-royal-300 text-sm font-medium">Major Titles</span>
-                                        <span className="text-gold-400 font-bold">{nat.titles}</span>
+                                    <div className="flex justify-between items-center bg-black/20 p-3 rounded-xl border border-white/5 shadow-inner">
+                                        <span className="text-white/50 text-[11px] uppercase tracking-widest font-bold">Major Titles</span>
+                                        <span className="text-white font-black text-base">{nat.titles}</span>
                                     </div>
                                 </div>
                             </div>
@@ -2412,7 +2390,7 @@
                 </div>
             );
         }
-
+        
         function NationAchievements({ code, players, tournaments }) {
             const list = [];
             tournaments.forEach(t => {
@@ -2447,15 +2425,19 @@
             list.sort((a,b) => (b.date || 0) - (a.date || 0));
 
             return (
-                <div id="nation-trophies" className="bg-royal-900 p-6 rounded-xl border border-royal-800 shadow-md scroll-mt-8 mt-8">
-                    <h2 className="text-xl font-bold text-white flex items-center gap-2 mb-6"><Trophy size={24} className="text-gold-500"/> Major Achievements</h2>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                <div id="nation-trophies" className="bg-white/5 backdrop-blur-2xl p-6 md:p-8 rounded-3xl border border-white/10 shadow-[0_20px_50px_rgba(0,0,0,0.5)] scroll-mt-8 mt-8">
+                    <h2 className="text-2xl font-black text-white flex items-center gap-3 mb-8 tracking-tight"><Trophy size={24} className="text-gold-500"/> Major Achievements</h2>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                         {list.map((ach, i) => (
-                            <div key={i} onClick={() => window.history.pushState(null, '', '') /* Optional navigation trigger */} className="bg-royal-950/50 p-4 rounded-xl border border-royal-800 flex flex-col items-center text-center cursor-pointer hover:border-gold-500/50 hover:bg-royal-900 transition-all group hover:-translate-y-1 hover:shadow-lg hover:shadow-gold-500/10">
-                                <DynamicTrophy tier={ach.tier} result={ach.result} country={ach.hostCountry} size={48} className="mb-3 transition-transform group-hover:scale-110" />
-                                <span className={`text-[10px] uppercase font-bold tracking-widest px-2 py-0.5 rounded mb-2 ${TOURNAMENT_TIERS[ach.tier]?.bg || ''} ${TOURNAMENT_TIERS[ach.tier]?.color || ''}`}>{TOURNAMENT_TIERS[ach.tier].name}</span>
-                                <div className="font-bold text-white text-lg group-hover:text-gold-500 transition-colors">{ach.winner.name}</div>
-                                <div className="text-sm text-royal-300 mt-1">{ach.tournamentName}</div>
+                            <div key={i} onClick={() => window.history.pushState(null, '', '') /* Optional navigation trigger */} className="relative bg-black/20 border border-white/5 p-6 rounded-2xl flex flex-col items-center text-center cursor-pointer transition-all duration-300 group hover:-translate-y-1.5 hover:bg-white/10 shadow-inner">
+                                {/* Ambient Hover Glow behind Trophy */}
+                                <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 blur-xl pointer-events-none rounded-full" style={{ background: `radial-gradient(circle, ${TOURNAMENT_TIERS[ach.tier]?.hex || '#d4af37'}20 0%, transparent 70%)` }}></div>
+                                
+                                <DynamicTrophy tier={ach.tier} result={ach.result} country={ach.hostCountry} size={56} className="mb-4 transition-transform duration-500 group-hover:scale-110 drop-shadow-xl relative z-10" />
+                                
+                                <span className={`text-[9px] uppercase font-black tracking-widest px-2.5 py-1 rounded-md mb-3 relative z-10 shadow-sm ${TOURNAMENT_TIERS[ach.tier]?.bg || 'bg-white/10'} ${TOURNAMENT_TIERS[ach.tier]?.color || 'text-white/60'}`}>{TOURNAMENT_TIERS[ach.tier].name}</span>
+                                <div className="font-black text-white text-lg group-hover:text-gold-400 transition-colors relative z-10">{ach.winner.name}</div>
+                                <div className="text-[11px] text-white/50 mt-1.5 font-bold tracking-wide relative z-10">{ach.tournamentName}</div>
                             </div>
                         ))}
                     </div>
@@ -2495,7 +2477,6 @@
             const playerDebuts = {};
             allHistory.forEach(h => h.standings?.forEach(s => { if (!playerDebuts[s.id]) playerDebuts[s.id] = h.id; }));
 
-            // NEW: Gather ALL players from this nation (Active AND Retired) who appear in this window
             const allNationPlayerIds = new Set();
             historyData.forEach(h => h.standings?.forEach(s => {
                 const p = playersRaw.find(x => x.id === s.id);
@@ -2503,7 +2484,7 @@
             }));
 
             const width = 1200;
-            const LABEL_GAP = 18; 
+            const LABEL_GAP = 20; 
             
             let plotHeight = layoutMode === 'extended' ? Math.max(450, allNationPlayerIds.size * LABEL_GAP * 1.8) : 350;
             const pad = { top: 40, right: 180, left: 80, bottom: 40 }; 
@@ -2548,15 +2529,12 @@
                 timelines[pid].forEach((pt, i) => {
                     const isDebut = pt.val > 0 && playerDebuts[pid] === historyData[pt.k].id;
                     const mapped = { ...pt, x: getX(pt.k), y: getY(pt.val), isDot: true, isDebut };
-                    
-                    // Visual Ghosting
                     if (pt.val > 0) pCSeg.push(mapped); else if (pCSeg.length > 0) { pSegs.push(pCSeg); pCSeg = []; }
                 });
                 if (pCSeg.length > 0) pSegs.push(pCSeg);
                 if (pSegs.length > 0) lines.push({ id: pid, name: p.name, img: p.imageUrl, color: nationColor, isTotal: false, paths: pSegs.map(seg => seg.map((pt, i) => `${i===0?'M':'L'} ${pt.x} ${pt.y}`).join(' ')), segments: pSegs, retired: !!p.retired });
             });
 
-            // --- COLUMN-BASED CASCADE PHYSICS (Allows drops mid-chart without overlapping) ---
             const labels = [];
             lines.forEach(line => {
                 const endPt = line.segments[line.segments.length - 1].slice(-1)[0];
@@ -2567,28 +2545,21 @@
             const columns = [];
             labels.forEach(l => {
                 let placed = false;
-                for (let c of columns) {
-                    if (Math.abs(c.x - l.endX) < 10) { c.labels.push(l); placed = true; break; }
-                }
+                for (let c of columns) { if (Math.abs(c.x - l.endX) < 10) { c.labels.push(l); placed = true; break; } }
                 if (!placed) columns.push({ x: l.endX, labels: [l] });
             });
 
-            const physicsGap = layoutMode === 'extended' ? LABEL_GAP : LABEL_GAP * 0.5;
+            const physicsGap = layoutMode === 'extended' ? LABEL_GAP : LABEL_GAP * 0.6;
 
             columns.forEach(col => {
                 const colLabels = col.labels;
                 colLabels.sort((a,b) => b.actualVal - a.actualVal);
-
                 if (colLabels.length > 0) {
                     colLabels[0].currentY = colLabels[0].endY;
-                    for (let i = 1; i < colLabels.length; i++) {
-                        colLabels[i].currentY = Math.max(colLabels[i].endY, colLabels[i-1].currentY + physicsGap);
-                    }
+                    for (let i = 1; i < colLabels.length; i++) colLabels[i].currentY = Math.max(colLabels[i].endY, colLabels[i-1].currentY + physicsGap);
                     if (colLabels[colLabels.length - 1].currentY > gridBottomY) {
                         colLabels[colLabels.length - 1].currentY = gridBottomY;
-                        for (let i = colLabels.length - 2; i >= 0; i--) {
-                            colLabels[i].currentY = Math.min(colLabels[i].currentY, colLabels[i+1].currentY - physicsGap);
-                        }
+                        for (let i = colLabels.length - 2; i >= 0; i--) colLabels[i].currentY = Math.min(colLabels[i].currentY, colLabels[i+1].currentY - physicsGap);
                     }
                 }
             });
@@ -2605,39 +2576,40 @@
             });
 
             return (
-                <div className="w-full bg-royal-900/50 rounded-2xl border border-royal-800 p-6 shadow-xl mb-8" id="nation-chart">
-                    <div className="flex flex-wrap justify-between items-center mb-6 gap-4">
-                        <h3 className="text-xl font-bold text-white flex items-center gap-3"><AnalyticsIcon size={24} className="text-gold-500"/> Internal Progression</h3>
+                <div className="w-full bg-white/5 backdrop-blur-2xl rounded-3xl border border-white/10 p-6 md:p-8 shadow-[0_20px_50px_rgba(0,0,0,0.5)] mb-8" id="nation-chart">
+                    <div className="flex flex-wrap justify-between items-center mb-8 gap-4">
+                        <h3 className="text-2xl font-black text-white flex items-center gap-3 tracking-tight"><AnalyticsIcon size={24} className="text-white/40"/> Internal Progression</h3>
                         
                         <div className="flex items-center gap-4 flex-wrap">
-                            <div className="flex items-center gap-1.5 bg-royal-950 p-1.5 rounded-lg border border-royal-800">
-                                <span className="text-[10px] text-royal-400 uppercase tracking-widest font-bold px-2 hidden sm:block">Window</span>
+                            <div className="flex items-center gap-1.5 bg-black/40 p-1.5 rounded-xl border border-white/5 shadow-inner">
+                                <span className="text-[10px] text-white/30 uppercase tracking-widest font-black px-2 hidden sm:block">Window</span>
                                 {[10, 20, 50, 'all'].map(ws => (
-                                    <button key={ws} onClick={() => updateSnbChartState({ windowSize: ws, offset: 0 })} className={`px-3 py-1 rounded text-xs font-bold transition-all ${windowSize === ws ? 'bg-gold-500 text-royal-950 shadow-sm' : 'bg-transparent text-royal-400 hover:text-white hover:bg-royal-800'}`}>
+                                    <button key={ws} onClick={() => updateSnbChartState({ windowSize: ws, offset: 0 })} className={`px-4 py-1.5 rounded-lg text-xs font-black uppercase tracking-widest transition-all ${windowSize === ws ? 'bg-gold-500 text-black shadow-[0_0_15px_rgba(212,175,55,0.4)]' : 'bg-transparent text-white/50 hover:text-white hover:bg-white/10'}`}>
                                         {ws === 'all' ? 'All Time' : ws}
                                     </button>
                                 ))}
                             </div>
                             {windowSize !== 'all' && (
-                                <div className="flex items-center gap-2 bg-royal-950 p-1.5 rounded-lg border border-royal-800">
-                                    <button onClick={() => updateSnbChartState({ offset: Math.min(maxOffset, safeOffset + windowSize) })} disabled={safeOffset >= maxOffset} className="p-1 hover:bg-royal-800 text-royal-400 hover:text-white rounded disabled:opacity-30 transition-colors"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg></button>
-                                    <span className="text-xs font-bold text-royal-300 w-28 text-center tabular-nums">{startIndex + 1} - {endIndex} of {N}</span>
-                                    <button onClick={() => updateSnbChartState({ offset: Math.max(0, safeOffset - windowSize) })} disabled={safeOffset <= 0} className="p-1 hover:bg-royal-800 text-royal-400 hover:text-white rounded disabled:opacity-30 transition-colors"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg></button>
+                                <div className="flex items-center gap-2 bg-black/40 p-1.5 rounded-xl border border-white/5 shadow-inner">
+                                    <button onClick={() => updateSnbChartState({ offset: Math.min(maxOffset, safeOffset + windowSize) })} disabled={safeOffset >= maxOffset} className="p-1 hover:bg-white/10 text-white/50 hover:text-white rounded-lg disabled:opacity-30 transition-colors"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg></button>
+                                    <span className="text-xs font-bold text-white/70 w-28 text-center tabular-nums">{startIndex + 1} - {endIndex} of {N}</span>
+                                    <button onClick={() => updateSnbChartState({ offset: Math.max(0, safeOffset - windowSize) })} disabled={safeOffset <= 0} className="p-1 hover:bg-white/10 text-white/50 hover:text-white rounded-lg disabled:opacity-30 transition-colors"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg></button>
                                 </div>
                             )}
-                            <div className="w-px h-6 bg-royal-700 hidden lg:block"></div>
-                            <div className="flex items-center gap-1.5 bg-royal-950 p-1.5 rounded-lg border border-royal-800">
-                                <button onClick={() => updateSnbChartState({ layoutMode: 'compact' })} className={`px-3 py-1 rounded text-xs font-bold transition-all ${layoutMode === 'compact' ? 'bg-sky-500 text-white shadow-sm' : 'bg-transparent text-royal-400 hover:text-white hover:bg-royal-800'}`}>Compact</button>
-                                <button onClick={() => updateSnbChartState({ layoutMode: 'extended' })} className={`px-3 py-1 rounded text-xs font-bold transition-all ${layoutMode === 'extended' ? 'bg-sky-500 text-white shadow-sm' : 'bg-transparent text-royal-400 hover:text-white hover:bg-royal-800'}`}>Extended</button>
+                            <div className="w-px h-6 bg-white/10 hidden lg:block"></div>
+                            <div className="flex items-center gap-1.5 bg-black/40 p-1.5 rounded-xl border border-white/5 shadow-inner">
+                                <button onClick={() => updateSnbChartState({ layoutMode: 'compact' })} className={`px-4 py-1.5 rounded-lg text-xs font-black uppercase tracking-widest transition-all ${layoutMode === 'compact' ? 'bg-gold-500 text-black shadow-sm' : 'bg-transparent text-white/50 hover:text-white hover:bg-white/10'}`}>Compact</button>
+                                <button onClick={() => updateSnbChartState({ layoutMode: 'extended' })} className={`px-4 py-1.5 rounded-lg text-xs font-black uppercase tracking-widest transition-all ${layoutMode === 'extended' ? 'bg-gold-500 text-black shadow-sm' : 'bg-transparent text-white/50 hover:text-white hover:bg-white/10'}`}>Extended</button>
                             </div>
                             <button onClick={() => updateSnbChartState({ showDropped: !showDropped })} 
-                                className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all border shadow-sm ${showDropped ? 'bg-royal-800 border-royal-600 text-white' : 'bg-royal-950 border-royal-800 text-royal-400 hover:text-royal-300'}`}>
+                                className={`px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest transition-all border shadow-sm ${showDropped ? 'bg-white/20 border-white/40 text-white' : 'bg-white/5 border-white/10 text-white/60 hover:text-white hover:bg-white/10'}`}>
                                 {showDropped ? 'Hide Dropped' : 'Show Dropped'}
                             </button>
                         </div>
                     </div>
                     
-                    <div className="w-full overflow-x-auto custom-scrollbar pb-2" onClick={() => setSelectedId(null)}>
+                    {/* SVG WRAPPER */}
+                    <div className="w-full bg-black/20 rounded-3xl border border-white/5 pt-4 pb-2 relative overflow-x-auto select-none custom-scrollbar" onClick={() => setSelectedId(null)}>
                         <svg viewBox={`0 0 ${width} ${gridBottomY + pad.bottom}`} style={{ minWidth: `800px`, transition: 'viewBox 0.3s ease' }} className="w-full h-auto overflow-visible font-sans">
                             {(() => {
                                 const rawStep = maxPointsVal / 12;
@@ -2646,8 +2618,8 @@
                                 const yLines = [0]; for(let v=step; v<=maxPointsVal; v+=step) yLines.push(v);
                                 return yLines.map((p, i) => (
                                     <g key={`g-${i}`}>
-                                        <line x1={pad.left} y1={getY(p)} x2={width - pad.right + 20} y2={getY(p)} stroke={i===0?"#1e4033":"#13382d"} strokeWidth={i===0?"3":"1"} strokeDasharray={i===0?"none":"4 4"} />
-                                        <text x={pad.left - 15} y={getY(p)} fill="#789e90" fontSize="11" fontWeight="bold" textAnchor="end" alignmentBaseline="middle">{p.toLocaleString()}</text>
+                                        <line x1={pad.left} y1={getY(p)} x2={width - pad.right + 20} y2={getY(p)} stroke={i===0?"rgba(255,255,255,0.2)":"rgba(255,255,255,0.05)"} strokeWidth={i===0?"2":"1.5"} strokeDasharray={i===0?"none":"4 4"} />
+                                        <text x={pad.left - 15} y={getY(p)} fill="rgba(255,255,255,0.3)" fontSize="11" fontWeight="bold" textAnchor="end" alignmentBaseline="middle">{p.toLocaleString()}</text>
                                     </g>
                                 ));
                             })()}
@@ -2656,7 +2628,7 @@
                                 const isHighlighted = selectedId === line.id || hoveredId === line.id;
                                 const isFaded = (selectedId || hoveredId) && !isHighlighted;
                                 return line.paths.map((pStr, pIdx) => (
-                                    <path key={`p-${line.id}-${pIdx}`} d={pStr} fill="none" stroke={line.color} strokeWidth={line.isTotal ? 4 : (isHighlighted ? 3 : 1.5)} opacity={isFaded ? 0.15 : (line.isTotal ? 1 : 0.6)} strokeLinejoin="round" className="cursor-pointer" onClick={(e) => { e.stopPropagation(); setSelectedId(line.id === selectedId ? null : line.id); }} onMouseEnter={() => setHoveredId(line.id)} onMouseLeave={() => setHoveredId(null)} />
+                                    <path key={`p-${line.id}-${pIdx}`} d={pStr} fill="none" stroke={line.color} strokeWidth={line.isTotal ? 4 : (isHighlighted ? 3 : 1.5)} opacity={isFaded ? 0.15 : (line.isTotal ? 1 : 0.6)} strokeLinejoin="round" className="cursor-pointer" onClick={(e) => { e.stopPropagation(); setSelectedId(line.id === selectedId ? null : line.id); }} onMouseEnter={() => setHoveredId(line.id)} onMouseLeave={() => setHoveredId(null)} style={{ filter: isHighlighted ? `drop-shadow(0 0 6px ${line.color}60)` : 'none' }} />
                                 ));
                             })}
 
@@ -2670,13 +2642,13 @@
                                     <g key={`o-${line.id}`} opacity={isFaded ? 0.2 : 1} style={{ transition: 'opacity 0.2s ease' }}>
                                         {line.segments.map((seg, sI) => seg.map((pt, i) => {
                                             const isSolidDebut = pt.isDebut && sI === 0 && i === 0;
-                                            const r = line.isTotal ? 3 : (isHighlighted ? 2.5 : 1.5);
-                                            const debutR = line.isTotal ? 4 : (isHighlighted ? 3.5 : 2.5);
-                                            const sWidth = isHighlighted ? 2 : 1.5;
+                                            const r = line.isTotal ? 3.5 : (isHighlighted ? 3 : 2);
+                                            const debutR = line.isTotal ? 4.5 : (isHighlighted ? 4 : 3);
+                                            const sWidth = isHighlighted ? 2.5 : 1.5;
 
                                             return (
                                                 <g key={`d-${line.id}-${sI}-${i}`} className="group cursor-pointer" onClick={(e) => { e.stopPropagation(); setSelectedId(line.id === selectedId ? null : line.id); }} onMouseEnter={() => setHoveredId(line.id)} onMouseLeave={() => setHoveredId(null)}>
-                                                    <circle cx={pt.x} cy={pt.y} r={isSolidDebut ? debutR : r} fill={isSolidDebut ? line.color : "#051611"} stroke={line.color} strokeWidth={isSolidDebut ? 0 : sWidth} />
+                                                    <circle cx={pt.x} cy={pt.y} r={isSolidDebut ? debutR : r} fill={isSolidDebut ? line.color : "#0f172a"} stroke={line.color} strokeWidth={isSolidDebut ? 0 : sWidth} />
                                                     <circle cx={pt.x} cy={pt.y} r="20" fill="transparent" />
                                                     <title>{`${line.name}: ${pt.val.toLocaleString()}`}</title>
                                                 </g>
@@ -2687,12 +2659,12 @@
                                         
                                         {shouldShowLabel && (
                                             <g transform={`translate(${lObj.endX + 20}, ${lObj.currentY})`} className="cursor-pointer" onClick={(e) => { if (!line.isTotal) { e.stopPropagation(); onNavigate('players', line.id); } }} onMouseEnter={() => setHoveredId(line.id)} onMouseLeave={() => setHoveredId(null)}>
-                                                <rect x="0" y={-10} width={140} height={20} rx={10} fill="#051611" fillOpacity={isHighlighted ? "1" : (lObj.isDropped ? "0.6" : "0.9")} stroke={line.color} strokeWidth={line.isTotal || isHighlighted ? 2 : 1} style={{ filter: isHighlighted ? 'drop-shadow(0 0 8px rgba(255,255,255,0.3))' : 'none' }} />
+                                                <rect x="0" y={-11} width={140} height={22} rx={11} fill="#000000" fillOpacity={isHighlighted ? "0.9" : (lObj.isDropped ? "0.5" : "0.7")} stroke={line.color} strokeWidth={line.isTotal || isHighlighted ? 2 : 1} style={{ filter: isHighlighted ? `drop-shadow(0 0 10px ${line.color}60)` : 'none' }} />
                                                 
-                                                {line.isTotal ? <circle cx="10" cy="0" r="3" fill={line.color} /> : (line.img ? <image href={line.img} x="4" y="-7" width={14} height={14} preserveAspectRatio="xMidYMid slice" clipPath={`url(#clip-nat-${line.id})`} style={{ filter: lObj.isDropped && !isHighlighted ? 'grayscale(0.7)' : 'none' }} /> : <circle cx="10" cy="0" r="6" fill="#1e293b"/>)}
+                                                {line.isTotal ? <circle cx="11" cy="0" r="4" fill={line.color} /> : (line.img ? <image href={line.img} x="4" y="-7" width={14} height={14} preserveAspectRatio="xMidYMid slice" clipPath={`url(#clip-nat-${line.id})`} style={{ filter: lObj.isDropped && !isHighlighted ? 'grayscale(0.8)' : 'none' }} /> : <circle cx="11" cy="0" r="7" fill="#1e293b"/>)}
                                                 {line.img && <defs><clipPath id={`clip-nat-${line.id}`}><circle cx="11" cy="0" r="7" /></clipPath></defs>}
                                                 
-                                                <text x={24} y={3} fill={line.isTotal ? line.color : (lObj.isDropped && !isHighlighted ? "#94a3b8" : "#ffffff")} fontSize={10} fontWeight="bold">{line.name}</text>
+                                                <text x={26} y={4} fill={line.isTotal ? line.color : (lObj.isDropped && !isHighlighted ? "rgba(255,255,255,0.4)" : "#ffffff")} fontSize={10} fontWeight="bold">{line.name}</text>
                                             </g>
                                         )}
                                     </g>
@@ -2770,25 +2742,25 @@
             return (
                 <div ref={wrapperRef} className="relative w-full sm:w-72">
                     <div 
-                        className="w-full bg-royal-900/80 backdrop-blur-md border border-royal-700/50 rounded-xl px-4 py-2.5 text-white/90 flex justify-between items-center cursor-pointer hover:bg-royal-800 transition-colors shadow-sm"
+                        className="w-full bg-white/5 backdrop-blur-xl border border-white/10 rounded-xl px-4 py-2.5 text-white/90 flex justify-between items-center cursor-pointer hover:bg-white/10 transition-colors shadow-sm"
                         onClick={() => setIsOpen(!isOpen)}
                     >
-                        <span className="truncate text-sm font-medium tracking-wide">
+                        <span className="truncate text-sm font-bold tracking-wide">
                             {value === '' ? '🟢 Live Rankings' : `🕒 As of: ${selectedT?.name}`}
                         </span>
                         <ChevronRight size={16} className={`shrink-0 text-white/50 transition-transform duration-300 ${isOpen ? 'rotate-90' : ''}`} />
                     </div>
                     {isOpen && (
-                        <div className="absolute z-50 w-full mt-2 bg-royal-800/95 backdrop-blur-xl border border-white/10 rounded-xl shadow-2xl max-h-72 overflow-y-auto custom-scrollbar">
-                            <div className="p-2 sticky top-0 bg-royal-800/90 backdrop-blur-md border-b border-white/5 z-10">
-                                <input type="text" autoFocus className="w-full bg-royal-950/50 border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-gold-500/50 transition-colors" placeholder="Search history..." value={search} onChange={e => setSearch(e.target.value)} />
+                        <div className="absolute z-50 w-full mt-2 bg-black/60 backdrop-blur-2xl border border-white/10 rounded-xl shadow-2xl max-h-72 overflow-y-auto custom-scrollbar animate-in fade-in slide-in-from-top-2 duration-200">
+                            <div className="p-2 sticky top-0 bg-black/40 backdrop-blur-md border-b border-white/5 z-10">
+                                <input type="text" autoFocus className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-gold-500/50 transition-colors placeholder-white/30" placeholder="Search history..." value={search} onChange={e => setSearch(e.target.value)} />
                             </div>
-                            <div className="px-4 py-3 hover:bg-white/5 cursor-pointer flex items-center gap-2 text-white/90 border-b border-white/5 transition-colors" onClick={() => { onChange(''); setIsOpen(false); setSearch(''); }}>
-                                <span className="font-semibold text-emerald-400">🟢 Live Rankings</span>
+                            <div className="px-4 py-3 hover:bg-white/10 cursor-pointer flex items-center gap-2 text-white/90 border-b border-white/5 transition-colors" onClick={() => { onChange(''); setIsOpen(false); setSearch(''); }}>
+                                <span className="font-bold text-emerald-400">🟢 Live Rankings</span>
                             </div>
                             {filtered.map(t => (
-                                <div key={t.id} className="px-4 py-2.5 hover:bg-white/5 cursor-pointer flex flex-col text-white/80 transition-colors" onClick={() => { onChange(t.id); setIsOpen(false); setSearch(''); }}>
-                                    <span className="font-medium text-sm truncate">{t.name}</span>
+                                <div key={t.id} className="px-4 py-2.5 hover:bg-white/10 cursor-pointer flex flex-col text-white/80 transition-colors" onClick={() => { onChange(t.id); setIsOpen(false); setSearch(''); }}>
+                                    <span className="font-bold text-sm truncate">{t.name}</span>
                                     <span className="text-[10px] text-white/40 mt-0.5 tracking-wider uppercase">{new Date(t.completedAt).toLocaleDateString()}</span>
                                 </div>
                             ))}
@@ -2798,7 +2770,7 @@
                 </div>
             );
         }
-
+        
         function DashboardCountryFilter({ value, onChange, playersRaw }) {
             const [isOpen, setIsOpen] = useState(false);
             const [search, setSearch] = useState('');
@@ -2818,26 +2790,26 @@
             return (
                 <div ref={wrapperRef} className="relative w-full sm:w-64">
                     <div 
-                        className="w-full bg-royal-900/80 backdrop-blur-md border border-royal-700/50 rounded-xl px-4 py-2.5 text-white/90 flex justify-between items-center cursor-pointer hover:bg-royal-800 transition-colors shadow-sm"
+                        className="w-full bg-white/5 backdrop-blur-xl border border-white/10 rounded-xl px-4 py-2.5 text-white/90 flex justify-between items-center cursor-pointer hover:bg-white/10 transition-colors shadow-sm"
                         onClick={() => setIsOpen(!isOpen)}
                     >
-                        <span className="truncate text-sm font-medium tracking-wide">
+                        <span className="truncate text-sm font-bold tracking-wide">
                             {value === 'All' ? 'All Nations' : `${selected?.flag} ${selected?.name}`}
                         </span>
                         <ChevronRight size={16} className={`shrink-0 text-white/50 transition-transform duration-300 ${isOpen ? 'rotate-90' : ''}`} />
                     </div>
                     {isOpen && (
-                        <div className="absolute z-50 w-full mt-2 bg-royal-800/95 backdrop-blur-xl border border-white/10 rounded-xl shadow-2xl max-h-72 overflow-y-auto custom-scrollbar">
-                            <div className="p-2 sticky top-0 bg-royal-800/90 backdrop-blur-md border-b border-white/5 z-10">
-                                <input type="text" autoFocus className="w-full bg-royal-950/50 border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-gold-500/50 transition-colors" placeholder="Search nations..." value={search} onChange={e => setSearch(e.target.value)} />
+                        <div className="absolute z-50 w-full mt-2 bg-black/60 backdrop-blur-2xl border border-white/10 rounded-xl shadow-2xl max-h-72 overflow-y-auto custom-scrollbar animate-in fade-in slide-in-from-top-2 duration-200">
+                            <div className="p-2 sticky top-0 bg-black/40 backdrop-blur-md border-b border-white/5 z-10">
+                                <input type="text" autoFocus className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-gold-500/50 transition-colors placeholder-white/30" placeholder="Search nations..." value={search} onChange={e => setSearch(e.target.value)} />
                             </div>
-                            <div className="px-4 py-3 hover:bg-white/5 cursor-pointer flex items-center gap-2 text-white/90 border-b border-white/5 transition-colors" onClick={() => { onChange('All'); setIsOpen(false); setSearch(''); }}>
-                                <span className="font-semibold">All Nations</span>
+                            <div className="px-4 py-3 hover:bg-white/10 cursor-pointer flex items-center gap-2 text-white/90 border-b border-white/5 transition-colors" onClick={() => { onChange('All'); setIsOpen(false); setSearch(''); }}>
+                                <span className="font-bold">All Nations</span>
                             </div>
                             {filtered.map(c => (
-                                <div key={c.code} className="px-4 py-2.5 hover:bg-white/5 cursor-pointer flex items-center gap-3 text-white/90 transition-colors" onClick={() => { onChange(c.code); setIsOpen(false); setSearch(''); }}>
+                                <div key={c.code} className="px-4 py-2.5 hover:bg-white/10 cursor-pointer flex items-center gap-3 text-white/90 transition-colors" onClick={() => { onChange(c.code); setIsOpen(false); setSearch(''); }}>
                                     <span className="text-lg">{c.flag}</span>
-                                    <span className="font-medium text-sm truncate">{c.name}</span>
+                                    <span className="font-bold text-sm truncate">{c.name}</span>
                                 </div>
                             ))}
                             {filtered.length === 0 && <div className="p-4 text-center text-white/40 text-sm">No nations found</div>}
@@ -2989,31 +2961,40 @@
             }, [players, code, playersRaw, tournaments]);
 
             return (
-                <div className="max-w-7xl mx-auto pb-20 relative flex gap-8 items-start">
+                <div className="max-w-7xl mx-auto pb-20 relative flex gap-8 items-start animate-in fade-in duration-300">
                     <FloatingNationNav />
-                    <div className="flex-1 min-w-0 xl:pl-4 space-y-6">
-                        <button onClick={onBack} className="flex items-center gap-2 text-white/60 hover:text-white transition-colors text-sm font-medium"><ArrowLeft size={16}/> Back to Nations</button>
+                    <div className="flex-1 min-w-0 xl:pl-4 space-y-8">
+                        <button onClick={onBack} className="flex items-center gap-2 text-white/60 hover:text-white transition-colors text-sm font-bold tracking-wide"><ArrowLeft size={16}/> Back to Nations</button>
                         
-                        <div id="nation-overview" className="bg-[#05100c] rounded-2xl p-8 border border-white/[0.05] flex flex-col md:flex-row gap-8 relative shadow-lg items-center md:items-start mb-8 scroll-mt-8">
-                            <div className="text-8xl drop-shadow-lg">{getFlag(code)}</div>
-                            <div className="flex-1 text-center md:text-left">
-                                <h1 className="text-4xl font-bold text-white mb-6 tracking-wide">{getCountryName(code)}</h1>
+                        <div id="nation-overview" className="bg-white/5 backdrop-blur-3xl rounded-[2.5rem] p-8 md:p-10 border border-white/10 flex flex-col md:flex-row gap-8 md:gap-12 relative shadow-[0_20px_60px_rgba(0,0,0,0.5)] items-center md:items-start scroll-mt-8 animate-in slide-in-from-bottom-4 duration-500">
+                            <div className="text-8xl md:text-9xl drop-shadow-[0_10px_20px_rgba(0,0,0,0.4)] hover:scale-110 transition-transform duration-500 cursor-default">{getFlag(code)}</div>
+                            <div className="flex-1 text-center md:text-left w-full">
+                                <h1 className="text-4xl md:text-5xl font-black text-white mb-8 tracking-tight drop-shadow-md">{getCountryName(code)}</h1>
                                 <div className="flex flex-wrap justify-center md:justify-start gap-4">
-                                    <div className="bg-white/[0.02] border border-white/[0.05] p-4 rounded-xl text-center min-w-[100px]">
-                                        <div className="text-white/40 font-semibold uppercase text-[10px] tracking-widest mb-1">Players</div>
-                                        <div className="text-2xl font-medium text-white">{stats.activeCount} <span className="text-sm font-medium text-white/40 block -mt-1">+{stats.retiredCount} Ret.</span></div>
+                                    <div className="bg-black/20 border border-white/5 p-4 rounded-2xl text-center min-w-[110px] shadow-inner">
+                                        <div className="text-white/40 font-bold uppercase text-[10px] tracking-widest mb-1.5">Players</div>
+                                        <div className="text-2xl font-black text-white">{stats.activeCount} <span className="text-xs font-bold text-white/30 block -mt-0.5">+{stats.retiredCount} Ret.</span></div>
                                     </div>
-                                    <div className="bg-white/[0.02] border border-white/[0.05] p-4 rounded-xl text-center min-w-[100px]"><div className="text-white/40 font-semibold uppercase text-[10px] tracking-widest mb-1">Active Pts</div><div className="text-2xl font-medium text-gold-400">{stats.points.toLocaleString()} {stats.bonusPoints > 0 && <span className="text-emerald-400 text-sm ml-1 font-medium">+{stats.bonusPoints}</span>}</div></div>
-                                    <div className="bg-white/[0.02] border border-white/[0.05] p-4 rounded-xl text-center min-w-[100px]"><div className="text-white/40 font-semibold uppercase text-[10px] tracking-widest mb-1">All-Time Titles</div><div className="text-2xl font-medium text-gold-400">{stats.titles}</div></div>
-                                    <div className="bg-white/[0.02] border border-white/[0.05] p-4 rounded-xl text-center min-w-[100px]"><div className="text-white/40 font-semibold uppercase text-[10px] tracking-widest mb-1">Active W-L</div><div className="text-2xl font-medium text-white">{stats.wins}-{stats.losses}</div></div>
+                                    <div className="bg-black/20 border border-white/5 p-4 rounded-2xl text-center min-w-[110px] shadow-inner">
+                                        <div className="text-white/40 font-bold uppercase text-[10px] tracking-widest mb-1.5">Active Pts</div>
+                                        <div className="text-2xl font-black text-gold-400 drop-shadow-[0_0_8px_rgba(212,175,55,0.3)]">{stats.points.toLocaleString()} {stats.bonusPoints > 0 && <span className="text-emerald-400 text-sm ml-1 font-bold">+{stats.bonusPoints}</span>}</div>
+                                    </div>
+                                    <div className="bg-black/20 border border-white/5 p-4 rounded-2xl text-center min-w-[110px] shadow-inner">
+                                        <div className="text-white/40 font-bold uppercase text-[10px] tracking-widest mb-1.5">Major Titles</div>
+                                        <div className="text-2xl font-black text-sky-400">{stats.titles}</div>
+                                    </div>
+                                    <div className="bg-black/20 border border-white/5 p-4 rounded-2xl text-center min-w-[110px] shadow-inner">
+                                        <div className="text-white/40 font-bold uppercase text-[10px] tracking-widest mb-1.5">Active W-L</div>
+                                        <div className="text-2xl font-black text-white tabular-nums">{stats.wins}-{stats.losses}</div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
 
                         <NationPointsChart code={code} globalHistory={getGlobalHistory(playersRaw, tournaments)} playersRaw={playersRaw} onNavigate={onNavigate} />
 
-                        <div id="nation-roster" className="scroll-mt-8">
-                            <h2 className="text-2xl font-bold text-white mb-4 mt-8 flex items-center gap-2"><PlayersIcon size={24} className="text-gold-500"/> National Roster</h2>
+                        <div id="nation-roster" className="scroll-mt-8 space-y-6">
+                            <h2 className="text-2xl font-black text-white flex items-center gap-3 tracking-tight"><PlayersIcon size={24} className="text-gold-500"/> National Roster</h2>
                             <PlayerDataGrid 
                                 players={processedPlayers} 
                                 tournaments={tournaments} 
@@ -3069,7 +3050,6 @@
             const retired = sortedPlayers.filter(p => p.retired);
 
             return (
-                // GLASS TABLE CONTAINER
                 <div className="bg-white/5 backdrop-blur-2xl rounded-3xl shadow-[0_20px_50px_rgba(0,0,0,0.6)] border border-white/10 overflow-hidden">
                     <div className="overflow-x-auto custom-scrollbar">
                         <table className="w-full text-left border-collapse whitespace-nowrap min-w-[900px] table-fixed">
@@ -3082,7 +3062,7 @@
                                         Player <SortIcon column="name"/>
                                     </th>
                                     {showNationality && (
-                                        <th className="py-4 px-2 w-20 text-center cursor-pointer hover:text-white transition-colors group" onClick={() => handleSort('nationality')}>
+                                        <th className="py-4 px-2 w-24 text-center cursor-pointer hover:text-white transition-colors group" onClick={() => handleSort('nationality')}>
                                             Nat <SortIcon column="nationality"/>
                                         </th>
                                     )}
@@ -3107,12 +3087,10 @@
                                 {active.map((player) => {
                                     const recent = player.recentTournaments?.[0];
                                     let recentDisplay = <span className="text-white/20">-</span>;
-                                    let recentTier = null;
                                     
                                     if (recent) {
                                         const recentT = tournaments.find(t => t.id === recent.tournamentId);
                                         const rFlag = recentT ? getFlag(recentT.hostCountry) : '';
-                                        recentTier = recentT ? getTournamentTier(recentT) : null;
                                         
                                         recentDisplay = (
                                             <div className="flex items-center justify-center gap-2 text-sm cursor-pointer group/recent" 
@@ -3125,18 +3103,18 @@
                                         );
                                     }
 
-                                    // Check if the most recent tournament was a Major+ for the Tooltip logic
-                                    const isRecentMajorPlus = ['grand_slam', 'major', 'finals'].includes(recentTier);
-
                                     return (
                                         <tr key={player.id} onClick={() => onSelectPlayer(player.id)} className="hover:bg-white/5 transition-all duration-200 cursor-pointer group">
+                                            
                                             <td className="py-3 px-2 text-center">
-                                                <span className="text-2xl font-light tabular-nums text-white/80 group-hover:text-white transition-colors tracking-tight">{player[rankKey]}</span>
+                                                {/* Bumped font-light to font-medium for better readability */}
+                                                <span className="text-2xl font-medium tabular-nums text-white/80 group-hover:text-white transition-colors tracking-tight">{player[rankKey]}</span>
                                             </td>
                                             
                                             <td className="py-3 px-2 text-left">
                                                 <div className="flex items-center gap-3">
-                                                    <div className="w-10 h-10 rounded-full overflow-hidden border border-white/20 group-hover:border-gold-400 transition-colors bg-black/40 shrink-0 shadow-md relative">
+                                                    {/* Removed the cheap border ring, leaving just the image and a subtle shadow */}
+                                                    <div className="w-10 h-10 rounded-full overflow-hidden bg-black/40 shrink-0 shadow-md relative">
                                                         <PlayerMedia url={player.imageUrl || (player.images ? player.images[0] : '')} className="w-full h-full object-cover" />
                                                     </div>
                                                     <div className="flex flex-col justify-center min-w-0">
@@ -3151,6 +3129,8 @@
                                                 <td className="py-3 px-2 text-center">
                                                     <div className="flex flex-col items-center justify-center group-hover:scale-110 transition-transform">
                                                         <span className="text-2xl drop-shadow-md leading-none">{getFlag(player.nationality)}</span>
+                                                        {/* Added the 3-letter Country Code beneath the flag */}
+                                                        <span className="text-[9px] font-bold text-white/40 uppercase tracking-widest mt-1">{player.nationality}</span>
                                                     </div>
                                                 </td>
                                             )}
@@ -3160,21 +3140,18 @@
                                             </td>
                                             
                                             <td className="py-3 px-2 text-center">
+                                                {/* Cleaned, uniform, compact Tooltip */}
                                                 <Tooltip content={
-                                                    <div className="min-w-[200px]">
-                                                        <div className="text-emerald-400 font-bold flex flex-col gap-1 mb-2">
-                                                            {/* MATHEMATICALLY PERFECT GAINED: (Net Change + Dropped) */}
-                                                            <div className="flex justify-between"><span>Gained:</span> <span>+{(player.diff || 0) + (player.droppingPoints || 0)}</span></div>
-                                                            
-                                                            {/* Contextual Tag */}
-                                                            {recent && (
-                                                                <span className="text-[10px] text-emerald-400/60 uppercase tracking-widest leading-tight">
-                                                                    Incl. {recent.tournamentName} {isRecentMajorPlus && <span className="bg-emerald-500/20 text-emerald-300 px-1 py-0.5 rounded border border-emerald-500/30 ml-1">Major+</span>}
-                                                                </span>
-                                                            )}
+                                                    <div className="min-w-[160px] text-sm">
+                                                        <div className="flex justify-between text-emerald-400 font-bold mb-1.5">
+                                                            <span>Gained:</span> <span>+{(player.diff || 0) + (player.droppingPoints || 0)}</span>
                                                         </div>
-                                                        <div className="text-rose-400 font-bold flex justify-between gap-4 border-b border-white/10 pb-2 mb-2"><span>Dropped:</span> <span>-{player.droppingPoints || 0}</span></div>
-                                                        <div className="text-white font-black flex justify-between gap-4 text-sm"><span>Net:</span> <span>{player.diff > 0 ? '+' : ''}{player.diff || 0}</span></div>
+                                                        <div className="flex justify-between text-rose-400 font-bold border-b border-white/10 pb-1.5 mb-1.5">
+                                                            <span>Dropped:</span> <span>-{player.droppingPoints || 0}</span>
+                                                        </div>
+                                                        <div className="flex justify-between text-white font-bold">
+                                                            <span>Net:</span> <span>{player.diff > 0 ? '+' : ''}{player.diff || 0}</span>
+                                                        </div>
                                                     </div>
                                                 }>
                                                     <span className={`text-sm font-black tabular-nums border-b border-dashed ${player.diff > 0 ? 'text-emerald-400 border-emerald-400/30 hover:border-emerald-400' : player.diff < 0 ? 'text-rose-400 border-rose-400/30 hover:border-rose-400' : 'text-white/30 border-white/10 hover:border-white/30'} transition-colors cursor-help`}>
@@ -3212,11 +3189,11 @@
                                         </tr>
                                         {retired.map((player) => (
                                             <tr key={player.id} onClick={() => onSelectPlayer(player.id)} className="hover:bg-white/[0.03] transition-all duration-300 cursor-pointer group opacity-50 grayscale hover:grayscale-0 hover:opacity-100">
-                                                <td className="py-3 px-2 text-center text-3xl font-light text-white/30 tabular-nums">-</td>
+                                                <td className="py-3 px-2 text-center text-3xl font-medium text-white/30 tabular-nums">-</td>
                                                 
                                                 <td className="py-3 px-2 text-left">
                                                     <div className="flex items-center gap-3">
-                                                        <div className="w-10 h-10 rounded-full overflow-hidden border border-white/10 bg-black shrink-0 shadow-sm relative">
+                                                        <div className="w-10 h-10 rounded-full overflow-hidden bg-black shrink-0 shadow-sm relative">
                                                             <PlayerMedia url={player.imageUrl || (player.images ? player.images[0] : '')} className="w-full h-full object-cover" />
                                                         </div>
                                                         <div className="font-bold text-base text-white/70 truncate flex items-center gap-2 group-hover:text-white transition-colors">
@@ -3230,6 +3207,7 @@
                                                     <td className="py-3 px-2 text-center">
                                                         <div className="flex flex-col items-center justify-center">
                                                             <span className="text-2xl drop-shadow-sm leading-none">{getFlag(player.nationality)}</span>
+                                                            <span className="text-[9px] font-bold text-white/40 uppercase tracking-widest mt-1">{player.nationality}</span>
                                                         </div>
                                                     </td>
                                                 )}
@@ -3665,142 +3643,145 @@
             const tiedCount = h2hStats.filter(h => h.wins === h.losses).length;
 
             return (
-                <div className="max-w-6xl mx-auto pb-20 relative">
+                <div className="max-w-6xl mx-auto pb-20 relative animate-in fade-in duration-300">
                     {!isEditing && <FloatingPlayerNav hasGallery={player.images?.length > 1} />}
 
                     <div className="mb-6 xl:pl-4">
-                        <button onClick={onBack} className="flex items-center gap-2 text-royal-300 hover:text-white transition-colors text-sm font-medium"><ArrowLeft size={16}/> Back to Roster</button>
+                        <button onClick={onBack} className="flex items-center gap-2 text-white/60 hover:text-white transition-colors text-sm font-bold tracking-wide"><ArrowLeft size={16}/> Back to Roster</button>
                     </div>
 
                     {isEditing ? (
-                        <form onSubmit={handleUpdate} className="bg-[#05100c] rounded-3xl p-8 space-y-6 max-w-4xl mx-auto shadow-2xl border border-white/10 animate-in fade-in slide-in-from-bottom-4 duration-300">
-                            <h2 className="text-2xl font-bold text-white tracking-tight border-b border-white/10 pb-4">Edit Player Profile</h2>
+                        <form onSubmit={handleUpdate} className="bg-black/40 backdrop-blur-3xl rounded-3xl p-8 space-y-6 max-w-4xl mx-auto shadow-[0_30px_60px_rgba(0,0,0,0.6)] border border-white/10 animate-in fade-in slide-in-from-bottom-4 duration-300">
+                            <h2 className="text-2xl font-black text-white tracking-tight border-b border-white/10 pb-4">Edit Player Profile</h2>
                             <div className="grid md:grid-cols-2 gap-6">
                                 <div>
-                                    <label className="block text-xs font-bold text-white/40 uppercase tracking-widest mb-2">Player Name</label>
-                                    <input type="text" className="w-full bg-white/[0.02] p-3 rounded-xl text-white border border-white/10 focus:border-gold-500/50 transition-colors" value={editName} onChange={e => setEditName(e.target.value)} />
+                                    <label className="block text-[10px] font-black text-white/40 uppercase tracking-widest mb-2">Player Name</label>
+                                    <input type="text" className="w-full bg-white/5 p-3.5 rounded-xl text-white font-bold border border-white/10 focus:border-gold-500/50 focus:bg-white/10 shadow-inner transition-all" value={editName} onChange={e => setEditName(e.target.value)} />
                                 </div>
                                 <div>
-                                    <label className="block text-xs font-bold text-white/40 uppercase tracking-widest mb-2">Nationality</label>
-                                    <CountrySelect value={editNationality} onChange={setEditNationality} />
+                                    <label className="block text-[10px] font-black text-white/40 uppercase tracking-widest mb-2">Nationality</label>
+                                    <div className="bg-white/5 border border-white/10 rounded-xl p-1 shadow-inner">
+                                        <CountrySelect value={editNationality} onChange={setEditNationality} />
+                                    </div>
                                 </div>
                             </div>
                             
-                            <div className="flex justify-between items-center bg-white/[0.02] p-5 rounded-xl border border-white/[0.05]">
+                            <div className="flex justify-between items-center bg-black/20 p-6 rounded-2xl border border-white/5 shadow-inner">
                                 <div>
-                                    <div className="font-bold text-white/90">Player Status</div>
-                                    <div className="text-xs text-white/40 mt-1">Retired players are hidden from tournament bracket generation.</div>
+                                    <div className="font-black text-white/90">Player Status</div>
+                                    <div className="text-xs text-white/50 mt-1 font-medium">Retired players are hidden from tournament bracket generation.</div>
                                 </div>
-                                <button type="button" onClick={() => setEditRetired(!editRetired)} className={`px-5 py-2.5 rounded-xl font-bold tracking-wide transition-colors border text-sm shadow-sm ${editRetired ? 'bg-rose-500/10 text-rose-400 border-rose-500/30' : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30'}`}>
+                                <button type="button" onClick={() => setEditRetired(!editRetired)} className={`px-6 py-2.5 rounded-xl font-black tracking-widest uppercase text-xs transition-all border shadow-md ${editRetired ? 'bg-rose-500/20 text-rose-400 border-rose-500/40 shadow-rose-500/10' : 'bg-emerald-500/20 text-emerald-400 border-emerald-500/40 shadow-emerald-500/10'}`}>
                                     {editRetired ? 'Retired' : 'Active'}
                                 </button>
                             </div>
 
-                            <div className="bg-white/[0.02] p-5 rounded-xl border border-white/[0.05]">
-                                <h3 className="font-semibold text-white/80 mb-4 text-sm flex items-center gap-2"><GalleryIcon size={18} className="text-white/40" /> Media Links & Preview</h3>
+                            <div className="bg-black/20 p-6 rounded-2xl border border-white/5 shadow-inner">
+                                <h3 className="font-black text-white/80 mb-5 text-xs uppercase tracking-widest flex items-center gap-2"><GalleryIcon size={16} className="text-gold-400" /> Media Links & Preview</h3>
                                 <div className="grid grid-cols-2 md:grid-cols-4 gap-5">
                                     {editImages.map((u, i) => (
                                         <div key={i} className="space-y-3">
-                                            <input type="text" placeholder={`Image URL ${i+1}`} className="w-full bg-white/[0.02] p-2.5 rounded-lg text-xs text-white/90 border border-white/10 focus:border-gold-500/50 transition-colors" value={u} onChange={e => { const ni = [...editImages]; ni[i] = e.target.value; setEditImages(ni); }} />
-                                            <div className="w-full aspect-[3/4] bg-[#030806] rounded-xl border border-white/10 overflow-hidden flex items-center justify-center shadow-inner relative">
-                                                {u ? <PlayerMedia url={u} className="w-full h-full object-cover" /> : <span className="text-white/20 font-bold text-[10px] tracking-widest">SLOT {i+1}</span>}
+                                            <input type="text" placeholder={`Image URL ${i+1}`} className="w-full bg-white/5 p-3 rounded-lg text-xs font-medium text-white/90 border border-white/10 focus:border-gold-500/50 shadow-inner transition-colors" value={u} onChange={e => { const ni = [...editImages]; ni[i] = e.target.value; setEditImages(ni); }} />
+                                            <div className="w-full aspect-[3/4] bg-black/60 rounded-xl border border-white/10 overflow-hidden flex items-center justify-center shadow-inner relative group">
+                                                {u ? <PlayerMedia url={u} className="w-full h-full object-cover group-hover:scale-105 transition-transform" /> : <span className="text-white/20 font-black text-[10px] uppercase tracking-widest">SLOT {i+1}</span>}
                                             </div>
                                         </div>
                                     ))}
                                 </div>
                             </div>
 
-                            <div className="flex justify-between pt-6 border-t border-white/10">
+                            <div className="flex justify-between items-center pt-6 border-t border-white/10">
                                 <button type="button" onClick={() => setShowDelete(true)} className="text-rose-400 font-bold hover:text-rose-300 transition-colors text-sm px-4">Delete Player</button>
-                                <button type="submit" className="bg-gold-500 px-8 py-2.5 rounded-xl text-royal-950 font-bold hover:bg-gold-400 transition-all shadow-[0_0_15px_rgba(212,175,55,0.2)]">Save Changes</button>
+                                <button type="submit" className="bg-gold-500 px-8 py-3.5 rounded-xl text-black font-black tracking-wide hover:bg-gold-400 transition-all shadow-[0_0_20px_rgba(212,175,55,0.4)]">Save Changes</button>
                             </div>
                             {showDelete && (
-                                <div className="mt-4 p-4 border border-rose-500/30 bg-rose-500/10 rounded-xl flex justify-between items-center animate-in fade-in zoom-in duration-200">
-                                    <span className="text-rose-400 font-medium text-sm">Are you sure? This cannot be undone.</span>
-                                    <div className="flex gap-2">
-                                        <button type="button" onClick={handleDelete} className="bg-rose-500 hover:bg-rose-400 text-white transition-colors px-5 py-2 rounded-lg font-bold text-sm">Yes, Delete</button>
-                                        <button type="button" onClick={() => setShowDelete(false)} className="text-white/60 hover:text-white border border-white/20 hover:bg-white/5 px-5 py-2 rounded-lg text-sm transition-colors font-medium">Cancel</button>
+                                <div className="mt-4 p-5 border border-rose-500/30 bg-rose-500/10 backdrop-blur-md rounded-2xl flex justify-between items-center animate-in fade-in zoom-in duration-200 shadow-inner">
+                                    <span className="text-rose-400 font-bold text-sm">Are you sure? This cannot be undone.</span>
+                                    <div className="flex gap-3">
+                                        <button type="button" onClick={handleDelete} className="bg-rose-500 hover:bg-rose-400 text-white transition-colors px-6 py-2.5 rounded-xl font-bold text-sm shadow-md">Yes, Delete</button>
+                                        <button type="button" onClick={() => setShowDelete(false)} className="text-white/60 hover:text-white border border-white/20 hover:bg-white/10 px-6 py-2.5 rounded-xl text-sm transition-colors font-bold backdrop-blur-md">Cancel</button>
                                     </div>
                                 </div>
                             )}
                         </form>
                     ) : (
-                        <div className="flex flex-col gap-6 xl:pl-4">
+                        <div className="flex flex-col gap-8 xl:pl-4">
                             
-                            {/* --- IMMERSIVE HERO BANNER (Tightened & Polished) --- */}
-                            <div id="player-overview" className="relative rounded-3xl overflow-hidden border border-white/10 bg-[#05100c] shadow-2xl mb-2 scroll-mt-8 group/hero">
+                            {/* --- IMMERSIVE GLASS HERO BANNER --- */}
+                            <div id="player-overview" className="relative rounded-[2.5rem] overflow-hidden border border-white/10 bg-black/40 backdrop-blur-3xl shadow-[0_30px_60px_rgba(0,0,0,0.6)] mb-2 scroll-mt-8 group/hero">
+                                {/* Blurred Background Element */}
                                 <div className="absolute inset-0 z-0 overflow-hidden">
-                                    <PlayerMedia url={player.images?.[0] || player.imageUrl} className={`w-full h-full object-cover blur-3xl opacity-30 scale-125 transition-transform duration-1000 ${player.retired ? 'grayscale' : ''}`} />
+                                    <PlayerMedia url={player.images?.[0] || player.imageUrl} className={`w-full h-full object-cover blur-[80px] opacity-40 scale-125 transition-transform duration-1000 ${player.retired ? 'grayscale' : ''}`} />
+                                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent"></div>
                                 </div>
-                                <div className="absolute inset-0 bg-gradient-to-t from-[#05100c] via-[#05100c]/80 to-[#05100c]/30 z-0"></div>
 
-                                <button onClick={() => setIsEditing(true)} className="absolute top-6 right-6 bg-black/40 backdrop-blur-md p-2.5 rounded-xl border border-white/10 hover:border-gold-500/50 transition-colors z-20 shadow-lg text-white/50 hover:text-gold-400">
-                                    <Edit2 size={16} />
+                                <button onClick={() => setIsEditing(true)} className="absolute top-6 right-6 bg-white/5 backdrop-blur-md p-3 rounded-xl border border-white/10 hover:border-gold-500/50 transition-colors z-20 shadow-lg text-white/50 hover:text-gold-400">
+                                    <Edit2 size={18} />
                                 </button>
 
-                                <div className="relative z-10 px-8 pt-10 pb-8 flex flex-col items-center text-center">
-                                    <div className="w-32 h-32 md:w-40 md:h-40 rounded-full overflow-hidden border-[3px] border-white/10 shadow-[0_0_40px_rgba(0,0,0,0.8)] bg-black relative mb-5">
+                                <div className="relative z-10 px-8 pt-12 pb-10 flex flex-col items-center text-center">
+                                    <div className="w-36 h-36 md:w-44 md:h-44 rounded-full overflow-hidden border-[4px] border-white/10 shadow-[0_0_50px_rgba(0,0,0,0.6)] bg-black relative mb-6">
                                         <PlayerMedia url={player.images?.[0] || player.imageUrl} className={`w-full h-full object-cover ${player.retired ? 'grayscale opacity-80' : ''}`} />
                                     </div>
 
-                                    <h1 className="text-3xl md:text-4xl font-bold text-white tracking-tight flex items-center justify-center gap-3 mb-2">
+                                    <h1 className="text-4xl md:text-5xl font-black text-white tracking-tight flex items-center justify-center gap-4 mb-3 drop-shadow-lg">
                                         {player.name}
-                                        {player.retired && <span className="text-[10px] px-2 py-1 bg-rose-500/20 text-rose-300 border border-rose-500/30 rounded uppercase tracking-widest align-middle flex items-center gap-1.5 shadow-sm"><span className="w-1.5 h-1.5 rounded-full bg-rose-400"></span> RETIRED</span>}
+                                        {player.retired && <span className="text-[10px] px-2.5 py-1 bg-rose-500/30 text-rose-200 border border-rose-500/40 rounded-md uppercase tracking-widest align-middle flex items-center gap-1.5 shadow-sm backdrop-blur-md"><span className="w-1.5 h-1.5 rounded-full bg-rose-400"></span> RETIRED</span>}
                                     </h1>
                                     
-                                    <div className="text-lg md:text-xl text-white/80 font-medium flex items-center gap-2 mb-8 cursor-pointer hover:text-white transition-colors" onClick={() => onNavigate('nations', null, null, player.nationality)}>
-                                        <span className="text-2xl drop-shadow-md leading-none">{getFlag(player.nationality)}</span> 
+                                    <div className="text-xl md:text-2xl text-white/80 font-bold flex items-center gap-3 mb-10 cursor-pointer hover:text-white transition-colors" onClick={() => onNavigate('nations', null, null, player.nationality)}>
+                                        <span className="text-3xl drop-shadow-md leading-none">{getFlag(player.nationality)}</span> 
                                         <span className="tracking-wide">{getCountryName(player.nationality)}</span>
                                     </div>
 
-                                    {/* Vitals Grid (Compact) */}
-                                    <div className="flex flex-wrap justify-center gap-3 w-full max-w-2xl">
-                                        <div className={`bg-white/[0.03] backdrop-blur-md border border-white/10 p-4 rounded-xl flex-1 min-w-[100px] shadow-lg ${player.retired ? 'opacity-50' : ''}`}>
-                                            <div className="text-[9px] text-white/40 uppercase tracking-widest font-bold mb-1">Rank</div>
-                                            <div className="text-2xl font-light text-white tabular-nums tracking-tighter">{player.retired ? '-' : `#${player.rank}`}</div>
+                                    {/* Vitals Grid (Glassmorphism) */}
+                                    <div className="flex flex-wrap justify-center gap-4 w-full max-w-3xl">
+                                        <div className={`bg-white/5 backdrop-blur-xl border border-white/10 p-5 rounded-2xl flex-1 min-w-[120px] shadow-xl ${player.retired ? 'opacity-50' : ''}`}>
+                                            <div className="text-[10px] text-white/40 uppercase tracking-widest font-black mb-1.5">Rank</div>
+                                            <div className="text-3xl font-medium text-white tabular-nums tracking-tighter drop-shadow-sm">{player.retired ? '-' : `#${player.rank}`}</div>
                                         </div>
-                                        <div className="bg-white/[0.03] backdrop-blur-md border border-white/10 p-4 rounded-xl flex-1 min-w-[100px] shadow-lg relative overflow-hidden group/pts">
-                                            <div className="absolute inset-0 bg-gold-500/5 opacity-0 group-hover/pts:opacity-100 transition-opacity"></div>
-                                            <div className="text-[9px] text-white/40 uppercase tracking-widest font-bold mb-1 relative z-10">Points</div>
-                                            <div className="text-2xl font-medium text-gold-400 tabular-nums tracking-tight relative z-10">
+                                        <div className="bg-white/5 backdrop-blur-xl border border-white/10 p-5 rounded-2xl flex-1 min-w-[120px] shadow-xl relative overflow-hidden group/pts">
+                                            <div className="absolute inset-0 bg-gold-500/10 opacity-0 group-hover/pts:opacity-100 transition-opacity"></div>
+                                            <div className="text-[10px] text-white/40 uppercase tracking-widest font-black mb-1.5 relative z-10">Points</div>
+                                            <div className="text-3xl font-black text-gold-400 tabular-nums tracking-tight relative z-10 drop-shadow-[0_0_10px_rgba(212,175,55,0.4)]">
                                                 {player.points.toLocaleString()}
-                                                {player.bonusPoints > 0 && <span className="text-emerald-400 text-xs ml-1 font-semibold">+{player.bonusPoints}</span>}
+                                                {player.bonusPoints > 0 && <span className="text-emerald-400 text-sm ml-1 font-bold">+{player.bonusPoints}</span>}
                                             </div>
                                         </div>
-                                        <div className="bg-white/[0.03] backdrop-blur-md border border-white/10 p-4 rounded-xl flex-1 min-w-[100px] shadow-lg">
-                                            <div className="text-[9px] text-white/40 uppercase tracking-widest font-bold mb-1">W-L</div>
-                                            <div className="text-2xl font-medium text-white/90 tabular-nums tracking-tight">{player.stats.wins}-{player.stats.losses}</div>
+                                        <div className="bg-white/5 backdrop-blur-xl border border-white/10 p-5 rounded-2xl flex-1 min-w-[120px] shadow-xl">
+                                            <div className="text-[10px] text-white/40 uppercase tracking-widest font-black mb-1.5">W-L</div>
+                                            <div className="text-3xl font-bold text-white/90 tabular-nums tracking-tight drop-shadow-sm">{player.stats.wins}-{player.stats.losses}</div>
                                         </div>
-                                        <div className="bg-white/[0.03] backdrop-blur-md border border-white/10 p-4 rounded-xl flex-1 min-w-[100px] shadow-lg">
-                                            <div className="text-[9px] text-white/40 uppercase tracking-widest font-bold mb-1">Played</div>
-                                            <div className="text-2xl font-medium text-white/90 tabular-nums tracking-tight">{player.stats.totalPlayed}</div>
+                                        <div className="bg-white/5 backdrop-blur-xl border border-white/10 p-5 rounded-2xl flex-1 min-w-[120px] shadow-xl">
+                                            <div className="text-[10px] text-white/40 uppercase tracking-widest font-black mb-1.5">Played</div>
+                                            <div className="text-3xl font-bold text-white/90 tabular-nums tracking-tight drop-shadow-sm">{player.stats.totalPlayed}</div>
                                         </div>
                                     </div>
                                 </div>
                             </div>
 
-                            {/* --- 3-COLUMN DATA GRID --- */}
+                            {/* --- 3-COLUMN GLASS DATA GRID --- */}
                             <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-6">
                                 
                                 {/* Scoring Tournaments Feed */}
-                                <div id="player-tournaments" className="bg-[#05100c] rounded-2xl border border-white/[0.05] shadow-xl h-[400px] flex flex-col scroll-mt-8">
-                                    <div className="p-5 border-b border-white/[0.05] shrink-0">
-                                        <h2 className="text-lg font-bold text-white flex items-center gap-2"><Star size={18} className="text-gold-500"/> Scoring Tournaments</h2>
+                                <div id="player-tournaments" className="bg-white/5 backdrop-blur-2xl rounded-3xl border border-white/10 shadow-[0_20px_50px_rgba(0,0,0,0.5)] h-[400px] flex flex-col scroll-mt-8">
+                                    <div className="p-6 border-b border-white/10 shrink-0 bg-black/20 rounded-t-3xl">
+                                        <h2 className="text-xl font-black text-white flex items-center gap-3 tracking-tight"><Star size={20} className="text-gold-500"/> Scoring Tournaments</h2>
                                     </div>
-                                    <div className="overflow-y-auto flex-1 custom-scrollbar p-2">
-                                        <div className="divide-y divide-white/[0.04]">
+                                    <div className="overflow-y-auto flex-1 custom-scrollbar p-3">
+                                        <div className="space-y-2">
                                             {player.recentTournaments.map((t, i) => {
                                                 const tierConf = TOURNAMENT_TIERS[t.tier || 'major'];
                                                 return (
-                                                    <div key={i} onClick={() => onNavigate('tournaments', null, t.tournamentId)} className="p-3 flex items-center justify-between cursor-pointer hover:bg-white/[0.02] transition-colors group">
+                                                    <div key={i} onClick={() => onNavigate('tournaments', null, t.tournamentId)} className="p-4 rounded-2xl flex items-center justify-between cursor-pointer hover:bg-white/10 border border-transparent hover:border-white/5 transition-all group shadow-sm">
                                                         <div className="min-w-0 pr-4">
-                                                            <div className="flex items-center gap-2 mb-1">
-                                                                <span className={`text-[9px] uppercase font-bold tracking-widest px-1.5 py-0.5 rounded-sm ${tierConf?.bg || 'bg-white/10'} ${tierConf?.color || 'text-white/60'}`}>{tierConf?.name || 'Tournament'}</span>
-                                                                <span className="text-[10px] text-white/40 uppercase tracking-widest">{t.result}</span>
+                                                            <div className="flex items-center gap-2 mb-1.5">
+                                                                <span className={`text-[9px] uppercase font-black tracking-widest px-2 py-0.5 rounded shadow-sm ${tierConf?.bg || 'bg-white/10'} ${tierConf?.color || 'text-white/60'}`}>{tierConf?.name || 'Tournament'}</span>
+                                                                <span className="text-[10px] text-white/40 uppercase tracking-widest font-bold">{t.result}</span>
                                                             </div>
-                                                            <div className="font-medium text-sm text-white/90 truncate group-hover:text-white transition-colors">{t.tournamentName} <span className="text-white/30 text-[10px] uppercase ml-1">({getOrdinalSuffix(t.playedNumber)})</span></div>
+                                                            <div className="font-bold text-sm text-white/90 truncate group-hover:text-white transition-colors">{t.tournamentName} <span className="text-white/30 text-[10px] uppercase ml-1 font-bold">({getOrdinalSuffix(t.playedNumber)})</span></div>
                                                         </div>
-                                                        <div className="font-bold text-gold-400 tabular-nums shrink-0">+{t.points}</div>
+                                                        <div className="font-black text-lg text-gold-400 tabular-nums shrink-0">+{t.points}</div>
                                                     </div>
                                                 );
                                             })}
@@ -3809,65 +3790,65 @@
                                 </div>
 
                                 {/* Vertical Match Timeline */}
-                                <div id="player-matches" className="bg-[#05100c] rounded-2xl border border-white/[0.05] shadow-xl h-[400px] flex flex-col scroll-mt-8">
-                                    <div className="p-5 border-b border-white/[0.05] shrink-0">
-                                        <h2 className="text-lg font-bold text-white flex items-center gap-2"><History size={18} className="text-emerald-400"/> Match History</h2>
+                                <div id="player-matches" className="bg-white/5 backdrop-blur-2xl rounded-3xl border border-white/10 shadow-[0_20px_50px_rgba(0,0,0,0.5)] h-[400px] flex flex-col scroll-mt-8">
+                                    <div className="p-6 border-b border-white/10 shrink-0 bg-black/20 rounded-t-3xl">
+                                        <h2 className="text-xl font-black text-white flex items-center gap-3 tracking-tight"><History size={20} className="text-emerald-400"/> Match History</h2>
                                     </div>
-                                    <div className="overflow-y-auto flex-1 custom-scrollbar p-2">
-                                        <div className="divide-y divide-white/[0.02]">
+                                    <div className="overflow-y-auto flex-1 custom-scrollbar p-3">
+                                        <div className="space-y-2">
                                             {matchHistory.map((m, i) => {
                                                 const tierConf = TOURNAMENT_TIERS[m.tier];
                                                 return (
-                                                    <div key={i} onClick={() => onNavigate('tournaments', null, m.tournamentId)} className="relative p-3 flex items-center justify-between cursor-pointer hover:bg-white/[0.02] transition-colors group">
-                                                        <div className={`absolute left-0 top-0 bottom-0 w-1 ${m.isWin ? 'bg-emerald-500/80' : 'bg-rose-500/80'}`}></div>
+                                                    <div key={i} onClick={() => onNavigate('tournaments', null, m.tournamentId)} className="relative p-4 rounded-2xl flex items-center justify-between cursor-pointer hover:bg-white/10 border border-transparent hover:border-white/5 transition-all group overflow-hidden shadow-sm">
+                                                        <div className={`absolute left-0 top-0 bottom-0 w-1.5 ${m.isWin ? 'bg-emerald-500/80' : 'bg-rose-500/80'}`}></div>
                                                         <div className="min-w-0 pr-3 pl-3">
-                                                            <div className="flex items-center gap-2 mb-1">
-                                                                <span className={`text-[9px] uppercase font-semibold tracking-widest ${tierConf?.color || 'text-white/40'}`}>{tierConf?.name || 'Event'}</span>
+                                                            <div className="flex items-center gap-2 mb-1.5">
+                                                                <span className={`text-[9px] uppercase font-black tracking-widest ${tierConf?.color || 'text-white/40'}`}>{tierConf?.name || 'Event'}</span>
                                                                 <span className="text-white/20 text-[9px]">•</span>
-                                                                <span className="text-[9px] text-white/50">{m.roundName}</span>
+                                                                <span className="text-[9px] font-bold text-white/50">{m.roundName}</span>
                                                             </div>
-                                                            <div className="font-medium text-sm text-white/80 truncate mb-1">{m.tournamentName}</div>
+                                                            <div className="font-bold text-sm text-white/80 truncate mb-1.5">{m.tournamentName}</div>
                                                             <div className="flex items-center gap-2 text-sm">
-                                                                <span className={`font-bold ${m.isWin ? 'text-emerald-400' : 'text-rose-400'}`}>{m.isWin ? 'W' : 'L'}</span>
-                                                                <span className="text-white/50 text-xs">vs</span>
-                                                                <span className="text-white/90 font-medium truncate">{m.opponentName}</span>
+                                                                <span className={`font-black ${m.isWin ? 'text-emerald-400' : 'text-rose-400'}`}>{m.isWin ? 'W' : 'L'}</span>
+                                                                <span className="text-white/30 text-xs font-bold">vs</span>
+                                                                <span className="text-white/90 font-bold truncate">{m.opponentName}</span>
                                                             </div>
                                                         </div>
                                                         <div className="shrink-0 flex flex-col items-end gap-2">
-                                                            <span className={`text-[9px] px-1.5 py-0.5 rounded-sm uppercase font-bold tracking-widest ${m.type === 'lopsided' ? 'bg-purple-500/10 text-purple-400 border border-purple-500/20' : 'bg-white/5 text-white/40 border border-white/10'}`}>{m.type === 'lopsided' ? 'Lop' : 'Close'}</span>
+                                                            <span className={`text-[9px] px-2 py-1 rounded uppercase font-black tracking-widest shadow-sm ${m.type === 'lopsided' ? 'bg-purple-500/20 text-purple-300 border border-purple-500/30' : 'bg-white/10 text-white/60 border border-white/20'}`}>{m.type === 'lopsided' ? 'Lop' : 'Close'}</span>
                                                         </div>
                                                     </div>
                                                 );
                                             })}
-                                            {matchHistory.length === 0 && <div className="p-6 text-center text-white/40 text-sm">No matches recorded.</div>}
+                                            {matchHistory.length === 0 && <div className="p-6 text-center text-white/40 text-sm font-medium">No matches recorded.</div>}
                                         </div>
                                     </div>
                                 </div>
 
                                 {/* Head-to-Head List */}
-                                <div id="player-h2h" className="bg-[#05100c] rounded-2xl border border-white/[0.05] shadow-xl h-[400px] flex flex-col md:col-span-2 xl:col-span-1 scroll-mt-8">
-                                    <div className="p-5 border-b border-white/[0.05] shrink-0 flex justify-between items-center">
-                                        <h2 className="text-lg font-bold text-white flex items-center gap-2"><PlayersIcon size={18} className="text-sky-400"/> Head-to-Head</h2>
-                                        <div className="text-[10px] text-white/50 uppercase font-bold tracking-widest bg-white/[0.03] px-2 py-1 rounded-md border border-white/5">
+                                <div id="player-h2h" className="bg-white/5 backdrop-blur-2xl rounded-3xl border border-white/10 shadow-[0_20px_50px_rgba(0,0,0,0.5)] h-[400px] flex flex-col md:col-span-2 xl:col-span-1 scroll-mt-8">
+                                    <div className="p-6 border-b border-white/10 shrink-0 flex justify-between items-center bg-black/20 rounded-t-3xl">
+                                        <h2 className="text-xl font-black text-white flex items-center gap-3 tracking-tight"><PlayersIcon size={20} className="text-sky-400"/> Head-to-Head</h2>
+                                        <div className="text-[10px] text-white/50 uppercase font-black tracking-widest bg-white/10 px-2.5 py-1 rounded-md border border-white/10 shadow-inner">
                                             <span className="text-emerald-400">{winningCount}</span> - <span className="text-rose-400">{losingCount}</span> - <span className="text-white/60">{tiedCount}</span>
                                         </div>
                                     </div>
-                                    <div className="overflow-y-auto flex-1 custom-scrollbar p-2">
-                                        <div className="divide-y divide-white/[0.02]">
+                                    <div className="overflow-y-auto flex-1 custom-scrollbar p-3">
+                                        <div className="space-y-2">
                                             {h2hStats.length === 0 ? (
-                                                <div className="p-6 text-center text-white/40 text-sm">No match records yet.</div>
+                                                <div className="p-6 text-center text-white/40 text-sm font-medium">No match records yet.</div>
                                             ) : (
                                                 h2hStats.map(h => {
                                                     const isPos = h.wins > h.losses;
                                                     const isNeg = h.losses > h.wins;
                                                     const color = isPos ? 'text-emerald-400' : (isNeg ? 'text-rose-400' : 'text-white/40');
                                                     return (
-                                                        <div key={h.opponentId} onClick={() => onNavigate('players', h.opponentId)} className="p-3 flex items-center justify-between cursor-pointer hover:bg-white/[0.02] transition-colors group">
+                                                        <div key={h.opponentId} onClick={() => onNavigate('players', h.opponentId)} className="p-4 rounded-2xl flex items-center justify-between cursor-pointer hover:bg-white/10 border border-transparent hover:border-white/5 transition-all group shadow-sm">
                                                             <div className="flex items-center gap-3 min-w-0 pr-4">
-                                                                <span className="text-lg drop-shadow-sm shrink-0">{h.opponentFlag}</span>
-                                                                <span className="font-medium text-sm text-white/80 truncate group-hover:text-white transition-colors">{h.opponentName}</span>
+                                                                <span className="text-xl drop-shadow-md shrink-0">{h.opponentFlag}</span>
+                                                                <span className="font-bold text-sm text-white/80 truncate group-hover:text-white transition-colors">{h.opponentName}</span>
                                                             </div>
-                                                            <div className={`font-semibold tabular-nums text-sm shrink-0 ${color}`}>
+                                                            <div className={`font-black tabular-nums text-base shrink-0 ${color}`}>
                                                                 {h.wins} - {h.losses}
                                                             </div>
                                                         </div>
@@ -3881,15 +3862,15 @@
 
                             {/* Full-Width Interactive Grid Gallery */}
                             {player.images?.length > 1 && (
-                                <div id="player-gallery" className="bg-[#05100c] rounded-2xl border border-white/[0.05] p-6 shadow-xl scroll-mt-8">
-                                    <h2 className="text-xl font-bold text-white mb-6 flex items-center gap-2"><GalleryIcon size={20} className="text-white/60"/> Media Gallery</h2>
-                                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                <div id="player-gallery" className="bg-white/5 backdrop-blur-2xl rounded-3xl border border-white/10 p-8 shadow-[0_20px_50px_rgba(0,0,0,0.5)] scroll-mt-8">
+                                    <h2 className="text-2xl font-black text-white mb-8 flex items-center gap-3 tracking-tight"><GalleryIcon size={24} className="text-white/50"/> Media Gallery</h2>
+                                    <div className="grid grid-cols-2 md:grid-cols-4 gap-5">
                                         {player.images.map((img, i) => {
                                             if (!img) return null;
                                             return (
-                                            <div key={i} onClick={() => setLightboxIndex(i)} className="w-full aspect-[3/4] cursor-pointer rounded-xl overflow-hidden bg-black shadow-md border border-white/5 relative group">
+                                            <div key={i} onClick={() => setLightboxIndex(i)} className="w-full aspect-[3/4] cursor-pointer rounded-2xl overflow-hidden bg-black/40 shadow-lg border border-white/10 relative group">
                                                 <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors z-10 duration-300"></div>
-                                                <PlayerMedia url={img} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                                                <PlayerMedia url={img} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
                                             </div>
                                             );
                                         })}
@@ -3900,7 +3881,7 @@
                             {/* Lightbox Modal */}
                             {lightboxIndex !== null && (
                                 <div className="fixed inset-0 z-[200] bg-black/95 backdrop-blur-3xl flex items-center justify-center animate-in fade-in duration-200" onClick={() => setLightboxIndex(null)}>
-                                    <button className="absolute top-6 right-6 text-white/50 hover:text-white bg-white/10 p-3 rounded-full backdrop-blur-md transition-colors z-50 hover:bg-white/20" onClick={(e) => { e.stopPropagation(); setLightboxIndex(null); }}>
+                                    <button className="absolute top-6 right-6 text-white/50 hover:text-white bg-white/10 p-4 rounded-full backdrop-blur-md transition-colors z-50 hover:bg-white/20" onClick={(e) => { e.stopPropagation(); setLightboxIndex(null); }}>
                                         <X size={24} />
                                     </button>
                                     
@@ -3908,37 +3889,37 @@
                                         <ChevronLeft size={32} />
                                     </button>
                                     
-                                    <div className="w-[85vw] h-[85vh] max-w-4xl flex items-center justify-center relative shadow-2xl rounded-2xl overflow-hidden" onClick={e => e.stopPropagation()}>
-                                        <PlayerMedia url={player.images[lightboxIndex]} className="absolute inset-0 w-full h-full" />
+                                    <div className="w-[85vw] h-[85vh] max-w-4xl flex items-center justify-center relative shadow-[0_0_100px_rgba(0,0,0,0.8)] rounded-2xl overflow-hidden border border-white/10" onClick={e => e.stopPropagation()}>
+                                        <PlayerMedia url={player.images[lightboxIndex]} className="absolute inset-0 w-full h-full object-contain" />
                                     </div>
                                     
                                     <button className="absolute right-4 md:right-12 top-1/2 -translate-y-1/2 text-white/50 hover:text-white bg-white/10 p-4 rounded-full backdrop-blur-md transition-all z-50 hover:scale-110 hover:bg-white/20" onClick={handleNextImg}>
                                         <ChevronRight size={32} />
                                     </button>
 
-                                    <div className="absolute bottom-8 left-1/2 -translate-x-1/2 text-white/60 font-bold tracking-widest text-sm bg-white/10 px-6 py-2.5 rounded-full backdrop-blur-md border border-white/5">
+                                    <div className="absolute bottom-8 left-1/2 -translate-x-1/2 text-white/60 font-black tracking-widest text-sm bg-white/10 px-8 py-3 rounded-full backdrop-blur-md border border-white/10 shadow-lg">
                                         {lightboxIndex + 1} / {player.images.filter(Boolean).length}
                                     </div>
                                 </div>
                             )}
 
                             {/* Glowing Trophy Cabinet */}
-                            <div id="player-achievements" className="bg-[#05100c] rounded-2xl border border-white/[0.05] p-6 shadow-xl scroll-mt-8">
-                                <h2 className="text-xl font-bold text-white flex items-center gap-2 mb-6"><Trophy size={20} className="text-gold-500"/> Trophy Cabinet</h2>
+                            <div id="player-achievements" className="bg-white/5 backdrop-blur-2xl rounded-3xl border border-white/10 p-8 shadow-[0_20px_50px_rgba(0,0,0,0.5)] scroll-mt-8">
+                                <h2 className="text-2xl font-black text-white flex items-center gap-3 mb-8 tracking-tight"><Trophy size={24} className="text-gold-500"/> Trophy Cabinet</h2>
                                 {achievements.length === 0 ? (
-                                    <p className="text-white/40 text-sm italic">No major hardware collected yet. Reaching Semifinals in Grand Slams/Internationals, or Finals in Majors will unlock achievements here.</p>
+                                    <p className="text-white/40 text-sm font-medium italic text-center py-8">No major hardware collected yet. Reaching Semifinals in Grand Slams/Internationals, or Finals in Majors will unlock achievements here.</p>
                                 ) : (
                                     <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
                                         {achievements.map((ach, i) => (
-                                            <div key={i} onClick={() => onNavigate('tournaments', null, ach.tournamentId)} className="relative bg-white/[0.02] border border-white/[0.05] p-6 rounded-2xl flex flex-col items-center text-center cursor-pointer transition-all duration-300 group hover:-translate-y-1.5 hover:bg-white/[0.04]">
+                                            <div key={i} onClick={() => onNavigate('tournaments', null, ach.tournamentId)} className="relative bg-black/20 border border-white/5 p-6 rounded-3xl flex flex-col items-center text-center cursor-pointer transition-all duration-300 group hover:-translate-y-2 hover:bg-white/10 shadow-inner">
                                                 {/* Ambient Hover Glow behind Trophy */}
-                                                <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 blur-xl pointer-events-none rounded-full" style={{ background: `radial-gradient(circle, ${TOURNAMENT_TIERS[ach.tier]?.hex || '#d4af37'}20 0%, transparent 70%)` }}></div>
+                                                <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 blur-xl pointer-events-none rounded-full" style={{ background: `radial-gradient(circle, ${TOURNAMENT_TIERS[ach.tier]?.hex || '#d4af37'}30 0%, transparent 70%)` }}></div>
                                                 
-                                                <DynamicTrophy tier={ach.tier} result={ach.result} country={ach.hostCountry} size={56} className="mb-4 transition-transform duration-500 group-hover:scale-110 drop-shadow-xl relative z-10" />
+                                                <DynamicTrophy tier={ach.tier} result={ach.result} country={ach.hostCountry} size={64} className="mb-5 transition-transform duration-500 group-hover:scale-110 drop-shadow-xl relative z-10" />
                                                 
-                                                <span className={`text-[9px] uppercase font-bold tracking-widest px-2 py-0.5 rounded mb-2.5 relative z-10 ${TOURNAMENT_TIERS[ach.tier]?.bg || 'bg-white/10'} ${TOURNAMENT_TIERS[ach.tier]?.color || 'text-white/60'}`}>{TOURNAMENT_TIERS[ach.tier].name}</span>
-                                                <div className="font-bold text-white/90 text-sm group-hover:text-white transition-colors relative z-10">{ach.result}</div>
-                                                <div className="text-[11px] text-white/40 mt-1.5 relative z-10 font-medium px-2">{ach.tournamentName}</div>
+                                                <span className={`text-[10px] uppercase font-black tracking-widest px-3 py-1 rounded-md mb-3 relative z-10 shadow-sm ${TOURNAMENT_TIERS[ach.tier]?.bg || 'bg-white/10'} ${TOURNAMENT_TIERS[ach.tier]?.color || 'text-white/60'}`}>{TOURNAMENT_TIERS[ach.tier].name}</span>
+                                                <div className="font-black text-white text-base group-hover:text-white transition-colors relative z-10">{ach.result}</div>
+                                                <div className="text-xs text-white/50 mt-1.5 relative z-10 font-bold px-2">{ach.tournamentName}</div>
                                             </div>
                                         ))}
                                     </div>
@@ -3946,22 +3927,22 @@
                             </div>
 
                             {/* Charts Wrapper */}
-                            <div id="player-charts" className="space-y-6 scroll-mt-8">
-                                <div className="bg-[#05100c] p-6 rounded-2xl border border-white/[0.05] shadow-xl">
-                                    <h2 className="text-lg font-bold text-white flex items-center gap-2 mb-6"><AnalyticsIcon size={20} className="text-gold-500"/> Career Ranking Trajectory</h2>
+                            <div id="player-charts" className="space-y-8 scroll-mt-8">
+                                <div className="bg-white/5 backdrop-blur-2xl p-8 rounded-3xl border border-white/10 shadow-[0_20px_50px_rgba(0,0,0,0.5)]">
+                                    <h2 className="text-2xl font-black text-white flex items-center gap-3 mb-8 tracking-tight"><AnalyticsIcon size={24} className="text-gold-500"/> Career Ranking Trajectory</h2>
                                     <IndividualPlayerChart history={rankingHistory} type="rank" filterPlayed={false} totalPlayersCount={players.length} isRetired={player.retired} />
                                 </div>
                                 
-                                <div className="bg-[#05100c] p-6 rounded-2xl border border-white/[0.05] shadow-xl">
-                                    <h2 className="text-lg font-bold text-white flex items-center gap-2 mb-2"><AnalyticsIcon size={20} className="text-gold-500"/> Rolling 20-Tournament Points</h2>
-                                    <p className="text-white/50 text-[11px] mb-6 max-w-3xl">
+                                <div className="bg-white/5 backdrop-blur-2xl p-8 rounded-3xl border border-white/10 shadow-[0_20px_50px_rgba(0,0,0,0.5)]">
+                                    <h2 className="text-2xl font-black text-white flex items-center gap-3 mb-3 tracking-tight"><AnalyticsIcon size={24} className="text-gold-500"/> Rolling 20-Tournament Points</h2>
+                                    <p className="text-white/50 text-xs font-medium mb-8 max-w-4xl leading-relaxed">
                                         The solid line shows total rolling points for events attended. The blue dotted line shows the exact points earned at each specific event. Minor events (Pro/Challenger) do not consume the 20-tournament limit and are marked with smaller silver dots.
                                     </p>
                                     <IndividualPlayerChart history={rankingHistory} type="points" filterPlayed={true} totalPlayersCount={players.length} isRetired={player.retired} />
                                 </div>
                                 
-                                <div className="bg-[#05100c] p-6 rounded-2xl border border-white/[0.05] shadow-xl">
-                                    <h2 className="text-lg font-bold text-white flex items-center gap-2 mb-6"><AnalyticsIcon size={20} className="text-gold-500"/> Career Points Accumulation</h2>
+                                <div className="bg-white/5 backdrop-blur-2xl p-8 rounded-3xl border border-white/10 shadow-[0_20px_50px_rgba(0,0,0,0.5)]">
+                                    <h2 className="text-2xl font-black text-white flex items-center gap-3 mb-8 tracking-tight"><AnalyticsIcon size={24} className="text-gold-500"/> Career Points Accumulation</h2>
                                     <IndividualPlayerChart history={rankingHistory} type="careerPoints" filterPlayed={true} totalPlayersCount={players.length} isRetired={player.retired} />
                                 </div>
                             </div>
@@ -3976,7 +3957,7 @@
             const scrollToTop = () => document.querySelector('main .overflow-auto')?.scrollTo({ top: 0, behavior: 'smooth' });
             
             return (
-                <div className="fixed right-8 top-1/2 -translate-y-1/2 flex flex-col gap-3 z-50 bg-[#05100c]/80 backdrop-blur-2xl p-3 rounded-2xl border border-white/10 shadow-[0_20px_40px_rgba(0,0,0,0.8)] hidden xl:flex w-24">
+                <div className="fixed right-8 top-1/2 -translate-y-1/2 flex flex-col gap-3 z-50 bg-black/40 backdrop-blur-2xl p-3 rounded-2xl border border-white/10 shadow-[0_20px_50px_rgba(0,0,0,0.5)] hidden xl:flex w-24">
                     <div className="text-[9px] text-white/40 uppercase tracking-widest font-bold text-center pb-2 border-b border-white/10 w-full mb-1">Jump</div>
                     
                     <button onClick={scrollToTop} className="p-2 w-full text-white/30 hover:text-white transition-colors group flex flex-col items-center justify-center gap-1 mb-1">
@@ -3984,18 +3965,18 @@
                     </button>
 
                     {hasGallery && (
-                        <button onClick={() => scrollToSection('player-gallery')} className="p-3 w-full bg-white/[0.03] hover:bg-white/90 hover:text-[#05100c] text-white/60 rounded-xl transition-all hover:scale-105 group flex flex-col items-center justify-center gap-1.5 border border-transparent hover:border-white">
+                        <button onClick={() => scrollToSection('player-gallery')} className="p-3 w-full bg-white/5 hover:bg-white/20 text-white/70 hover:text-white rounded-xl transition-all hover:scale-105 group flex flex-col items-center justify-center gap-1.5 border border-transparent hover:border-white/20 shadow-inner">
                             <GalleryIcon size={20}/>
                             <span className="text-[9px] font-bold uppercase tracking-wider text-center">Gallery</span>
                         </button>
                     )}
                     
-                    <button onClick={() => scrollToSection('player-achievements')} className="p-3 w-full bg-white/[0.03] hover:bg-gold-500 hover:text-[#05100c] text-white/60 rounded-xl transition-all hover:scale-105 group flex flex-col items-center justify-center gap-1.5 border border-transparent hover:border-gold-400">
+                    <button onClick={() => scrollToSection('player-achievements')} className="p-3 w-full bg-white/5 hover:bg-gold-500/20 hover:text-gold-400 text-white/70 rounded-xl transition-all hover:scale-105 group flex flex-col items-center justify-center gap-1.5 border border-transparent hover:border-gold-500/30 shadow-inner">
                         <Trophy size={20}/>
                         <span className="text-[9px] font-bold uppercase tracking-wider text-center">Trophies</span>
                     </button>
                     
-                    <button onClick={() => scrollToSection('player-charts')} className="p-3 w-full bg-white/[0.03] hover:bg-white/90 hover:text-[#05100c] text-white/60 rounded-xl transition-all hover:scale-105 group flex flex-col items-center justify-center gap-1.5 border border-transparent hover:border-white">
+                    <button onClick={() => scrollToSection('player-charts')} className="p-3 w-full bg-white/5 hover:bg-white/20 text-white/70 hover:text-white rounded-xl transition-all hover:scale-105 group flex flex-col items-center justify-center gap-1.5 border border-transparent hover:border-white/20 shadow-inner">
                         <AnalyticsIcon size={20}/>
                         <span className="text-[9px] font-bold uppercase tracking-wider text-center">Charts</span>
                     </button>
