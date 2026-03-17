@@ -1360,15 +1360,15 @@
 
         function GlassTabs({ tabs, activeTab, onChange }) {
             return (
-                <div className="flex bg-royal-900/60 backdrop-blur-md p-1 rounded-xl border border-white/10 w-full sm:w-auto overflow-x-auto custom-scrollbar">
+                <div className="flex bg-black/40 backdrop-blur-2xl p-1.5 rounded-full border border-white/10 w-fit overflow-x-auto custom-scrollbar shadow-lg">
                     {tabs.map(tab => (
                         <button
                             key={tab.id}
                             onClick={() => onChange(tab.id)}
-                            className={`flex-1 sm:flex-none px-6 py-2 rounded-lg text-sm font-semibold whitespace-nowrap transition-all duration-300 ${
+                            className={`flex-1 sm:flex-none px-5 py-1.5 rounded-full text-xs font-bold tracking-wide whitespace-nowrap transition-all duration-300 ${
                                 activeTab === tab.id 
-                                ? 'bg-white/10 text-white shadow-sm border border-white/10' 
-                                : 'text-white/50 hover:text-white/80 hover:bg-white/[0.02] border border-transparent'
+                                ? 'bg-white/10 text-white shadow-[0_0_15px_rgba(255,255,255,0.1)] border border-white/20 scale-[1.02]' 
+                                : 'text-white/40 hover:text-white/80 hover:bg-white/[0.05] border border-transparent'
                             }`}
                         >
                             {tab.label}
@@ -1377,7 +1377,7 @@
                 </div>
             );
         }
-
+        
         function SectionHeader({ title, subtitle, icon: IconComponent, rightContent }) {
             return (
                 <header className="mb-6 flex flex-col md:flex-row md:items-end justify-between gap-6">
@@ -4095,6 +4095,7 @@
             const [autoSearch, setAutoSearch] = useState('');
             const [withdrawnSearch, setWithdrawnSearch] = useState('');
             const [errorMsg, setErrorMsg] = useState('');
+            const [showDelete, setShowDelete] = useState(false);
             
             useEffect(() => {
                 if (editingId && tournaments) {
@@ -4217,16 +4218,25 @@
                 setIsGenerating(false);
             };
 
-            const mapQuery = location.trim() || `${name} ${getCountryName(hostCountry)}`;
+            const handleDeleteTournament = async () => {
+                if (!editingId) return;
+                try {
+                    await window.fb.deleteDoc(window.fb.doc(db, 'artifacts', appId, 'public', 'data', 'tournaments', editingId));
+                    onBack();
+                } catch(e) { console.error(e); }
+            };
+
+            const autoMapQuery = `${name} ${getCountryName(hostCountry)}`.trim();
+            const mapQuery = location.trim() || autoMapQuery;
 
             return (
-                <div className="h-full flex flex-col pb-20 relative max-w-5xl mx-auto w-full pt-8">
+                <div className="h-full flex flex-col pb-20 relative max-w-6xl mx-auto w-full pt-8">
                     
                     {/* LIVE SMART MAP BACKGROUND */}
                     <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden bg-[#020617]">
                         <iframe 
-                            src={`https://maps.google.com/maps?q=${encodeURIComponent(mapQuery)}&t=k&z=11&ie=UTF8&iwloc=&output=embed`} 
-                            className="w-[120%] h-[120%] -translate-x-[10%] -translate-y-[10%] opacity-40 saturate-100 transition-all duration-1000"
+                            src={`http://googleusercontent.com/maps.google.com/maps?q=${encodeURIComponent(mapQuery)}&t=k&z=13&ie=UTF8&iwloc=&output=embed`} 
+                            className="w-[120%] h-[120%] -translate-x-[10%] -translate-y-[10%] opacity-50 saturate-[1.2] transition-all duration-1000"
                             frameBorder="0"
                             loading="lazy"
                         />
@@ -4236,19 +4246,19 @@
                     <div className="relative z-20 px-4 xl:px-0">
                         <button onClick={onBack} className="flex items-center gap-2 text-white/60 hover:text-white transition-colors text-sm font-medium mb-6 drop-shadow-md"><ArrowLeft size={16}/> Back to Tournaments</button>
                         
-                        <div className="bg-white/5 backdrop-blur-2xl p-6 md:p-10 rounded-[2rem] border border-white/10 shadow-[0_20px_50px_rgba(0,0,0,0.5)]">
+                        <div className="bg-black/40 backdrop-blur-3xl p-6 md:p-10 rounded-[2rem] border border-white/10 shadow-[0_20px_50px_rgba(0,0,0,0.5)]">
                             <h1 className="text-3xl md:text-4xl font-black text-white mb-8 drop-shadow-lg tracking-tight">{editingId ? "Edit Tournament" : "Create Event"}</h1>
 
                             {/* UPPER SECTION: CORE INFO */}
-                            <div className="grid md:grid-cols-2 gap-6 mb-8 border-b border-white/10 pb-10">
+                            <div className="grid md:grid-cols-2 gap-8 mb-8 border-b border-white/10 pb-10">
                                 <div className="space-y-6">
                                     <div>
                                         <label className="block text-[10px] font-black text-white/50 uppercase tracking-widest mb-2.5">Tournament Name</label>
-                                        <input type="text" className="w-full bg-black/20 border border-white/10 text-white px-4 py-3.5 rounded-xl focus:outline-none focus:border-gold-500/50 focus:bg-black/40 transition-all shadow-inner backdrop-blur-md font-bold text-lg placeholder-white/20" placeholder="e.g. Paris Masters 2026..." value={name} onChange={e => setName(e.target.value)} />
+                                        <input type="text" className="w-full bg-white/5 border border-white/10 text-white px-4 py-3.5 rounded-xl focus:outline-none focus:border-gold-500/50 focus:bg-white/10 transition-all shadow-inner backdrop-blur-md font-bold text-lg placeholder-white/20" placeholder="e.g. Paris Masters 2026..." value={name} onChange={e => setName(e.target.value)} />
                                     </div>
                                     <div>
                                         <label className="block text-[10px] font-black text-white/50 uppercase tracking-widest mb-2.5">Host Country</label>
-                                        <div className="bg-black/20 border border-white/10 rounded-xl p-1 shadow-inner backdrop-blur-md">
+                                        <div className="bg-white/5 border border-white/10 rounded-xl p-1 shadow-inner backdrop-blur-md">
                                             <CountrySelect value={hostCountry} onChange={setHostCountry} />
                                         </div>
                                     </div>
@@ -4257,13 +4267,14 @@
                                     <div>
                                         <label className="block text-[10px] font-black text-white/50 uppercase tracking-widest mb-2.5 flex items-center gap-2">
                                             City / Map Location
-                                            {mapQuery && <span className="text-emerald-400 normal-case tracking-normal font-medium text-xs bg-emerald-500/10 px-2 py-0.5 rounded flex items-center gap-1 border border-emerald-500/20"><span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>Live Preview</span>}
+                                            {mapQuery && !location.trim() && <span className="text-emerald-400 normal-case tracking-normal font-medium text-xs bg-emerald-500/10 px-2 py-0.5 rounded flex items-center gap-1 border border-emerald-500/20"><span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>Live Auto-Detect</span>}
+                                            {location.trim() && <span className="text-sky-400 normal-case tracking-normal font-medium text-xs bg-sky-500/10 px-2 py-0.5 rounded flex items-center gap-1 border border-sky-500/20">Manual Override</span>}
                                         </label>
-                                        <input type="text" className="w-full bg-black/20 border border-white/10 text-white px-4 py-3 rounded-xl focus:outline-none focus:border-gold-500/50 focus:bg-black/40 transition-all shadow-inner backdrop-blur-md placeholder-white/20" placeholder="Override auto-detect (e.g. 'Miami')..." value={location} onChange={e => setLocation(e.target.value)} />
+                                        <input type="text" className="w-full bg-white/5 border border-white/10 text-white px-4 py-3.5 rounded-xl focus:outline-none focus:border-gold-500/50 focus:bg-white/10 transition-all shadow-inner backdrop-blur-md placeholder-white/20" placeholder={autoMapQuery ? `Auto: ${autoMapQuery}` : "Override map location..."} value={location} onChange={e => setLocation(e.target.value)} />
                                     </div>
                                     <div>
                                         <label className="block text-[10px] font-black text-white/50 uppercase tracking-widest mb-2.5">Description (Optional)</label>
-                                        <textarea className="w-full bg-black/20 border border-white/10 text-white/90 px-4 py-3 rounded-xl focus:outline-none focus:border-gold-500/50 focus:bg-black/40 transition-all custom-scrollbar shadow-inner backdrop-blur-md placeholder-white/20" placeholder="Event details..." value={description} onChange={e => setDescription(e.target.value)} rows="2"></textarea>
+                                        <textarea className="w-full bg-white/5 border border-white/10 text-white/90 px-4 py-3 rounded-xl focus:outline-none focus:border-gold-500/50 focus:bg-white/10 transition-all custom-scrollbar shadow-inner backdrop-blur-md placeholder-white/20" placeholder="Event details..." value={description} onChange={e => setDescription(e.target.value)} rows="2"></textarea>
                                     </div>
                                 </div>
                             </div>
@@ -4279,9 +4290,9 @@
                                             <button 
                                                 key={k} 
                                                 onClick={() => setTier(k)} 
-                                                className={`px-4 py-2 rounded-full text-xs font-bold transition-all ${
+                                                className={`px-4 py-2.5 rounded-full text-xs font-bold transition-all ${
                                                     tier === k 
-                                                    ? 'bg-white text-black shadow-[0_0_15px_rgba(255,255,255,0.4)] scale-105' 
+                                                    ? 'bg-white text-black shadow-[0_0_15px_rgba(255,255,255,0.4)] scale-[1.02]' 
                                                     : 'bg-black/40 text-white/60 border border-white/10 hover:bg-black/60 hover:text-white backdrop-blur-md'
                                                 }`}
                                             >
@@ -4303,12 +4314,12 @@
                                                     key={s} 
                                                     disabled={!!editingId || !isAllowed} 
                                                     onClick={() => setSize(s)} 
-                                                    className={`px-6 py-2 rounded-full text-sm font-black transition-all ${
+                                                    className={`px-6 py-2.5 rounded-full text-sm font-black transition-all ${
                                                         isSelected 
-                                                        ? 'bg-gold-500 text-black shadow-sm scale-105' 
+                                                        ? 'bg-gold-500 text-black shadow-sm scale-[1.02]' 
                                                         : isAllowed 
-                                                            ? 'text-white/60 hover:text-white hover:bg-white/5' 
-                                                            : 'text-white/20 cursor-not-allowed hidden sm:block' // Hide disallowed sizes on mobile to save space
+                                                            ? 'text-white/60 hover:text-white hover:bg-white/10' 
+                                                            : 'text-white/20 cursor-not-allowed hidden sm:block' // Hide disallowed sizes on mobile
                                                     }`}
                                                 >
                                                     {s}
@@ -4321,10 +4332,10 @@
                             </div>
                             
                             {/* Mechanics Config Readout */}
-                            <div className="mb-10 bg-black/20 p-5 rounded-2xl border border-white/5 shadow-inner backdrop-blur-sm">
-                                <div className="flex items-center gap-2 mb-2"><span className={`font-bold ${tierConf.color}`}>{tierConf.name} Configuration:</span></div>
+                            <div className="mb-10 bg-white/5 p-5 rounded-2xl border border-white/10 shadow-inner backdrop-blur-sm">
+                                <div className="flex items-center gap-2 mb-2"><span className={`font-bold drop-shadow-md`} style={{ color: tierConf.hex }}>{tierConf.name} Configuration:</span></div>
                                 <ul className="space-y-1.5 list-disc pl-4 text-xs font-medium text-white/70">
-                                    <li>Champion receives <strong className="text-white">{expectedWinnerPoints} points</strong>.</li>
+                                    <li>Champion receives <strong className="text-white">{expectedWinnerPoints.toLocaleString()} points</strong>.</li>
                                     <li>{tierConf.excludeTop > 0 ? `Top ${tierConf.excludeTop} globally ranked players are excluded from entry.` : (tier === 'finals' ? 'Exclusive Round Robin format for the Top 8 globally ranked players.' : 'Open Entry. Selection strictly based on global rank.')}</li>
                                     {reqWc > 0 && <li>Draw automatically reserves <strong className="text-gold-400">{reqWc} Wildcard slots</strong> for lower-ranked entrants.</li>}
                                 </ul>
@@ -4342,29 +4353,34 @@
 
                                     <div className={`grid ${reqAuto > 0 ? 'md:grid-cols-2' : 'grid-cols-1'} gap-8 border-t border-white/10 pt-10`}>
                                         {reqAuto > 0 && (
-                                            <div className="flex flex-col h-[500px]">
+                                            <div className="flex flex-col h-[400px]">
                                                 <div className="flex justify-between items-center mb-4 shrink-0">
                                                     <h3 className="font-black text-white text-lg tracking-tight drop-shadow-md">Auto Qualifiers <span className="text-white/40 text-xs ml-1.5 font-bold uppercase tracking-widest">(Top {reqAuto})</span></h3>
                                                 </div>
-                                                <div className="bg-black/30 backdrop-blur-xl rounded-2xl p-3 flex-1 overflow-y-auto border border-white/10 space-y-1 min-h-0 custom-scrollbar shadow-inner">
-                                                    <div className="relative mb-3 shrink-0">
-                                                        <input type="text" placeholder="Search qualifiers to withdraw..." className="w-full bg-white/5 border border-white/10 text-white px-4 py-2.5 pl-10 rounded-xl text-sm focus:outline-none focus:border-gold-500/50 transition-colors shadow-inner placeholder-white/30" value={autoSearch} onChange={e => setAutoSearch(e.target.value)} />
-                                                        <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-white/40" />
+                                                <div className="bg-black/30 backdrop-blur-xl rounded-2xl p-2 flex-1 overflow-y-auto border border-white/10 space-y-1 min-h-0 custom-scrollbar shadow-inner">
+                                                    <div className="relative mb-2 shrink-0">
+                                                        <input type="text" placeholder="Search qualifiers to withdraw..." className="w-full bg-white/5 border border-white/10 text-white px-3 py-2 pl-9 rounded-xl text-sm focus:outline-none focus:border-gold-500/50 transition-colors shadow-inner placeholder-white/30" value={autoSearch} onChange={e => setAutoSearch(e.target.value)} />
+                                                        <Search size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-white/40" />
                                                     </div>
                                                     {filteredAuto.map(p => (
-                                                        <div key={p.id} onClick={() => toggleWithdraw(p.id)} className="p-3 opacity-90 hover:opacity-100 text-sm flex items-center justify-between text-white/70 cursor-pointer hover:bg-[#be123c]/20 rounded-xl transition-colors group border border-transparent hover:border-[#be123c]/30">
+                                                        <div key={p.id} onClick={() => toggleWithdraw(p.id)} className="p-2 opacity-90 hover:opacity-100 text-sm flex items-center justify-between text-white/70 cursor-pointer hover:bg-[#be123c]/20 rounded-xl transition-colors group border border-transparent hover:border-[#be123c]/30">
                                                             <span className="flex items-center">
-                                                                <span className="font-mono text-white/30 mr-3 w-6 text-[10px] font-bold">#{p.rank}</span> 
-                                                                <span className="mr-3 drop-shadow-sm text-base">{getFlag(p.nationality)}</span> <span className="font-bold truncate max-w-[150px] group-hover:text-white transition-colors">{p.name}</span>
+                                                                <span className="font-mono text-white/30 mr-2 w-5 text-[10px] font-bold">#{p.rank}</span> 
+                                                                <img src={p.images?.[0] || p.imageUrl || "https://via.placeholder.com/40"} className="w-6 h-6 rounded-full object-cover border border-white/20 shrink-0 mr-2" />
+                                                                <span className="mr-2 drop-shadow-sm">{getFlag(p.nationality)}</span> 
+                                                                <span className="font-bold truncate max-w-[120px] group-hover:text-white transition-colors mr-2">{p.name}</span>
                                                             </span>
-                                                            <X size={16} className="text-[#fb7185] opacity-0 group-hover:opacity-100 transition-opacity" />
+                                                            <div className="flex items-center gap-3">
+                                                                <span className="text-[9px] font-bold text-gold-400 bg-gold-500/10 px-2 py-0.5 rounded-md border border-gold-500/20 whitespace-nowrap">{p.points.toLocaleString()} pts</span>
+                                                                <X size={14} className="text-[#fb7185] opacity-0 group-hover:opacity-100 transition-opacity" />
+                                                            </div>
                                                         </div>
                                                     ))}
                                                 </div>
                                             </div>
                                         )}
 
-                                        <div className="flex flex-col h-[500px]">
+                                        <div className="flex flex-col h-[400px]">
                                             <div className="flex justify-between items-center mb-4 shrink-0">
                                                 <h3 className="font-black text-white text-lg tracking-tight drop-shadow-md">{reqAuto === 0 ? 'Participants' : (reqWc === 0 ? 'Alternates' : 'Wildcards')}</h3>
                                                 <div className="flex gap-2 items-center flex-wrap justify-end">
@@ -4381,24 +4397,27 @@
                                                     </span>
                                                 </div>
                                             </div>
-                                            <div className="bg-black/30 backdrop-blur-xl rounded-2xl p-3 flex-1 flex flex-col border border-white/10 min-h-0 shadow-inner">
-                                                <div className="relative mb-3 shrink-0">
-                                                    <input type="text" placeholder="Search..." className="w-full bg-white/5 border border-white/10 text-white px-4 py-2.5 pl-10 rounded-xl text-sm focus:outline-none focus:border-gold-500/50 transition-colors shadow-inner placeholder-white/30" value={wcSearch} onChange={e => setWcSearch(e.target.value)} />
-                                                    <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-white/40" />
+                                            <div className="bg-black/30 backdrop-blur-xl rounded-2xl p-2 flex-1 flex flex-col border border-white/10 min-h-0 shadow-inner">
+                                                <div className="relative mb-2 shrink-0">
+                                                    <input type="text" placeholder="Search..." className="w-full bg-white/5 border border-white/10 text-white px-3 py-2 pl-9 rounded-xl text-sm focus:outline-none focus:border-gold-500/50 transition-colors shadow-inner placeholder-white/30" value={wcSearch} onChange={e => setWcSearch(e.target.value)} />
+                                                    <Search size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-white/40" />
                                                 </div>
                                                 <div className="overflow-y-auto space-y-1 pr-1 flex-1 custom-scrollbar">
                                                     {filteredRemaining.map(p => { 
                                                         const isS = selectedWildcards.includes(p.id); 
                                                         const isDisabled = reqWc === 0 || (!isS && selectedWildcards.length >= reqWc);
                                                         return (
-                                                            <div key={p.id} onClick={() => !isDisabled && toggleWildcard(p.id)} className={`p-3 rounded-xl ${reqWc > 0 ? 'cursor-pointer' : 'cursor-default'} flex justify-between items-center text-sm transition-all duration-300 group ${isS ? 'bg-gold-500/20 border border-gold-500/40 text-white shadow-md backdrop-blur-md' : (isDisabled && reqWc > 0) ? 'opacity-30 cursor-not-allowed border border-transparent' : 'hover:bg-white/10 text-white/70 border border-transparent hover:text-white'}`}>
+                                                            <div key={p.id} onClick={() => !isDisabled && toggleWildcard(p.id)} className={`p-2 rounded-xl ${reqWc > 0 ? 'cursor-pointer' : 'cursor-default'} flex justify-between items-center text-sm transition-all duration-300 group ${isS ? 'bg-gold-500/20 border border-gold-500/40 text-white shadow-md backdrop-blur-md' : (isDisabled && reqWc > 0) ? 'opacity-30 cursor-not-allowed border border-transparent' : 'hover:bg-white/10 text-white/70 border border-transparent hover:text-white'}`}>
                                                                 <span className="flex items-center">
-                                                                    <span className={`font-mono text-[10px] mr-3 w-6 font-bold ${isS ? 'text-gold-400' : 'text-white/30'}`}>#{p.rank}</span> 
-                                                                    <span className="mr-3 drop-shadow-sm text-base">{getFlag(p.nationality)}</span> <span className={`truncate max-w-[120px] ${isS ? 'font-black' : 'font-bold'}`}>{p.name}</span>
+                                                                    <span className={`font-mono text-[10px] mr-2 w-5 font-bold ${isS ? 'text-gold-400' : 'text-white/30'}`}>#{p.rank}</span> 
+                                                                    <img src={p.images?.[0] || p.imageUrl || "https://via.placeholder.com/40"} className="w-6 h-6 rounded-full object-cover border border-white/20 shrink-0 mr-2" />
+                                                                    <span className="mr-2 drop-shadow-sm text-base">{getFlag(p.nationality)}</span> 
+                                                                    <span className={`truncate max-w-[100px] mr-2 ${isS ? 'font-black' : 'font-bold'}`}>{p.name}</span>
                                                                 </span>
-                                                                <div className="flex items-center gap-2">
-                                                                    {isS && <CheckCircle size={18} className="text-gold-400 drop-shadow-sm" />}
-                                                                    {reqWc > 0 && !isS && !isDisabled && <X size={16} className="text-[#fb7185] opacity-0 group-hover:opacity-100 transition-opacity hover:scale-110" onClick={(e) => { e.stopPropagation(); toggleWithdraw(p.id); }} />}
+                                                                <div className="flex items-center gap-3">
+                                                                    <span className="text-[9px] font-bold text-gold-400 bg-gold-500/10 px-2 py-0.5 rounded-md border border-gold-500/20 whitespace-nowrap">{p.points.toLocaleString()} pts</span>
+                                                                    {isS && <CheckCircle size={16} className="text-gold-400 drop-shadow-sm" />}
+                                                                    {reqWc > 0 && !isS && !isDisabled && <X size={14} className="text-[#fb7185] opacity-0 group-hover:opacity-100 transition-opacity hover:scale-110" onClick={(e) => { e.stopPropagation(); toggleWithdraw(p.id); }} />}
                                                                 </div>
                                                             </div>
                                                         ) 
@@ -4409,24 +4428,29 @@
                                     </div>
 
                                     {withdrawnPlayers.length > 0 && (
-                                        <div className="mt-10 flex flex-col h-[280px]">
-                                            <div className="flex justify-between items-end mb-4 shrink-0 border-t border-white/10 pt-8">
+                                        <div className="mt-8 flex flex-col h-[200px]">
+                                            <div className="flex justify-between items-end mb-4 shrink-0 border-t border-white/10 pt-6">
                                                 <h3 className="font-black text-white/40 text-[11px] uppercase tracking-widest">Withdrawn / Skipped</h3>
                                                 <span className="text-[10px] text-white/60 font-bold uppercase tracking-widest bg-white/5 px-2.5 py-1 rounded-lg border border-white/10">{withdrawnPlayers.length} Players</span>
                                             </div>
-                                            <div className="bg-black/30 backdrop-blur-xl rounded-2xl p-3 flex-1 flex flex-col border border-white/10 min-h-0 shadow-inner">
-                                                <div className="relative mb-3 shrink-0">
-                                                    <input type="text" placeholder="Search withdrawn players to restore..." className="w-full bg-white/5 border border-white/10 text-white px-4 py-2.5 pl-10 rounded-xl text-sm focus:outline-none focus:border-gold-500/50 transition-colors shadow-inner placeholder-white/30" value={withdrawnSearch} onChange={e => setWithdrawnSearch(e.target.value)} />
-                                                    <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-white/40" />
+                                            <div className="bg-black/30 backdrop-blur-xl rounded-2xl p-2 flex-1 flex flex-col border border-white/10 min-h-0 shadow-inner">
+                                                <div className="relative mb-2 shrink-0">
+                                                    <input type="text" placeholder="Search withdrawn players to restore..." className="w-full bg-white/5 border border-white/10 text-white px-3 py-2 pl-9 rounded-xl text-sm focus:outline-none focus:border-gold-500/50 transition-colors shadow-inner placeholder-white/30" value={withdrawnSearch} onChange={e => setWithdrawnSearch(e.target.value)} />
+                                                    <Search size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-white/40" />
                                                 </div>
                                                 <div className="overflow-y-auto space-y-1 pr-1 flex-1 custom-scrollbar">
                                                     {filteredWithdrawn.map(p => (
-                                                        <div key={p.id} onClick={() => toggleWithdraw(p.id)} className="p-3 text-sm flex items-center justify-between text-white/40 cursor-pointer hover:bg-[#059669]/20 hover:text-white rounded-xl transition-colors group border border-transparent hover:border-[#059669]/30">
+                                                        <div key={p.id} onClick={() => toggleWithdraw(p.id)} className="p-2 text-sm flex items-center justify-between text-white/40 cursor-pointer hover:bg-[#059669]/20 hover:text-white rounded-xl transition-colors group border border-transparent hover:border-[#059669]/30">
                                                             <span className="flex items-center line-through group-hover:no-underline decoration-white/20">
-                                                                <span className="font-mono mr-3 w-6 text-[10px] font-bold">#{p.rank}</span> 
-                                                                <span className="mr-3 drop-shadow-sm grayscale group-hover:grayscale-0 opacity-50 group-hover:opacity-100 transition-all text-base">{getFlag(p.nationality)}</span> <span className="font-bold">{p.name}</span>
+                                                                <span className="font-mono mr-2 w-5 text-[10px] font-bold">#{p.rank}</span> 
+                                                                <img src={p.images?.[0] || p.imageUrl || "https://via.placeholder.com/40"} className="w-6 h-6 rounded-full object-cover border border-white/20 shrink-0 mr-2 grayscale opacity-50 group-hover:grayscale-0 group-hover:opacity-100 transition-all" />
+                                                                <span className="mr-2 drop-shadow-sm grayscale group-hover:grayscale-0 opacity-50 group-hover:opacity-100 transition-all text-base">{getFlag(p.nationality)}</span> 
+                                                                <span className="font-bold">{p.name}</span>
                                                             </span>
-                                                            <Plus size={16} className="text-[#34d399] opacity-0 group-hover:opacity-100 transition-opacity" />
+                                                            <div className="flex items-center gap-3">
+                                                                <span className="text-[9px] font-bold text-gold-400 bg-gold-500/10 px-2 py-0.5 rounded-md border border-gold-500/20 whitespace-nowrap opacity-50 group-hover:opacity-100">{p.points.toLocaleString()} pts</span>
+                                                                <Plus size={14} className="text-[#34d399] opacity-0 group-hover:opacity-100 transition-opacity" />
+                                                            </div>
                                                         </div>
                                                     ))}
                                                 </div>
@@ -4438,9 +4462,27 @@
 
                             {errorMsg && <div className="mt-10 text-[#fb7185] text-sm font-bold text-center w-full bg-[#be123c]/20 p-5 rounded-2xl border border-[#be123c]/40 shadow-lg backdrop-blur-md">{errorMsg}</div>}
                             
-                            <div className="mt-10 pt-10 border-t border-white/10 flex justify-end">
-                                <button onClick={handleCreateOrUpdate} disabled={isGenerating || (!editingId && (!hasEnoughPlayers || selectedWildcards.length !== reqWc)) || !name.trim()} className="bg-gradient-to-r from-gold-600 to-gold-400 text-black px-12 py-5 rounded-full font-black text-lg flex items-center gap-3 disabled:opacity-30 disabled:cursor-not-allowed transition-all shadow-[0_10px_30px_rgba(212,175,55,0.3)] hover:shadow-[0_15px_40px_rgba(212,175,55,0.5)] hover:-translate-y-1 active:scale-[0.98] active:translate-y-0">
-                                    {editingId ? <Edit2 size={24}/> : <Play size={24} fill="currentColor"/>} 
+                            {/* ACTION FOOTER */}
+                            <div className="mt-10 pt-10 border-t border-white/10 flex justify-between items-center">
+                                {/* Safe Delete Button (Only shows if Editing) */}
+                                <div>
+                                    {editingId && (
+                                        showDelete ? (
+                                            <div className="flex items-center gap-2 bg-[#be123c]/20 border border-[#be123c]/50 p-2 rounded-xl backdrop-blur-xl">
+                                                <span className="text-[#fb7185] text-[10px] font-black uppercase tracking-widest px-2">Delete?</span>
+                                                <button onClick={handleDeleteTournament} className="bg-[#be123c] hover:bg-[#9f1239] text-white px-3 py-1.5 rounded-lg text-xs font-bold transition-colors">Confirm</button>
+                                                <button onClick={() => setShowDelete(false)} className="text-white/70 hover:text-white text-xs px-2 font-medium">Cancel</button>
+                                            </div>
+                                        ) : (
+                                            <button onClick={() => setShowDelete(true)} className="flex items-center gap-2 text-[#fb7185] hover:text-[#f43f5e] text-xs font-bold bg-white/5 backdrop-blur-xl px-4 py-2.5 rounded-xl border border-white/10 transition-colors shadow-sm hover:bg-white/10">
+                                                <Trash2 size={14}/> Delete Event
+                                            </button>
+                                        )
+                                    )}
+                                </div>
+
+                                <button onClick={handleCreateOrUpdate} disabled={isGenerating || (!editingId && (!hasEnoughPlayers || selectedWildcards.length !== reqWc)) || !name.trim()} className="bg-gradient-to-r from-gold-600 to-gold-400 text-black px-12 py-4 rounded-full font-black text-lg flex items-center gap-3 disabled:opacity-30 disabled:cursor-not-allowed transition-all shadow-[0_10px_30px_rgba(212,175,55,0.3)] hover:shadow-[0_15px_40px_rgba(212,175,55,0.5)] hover:-translate-y-1 active:scale-[0.98] active:translate-y-0">
+                                    {editingId ? <Edit2 size={20}/> : <Play size={20} fill="currentColor"/>} 
                                     {isGenerating ? 'Processing...' : (editingId ? 'Update Tournament' : 'Generate Draw')}
                                 </button>
                             </div>
@@ -4608,10 +4650,9 @@
             );
         }
 
-        function TournamentBracket({ tournament, allTournaments = [], players, onBack, db, appId, onNavigate }) {
+        function TournamentBracket({ tournament, allTournaments = [], players, onBack, db, appId, onNavigate, onEdit }) {
             const [resolvingMatch, setResolvingMatch] = useState(null);
             const [activeTab, setActiveTab] = useState('all');
-            const [showDelete, setShowDelete] = useState(false);
             const [expandedDesc, setExpandedDesc] = useState(false);
             const scrollContainerRef = useRef(null);
 
@@ -4627,11 +4668,9 @@
             const tierKey = getTournamentTier(tournament);
             const tierConf = TOURNAMENT_TIERS[tierKey];
 
-            // Premium SVG Icons for bracket badges
             const IconDom = () => <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>;
             const IconClose = () => <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><circle cx="12" cy="12" r="6"></circle><circle cx="12" cy="12" r="2"></circle></svg>;
 
-            // SMART DYNAMIC SCALABLE TABS
             const tabs = useMemo(() => {
                 if (drawSize <= 16) return [{ id: 'all', label: 'Full Draw' }];
                 const navTabs = [{ id: 'all', label: 'Full Draw' }];
@@ -4712,13 +4751,6 @@
                 submitResult(winnerId, 'random');
             };
 
-            const handleDelete = async () => {
-                try {
-                    onBack();
-                    await window.fb.deleteDoc(window.fb.doc(db, 'artifacts', appId, 'public', 'data', 'tournaments', tournament.id));
-                } catch(e) { console.error(e); }
-            };
-
             // ULTRA COMPACT & ELEGANT MATCH PARTICIPANT
             const renderMatchParticipant = (match, pId, isTop) => {
                 const p = getPlayer(pId);
@@ -4728,22 +4760,22 @@
                 const isLoser = !isTBD && match.winner != null && match.winner !== pId && !isBye;
                 
                 return (
-                    <div className={`relative px-3 py-2 flex items-center justify-between transition-colors h-[38px] ${isTop ? 'border-b border-white/[0.05]' : ''} ${isWinner ? 'bg-white/10' : 'bg-transparent'}`}>
-                        {isWinner && <div className="absolute left-0 top-0 bottom-0 w-[4px] rounded-r" style={{ backgroundColor: tierConf.hex }}></div>}
-                        <div className={`flex items-center gap-2.5 overflow-hidden w-full pr-2 ${isLoser ? 'opacity-40 grayscale' : ''}`}>
+                    <div className={`relative px-2.5 py-1.5 flex items-center justify-between transition-colors h-[32px] ${isTop ? 'border-b border-white/[0.05]' : ''} ${isWinner ? 'bg-white/[0.08]' : 'bg-transparent'}`}>
+                        {isWinner && <div className="absolute left-0 top-0 bottom-0 w-[3px] rounded-r shadow-[0_0_8px_rgba(255,255,255,0.8)]" style={{ backgroundColor: tierConf.hex }}></div>}
+                        <div className={`flex items-center gap-2 overflow-hidden w-full pr-2 transition-all duration-300 ${isLoser ? 'opacity-30 grayscale' : ''}`}>
                             {isTBD ? (
                                 <>
-                                    <div className="w-6 h-6 rounded-full border border-white/10 bg-white/5 shrink-0 flex items-center justify-center"></div>
-                                    <span className="text-[10px] font-bold text-white/30 tracking-widest uppercase">TBD</span>
+                                    <div className="w-5 h-5 rounded-full border border-white/10 bg-white/5 shrink-0 flex items-center justify-center"></div>
+                                    <span className="text-[9px] font-bold text-white/30 tracking-widest uppercase">TBD</span>
                                 </>
                             ) : (
                                 <>
-                                    <img src={p.images?.[0] || p.imageUrl || "https://via.placeholder.com/40"} loading="lazy" decoding="async" className={`w-6 h-6 rounded-full object-cover shrink-0 shadow-sm border border-white/20`} />
+                                    <img src={p.images?.[0] || p.imageUrl || "https://via.placeholder.com/40"} loading="lazy" decoding="async" className={`w-5 h-5 rounded-full object-cover shrink-0 shadow-sm border ${isWinner ? 'border-white/40' : 'border-white/10'}`} />
                                     <div className="flex flex-col min-w-0 justify-center">
-                                        <span onClick={tournament.status === 'completed' ? (e) => { e.stopPropagation(); onNavigate('players', pId); } : undefined} className={`text-xs font-bold flex items-center truncate ${isWinner ? 'text-white' : 'text-white/80'} ${tournament.status === 'completed' ? 'hover:underline cursor-pointer hover:text-gold-400' : ''}`}>
-                                            <span className="text-sm drop-shadow-sm">{getFlag(p.nationality)}</span>
-                                            <span className="text-[9px] uppercase tracking-widest text-white/50 font-bold ml-1.5">{p.nationality}</span>
-                                            <span className="ml-2 truncate tracking-wide">{p.name}</span>
+                                        <span onClick={tournament.status === 'completed' ? (e) => { e.stopPropagation(); onNavigate('players', pId); } : undefined} className={`text-xs flex items-center truncate ${isWinner ? 'text-white font-black drop-shadow-md' : 'text-white/70 font-semibold'} ${tournament.status === 'completed' ? 'hover:underline cursor-pointer hover:text-gold-400' : ''}`}>
+                                            <span className="text-xs drop-shadow-sm">{getFlag(p.nationality)}</span>
+                                            <span className="text-[8px] uppercase tracking-widest text-white/50 font-bold ml-1.5">{p.nationality}</span>
+                                            <span className="ml-1.5 truncate tracking-wide">{p.name}</span>
                                             {getSeedText(tournament, pId) && <span className="text-[8px] text-white/40 font-mono ml-1.5 shrink-0">{getSeedText(tournament, pId)}</span>}
                                         </span>
                                     </div>
@@ -4751,11 +4783,11 @@
                             )}
                         </div>
                         {isWinner && (
-                            <span className="text-[9px] font-black text-royal-950 ml-1 px-1.5 py-0.5 rounded shrink-0 shadow-sm flex items-center gap-1" style={{ backgroundColor: tierConf.hex }}>
-                                {match.type === 'random' ? <><Shuffle size={10} strokeWidth={3}/> LUCK</> : match.type === 'lopsided' ? <><IconDom/> DOM</> : <><IconClose/> CLS</>}
+                            <span className="text-[8px] font-black text-black ml-1 px-1.5 py-0.5 rounded-sm shrink-0 shadow-[0_0_10px_rgba(255,255,255,0.2)] flex items-center gap-1" style={{ backgroundColor: tierConf.hex }}>
+                                {match.type === 'random' ? <><Shuffle size={8} strokeWidth={3}/> LUCK</> : match.type === 'lopsided' ? <><IconDom/> DOM</> : <><IconClose/> CLS</>}
                             </span>
                         )}
-                        {isBye && <span className="text-[9px] font-bold text-white/30 uppercase tracking-widest shrink-0 mr-1">BYE</span>}
+                        {isBye && <span className="text-[8px] font-bold text-white/20 uppercase tracking-widest shrink-0 mr-1">BYE</span>}
                     </div>
                 );
             };
@@ -4765,16 +4797,16 @@
             return (
                 <div className="h-full flex flex-col pb-20 relative max-w-[1600px] mx-auto w-full">
                     
-                    {/* Fixed Background Layer - Map URL Fixed and visual settings adjusted to be clear but subtle */}
+                    {/* Fixed Background Layer - Map URL Fixed, Zoomed to z=13, No Blur */}
                     <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden bg-[#020617]">
                         <iframe 
-                            src={`https://maps.google.com/maps?q=${encodeURIComponent(mapQuery)}&t=k&z=11&ie=UTF8&iwloc=&output=embed`} 
-                            className="w-[120%] h-[120%] -translate-x-[10%] -translate-y-[10%] opacity-40 saturate-100"
+                            src={`http://googleusercontent.com/maps.google.com/maps?q=${encodeURIComponent(mapQuery)}&t=k&z=13&ie=UTF8&iwloc=&output=embed`} 
+                            className="w-[120%] h-[120%] -translate-x-[10%] -translate-y-[10%] opacity-50 saturate-[1.2]"
                             frameBorder="0"
                             loading="lazy"
                         />
                         {/* A gentle dark gradient to ensure text readability while letting the map shine */}
-                        <div className="absolute inset-0 bg-gradient-to-b from-[#020617]/80 via-[#020617]/50 to-[#020617]/90 z-10"></div>
+                        <div className="absolute inset-0 bg-gradient-to-b from-[#020617]/70 via-[#020617]/40 to-[#020617]/90 z-10"></div>
                     </div>
 
                     {/* Header Area */}
@@ -4787,7 +4819,7 @@
                                 {['grand_slam', 'finals', 'major'].includes(tierKey) && (
                                     <DynamicTrophy tier={tierKey} result="Winner" country={tournament.hostCountry} size={56} className="drop-shadow-[0_10px_20px_rgba(0,0,0,0.5)] shrink-0" />
                                 )}
-                                <span className={`${tierConf?.color || 'text-royal-300'} text-xs font-bold uppercase tracking-widest border border-current px-3 py-1.5 rounded-lg shrink-0 bg-black/40 backdrop-blur-md shadow-sm`}>{tierConf?.name || 'Tournament'}</span>
+                                <span className={`text-xs font-black uppercase tracking-widest px-3 py-1.5 rounded-lg shrink-0 shadow-sm`} style={{ backgroundColor: `${tierConf.hex}20`, color: tierConf.hex, border: `1px solid ${tierConf.hex}50` }}>{tierConf?.name || 'Tournament'}</span>
                                 <span className="text-4xl shrink-0" title={getCountryName(tournament.hostCountry || 'USA')}>{getFlag(tournament.hostCountry || 'USA')}</span>
                                 <span className="truncate tracking-tight">{tournament.name}</span>
                                 {tournament.status === 'completed' && <span className="bg-[#059669]/20 text-[#059669] text-xs px-3 py-1.5 rounded-lg shrink-0 font-black tracking-widest uppercase border border-[#059669]/40 shadow-sm backdrop-blur-sm">Completed</span>}
@@ -4808,15 +4840,9 @@
                             )}
                         </div>
                         <div className="shrink-0 mt-4 md:mt-0">
-                            {showDelete ? (
-                                <div className="flex items-center gap-3 bg-[#be123c]/20 border border-[#be123c]/50 p-2.5 rounded-xl backdrop-blur-xl shadow-lg">
-                                    <span className="text-[#fb7185] text-sm font-black uppercase tracking-widest px-2">Delete Tournament?</span>
-                                    <button onClick={handleDelete} className="bg-[#be123c] hover:bg-[#9f1239] text-white px-4 py-1.5 rounded-lg text-sm font-bold transition-colors shadow-md">Confirm</button>
-                                    <button onClick={() => setShowDelete(false)} className="text-white/70 hover:text-white text-sm px-3 font-medium transition-colors">Cancel</button>
-                                </div>
-                            ) : (
-                                <button onClick={() => setShowDelete(true)} className="flex items-center gap-2 text-[#fb7185] hover:text-[#f43f5e] text-sm font-bold bg-black/40 backdrop-blur-xl px-4 py-2.5 rounded-xl border border-white/10 transition-colors shadow-lg hover:bg-black/60"><Trash2 size={16}/> Delete Event</button>
-                            )}
+                            <button onClick={() => onEdit ? onEdit(tournament.id) : onNavigate('create', tournament.id)} className="flex items-center gap-2 text-white hover:text-gold-400 text-sm font-bold bg-white/10 backdrop-blur-xl px-5 py-2.5 rounded-xl border border-white/20 transition-colors shadow-lg hover:bg-white/20">
+                                <Edit2 size={16}/> Edit Event
+                            </button>
                         </div>
                     </div>
 
@@ -4841,9 +4867,9 @@
                                     const showHeaderTrophy = isFinalRound && round[0];
 
                                     return (
-                                        <div key={`header-${rIdx}`} className="w-64 shrink-0 mr-12 text-center flex flex-col items-center justify-end min-h-[50px]">
+                                        <div key={`header-${rIdx}`} className="w-56 shrink-0 mr-12 text-center flex flex-col items-center justify-end min-h-[50px]">
                                             {showHeaderTrophy && <DynamicTrophy tier={tierKey} result="Winner" country={tournament.hostCountry} size={48} className="mb-3 drop-shadow-2xl" />}
-                                            <div className="flex items-center justify-center gap-2 text-white font-black uppercase tracking-widest text-[12px] drop-shadow-md" style={{ color: isFinalRound ? tierConf.hex : undefined }}>
+                                            <div className="flex items-center justify-center gap-2 text-white font-black uppercase tracking-widest text-[11px] drop-shadow-md" style={{ color: isFinalRound ? tierConf.hex : undefined }}>
                                                 {isFinalRound && !showHeaderTrophy && <Trophy className="w-4 h-4 inline-block opacity-90 drop-shadow-md" style={{ color: tierConf.hex }} />}
                                                 {ROUND_NAMES[rIdx + rOffset]}
                                             </div>
@@ -4852,13 +4878,13 @@
                                 })}
                             </div>
 
-                            {/* Bracket Match Body */}
+                            {/* Bracket Match Body - COMPACT 64px MIN HEIGHT */}
                             <div className="flex min-w-max items-stretch relative z-10 px-8 pb-10 pt-6 flex-1">
                                 {parsedBracket.map((round, rIdx) => {
                                     if (!round.some((_, mIdx) => shouldShowMatch(activeTab, rIdx, mIdx, round.length))) return null;
                                     
                                     return (
-                                        <div key={`col-${rIdx}`} className="flex flex-col w-64 shrink-0 mr-12 py-1 justify-around h-full">
+                                        <div key={`col-${rIdx}`} className="flex flex-col w-56 shrink-0 mr-12 py-1 justify-around h-full">
                                             {round.map((match, mIdx) => {
                                                 if (!shouldShowMatch(activeTab, rIdx, mIdx, round.length)) return null;
                                                 
@@ -4870,11 +4896,11 @@
                                                     : rIdx === 0;
 
                                                 return (
-                                                    <div key={match.id} className="relative flex flex-col justify-center" style={{ flex: 1, minHeight: '88px' }}>
+                                                    <div key={match.id} className="relative flex flex-col justify-center" style={{ flex: 1, minHeight: '64px' }}>
                                                         <div onClick={() => handleMatchClick(rIdx, mIdx, match)} 
-                                                             className={`relative z-20 rounded-2xl transition-all duration-300 overflow-hidden flex flex-col border ${
+                                                             className={`relative z-20 rounded-xl transition-all duration-300 overflow-hidden flex flex-col border ${
                                                                  isReady 
-                                                                 ? 'cursor-pointer hover:scale-105 z-30 bg-white/[0.1] shadow-[0_8px_30px_rgba(0,0,0,0.5)] border-white/40 backdrop-blur-xl' 
+                                                                 ? 'cursor-pointer hover:scale-105 z-30 bg-white/[0.15] shadow-[0_8px_30px_rgba(0,0,0,0.5)] border-white/40 backdrop-blur-xl' 
                                                                  : match.winner 
                                                                      ? 'bg-black/50 border-white/10 shadow-md backdrop-blur-md' 
                                                                      : 'bg-black/20 border-white/[0.05] opacity-70 backdrop-blur-sm'
@@ -4906,9 +4932,8 @@
             );
         }
 
-        function SNBInternationalsBracket({ tournament, allTournaments = [], players, onBack, db, appId, onNavigate }) {
+        function SNBInternationalsBracket({ tournament, allTournaments = [], players, onBack, db, appId, onNavigate, onEdit }) {
             const [resolvingMatch, setResolvingMatch] = useState(null);
-            const [showDelete, setShowDelete] = useState(false);
 
             const getPlayer = (id) => players.find(p => p.id === id) || { name: 'TBD', rank: '-', nationality: 'UNK' };
 
@@ -4989,13 +5014,6 @@
                 submitResult(winnerId, 'close');
             };
 
-            const handleDelete = async () => {
-                try {
-                    onBack();
-                    await window.fb.deleteDoc(window.fb.doc(db, 'artifacts', appId, 'public', 'data', 'tournaments', tournament.id));
-                } catch(e) { console.error(e); }
-            };
-
             const tierKey = getTournamentTier(tournament);
             const tierConf = TOURNAMENT_TIERS[tierKey];
 
@@ -5027,22 +5045,6 @@
                                     </tr>
                                 );
                             })}
-                            {standings.length === 0 && tournament.groups && tournament.groups[groupName] && tournament.groups[groupName].map((pid, idx) => {
-                                const p = getPlayer(pid);
-                                return (
-                                    <tr key={pid} className="opacity-60">
-                                        <td className="p-4 flex items-center gap-3">
-                                            <span className="w-6 h-6 flex items-center justify-center rounded-full text-xs font-bold bg-white/5 border border-white/10 text-white/50">-</span> 
-                                            <span onClick={tournament.status === 'completed' ? (e) => { e.stopPropagation(); onNavigate('players', pid); } : undefined} className={`truncate flex items-center ${tournament.status === 'completed' ? 'cursor-pointer hover:text-gold-400 hover:underline' : ''}`}>
-                                                <span className="text-lg mr-2">{getFlag(p.nationality)}</span>
-                                                <span className="font-bold">{p.name}</span>
-                                            </span>
-                                        </td>
-                                        <td className="p-4 text-center font-mono text-white/40">0-0</td>
-                                        <td className="p-4 text-center font-mono text-white/40">0</td>
-                                    </tr>
-                                );
-                            })}
                         </tbody>
                     </table>
                 </div>
@@ -5058,12 +5060,12 @@
                     {/* Fixed Background Layer */}
                     <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden bg-[#020617]">
                         <iframe 
-                            src={`https://maps.google.com/maps?q=${encodeURIComponent(mapQuery)}&t=k&z=11&ie=UTF8&iwloc=&output=embed`} 
-                            className="w-[120%] h-[120%] -translate-x-[10%] -translate-y-[10%] opacity-40 saturate-100"
+                            src={`http://googleusercontent.com/maps.google.com/maps?q=${encodeURIComponent(mapQuery)}&t=k&z=13&ie=UTF8&iwloc=&output=embed`} 
+                            className="w-[120%] h-[120%] -translate-x-[10%] -translate-y-[10%] opacity-50 saturate-[1.2]"
                             frameBorder="0"
                             loading="lazy"
                         />
-                        <div className="absolute inset-0 bg-gradient-to-b from-[#020617]/80 via-[#020617]/50 to-[#020617]/90 z-10"></div>
+                        <div className="absolute inset-0 bg-gradient-to-b from-[#020617]/70 via-[#020617]/40 to-[#020617]/90 z-10"></div>
                     </div>
 
                     <div className="flex justify-between items-start md:items-center mb-6 relative z-20 pt-4 px-4 xl:px-0">
@@ -5075,7 +5077,7 @@
                                 {tournament.status === 'completed' && (
                                     <DynamicTrophy tier="finals" result="Winner" country={tournament.hostCountry} size={56} className="drop-shadow-[0_10px_20px_rgba(0,0,0,0.5)] shrink-0" />
                                 )}
-                                <span className={`${tierConf?.color || 'text-cyan-400'} text-xs font-bold uppercase tracking-widest border border-current px-3 py-1.5 rounded-lg shrink-0 bg-black/40 backdrop-blur-md shadow-sm`}>
+                                <span className={`text-xs font-black uppercase tracking-widest px-3 py-1.5 rounded-lg shrink-0 shadow-sm`} style={{ backgroundColor: `${tierConf.hex}20`, color: tierConf.hex, border: `1px solid ${tierConf.hex}50` }}>
                                     {tierConf?.name || 'SNB Internationals'}
                                 </span>
                                 <span className="text-4xl shrink-0" title={getCountryName(tournament.hostCountry || 'USA')}>{getFlag(tournament.hostCountry || 'USA')}</span>
@@ -5091,15 +5093,9 @@
                             )}
                         </div>
                         <div className="shrink-0 mt-4 md:mt-0">
-                            {showDelete ? (
-                                <div className="flex items-center gap-3 bg-[#be123c]/20 border border-[#be123c]/50 p-2.5 rounded-xl backdrop-blur-xl shadow-lg">
-                                    <span className="text-[#fb7185] text-sm font-black uppercase tracking-widest px-2">Delete Tournament?</span>
-                                    <button onClick={handleDelete} className="bg-[#be123c] hover:bg-[#9f1239] text-white px-4 py-1.5 rounded-lg text-sm font-bold transition-colors shadow-md">Confirm</button>
-                                    <button onClick={() => setShowDelete(false)} className="text-white/70 hover:text-white text-sm px-3 font-medium transition-colors">Cancel</button>
-                                </div>
-                            ) : (
-                                <button onClick={() => setShowDelete(true)} className="flex items-center gap-2 text-[#fb7185] hover:text-[#f43f5e] text-sm font-bold bg-black/40 backdrop-blur-xl px-4 py-2.5 rounded-xl border border-white/10 transition-colors shadow-lg hover:bg-black/60"><Trash2 size={16}/> Delete Event</button>
-                            )}
+                            <button onClick={() => onEdit ? onEdit(tournament.id) : onNavigate('create', tournament.id)} className="flex items-center gap-2 text-white hover:text-gold-400 text-sm font-bold bg-white/10 backdrop-blur-xl px-5 py-2.5 rounded-xl border border-white/20 transition-colors shadow-lg hover:bg-white/20">
+                                <Edit2 size={16}/> Edit Event
+                            </button>
                         </div>
                     </div>
 
@@ -5125,25 +5121,23 @@
                                          }}>
                                         <div className="text-[10px] font-black text-white/50 mb-3 uppercase tracking-widest">Group {match.group}</div>
                                         
-                                        <div className={`flex justify-between items-center mb-3 p-2 rounded-xl transition-colors ${match.winner === match.p1 ? 'bg-white/10 shadow-inner' : ''}`}>
+                                        <div className={`flex justify-between items-center mb-3 p-2 rounded-xl transition-colors ${match.winner === match.p1 ? 'bg-white/10 shadow-inner' : ''} ${match.winner && match.winner !== match.p1 ? 'opacity-40 grayscale' : ''}`}>
                                             <div className="flex items-center gap-3 overflow-hidden w-full pr-2">
                                                 <img src={p1.images?.[0] || p1.imageUrl || "https://via.placeholder.com/40"} loading="lazy" decoding="async" className="w-8 h-8 rounded-full object-cover border border-white/20 shrink-0 shadow-sm" />
-                                                <span onClick={tournament.status === 'completed' ? (e) => { e.stopPropagation(); onNavigate('players', match.p1); } : undefined} className={`text-sm font-bold flex items-center truncate ${match.winner && match.winner !== match.p1 ? 'text-white/40 line-through' : 'text-white'} ${tournament.status === 'completed' ? 'cursor-pointer hover:text-gold-400 hover:underline' : ''}`}>
+                                                <span onClick={tournament.status === 'completed' ? (e) => { e.stopPropagation(); onNavigate('players', match.p1); } : undefined} className={`text-sm flex items-center truncate ${match.winner === match.p1 ? 'text-white font-black' : 'text-white/80 font-bold'} ${tournament.status === 'completed' ? 'cursor-pointer hover:text-gold-400 hover:underline' : ''}`}>
                                                     <span className="text-lg drop-shadow-sm mr-2">{getFlag(p1.nationality)}</span>
                                                     <span className="truncate">{p1.name}</span>
-                                                    {getSeedText(tournament, match.p1) && <span className="text-[9px] text-white/40 font-mono tracking-tighter ml-2 bg-black/40 px-1.5 py-0.5 rounded">{getSeedText(tournament, match.p1)}</span>}
                                                 </span>
                                             </div>
                                             {match.winner && match.winner === match.p1 && <CheckCircle className="w-5 h-5 text-[#059669] shrink-0 drop-shadow-md" />}
                                         </div>
                                         
-                                        <div className={`flex justify-between items-center p-2 rounded-xl transition-colors ${match.winner === match.p2 ? 'bg-white/10 shadow-inner' : ''}`}>
+                                        <div className={`flex justify-between items-center p-2 rounded-xl transition-colors ${match.winner === match.p2 ? 'bg-white/10 shadow-inner' : ''} ${match.winner && match.winner !== match.p2 ? 'opacity-40 grayscale' : ''}`}>
                                             <div className="flex items-center gap-3 overflow-hidden w-full pr-2">
                                                 <img src={p2.images?.[0] || p2.imageUrl || "https://via.placeholder.com/40"} loading="lazy" decoding="async" className="w-8 h-8 rounded-full object-cover border border-white/20 shrink-0 shadow-sm" />
-                                                <span onClick={tournament.status === 'completed' ? (e) => { e.stopPropagation(); onNavigate('players', match.p2); } : undefined} className={`text-sm font-bold flex items-center truncate ${match.winner && match.winner !== match.p2 ? 'text-white/40 line-through' : 'text-white'} ${tournament.status === 'completed' ? 'cursor-pointer hover:text-gold-400 hover:underline' : ''}`}>
+                                                <span onClick={tournament.status === 'completed' ? (e) => { e.stopPropagation(); onNavigate('players', match.p2); } : undefined} className={`text-sm flex items-center truncate ${match.winner === match.p2 ? 'text-white font-black' : 'text-white/80 font-bold'} ${tournament.status === 'completed' ? 'cursor-pointer hover:text-gold-400 hover:underline' : ''}`}>
                                                     <span className="text-lg drop-shadow-sm mr-2">{getFlag(p2.nationality)}</span>
                                                     <span className="truncate">{p2.name}</span>
-                                                    {getSeedText(tournament, match.p2) && <span className="text-[9px] text-white/40 font-mono tracking-tighter ml-2 bg-black/40 px-1.5 py-0.5 rounded">{getSeedText(tournament, match.p2)}</span>}
                                                 </span>
                                             </div>
                                             {match.winner && match.winner === match.p2 && <CheckCircle className="w-5 h-5 text-[#059669] shrink-0 drop-shadow-md" />}
@@ -5178,8 +5172,7 @@
                                         {round.map((match, mIdx) => {
                                             if (!match) return null;
                                             const p1 = getPlayer(match.p1), p2 = getPlayer(match.p2);
-                                            const isBye = match.type === 'bye';
-                                            const isReady = match.p1 && match.p2 && !match.winner && tournament.status !== 'completed' && !isBye;
+                                            const isReady = match.p1 && match.p2 && !match.winner && tournament.status !== 'completed';
                                             
                                             return (
                                                 <div key={match.id} className="relative flex flex-col justify-center" style={{ flex: 1, minHeight: '100px' }}>
@@ -5197,20 +5190,19 @@
                                                          }}>
                                                         
                                                         {/* Player 1 */}
-                                                        <div className={`p-3 flex justify-between items-center border-b border-white/10 transition-colors ${match.winner && match.winner === match.p1 && !isBye ? 'bg-white/10 shadow-inner' : ''}`}>
+                                                        <div className={`p-3 flex justify-between items-center border-b border-white/10 transition-colors ${match.winner && match.winner === match.p1 ? 'bg-white/10 shadow-inner' : ''} ${match.winner && match.winner !== match.p1 ? 'opacity-30 grayscale' : ''}`}>
                                                             <div className="flex items-center gap-3 overflow-hidden w-full pr-2">
                                                                 {match.p1 ? (
                                                                     <>
-                                                                        <img src={p1.images?.[0] || p1.imageUrl || "https://via.placeholder.com/40"} loading="lazy" decoding="async" className="w-8 h-8 rounded-full object-cover border border-white/20 shrink-0 shadow-sm" />
-                                                                        <span onClick={tournament.status === 'completed' ? (e) => { e.stopPropagation(); onNavigate('players', match.p1); } : undefined} className={`text-sm font-bold flex items-center truncate ${match.winner && match.winner !== match.p1 && !isBye ? 'text-white/40 line-through' : 'text-white'} ${tournament.status === 'completed' ? 'cursor-pointer hover:text-gold-400 hover:underline' : ''}`}>
+                                                                        <img src={p1.images?.[0] || p1.imageUrl || "https://via.placeholder.com/40"} loading="lazy" decoding="async" className="w-6 h-6 rounded-full object-cover border border-white/20 shrink-0 shadow-sm" />
+                                                                        <span onClick={tournament.status === 'completed' ? (e) => { e.stopPropagation(); onNavigate('players', match.p1); } : undefined} className={`text-sm flex items-center truncate ${match.winner === match.p1 ? 'text-white font-black drop-shadow-md' : 'text-white/80 font-bold'} ${tournament.status === 'completed' ? 'cursor-pointer hover:text-gold-400 hover:underline' : ''}`}>
                                                                             <span className="text-lg drop-shadow-sm mr-2">{getFlag(p1.nationality)}</span> 
                                                                             <span className="truncate">{p1.name}</span>
-                                                                            {getSeedText(tournament, match.p1) && <span className="text-[9px] text-white/40 font-mono tracking-tighter ml-2 bg-black/40 px-1.5 py-0.5 rounded">{getSeedText(tournament, match.p1)}</span>}
                                                                         </span>
                                                                     </>
                                                                 ) : <span className="text-xs font-bold text-white/30 uppercase tracking-widest">TBD</span>}
                                                             </div>
-                                                            {match.winner && match.winner === match.p1 && !isBye && (
+                                                            {match.winner && match.winner === match.p1 && (
                                                                 isFinalRound 
                                                                 ? <DynamicTrophy tier="finals" result="Winner" country={tournament.hostCountry} size={32} className="shrink-0 drop-shadow-md" /> 
                                                                 : <CheckCircle size={20} className="text-[#059669] shrink-0 drop-shadow-md"/>
@@ -5218,20 +5210,19 @@
                                                         </div>
                                                         
                                                         {/* Player 2 */}
-                                                        <div className={`p-3 flex justify-between items-center transition-colors ${match.winner && match.winner === match.p2 && !isBye ? 'bg-white/10 shadow-inner' : ''}`}>
+                                                        <div className={`p-3 flex justify-between items-center transition-colors ${match.winner && match.winner === match.p2 ? 'bg-white/10 shadow-inner' : ''} ${match.winner && match.winner !== match.p2 ? 'opacity-30 grayscale' : ''}`}>
                                                             <div className="flex items-center gap-3 overflow-hidden w-full pr-2">
                                                                 {match.p2 ? (
                                                                     <>
-                                                                        <img src={p2.images?.[0] || p2.imageUrl || "https://via.placeholder.com/40"} loading="lazy" decoding="async" className="w-8 h-8 rounded-full object-cover border border-white/20 shrink-0 shadow-sm" />
-                                                                        <span onClick={tournament.status === 'completed' ? (e) => { e.stopPropagation(); onNavigate('players', match.p2); } : undefined} className={`text-sm font-bold flex items-center truncate ${match.winner && match.winner !== match.p2 && !isBye ? 'text-white/40 line-through' : 'text-white'} ${tournament.status === 'completed' ? 'cursor-pointer hover:text-gold-400 hover:underline' : ''}`}>
+                                                                        <img src={p2.images?.[0] || p2.imageUrl || "https://via.placeholder.com/40"} loading="lazy" decoding="async" className="w-6 h-6 rounded-full object-cover border border-white/20 shrink-0 shadow-sm" />
+                                                                        <span onClick={tournament.status === 'completed' ? (e) => { e.stopPropagation(); onNavigate('players', match.p2); } : undefined} className={`text-sm flex items-center truncate ${match.winner === match.p2 ? 'text-white font-black drop-shadow-md' : 'text-white/80 font-bold'} ${tournament.status === 'completed' ? 'cursor-pointer hover:text-gold-400 hover:underline' : ''}`}>
                                                                             <span className="text-lg drop-shadow-sm mr-2">{getFlag(p2.nationality)}</span> 
                                                                             <span className="truncate">{p2.name}</span>
-                                                                            {getSeedText(tournament, match.p2) && <span className="text-[9px] text-white/40 font-mono tracking-tighter ml-2 bg-black/40 px-1.5 py-0.5 rounded">{getSeedText(tournament, match.p2)}</span>}
                                                                         </span>
                                                                     </>
-                                                                ) : (isBye ? <span className="text-xs font-black text-white/20 italic tracking-widest">BYE</span> : <span className="text-xs font-bold text-white/30 uppercase tracking-widest">TBD</span>)}
+                                                                ) : <span className="text-xs font-bold text-white/30 uppercase tracking-widest">TBD</span>}
                                                             </div>
-                                                            {match.winner && match.winner === match.p2 && !isBye && (
+                                                            {match.winner && match.winner === match.p2 && (
                                                                 isFinalRound 
                                                                 ? <DynamicTrophy tier="finals" result="Winner" country={tournament.hostCountry} size={32} className="shrink-0 drop-shadow-md" /> 
                                                                 : <CheckCircle size={20} className="text-[#059669] shrink-0 drop-shadow-md"/>
@@ -5256,6 +5247,8 @@
                 </div>
             );
         }
+
+        
         
 
         function App() {
