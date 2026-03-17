@@ -4826,15 +4826,14 @@
             return (
                 <div className="h-full flex flex-col pb-20 relative max-w-[1600px] mx-auto w-full">
                     
-                    {/* SHIFTED HTTPS SATELLITE MAP - Pushed right and slightly up so the city center sits in negative space */}
+                    {/* SHIFTED HTTPS SATELLITE MAP */}
                     <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden bg-[#020617]">
                         <iframe 
-                            src={`https://maps.google.com/maps?q=${encodeURIComponent(mapQuery)}&t=k&z=13&ie=UTF8&iwloc=&output=embed`} 
+                            src={`http://googleusercontent.com/maps.google.com/maps?q=${encodeURIComponent(mapQuery)}&t=k&z=13&ie=UTF8&iwloc=&output=embed`} 
                             className="w-[150%] h-[150%] translate-x-[15%] -translate-y-[20%] opacity-50 saturate-[1.3] brightness-90 absolute left-0 top-0"
                             frameBorder="0"
                             loading="lazy"
                         />
-                        {/* Notice the gradient is lighter in the middle to let the map shine through the glass */}
                         <div className="absolute inset-0 bg-gradient-to-b from-[#020617]/40 via-[#020617]/20 to-[#020617]/80 z-10"></div>
                     </div>
 
@@ -4845,7 +4844,7 @@
                                 <ArrowLeft className="w-4 h-4" /> Back to Tournaments
                             </button>
                             
-                            {/* Clickable Title for Description Toggle */}
+                            {/* Clickable Title for Description Toggle - REPLACED <Info/> WITH RAW SVG */}
                             <h1 
                                 className="text-3xl md:text-4xl font-black text-white flex items-center gap-4 flex-wrap drop-shadow-lg cursor-pointer hover:opacity-80 transition-opacity"
                                 onClick={() => setExpandedDesc(!expandedDesc)}
@@ -4856,7 +4855,10 @@
                                 <span className={`text-xs font-black uppercase tracking-widest px-3 py-1.5 rounded-lg shrink-0 shadow-md backdrop-blur-md`} style={{ backgroundColor: `${tierConf.hex}20`, color: tierConf.hex, border: `1px solid ${tierConf.hex}50` }}>{tierConf?.name || 'Tournament'}</span>
                                 <span className="text-4xl shrink-0" title={getCountryName(tournament.hostCountry || 'USA')}>{getFlag(tournament.hostCountry || 'USA')}</span>
                                 <span className="truncate tracking-tight">{tournament.name}</span>
+                                
+                                {/* BULLETPROOF SVG INSTEAD OF <Info /> COMPONENT */}
                                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className={`text-white/40 transition-all shrink-0 ${expandedDesc ? 'text-white' : 'hover:text-white/80'}`}><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+                                
                                 {tournament.status === 'completed' && <span className="bg-[#059669]/20 text-[#059669] text-xs px-3 py-1.5 rounded-lg shrink-0 font-black tracking-widest uppercase border border-[#059669]/40 shadow-sm backdrop-blur-sm ml-auto">Completed</span>}
                             </h1>
                             
@@ -4883,7 +4885,7 @@
                         </div>
                     )}
 
-                    {/* Bracket Container - Thinner Glass (0.02 opacity, lower blur) to let the map shine! */}
+                    {/* Bracket Container */}
                     <div className="flex-1 bg-white/[0.02] backdrop-blur-xl rounded-3xl shadow-[0_0_50px_rgba(0,0,0,0.4)] relative overflow-hidden border border-white/10 flex flex-col z-20 mx-4 xl:mx-0">
                         
                         <div className="flex-1 overflow-auto custom-scrollbar relative z-10 flex flex-col" ref={scrollContainerRef}>
@@ -4911,12 +4913,10 @@
                                 {parsedBracket.map((round, rIdx) => {
                                     if (!round.some((_, mIdx) => shouldShowMatch(activeTab, rIdx, mIdx, round.length))) return null;
                                     
-                                    // DYNAMIC CONNECTOR MATH
-                                    // This determines if this is the absolute last visual round rendered in the current tab viewport.
                                     const hasNextRoundVisible = (() => {
-                                        if (rIdx === totalRounds - 1) return false; // The absolute final never has a right line
-                                        if (activeTab.startsWith('q') && rIdx === totalRounds - 3) return false; // Quarters stop 3 rounds before the final
-                                        if ((activeTab === 'top' || activeTab === 'bottom') && rIdx === totalRounds - 2) return false; // Halves stop 2 rounds before final
+                                        if (rIdx === totalRounds - 1) return false; 
+                                        if (activeTab.startsWith('q') && rIdx === totalRounds - 3) return false; 
+                                        if ((activeTab === 'top' || activeTab === 'bottom') && rIdx === totalRounds - 2) return false; 
                                         return true;
                                     })();
 
@@ -4951,7 +4951,6 @@
                                                             {renderMatchParticipant(match, match.p2, false)}
                                                         </div>
                                                         
-                                                        {/* Ultra-Visible Connector Lines (Using the new dynamic math to prevent phantom lines) */}
                                                         {!isFirstVisibleRoundInTab && <div className="absolute -left-[24px] top-1/2 w-[24px] h-[2px] bg-white/30 z-10 shadow-md"></div>}
                                                         {hasNextRoundVisible && <div className="absolute -right-[24px] top-1/2 w-[24px] h-[2px] bg-white/30 z-10 shadow-md"></div>}
                                                         {hasNextRoundVisible && mIdx % 2 === 0 && <div className="absolute -right-[24px] top-1/2 w-[2px] bg-white/30 z-10 shadow-md" style={{ height: '100%' }}></div>}
