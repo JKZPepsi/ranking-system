@@ -4241,10 +4241,10 @@
             return (
                 <div className="h-full flex flex-col pb-20 relative max-w-6xl mx-auto w-full pt-8">
                     
-                    {/* LIVE SMART MAP BACKGROUND */}
+                    {/* SECURE HTTPS LIVE SMART MAP BACKGROUND */}
                     <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden bg-[#020617]">
                         <iframe 
-                            src={`http://googleusercontent.com/maps.google.com/maps?q=${encodeURIComponent(mapQuery)}&t=k&z=13&ie=UTF8&iwloc=&output=embed`} 
+                            src={`https://maps.google.com/maps?q=${encodeURIComponent(mapQuery)}&t=k&z=13&ie=UTF8&iwloc=&output=embed`} 
                             className="w-[120%] h-[120%] -translate-x-[10%] -translate-y-[10%] opacity-40 saturate-[1.2] transition-all duration-1000"
                             frameBorder="0"
                             loading="lazy"
@@ -4263,7 +4263,7 @@
                                 <div className="space-y-6">
                                     <div>
                                         <label className="block text-[10px] font-black text-white/50 uppercase tracking-widest mb-2.5">Tournament Name</label>
-                                        <input type="text" className="w-full bg-black/20 border border-white/10 text-white px-4 py-3.5 rounded-xl focus:outline-none focus:border-gold-500/50 focus:bg-black/40 transition-all shadow-inner backdrop-blur-md font-bold text-lg placeholder-white/20" placeholder="e.g. Paris Masters 2026..." value={name} onChange={e => setName(e.target.value)} />
+                                        <input type="text" className="w-full h-12 bg-black/20 border border-white/10 text-white px-4 py-3.5 rounded-xl focus:outline-none focus:border-gold-500/50 focus:bg-black/40 transition-all shadow-inner backdrop-blur-md font-bold text-lg placeholder-white/20" placeholder="e.g. Paris Masters 2026..." value={name} onChange={e => setName(e.target.value)} />
                                     </div>
                                     {/* Z-INDEX FIX FOR DROPDOWN */}
                                     <div className="relative z-[60]">
@@ -4280,11 +4280,12 @@
                                             {mapQuery && !location.trim() && <span className="text-emerald-400 normal-case tracking-normal font-medium text-xs bg-emerald-500/10 px-2 py-0.5 rounded flex items-center gap-1 border border-emerald-500/20"><span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>Live Auto-Detect</span>}
                                             {location.trim() && <span className="text-sky-400 normal-case tracking-normal font-medium text-xs bg-sky-500/10 px-2 py-0.5 rounded flex items-center gap-1 border border-sky-500/20">Manual Override</span>}
                                         </label>
-                                        <input type="text" className="w-full bg-black/20 border border-white/10 text-white px-4 py-3.5 rounded-xl focus:outline-none focus:border-gold-500/50 focus:bg-black/40 transition-all shadow-inner backdrop-blur-md placeholder-white/30 text-sm" placeholder={autoMapQuery ? `Auto: ${autoMapQuery}` : "Override map location..."} value={location} onChange={e => setLocation(e.target.value)} />
+                                        {/* PERFECT ALIGNMENT WITH H-12 */}
+                                        <input type="text" className="w-full h-12 bg-black/20 border border-white/10 text-white px-4 py-3.5 rounded-xl focus:outline-none focus:border-gold-500/50 focus:bg-black/40 transition-all shadow-inner backdrop-blur-md placeholder-white/30 text-sm" placeholder={autoMapQuery ? `Auto-Search: ${autoMapQuery}` : "Override map location..."} value={location} onChange={e => setLocation(e.target.value)} />
                                     </div>
                                     <div>
                                         <label className="block text-[10px] font-black text-white/50 uppercase tracking-widest mb-2.5">Description (Optional)</label>
-                                        <textarea className="w-full bg-black/20 border border-white/10 text-white/90 px-4 py-3 rounded-xl focus:outline-none focus:border-gold-500/50 focus:bg-black/40 transition-all custom-scrollbar shadow-inner backdrop-blur-md placeholder-white/20 text-sm" placeholder="Event details..." value={description} onChange={e => setDescription(e.target.value)} rows="2"></textarea>
+                                        <textarea className="w-full bg-black/20 border border-white/10 text-white/90 px-4 py-3.5 rounded-xl focus:outline-none focus:border-gold-500/50 focus:bg-black/40 transition-all custom-scrollbar shadow-inner backdrop-blur-md placeholder-white/20 text-sm" placeholder="Event details..." value={description} onChange={e => setDescription(e.target.value)} rows="2"></textarea>
                                     </div>
                                 </div>
                             </div>
@@ -4400,6 +4401,7 @@
                                             <div className="flex justify-between items-center mb-4 shrink-0">
                                                 <h3 className="font-black text-white text-lg tracking-tight drop-shadow-md">{reqAuto === 0 ? 'Participants' : (reqWc === 0 ? 'Alternates' : 'Wildcards')}</h3>
                                                 <div className="flex gap-2 items-center flex-wrap justify-end">
+                                                    {/* DYNAMIC DROP TOP SEEDS BUTTON */}
                                                     {reqAuto === 0 && remainingPlayers.length > 0 && (
                                                         <button onClick={withdrawTopFraction} className="text-[9px] uppercase tracking-wider font-bold bg-white/10 text-white/70 hover:bg-[#be123c]/30 hover:text-white px-2.5 py-1.5 rounded-lg transition-colors border border-white/10 hover:border-[#be123c]/50 backdrop-blur-md">Drop Top {dropCount} Seeds</button>
                                                     )}
@@ -4455,11 +4457,13 @@
                                             </div>
                                             <div className="bg-black/30 backdrop-blur-xl rounded-2xl p-2 flex-1 flex flex-col border border-white/10 min-h-0 shadow-inner">
                                                 
+                                                {/* STICKY SEARCH BAR */}
                                                 <div className="relative mb-2 shrink-0 z-10">
                                                     <input type="text" placeholder="Search withdrawn players to restore..." className="w-full bg-white/5 border border-white/10 text-white px-3 py-2 pl-9 rounded-xl text-sm focus:outline-none focus:border-gold-500/50 transition-colors shadow-inner placeholder-white/30" value={withdrawnSearch} onChange={e => setWithdrawnSearch(e.target.value)} />
                                                     <Search size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-white/40" />
                                                 </div>
 
+                                                {/* SCROLLABLE COMPACT LIST */}
                                                 <div className="overflow-y-auto space-y-1 pr-1 flex-1 custom-scrollbar relative z-0">
                                                     {filteredWithdrawn.map(p => (
                                                         <div key={p.id} onClick={() => toggleWithdraw(p.id)} className="p-2 text-sm flex items-center justify-between text-white/40 cursor-pointer hover:bg-[#059669]/20 hover:text-white rounded-xl transition-colors group border border-transparent hover:border-[#059669]/30">
