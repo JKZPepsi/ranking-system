@@ -2039,7 +2039,11 @@
             const width = 1200;
             const cConf = { gap: 24, font: 12, rectH: 28, rectW: 100, ptR: 3, debutR: 4, stroke: 2 };
             
-            const plotHeight = Math.max(600, nationCodes.size * cConf.gap * 1.5);
+            const { windowSize, offset, layoutMode } = __snbSharedChartState;
+            // ... (keep the history slice logic)
+            const cConf = { gap: 24, font: 12, rectH: 28, rectW: 100, ptR: 3, debutR: 4, stroke: 2 };
+            // MASSIVE Y-AXIS STRETCH FOR EXTENDED MODE
+            const plotHeight = layoutMode === 'extended' ? Math.max(1200, nationCodes.size * cConf.gap * 4) : Math.max(600, nationCodes.size * cConf.gap * 1.5);
             const pad = { top: 40, right: 140, left: 80, bottom: 40 }; 
             const gridBottomY = pad.top + plotHeight;
 
@@ -2325,13 +2329,18 @@
 
                 tournaments.forEach(t => {
                     if (t.status === 'completed' && t.bracket) {
-                        let b = []; try { b = typeof t.bracket === 'string' ? JSON.parse(t.bracket) : t.bracket; } catch(e){}
-                        const finalMatch = b[1]?.[0] || b[b.length-1]?.[0];
-                        if (finalMatch?.winner) {
-                            const winner = players.find(p => p.id === finalMatch.winner);
-                            if (winner) {
-                                const code = winner.nationality || 'UNK';
-                                if (stats[code]) stats[code].titles++;
+                        const tTier = getTournamentTier(t);
+                        // STRICT MAJOR+ FILTER FOR TITLES
+                        if (['grand_slam', 'major', 'finals'].includes(tTier)) {
+                            let b = []; try { b = typeof t.bracket === 'string' ? JSON.parse(t.bracket) : t.bracket; } catch(e){}
+                            // THE FIX: Always grab the absolute LAST round for the Final Match!
+                            const finalMatch = b[b.length - 1]?.[0];
+                            if (finalMatch?.winner) {
+                                const winner = players.find(p => p.id === finalMatch.winner);
+                                if (winner) {
+                                    const code = winner.nationality || 'UNK';
+                                    if (stats[code]) stats[code].titles++;
+                                }
                             }
                         }
                     }
@@ -2391,17 +2400,17 @@
             );
         }
         
-        function NationAchievements({ code, players, tournaments }) {
+        function NationAchievements({ code, players, tournaments, onNavigate }) {
             const list = [];
             tournaments.forEach(t => {
                 if (t.status !== 'completed' || !t.bracket) return;
                 const tTier = getTournamentTier(t);
                 
-                // ONLY count Grand Slams, Majors, and Finals
                 if (tTier !== 'grand_slam' && tTier !== 'major' && tTier !== 'finals') return;
 
                 let b = []; try { b = typeof t.bracket === 'string' ? JSON.parse(t.bracket) : t.bracket; } catch(e){}
-                const finalMatch = b[1]?.[0] || b[b.length-1]?.[0];
+                // THE FIX: Always grab the absolute LAST round
+                const finalMatch = b[b.length - 1]?.[0];
                 
                 if (finalMatch?.winner) {
                     const winner = players.find(p => p.id === finalMatch.winner);
@@ -2421,7 +2430,6 @@
 
             if (list.length === 0) return null;
             
-            // Sort by most recent
             list.sort((a,b) => (b.date || 0) - (a.date || 0));
 
             return (
@@ -2429,8 +2437,7 @@
                     <h2 className="text-2xl font-black text-white flex items-center gap-3 mb-8 tracking-tight"><Trophy size={24} className="text-gold-500"/> Major Achievements</h2>
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                         {list.map((ach, i) => (
-                            <div key={i} onClick={() => window.history.pushState(null, '', '') /* Optional navigation trigger */} className="relative bg-black/20 border border-white/5 p-6 rounded-2xl flex flex-col items-center text-center cursor-pointer transition-all duration-300 group hover:-translate-y-1.5 hover:bg-white/10 shadow-inner">
-                                {/* Ambient Hover Glow behind Trophy */}
+                            <div key={i} onClick={() => onNavigate('tournaments', null, ach.tournamentId)} className="relative bg-black/20 border border-white/5 p-6 rounded-2xl flex flex-col items-center text-center cursor-pointer transition-all duration-300 group hover:-translate-y-1.5 hover:bg-white/10 shadow-inner">
                                 <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 blur-xl pointer-events-none rounded-full" style={{ background: `radial-gradient(circle, ${TOURNAMENT_TIERS[ach.tier]?.hex || '#d4af37'}20 0%, transparent 70%)` }}></div>
                                 
                                 <DynamicTrophy tier={ach.tier} result={ach.result} country={ach.hostCountry} size={56} className="mb-4 transition-transform duration-500 group-hover:scale-110 drop-shadow-xl relative z-10" />
@@ -2486,7 +2493,9 @@
             const width = 1200;
             const LABEL_GAP = 20; 
             
-            let plotHeight = layoutMode === 'extended' ? Math.max(450, allNationPlayerIds.size * LABEL_GAP * 1.8) : 350;
+            const LABEL_GAP = 20; 
+            // MASSIVE Y-AXIS STRETCH FOR EXTENDED MODE
+            let plotHeight = layoutMode === 'extended' ? Math.max(1200, allNationPlayerIds.size * LABEL_GAP * 4) : 400;
             const pad = { top: 40, right: 180, left: 80, bottom: 40 }; 
             const gridBottomY = pad.top + plotHeight;
 
@@ -2681,32 +2690,39 @@
             const [isOpen, setIsOpen] = useState(false);
             const [search, setSearch] = useState('');
             const wrapperRef = useRef(null);
+            
             useEffect(() => {
                 function handleClickOutside(event) { if (wrapperRef.current && !wrapperRef.current.contains(event.target)) setIsOpen(false); }
                 document.addEventListener("mousedown", handleClickOutside);
                 return () => document.removeEventListener("mousedown", handleClickOutside);
             }, []);
+            
             const filtered = COUNTRIES.filter(c => c.name.toLowerCase().includes(search.toLowerCase()) || c.code.toLowerCase().includes(search.toLowerCase()));
             const selectedCountry = COUNTRIES.find(c => c.code === value);
+            
             return (
                 <div ref={wrapperRef} className="relative w-full md:w-auto min-w-[200px]">
                     <div 
-                        className={`w-full bg-royal-950 border border-royal-800 rounded-lg px-4 py-3 text-white flex justify-between items-center transition-colors ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer hover:border-royal-600'}`}
+                        className={`w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 text-white flex justify-between items-center transition-colors shadow-inner backdrop-blur-md ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer hover:bg-white/10 hover:border-white/20'}`}
                         onClick={() => !disabled && setIsOpen(!isOpen)}
                     >
-                        <span className="truncate">{selectedCountry ? `${selectedCountry.flag} ${selectedCountry.name}` : 'Select Nationality...'}</span>
-                        <ChevronRight size={16} className={`shrink-0 transition-transform ${isOpen ? 'rotate-90' : ''}`} />
+                        <span className="truncate font-bold text-sm text-white/90">
+                            {selectedCountry ? <span className="flex items-center gap-2"><span className="text-lg drop-shadow-sm">{selectedCountry.flag}</span> {selectedCountry.name}</span> : 'Select Nationality...'}
+                        </span>
+                        <ChevronRight size={16} className={`shrink-0 transition-transform ${isOpen ? 'rotate-90' : 'text-white/50'}`} />
                     </div>
                     {isOpen && (
-                        <div className="absolute z-50 w-full mt-1 bg-royal-800 border border-royal-700 rounded-lg shadow-xl max-h-60 overflow-y-auto">
-                            <div className="p-2 sticky top-0 bg-royal-800 border-b border-royal-700">
-                                <input type="text" autoFocus className="w-full bg-royal-950 border border-royal-600 rounded px-3 py-2 text-sm text-white focus:outline-none focus:border-gold-500" placeholder="Search..." value={search} onChange={e => setSearch(e.target.value)} />
+                        <div className="absolute z-[100] w-full mt-2 bg-black/80 backdrop-blur-3xl border border-white/10 rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.7)] max-h-64 overflow-y-auto custom-scrollbar animate-in fade-in slide-in-from-top-2 duration-200">
+                            <div className="p-2 sticky top-0 bg-black/60 backdrop-blur-md border-b border-white/10 z-10">
+                                <input type="text" autoFocus className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-gold-500/50 transition-colors placeholder-white/40 shadow-inner" placeholder="Search..." value={search} onChange={e => setSearch(e.target.value)} />
                             </div>
                             {filtered.map(c => (
-                                <div key={c.code} className="px-4 py-3 hover:bg-royal-700 cursor-pointer flex items-center gap-3 text-royal-100" onClick={() => { onChange(c.code); setIsOpen(false); setSearch(''); }}>
-                                    <span className="text-xl">{c.flag}</span> <span className="font-medium">{c.name} ({c.code})</span>
+                                <div key={c.code} className="px-4 py-3 hover:bg-white/10 cursor-pointer flex items-center gap-3 text-white/90 border-b border-white/5 transition-colors" onClick={() => { onChange(c.code); setIsOpen(false); setSearch(''); }}>
+                                    <span className="text-xl drop-shadow-md">{c.flag}</span> 
+                                    <span className="font-bold text-sm truncate">{c.name} <span className="text-[10px] text-white/40 ml-1 tracking-widest">{c.code}</span></span>
                                 </div>
                             ))}
+                            {filtered.length === 0 && <div className="p-4 text-center text-white/40 text-sm font-medium">No countries found</div>}
                         </div>
                     )}
                 </div>
@@ -2918,13 +2934,11 @@
                 const natPlayers = players.filter(p => (p.nationality || 'UNK') === code);
                 const globalHist = getGlobalHistory(playersRaw, tournaments);
                 
-                // Calculate National Rank
                 let activeList = natPlayers.filter(p => !p.retired).sort((a,b) => b.points - a.points || b.totalPoints - a.totalPoints);
                 activeList.forEach((p, idx) => p.nationalRank = idx + 1);
                 
                 const listWithDiffs = attachDiffsAndForm(natPlayers, globalHist);
 
-                // Stats calculation
                 let points = 0, bonusPoints = 0, wins = 0, losses = 0, titles = 0;
                 activeList.forEach(p => {
                     points += (p.points || 0); bonusPoints += (p.bonusPoints || 0);
@@ -2933,16 +2947,20 @@
                 
                 tournaments.forEach(t => {
                     if (t.status === 'completed' && t.bracket) {
-                        let b = []; try { b = typeof t.bracket === 'string' ? JSON.parse(t.bracket) : t.bracket; } catch(e){}
-                        const finalMatch = b[1]?.[0] || b[b.length-1]?.[0];
-                        if (finalMatch?.winner) {
-                            const winner = players.find(p => p.id === finalMatch.winner);
-                            if (winner && (winner.nationality || 'UNK') === code) titles++;
+                        const tTier = getTournamentTier(t);
+                        // STRICT MAJOR+ FILTER FOR TITLES
+                        if (['grand_slam', 'major', 'finals'].includes(tTier)) {
+                            let b = []; try { b = typeof t.bracket === 'string' ? JSON.parse(t.bracket) : t.bracket; } catch(e){}
+                            // THE FIX: Always grab the absolute LAST round
+                            const finalMatch = b[b.length - 1]?.[0];
+                            if (finalMatch?.winner) {
+                                const winner = players.find(p => p.id === finalMatch.winner);
+                                if (winner && (winner.nationality || 'UNK') === code) titles++;
+                            }
                         }
                     }
                 });
 
-                // Calculate Peaks for retirees
                 const finalPlayers = listWithDiffs.map(p => {
                     if (!p.retired) return p;
                     let peakRank = 9999, peakPoints = 0;
@@ -3004,7 +3022,8 @@
                                 showNationality={false}
                             />
                         </div>
-                        <NationAchievements code={code} players={players} tournaments={tournaments} />
+                        {/* PASSED onNavigate SO THEY ARE CLICKABLE */}
+                        <NationAchievements code={code} players={players} tournaments={tournaments} onNavigate={onNavigate} />
                     </div>
                 </div>
             );
@@ -3343,7 +3362,7 @@
                     {showAddForm && (
                         <div className="relative z-10 -mt-4">
                             <form onSubmit={handleAddPlayer} className="bg-white/5 backdrop-blur-2xl border border-white/10 p-8 rounded-3xl space-y-6 shadow-[0_20px_40px_rgb(0,0,0,0.3)] animate-in fade-in slide-in-from-top-4 duration-500">
-                                <div className="grid md:grid-cols-2 gap-5">
+                                <div className="grid md:grid-cols-2 gap-5 relative z-50">
                                     <input type="text" placeholder="Player Name..." required className="bg-black/20 border border-white/10 rounded-xl px-5 py-3.5 text-white placeholder-white/40 focus:outline-none focus:border-gold-500/50 focus:bg-black/40 transition-all duration-300 shadow-inner backdrop-blur-md" value={newPlayerName} onChange={e => setNewPlayerName(e.target.value)} />
                                     <div className="bg-black/20 border border-white/10 rounded-xl p-1 shadow-inner backdrop-blur-md">
                                         <CountrySelect value={newPlayerNationality} onChange={setNewPlayerNationality} />
@@ -3653,7 +3672,7 @@
                     {isEditing ? (
                         <form onSubmit={handleUpdate} className="bg-black/40 backdrop-blur-3xl rounded-3xl p-8 space-y-6 max-w-4xl mx-auto shadow-[0_30px_60px_rgba(0,0,0,0.6)] border border-white/10 animate-in fade-in slide-in-from-bottom-4 duration-300">
                             <h2 className="text-2xl font-black text-white tracking-tight border-b border-white/10 pb-4">Edit Player Profile</h2>
-                            <div className="grid md:grid-cols-2 gap-6">
+                            <div className="grid md:grid-cols-2 gap-6 relative z-50">
                                 <div>
                                     <label className="block text-[10px] font-black text-white/40 uppercase tracking-widest mb-2">Player Name</label>
                                     <input type="text" className="w-full bg-white/5 p-3.5 rounded-xl text-white font-bold border border-white/10 focus:border-gold-500/50 focus:bg-white/10 shadow-inner transition-all" value={editName} onChange={e => setEditName(e.target.value)} />
