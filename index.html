@@ -4772,6 +4772,12 @@
                 setResolvingMatch(null);
             };
 
+            // THE MISSING FUNCTION RESTORED!
+            const handleRandomize = () => {
+                const winnerId = Math.random() < 0.5 ? resolvingMatch.p1 : resolvingMatch.p2;
+                submitResult(winnerId, 'random');
+            };
+
             const handleDelete = async () => {
                 try { onBack(); await window.fb.deleteDoc(window.fb.doc(db, 'artifacts', appId, 'public', 'data', 'tournaments', tournament.id)); } catch(e) { console.error(e); }
             };
@@ -4832,7 +4838,7 @@
                     {/* 100% SECURE HTTPS MAP - 110% Size, perfectly centered to fix black gaps */}
                     <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden bg-[#020617]">
                         <iframe 
-                            src={`https://maps.google.com/maps?q=${encodeURIComponent(mapQuery)}&t=k&z=13&ie=UTF8&iwloc=&output=embed`} 
+                            src={`http://googleusercontent.com/maps.google.com/maps?q=${encodeURIComponent(mapQuery)}&t=k&z=13&ie=UTF8&iwloc=&output=embed`} 
                             className="w-[110%] h-[110%] -translate-x-[2%] -translate-y-[5%] opacity-50 saturate-[1.2] absolute left-0 top-0"
                             frameBorder="0"
                             loading="lazy"
