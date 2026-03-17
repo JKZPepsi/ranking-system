@@ -4681,9 +4681,11 @@
         }
 
         function TournamentBracket({ tournament, allTournaments = [], players, onBack, db, appId, onNavigate, onEdit }) {
+            // Smart default: 'info' if completed, 'bracket' if active
+            const [viewMode, setViewMode] = useState(tournament.status === 'completed' ? 'info' : 'bracket');
             const [resolvingMatch, setResolvingMatch] = useState(null);
             const [activeTab, setActiveTab] = useState('all');
-            const [expandedDesc, setExpandedDesc] = useState(false);
+            const [showDelete, setShowDelete] = useState(false);
             const scrollContainerRef = useRef(null);
 
             const getPlayer = (id) => players.find(p => p.id === id) || { name: 'TBD', rank: '-', nationality: 'UNK' };
@@ -4698,28 +4700,40 @@
             const tierKey = getTournamentTier(tournament);
             const tierConf = TOURNAMENT_TIERS[tierKey];
 
+            // Extract Stats & Top Performers automatically
+            const tStats = { total: 0, close: 0, dom: 0, luck: 0 };
+            let champion = null, finalist = null, semi1 = null, semi2 = null;
+
+            if (parsedBracket.length > 0) {
+                parsedBracket.flat().forEach(m => {
+                    if (m && m.winner && m.type !== 'bye') {
+                        tStats.total++;
+                        if (m.type === 'close') tStats.close++;
+                        else if (m.type === 'lopsided') tStats.dom++;
+                        else if (m.type === 'random') tStats.luck++;
+                    }
+                });
+
+                const fIdx = totalRounds - 1; const sfIdx = totalRounds - 2;
+                if (fIdx >= 0 && parsedBracket[fIdx] && parsedBracket[fIdx][0]) {
+                    const fMatch = parsedBracket[fIdx][0];
+                    if (fMatch.winner) { champion = fMatch.winner; finalist = fMatch.p1 === fMatch.winner ? fMatch.p2 : fMatch.p1; }
+                }
+                if (sfIdx >= 0 && parsedBracket[sfIdx] && parsedBracket[sfIdx].length >= 2) {
+                    const s1 = parsedBracket[sfIdx][0]; const s2 = parsedBracket[sfIdx][1];
+                    if (s1 && s1.winner) semi1 = s1.p1 === s1.winner ? s1.p2 : s1.p1;
+                    if (s2 && s2.winner) semi2 = s2.p1 === s2.winner ? s2.p2 : s2.p1;
+                }
+            }
+
             const IconDom = () => <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>;
             const IconClose = () => <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><circle cx="12" cy="12" r="6"></circle><circle cx="12" cy="12" r="2"></circle></svg>;
 
             const tabs = useMemo(() => {
                 if (drawSize <= 16) return [{ id: 'all', label: 'Full Draw' }];
                 const navTabs = [{ id: 'all', label: 'Full Draw' }];
-                
-                if (drawSize === 64) {
-                    navTabs.push(
-                        { id: 'q1', label: 'Quarter 1 (1-16)' }, 
-                        { id: 'q2', label: 'Quarter 2 (17-32)' },
-                        { id: 'q3', label: 'Quarter 3 (33-48)' },
-                        { id: 'q4', label: 'Quarter 4 (49-64)' },
-                        { id: 'final8', label: 'Final 8' }
-                    );
-                } else if (drawSize === 32) {
-                    navTabs.push(
-                        { id: 'top', label: 'Top Half' }, 
-                        { id: 'bottom', label: 'Bottom Half' },
-                        { id: 'final8', label: 'Final 8' }
-                    );
-                }
+                if (drawSize === 64) navTabs.push({ id: 'q1', label: 'Quarter 1' }, { id: 'q2', label: 'Quarter 2' }, { id: 'q3', label: 'Quarter 3' }, { id: 'q4', label: 'Quarter 4' }, { id: 'final8', label: 'Final 8' });
+                else if (drawSize === 32) navTabs.push({ id: 'top', label: 'Top Half' }, { id: 'bottom', label: 'Bottom Half' }, { id: 'final8', label: 'Final 8' });
                 return navTabs;
             }, [drawSize]);
 
@@ -4727,35 +4741,19 @@
 
             const handleTabChange = (tabId) => {
                 setActiveTab(tabId);
-                setTimeout(() => {
-                    if (!scrollContainerRef.current) return;
-                    scrollContainerRef.current.scrollTo({ top: 0, left: 0, behavior: 'smooth' });
-                }, 50);
+                setTimeout(() => { if (scrollContainerRef.current) scrollContainerRef.current.scrollTo({ top: 0, left: 0, behavior: 'smooth' }); }, 50);
             };
 
             const shouldShowMatch = (tab, r, m, len) => {
                 if (tab === 'all') return true;
                 if (tab === 'final8') return r >= totalRounds - 3;
-                
-                if (tab.startsWith('q')) {
-                    if (r >= totalRounds - 2) return false; 
-                    const qMap = { 'q1': 0, 'q2': 1, 'q3': 2, 'q4': 3 };
-                    const q = qMap[tab];
-                    const chunkSize = len / 4;
-                    return m >= q * chunkSize && m < (q + 1) * chunkSize;
-                }
-                if (tab === 'top' || tab === 'bottom') {
-                    if (r >= totalRounds - 1) return false; 
-                    const h = tab === 'top' ? 0 : 1;
-                    const chunkSize = len / 2;
-                    return m >= h * chunkSize && m < (h + 1) * chunkSize;
-                }
+                if (tab.startsWith('q')) { if (r >= totalRounds - 2) return false; const qMap = { 'q1': 0, 'q2': 1, 'q3': 2, 'q4': 3 }; return m >= qMap[tab] * (len / 4) && m < (qMap[tab] + 1) * (len / 4); }
+                if (tab === 'top' || tab === 'bottom') { if (r >= totalRounds - 1) return false; const h = tab === 'top' ? 0 : 1; return m >= h * (len / 2) && m < (h + 1) * (len / 2); }
                 return true;
             };
 
             const handleMatchClick = (rIdx, mIdx, match) => { 
-                if (tournament.status === 'completed' || !match || !match.p1 || !match.p2 || match.winner) return; 
-                if (match.type === 'bye') return; 
+                if (tournament.status === 'completed' || !match || !match.p1 || !match.p2 || match.winner || match.type === 'bye') return; 
                 setResolvingMatch({ roundIndex: rIdx, matchIndex: mIdx, ...match }); 
             };
 
@@ -4764,10 +4762,8 @@
                 const { roundIndex: rIdx, matchIndex: mIdx } = resolvingMatch;
                 newBracket[rIdx][mIdx].winner = winnerId; newBracket[rIdx][mIdx].type = type;
                 if (rIdx < totalRounds - 1) { 
-                    const nRIdx = rIdx + 1; 
-                    const nMIdx = Math.floor(mIdx / 2); 
-                    if (mIdx % 2 === 0) newBracket[nRIdx][nMIdx].p1 = winnerId; 
-                    else newBracket[nRIdx][nMIdx].p2 = winnerId; 
+                    const nRIdx = rIdx + 1; const nMIdx = Math.floor(mIdx / 2); 
+                    if (mIdx % 2 === 0) newBracket[nRIdx][nMIdx].p1 = winnerId; else newBracket[nRIdx][nMIdx].p2 = winnerId; 
                 }
                 const tRef = window.fb.doc(db, 'artifacts', appId, 'public', 'data', 'tournaments', tournament.id);
                 let newStatus = tournament.status; let completedAt = tournament.completedAt;
@@ -4776,47 +4772,54 @@
                 setResolvingMatch(null);
             };
 
-            const handleRandomize = () => {
-                const winnerId = Math.random() < 0.5 ? resolvingMatch.p1 : resolvingMatch.p2;
-                submitResult(winnerId, 'random');
+            const handleDelete = async () => {
+                try { onBack(); await window.fb.deleteDoc(window.fb.doc(db, 'artifacts', appId, 'public', 'data', 'tournaments', tournament.id)); } catch(e) { console.error(e); }
             };
 
             const renderMatchParticipant = (match, pId, isTop) => {
                 const p = getPlayer(pId);
-                const isBye = match.type === 'bye';
-                const isTBD = pId == null;
-                const isWinner = !isTBD && match.winner === pId && !isBye;
-                const isLoser = !isTBD && match.winner != null && match.winner !== pId && !isBye;
-                
+                const isBye = match.type === 'bye'; const isTBD = pId == null;
+                const isWinner = !isTBD && match.winner === pId && !isBye; const isLoser = !isTBD && match.winner != null && match.winner !== pId && !isBye;
                 return (
                     <div className={`relative px-2.5 py-1.5 flex items-center justify-between transition-colors h-[30px] ${isTop ? 'border-b border-white/[0.05]' : ''} ${isWinner ? 'bg-white/[0.08]' : 'bg-transparent'}`}>
                         {isWinner && <div className="absolute left-0 top-0 bottom-0 w-[3px] rounded-r shadow-[0_0_8px_rgba(255,255,255,0.8)]" style={{ backgroundColor: tierConf.hex }}></div>}
                         <div className={`flex items-center gap-2 overflow-hidden w-full pr-2 transition-all duration-300 ${isLoser ? 'opacity-30 grayscale' : ''}`}>
-                            {isTBD ? (
-                                <>
-                                    <div className="w-4 h-4 rounded-full border border-white/10 bg-white/5 shrink-0 flex items-center justify-center"></div>
-                                    <span className="text-[9px] font-bold text-white/30 tracking-widest uppercase">TBD</span>
-                                </>
-                            ) : (
+                            {isTBD ? ( <><div className="w-4 h-4 rounded-full border border-white/10 bg-white/5 shrink-0 flex items-center justify-center"></div><span className="text-[9px] font-bold text-white/30 tracking-widest uppercase">TBD</span></> ) : (
                                 <>
                                     <img src={p.images?.[0] || p.imageUrl || "https://via.placeholder.com/40"} loading="lazy" decoding="async" className={`w-4 h-4 rounded-full object-cover shrink-0 shadow-sm border ${isWinner ? 'border-white/40' : 'border-white/10'}`} />
                                     <div className="flex flex-col min-w-0 justify-center">
                                         <span onClick={tournament.status === 'completed' ? (e) => { e.stopPropagation(); onNavigate('players', pId); } : undefined} className={`text-[11px] flex items-center truncate ${isWinner ? 'text-white font-black drop-shadow-md' : 'text-white/70 font-bold'} ${tournament.status === 'completed' ? 'hover:underline cursor-pointer hover:text-gold-400' : ''}`}>
-                                            <span className="text-xs drop-shadow-sm">{getFlag(p.nationality)}</span>
-                                            <span className="text-[8px] uppercase tracking-widest text-white/50 font-bold ml-1">{p.nationality}</span>
-                                            <span className="ml-1.5 truncate tracking-wide">{p.name}</span>
+                                            <span className="text-xs drop-shadow-sm">{getFlag(p.nationality)}</span><span className="text-[8px] uppercase tracking-widest text-white/50 font-bold ml-1">{p.nationality}</span><span className="ml-1.5 truncate tracking-wide">{p.name}</span>
                                             {getSeedText(tournament, pId) && <span className="text-[8px] text-white/40 font-mono ml-1.5 shrink-0">{getSeedText(tournament, pId)}</span>}
                                         </span>
                                     </div>
                                 </>
                             )}
                         </div>
-                        {isWinner && (
-                            <span className="text-[8px] font-black text-black ml-1 px-1.5 py-0.5 rounded-sm shrink-0 shadow-[0_0_10px_rgba(255,255,255,0.2)] flex items-center gap-1" style={{ backgroundColor: tierConf.hex }}>
-                                {match.type === 'random' ? <><Shuffle size={8} strokeWidth={3}/> LUCK</> : match.type === 'lopsided' ? <><IconDom/> DOM</> : <><IconClose/> CLS</>}
-                            </span>
-                        )}
+                        {isWinner && <span className="text-[8px] font-black text-black ml-1 px-1.5 py-0.5 rounded-sm shrink-0 shadow-[0_0_10px_rgba(255,255,255,0.2)] flex items-center gap-1" style={{ backgroundColor: tierConf.hex }}>{match.type === 'random' ? <><Shuffle size={8} strokeWidth={3}/> LUCK</> : match.type === 'lopsided' ? <><IconDom/> DOM</> : <><IconClose/> CLS</>}</span>}
                         {isBye && <span className="text-[8px] font-bold text-white/20 uppercase tracking-widest shrink-0 mr-1">BYE</span>}
+                    </div>
+                );
+            };
+
+            const renderPodiumCard = (pId, role) => {
+                if (!pId) return null;
+                const p = getPlayer(pId);
+                const isChamp = role === 'Champion';
+                const isFin = role === 'Finalist';
+                const colors = isChamp ? { bg: 'bg-gold-500', border: 'border-gold-400', text: 'text-gold-400' } : isFin ? { bg: 'bg-slate-300', border: 'border-slate-300', text: 'text-slate-300' } : { bg: 'bg-[#cd7f32]', border: 'border-[#cd7f32]', text: 'text-[#cd7f32]' };
+                
+                return (
+                    <div onClick={() => onNavigate('players', pId)} className={`flex flex-col items-center gap-3 p-5 rounded-3xl bg-white/5 border border-white/10 hover:bg-white/10 cursor-pointer transition-all hover:scale-105 shadow-xl backdrop-blur-md ${isChamp ? 'md:-translate-y-8 md:scale-110 shadow-[0_20px_50px_rgba(212,175,55,0.2)]' : ''}`}>
+                        <span className={`text-[10px] font-black uppercase tracking-widest ${colors.text}`}>{role}</span>
+                        <div className={`relative rounded-full p-1 ${colors.bg} shadow-lg`}>
+                            <img src={p.images?.[0] || p.imageUrl || "https://via.placeholder.com/80"} className={`w-16 h-16 ${isChamp ? 'md:w-20 md:h-20' : ''} rounded-full object-cover border-2 border-black`} />
+                        </div>
+                        <div className="text-center">
+                            <span className="text-xl drop-shadow-sm">{getFlag(p.nationality)}</span>
+                            <h3 className={`font-black text-white mt-1 ${isChamp ? 'text-lg md:text-xl' : 'text-base'}`}>{p.name}</h3>
+                            {getSeedText(tournament, pId) && <span className="text-[9px] text-white/40 font-mono tracking-widest block mt-1">{getSeedText(tournament, pId)}</span>}
+                        </div>
                     </div>
                 );
             };
@@ -4826,16 +4829,15 @@
             return (
                 <div className="h-full flex flex-col pb-20 relative max-w-[1600px] mx-auto w-full">
                     
-                    {/* BULLETPROOF SECURE SATELLITE MAP - NO MORE CRASHES */}
+                    {/* 100% SECURE HTTPS MAP - 110% Size, perfectly centered to fix black gaps */}
                     <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden bg-[#020617]">
                         <iframe 
                             src={`https://maps.google.com/maps?q=${encodeURIComponent(mapQuery)}&t=k&z=13&ie=UTF8&iwloc=&output=embed`} 
-                            className="w-[110%] h-[110%] -translate-x-[2%] -translate-y-[5%] opacity-60 saturate-[1.3] brightness-90 absolute left-0 top-0"
+                            className="w-[110%] h-[110%] -translate-x-[2%] -translate-y-[5%] opacity-50 saturate-[1.2] absolute left-0 top-0"
                             frameBorder="0"
                             loading="lazy"
                         />
-                        {/* Much lighter gradient to let the satellite texture shine through */}
-                        <div className="absolute inset-0 bg-gradient-to-b from-[#020617]/30 via-transparent to-[#020617]/80 z-10"></div>
+                        <div className="absolute inset-0 bg-gradient-to-b from-[#020617]/50 via-[#020617]/10 to-[#020617]/90 z-10"></div>
                     </div>
 
                     {/* Header Area */}
@@ -4845,143 +4847,171 @@
                                 <ArrowLeft className="w-4 h-4" /> Back to Tournaments
                             </button>
                             
-                            {/* Clickable Title for Description Toggle */}
+                            {/* Cinematic Toggle Title */}
                             <h1 
-                                className="text-3xl md:text-4xl font-black text-white flex items-center gap-4 flex-wrap drop-shadow-lg cursor-pointer hover:opacity-80 transition-opacity"
-                                onClick={() => setExpandedDesc(!expandedDesc)}
+                                className="text-3xl md:text-4xl font-black text-white flex items-center gap-4 flex-wrap drop-shadow-lg cursor-pointer group"
+                                onClick={() => setViewMode(v => v === 'bracket' ? 'info' : 'bracket')}
                             >
                                 {['grand_slam', 'finals', 'major'].includes(tierKey) && (
-                                    <DynamicTrophy tier={tierKey} result="Winner" country={tournament.hostCountry} size={56} className="drop-shadow-[0_10px_20px_rgba(0,0,0,0.5)] shrink-0" />
+                                    <DynamicTrophy tier={tierKey} result="Winner" country={tournament.hostCountry} size={56} className="drop-shadow-[0_10px_20px_rgba(0,0,0,0.5)] shrink-0 group-hover:scale-110 transition-transform" />
                                 )}
                                 
-                                {/* TIER BADGE FIX: Hardcoded fallback styling so it never disappears */}
+                                {/* Bulletproof Tier Badge */}
                                 {tierConf && (
-                                    <span 
-                                        className="text-[10px] font-black uppercase tracking-widest px-3 py-1.5 rounded-lg shrink-0 shadow-lg backdrop-blur-md border" 
-                                        style={{ 
-                                            color: tierConf.hex || '#fff', 
-                                            borderColor: `${tierConf.hex}80` || '#fff',
-                                            backgroundColor: 'rgba(0,0,0,0.4)' 
-                                        }}
-                                    >
+                                    <span className="text-[10px] font-black uppercase tracking-widest px-3 py-1.5 rounded-lg shrink-0 shadow-lg backdrop-blur-md border" style={{ color: tierConf.hex || '#fff', borderColor: `${tierConf.hex}80` || '#fff', backgroundColor: 'rgba(0,0,0,0.5)' }}>
                                         {tierConf.name}
                                     </span>
                                 )}
 
                                 <span className="text-4xl shrink-0" title={getCountryName(tournament.hostCountry || 'USA')}>{getFlag(tournament.hostCountry || 'USA')}</span>
-                                <span className="truncate tracking-tight">{tournament.name}</span>
+                                <span className="truncate tracking-tight group-hover:text-gold-400 transition-colors">{tournament.name}</span>
                                 
-                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className={`text-white/40 transition-all shrink-0 ${expandedDesc ? 'text-white' : 'hover:text-white/80'}`}><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+                                {/* Toggle Button */}
+                                <span className="bg-white/10 text-white/80 px-3 py-1.5 rounded-lg text-[10px] font-black flex items-center gap-2 group-hover:bg-white/20 transition-all shadow-inner border border-white/10 uppercase tracking-widest shrink-0 ml-2">
+                                    {viewMode === 'bracket' ? (
+                                        <><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"></path><path d="M22 12A10 10 0 0 0 12 2v10z"></path></svg> View Summary</>
+                                    ) : (
+                                        <><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="3" y1="9" x2="21" y2="9"></line><line x1="9" y1="21" x2="9" y2="9"></line></svg> View Bracket</>
+                                    )}
+                                </span>
                                 
                                 {tournament.status === 'completed' && <span className="bg-[#059669]/20 text-[#059669] text-xs px-3 py-1.5 rounded-lg shrink-0 font-black tracking-widest uppercase border border-[#059669]/40 shadow-sm backdrop-blur-sm ml-auto">Completed</span>}
                             </h1>
-                            
-                            {/* Smooth Hidden Description */}
-                            {expandedDesc && tournament.description && (
-                                <div className="mt-4 bg-black/40 backdrop-blur-xl border border-white/10 p-5 rounded-2xl max-w-3xl shadow-lg animate-in slide-in-from-top-2 fade-in duration-300">
-                                    <p className="text-white/90 text-sm font-medium leading-relaxed drop-shadow-sm">
-                                        {tournament.description}
-                                    </p>
-                                </div>
-                            )}
                         </div>
-                        <div className="shrink-0 mt-4 md:mt-0">
+
+                        {/* Safe Action Buttons */}
+                        <div className="shrink-0 mt-4 md:mt-0 flex items-center gap-3">
+                            {showDelete ? (
+                                <div className="flex items-center gap-2 bg-[#be123c]/20 border border-[#be123c]/50 p-1.5 rounded-xl backdrop-blur-xl animate-in fade-in slide-in-from-right-2">
+                                    <button onClick={handleDelete} className="bg-[#be123c] hover:bg-[#9f1239] text-white px-3 py-1.5 rounded-lg text-xs font-bold transition-colors shadow-sm">Confirm Delete</button>
+                                    <button onClick={() => setShowDelete(false)} className="text-white/70 hover:text-white text-xs px-2 font-medium">Cancel</button>
+                                </div>
+                            ) : (
+                                <button onClick={() => setShowDelete(true)} className="w-10 h-10 flex items-center justify-center text-[#fb7185] bg-white/5 hover:bg-[#be123c]/20 backdrop-blur-xl rounded-xl border border-white/10 transition-colors shadow-sm">
+                                    {/* Safe Inline Trash Icon */}
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                                </button>
+                            )}
                             <button onClick={() => { if(onEdit) onEdit(tournament.id); else onNavigate('create', tournament.id); }} className="flex items-center gap-2 text-white hover:text-gold-400 text-sm font-bold bg-white/10 backdrop-blur-xl px-5 py-2.5 rounded-xl border border-white/20 transition-colors shadow-lg hover:bg-white/20">
                                 <Edit2 size={16}/> Edit Event
                             </button>
                         </div>
                     </div>
 
-                    {tabs.length > 1 && (
-                        <div className="mb-6 relative z-20 px-4 xl:px-0">
-                            <GlassTabs tabs={tabs} activeTab={activeTab} onChange={handleTabChange} activeColor={tierConf.hex} />
-                        </div>
-                    )}
+                    {/* DYNAMIC CINEMATIC VIEWS */}
+                    {viewMode === 'info' ? (
+                        <div className="flex-1 flex flex-col items-center justify-center p-4 relative z-20 animate-in fade-in zoom-in-95 duration-500">
+                            <div className="w-full max-w-5xl bg-black/40 backdrop-blur-2xl border border-white/10 rounded-[2.5rem] p-8 md:p-12 shadow-[0_20px_60px_rgba(0,0,0,0.6)]">
+                                
+                                {tournament.description && <p className="text-white/90 text-lg md:text-xl font-medium leading-relaxed mb-12 text-center max-w-4xl mx-auto drop-shadow-md">{tournament.description}</p>}
 
-                    {/* Bracket Container - "Smoked Glass" Effect instead of thick frosted glass */}
-                    <div className="flex-1 bg-black/20 backdrop-blur-md rounded-3xl shadow-[0_0_50px_rgba(0,0,0,0.6)] relative overflow-hidden border border-white/10 flex flex-col z-20 mx-4 xl:mx-0">
-                        
-                        <div className="flex-1 overflow-auto custom-scrollbar relative z-10 flex flex-col" ref={scrollContainerRef}>
-                            
-                            <div className="flex min-w-max sticky top-0 z-40 bg-black/50 backdrop-blur-3xl border-b border-white/10 pb-4 pt-6 px-8 shadow-xl">
-                                {parsedBracket.map((round, rIdx) => {
-                                    if (!round.some((_, mIdx) => shouldShowMatch(activeTab, rIdx, mIdx, round.length))) return null;
-                                    
-                                    const isFinalRound = rIdx === totalRounds - 1;
-                                    const showHeaderTrophy = isFinalRound && round[0];
-
-                                    return (
-                                        <div key={`header-${rIdx}`} className="w-56 shrink-0 mr-12 text-center flex flex-col items-center justify-end min-h-[50px]">
-                                            {showHeaderTrophy && <DynamicTrophy tier={tierKey} result="Winner" country={tournament.hostCountry} size={48} className="mb-3 drop-shadow-2xl" />}
-                                            <div className="flex items-center justify-center gap-2 text-white font-black uppercase tracking-widest text-[12px] drop-shadow-md" style={{ color: isFinalRound ? tierConf.hex : undefined }}>
-                                                {isFinalRound && !showHeaderTrophy && <Trophy className="w-4 h-4 inline-block opacity-90 drop-shadow-md" style={{ color: tierConf.hex }} />}
-                                                {ROUND_NAMES[rIdx + rOffset]}
-                                            </div>
+                                {champion && (
+                                    <div className="flex flex-col md:flex-row items-center justify-center gap-6 md:gap-10 mb-12">
+                                        <div className="order-2 md:order-1">{renderPodiumCard(finalist, 'Finalist')}</div>
+                                        <div className="order-1 md:order-2">{renderPodiumCard(champion, 'Champion')}</div>
+                                        <div className="order-3 flex flex-col sm:flex-row md:flex-col gap-6">
+                                            {renderPodiumCard(semi1, 'Semifinalist')}
+                                            {renderPodiumCard(semi2, 'Semifinalist')}
                                         </div>
-                                    )
-                                })}
+                                    </div>
+                                )}
+
+                                <div className="flex flex-wrap justify-center gap-4 border-t border-white/10 pt-8">
+                                    <div className="bg-white/5 border border-white/10 px-5 py-3 rounded-2xl flex items-center gap-3 backdrop-blur-md shadow-inner"><span className="text-white/40 text-[10px] font-black uppercase tracking-widest">Total Matches</span><span className="text-white font-black text-xl">{tStats.total}</span></div>
+                                    <div className="bg-white/5 border border-white/10 px-5 py-3 rounded-2xl flex items-center gap-3 backdrop-blur-md shadow-inner"><span className="text-white/40 text-[10px] font-black uppercase tracking-widest">Close (CLS)</span><span className="text-white font-black text-xl">{tStats.close}</span></div>
+                                    <div className="bg-white/5 border border-white/10 px-5 py-3 rounded-2xl flex items-center gap-3 backdrop-blur-md shadow-inner"><span className="text-white/40 text-[10px] font-black uppercase tracking-widest">Dominant (DOM)</span><span className="text-white font-black text-xl">{tStats.dom}</span></div>
+                                    <div className="bg-white/5 border border-white/10 px-5 py-3 rounded-2xl flex items-center gap-3 backdrop-blur-md shadow-inner"><span className="text-white/40 text-[10px] font-black uppercase tracking-widest">Auto (Luck)</span><span className="text-white font-black text-xl">{tStats.luck}</span></div>
+                                </div>
                             </div>
+                        </div>
+                    ) : (
+                        <>
+                            {tabs.length > 1 && (
+                                <div className="mb-6 relative z-20 px-4 xl:px-0 animate-in fade-in">
+                                    <GlassTabs tabs={tabs} activeTab={activeTab} onChange={handleTabChange} activeColor={tierConf.hex} />
+                                </div>
+                            )}
 
-                            <div className="flex min-w-max items-stretch relative z-10 px-8 pb-10 pt-6 flex-1 h-max">
-                                {parsedBracket.map((round, rIdx) => {
-                                    if (!round.some((_, mIdx) => shouldShowMatch(activeTab, rIdx, mIdx, round.length))) return null;
+                            {/* Heavy Matte Glass Bracket Container */}
+                            <div className="flex-1 bg-white/5 backdrop-blur-2xl rounded-3xl shadow-[0_0_50px_rgba(0,0,0,0.6)] relative overflow-hidden border border-white/10 flex flex-col z-20 mx-4 xl:mx-0 animate-in fade-in zoom-in-95 duration-300">
+                                <div className="flex-1 overflow-auto custom-scrollbar relative z-10 flex flex-col" ref={scrollContainerRef}>
                                     
-                                    const hasNextRoundVisible = (() => {
-                                        if (rIdx === totalRounds - 1) return false; 
-                                        if (activeTab.startsWith('q') && rIdx === totalRounds - 3) return false; 
-                                        if ((activeTab === 'top' || activeTab === 'bottom') && rIdx === totalRounds - 2) return false; 
-                                        return true;
-                                    })();
+                                    {/* Tightened Header Padding */}
+                                    <div className="flex min-w-max sticky top-0 z-40 bg-black/50 backdrop-blur-3xl border-b border-white/10 py-3 px-8 shadow-xl">
+                                        {parsedBracket.map((round, rIdx) => {
+                                            if (!round.some((_, mIdx) => shouldShowMatch(activeTab, rIdx, mIdx, round.length))) return null;
+                                            const isFinalRound = rIdx === totalRounds - 1;
+                                            const showHeaderTrophy = isFinalRound && round[0];
 
-                                    return (
-                                        <div key={`col-${rIdx}`} className="flex flex-col w-56 shrink-0 mr-12 py-1 justify-around h-max min-h-full">
-                                            {round.map((match, mIdx) => {
-                                                if (!shouldShowMatch(activeTab, rIdx, mIdx, round.length)) return null;
-                                                
-                                                if (!match) return null;
-                                                const isReady = match.p1 && match.p2 && !match.winner && tournament.status !== 'completed' && match.type !== 'bye';
-                                                
-                                                const isFirstVisibleRoundInTab = (activeTab === 'top' || activeTab === 'bottom' || activeTab === 'final16' || activeTab === 'final8' || activeTab.startsWith('q')) 
-                                                    ? !shouldShowMatch(activeTab, rIdx - 1, mIdx * 2, round.length * 2) 
-                                                    : rIdx === 0;
-
-                                                return (
-                                                    <div key={match.id} className="relative flex flex-col justify-center py-2" style={{ flex: 1, minHeight: '80px' }}>
-                                                        <div onClick={() => handleMatchClick(rIdx, mIdx, match)} 
-                                                             className={`relative z-20 rounded-xl transition-all duration-300 overflow-hidden flex flex-col border ${
-                                                                 isReady 
-                                                                 ? 'cursor-pointer hover:scale-105 z-30 bg-white/[0.15] shadow-[0_8px_30px_rgba(0,0,0,0.5)] border-white/40 backdrop-blur-xl' 
-                                                                 : match.winner 
-                                                                     ? 'bg-black/60 border-white/10 shadow-md backdrop-blur-md' 
-                                                                     : 'bg-black/40 border-white/[0.05] opacity-80 backdrop-blur-sm'
-                                                             }`}
-                                                             style={{ 
-                                                                 borderColor: isReady ? tierConf.hex : undefined,
-                                                                 boxShadow: isReady ? `0 0 20px ${tierConf.hex}40` : undefined
-                                                             }}>
-                                                            {renderMatchParticipant(match, match.p1, true)}
-                                                            <div className="h-px w-full bg-white/10"></div>
-                                                            {renderMatchParticipant(match, match.p2, false)}
-                                                        </div>
-                                                        
-                                                        {!isFirstVisibleRoundInTab && <div className="absolute -left-[24px] top-1/2 w-[24px] h-[2px] bg-white/30 z-10 shadow-md"></div>}
-                                                        {hasNextRoundVisible && <div className="absolute -right-[24px] top-1/2 w-[24px] h-[2px] bg-white/30 z-10 shadow-md"></div>}
-                                                        {hasNextRoundVisible && mIdx % 2 === 0 && <div className="absolute -right-[24px] top-1/2 w-[2px] bg-white/30 z-10 shadow-md" style={{ height: '100%' }}></div>}
+                                            return (
+                                                <div key={`header-${rIdx}`} className="w-56 shrink-0 mr-12 text-center flex flex-col items-center justify-end min-h-[40px]">
+                                                    {showHeaderTrophy && <DynamicTrophy tier={tierKey} result="Winner" country={tournament.hostCountry} size={40} className="mb-2 drop-shadow-2xl" />}
+                                                    <div className="flex items-center justify-center gap-2 text-white font-black uppercase tracking-widest text-[11px] drop-shadow-md" style={{ color: isFinalRound ? tierConf.hex : undefined }}>
+                                                        {isFinalRound && !showHeaderTrophy && <Trophy className="w-4 h-4 inline-block opacity-90 drop-shadow-md" style={{ color: tierConf.hex }} />}
+                                                        {ROUND_NAMES[rIdx + rOffset]}
                                                     </div>
-                                                );
-                                            })}
-                                        </div>
-                                    );
-                                })}
+                                                </div>
+                                            )
+                                        })}
+                                    </div>
+
+                                    <div className="flex min-w-max items-stretch relative z-10 px-8 pb-10 pt-6 flex-1 h-max">
+                                        {parsedBracket.map((round, rIdx) => {
+                                            if (!round.some((_, mIdx) => shouldShowMatch(activeTab, rIdx, mIdx, round.length))) return null;
+                                            
+                                            const hasNextRoundVisible = (() => {
+                                                if (rIdx === totalRounds - 1) return false; 
+                                                if (activeTab.startsWith('q') && rIdx === totalRounds - 3) return false; 
+                                                if ((activeTab === 'top' || activeTab === 'bottom') && rIdx === totalRounds - 2) return false; 
+                                                return true;
+                                            })();
+
+                                            return (
+                                                <div key={`col-${rIdx}`} className="flex flex-col w-56 shrink-0 mr-12 py-1 justify-around h-max min-h-full">
+                                                    {round.map((match, mIdx) => {
+                                                        if (!shouldShowMatch(activeTab, rIdx, mIdx, round.length)) return null;
+                                                        if (!match) return null;
+                                                        const isReady = match.p1 && match.p2 && !match.winner && tournament.status !== 'completed' && match.type !== 'bye';
+                                                        const isFirstVisibleRoundInTab = (activeTab === 'top' || activeTab === 'bottom' || activeTab === 'final16' || activeTab === 'final8' || activeTab.startsWith('q')) 
+                                                            ? !shouldShowMatch(activeTab, rIdx - 1, mIdx * 2, round.length * 2) : rIdx === 0;
+
+                                                        return (
+                                                            <div key={match.id} className="relative flex flex-col justify-center py-2" style={{ flex: 1, minHeight: '80px' }}>
+                                                                <div onClick={() => handleMatchClick(rIdx, mIdx, match)} 
+                                                                     className={`relative z-20 rounded-xl transition-all duration-300 overflow-hidden flex flex-col border ${
+                                                                         isReady 
+                                                                         ? 'cursor-pointer hover:scale-105 z-30 bg-white/[0.15] shadow-[0_8px_30px_rgba(0,0,0,0.5)] border-white/40 backdrop-blur-xl' 
+                                                                         : match.winner 
+                                                                             ? 'bg-black/50 border-white/10 shadow-md backdrop-blur-md' 
+                                                                             : 'bg-black/20 border-white/[0.05] opacity-70 backdrop-blur-sm'
+                                                                     }`}
+                                                                     style={{ borderColor: isReady ? tierConf.hex : undefined, boxShadow: isReady ? `0 0 20px ${tierConf.hex}40` : undefined }}>
+                                                                    {renderMatchParticipant(match, match.p1, true)}
+                                                                    <div className="h-px w-full bg-white/10"></div>
+                                                                    {renderMatchParticipant(match, match.p2, false)}
+                                                                </div>
+                                                                
+                                                                {!isFirstVisibleRoundInTab && <div className="absolute -left-[24px] top-1/2 w-[24px] h-[2px] bg-white/30 z-10 shadow-md"></div>}
+                                                                {hasNextRoundVisible && <div className="absolute -right-[24px] top-1/2 w-[24px] h-[2px] bg-white/30 z-10 shadow-md"></div>}
+                                                                {hasNextRoundVisible && mIdx % 2 === 0 && <div className="absolute -right-[24px] top-1/2 w-[2px] bg-white/30 z-10 shadow-md" style={{ height: '100%' }}></div>}
+                                                            </div>
+                                                        );
+                                                    })}
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
                             </div>
-                        </div>
-                    </div>
+                        </>
+                    )}
                     <ResolveMatchModal resolvingMatch={resolvingMatch} setResolvingMatch={setResolvingMatch} submitResult={submitResult} handleRandomize={handleRandomize} players={players} allTournaments={allTournaments} tournament={tournament} tierConf={tierConf} onNavigate={onNavigate} />
                 </div>
             );
         }
 
         function SNBInternationalsBracket({ tournament, allTournaments = [], players, onBack, db, appId, onNavigate, onEdit }) {
+            const [viewMode, setViewMode] = useState(tournament.status === 'completed' ? 'info' : 'bracket');
             const [resolvingMatch, setResolvingMatch] = useState(null);
             const [expandedDesc, setExpandedDesc] = useState(false);
             const [showDelete, setShowDelete] = useState(false);
@@ -4993,24 +5023,41 @@
             
             if (typeof tournament.groupMatches === 'string') {
                 try { groupMatches = JSON.parse(tournament.groupMatches); } catch(e){}
-            } else {
-                groupMatches = tournament.groupMatches || [];
-            }
+            } else { groupMatches = tournament.groupMatches || []; }
             if (!Array.isArray(groupMatches)) groupMatches = [];
             
             if (typeof tournament.bracket === 'string') {
                 try { knockout = JSON.parse(tournament.bracket); } catch(e){}
-            } else {
-                knockout = tournament.bracket || [[],[]];
-            }
+            } else { knockout = tournament.bracket || [[],[]]; }
             if (!Array.isArray(knockout) || knockout.length < 2) knockout = [[],[]];
 
             const standingsA = useMemo(() => calcGroupStandings('A', groupMatches), [groupMatches]);
             const standingsB = useMemo(() => calcGroupStandings('B', groupMatches), [groupMatches]);
 
-            const isGroupStageComplete = useMemo(() => {
-                return groupMatches.length === 12 && groupMatches.every(m => m && m.winner);
-            }, [groupMatches]);
+            const isGroupStageComplete = useMemo(() => { return groupMatches.length === 12 && groupMatches.every(m => m && m.winner); }, [groupMatches]);
+
+            // Extract Stats & Top Performers for the Cinematic View
+            const tStats = { total: 0, close: 0, dom: 0, luck: 0 };
+            let champion = null, finalist = null, semi1 = null, semi2 = null;
+
+            [...groupMatches, ...(knockout.flat())].forEach(m => {
+                if (m && m.winner && m.type !== 'bye') {
+                    tStats.total++;
+                    if (m.type === 'close') tStats.close++;
+                    else if (m.type === 'lopsided') tStats.dom++;
+                    else if (m.type === 'random') tStats.luck++;
+                }
+            });
+
+            if (knockout.length > 1 && knockout[1][0] && knockout[1][0].winner) {
+                const fMatch = knockout[1][0];
+                champion = fMatch.winner; finalist = fMatch.p1 === fMatch.winner ? fMatch.p2 : fMatch.p1;
+            }
+            if (knockout.length > 0 && knockout[0].length >= 2) {
+                const s1 = knockout[0][0]; const s2 = knockout[0][1];
+                if (s1 && s1.winner) semi1 = s1.p1 === s1.winner ? s1.p2 : s1.p1;
+                if (s2 && s2.winner) semi2 = s2.p1 === s2.winner ? s2.p2 : s2.p1;
+            }
 
             const handleMatchClick = (type, mIdx, match) => {
                 if (tournament.status === 'completed' || !match || !match.p1 || !match.p2 || match.winner) return;
@@ -5021,146 +5068,108 @@
                 const newT = JSON.parse(JSON.stringify(tournament));
                 const { matchType, matchIndex } = resolvingMatch;
 
-                let parsedGM = [];
-                let parsedKO = [[], []];
+                let parsedGM = []; let parsedKO = [[], []];
                 try { parsedGM = typeof newT.groupMatches === 'string' ? JSON.parse(newT.groupMatches) : newT.groupMatches; } catch(e){}
                 try { parsedKO = typeof newT.bracket === 'string' ? JSON.parse(newT.bracket) : newT.bracket; } catch(e){}
 
                 if (matchType === 'group') {
-                    parsedGM[matchIndex].winner = winnerId;
-                    parsedGM[matchIndex].type = winType;
-                    
+                    parsedGM[matchIndex].winner = winnerId; parsedGM[matchIndex].type = winType;
                     const allGroupsDone = parsedGM.every(m => m && m.winner);
                     if (allGroupsDone) {
-                        const sA = calcGroupStandings('A', parsedGM);
-                        const sB = calcGroupStandings('B', parsedGM);
+                        const sA = calcGroupStandings('A', parsedGM); const sB = calcGroupStandings('B', parsedGM);
                         if(sA.length >= 2 && sB.length >= 2) {
-                            parsedKO[0][0].p1 = sA[0].id;
-                            parsedKO[0][0].p2 = sB[1].id;
-                            parsedKO[0][1].p1 = sB[0].id;
-                            parsedKO[0][1].p2 = sA[1].id;
+                            parsedKO[0][0].p1 = sA[0].id; parsedKO[0][0].p2 = sB[1].id;
+                            parsedKO[0][1].p1 = sB[0].id; parsedKO[0][1].p2 = sA[1].id;
                         }
                     }
                 } else if (matchType === 'sf') {
-                    parsedKO[0][matchIndex].winner = winnerId;
-                    parsedKO[0][matchIndex].type = winType;
-                    if (matchIndex === 0) parsedKO[1][0].p1 = winnerId;
-                    else parsedKO[1][0].p2 = winnerId;
+                    parsedKO[0][matchIndex].winner = winnerId; parsedKO[0][matchIndex].type = winType;
+                    if (matchIndex === 0) parsedKO[1][0].p1 = winnerId; else parsedKO[1][0].p2 = winnerId;
                 } else if (matchType === 'f') {
-                    parsedKO[1][0].winner = winnerId;
-                    parsedKO[1][0].type = winType;
-                    newT.status = 'completed';
-                    newT.completedAt = Date.now();
+                    parsedKO[1][0].winner = winnerId; parsedKO[1][0].type = winType;
+                    newT.status = 'completed'; newT.completedAt = Date.now();
                 }
                 
-                newT.groupMatches = JSON.stringify(parsedGM);
-                newT.bracket = JSON.stringify(parsedKO);
-
+                newT.groupMatches = JSON.stringify(parsedGM); newT.bracket = JSON.stringify(parsedKO);
                 await window.fb.updateDoc(window.fb.doc(db, 'artifacts', appId, 'public', 'data', 'tournaments', tournament.id), newT);
                 setResolvingMatch(null);
             };
 
-            const handleRandomize = () => {
-                const winnerId = Math.random() < 0.5 ? resolvingMatch.p1 : resolvingMatch.p2;
-                submitResult(winnerId, 'random');
-            };
+            const handleRandomize = () => { const winnerId = Math.random() < 0.5 ? resolvingMatch.p1 : resolvingMatch.p2; submitResult(winnerId, 'random'); };
+            const handleDelete = async () => { try { onBack(); await window.fb.deleteDoc(window.fb.doc(db, 'artifacts', appId, 'public', 'data', 'tournaments', tournament.id)); } catch(e) { console.error(e); } };
 
-            const handleDelete = async () => {
-                try {
-                    onBack();
-                    await window.fb.deleteDoc(window.fb.doc(db, 'artifacts', appId, 'public', 'data', 'tournaments', tournament.id));
-                } catch(e) { console.error(e); }
-            };
-
-            const tierKey = getTournamentTier(tournament);
-            const tierConf = TOURNAMENT_TIERS[tierKey];
-
+            const tierKey = getTournamentTier(tournament); const tierConf = TOURNAMENT_TIERS[tierKey];
             const IconDom = () => <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>;
             const IconClose = () => <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><circle cx="12" cy="12" r="6"></circle><circle cx="12" cy="12" r="2"></circle></svg>;
 
-            // UNIFIED ULTRA COMPACT MATCH PARTICIPANT
             const renderMatchParticipant = (match, pId, isTop) => {
-                const p = getPlayer(pId);
-                const isBye = match.type === 'bye';
-                const isTBD = pId == null;
-                const isWinner = !isTBD && match.winner === pId && !isBye;
-                const isLoser = !isTBD && match.winner != null && match.winner !== pId && !isBye;
-                
+                const p = getPlayer(pId); const isBye = match.type === 'bye'; const isTBD = pId == null;
+                const isWinner = !isTBD && match.winner === pId && !isBye; const isLoser = !isTBD && match.winner != null && match.winner !== pId && !isBye;
                 return (
                     <div className={`relative px-2.5 py-1.5 flex items-center justify-between transition-colors h-[30px] ${isTop ? 'border-b border-white/[0.05]' : ''} ${isWinner ? 'bg-white/[0.08]' : 'bg-transparent'}`}>
                         {isWinner && <div className="absolute left-0 top-0 bottom-0 w-[3px] rounded-r shadow-[0_0_8px_rgba(255,255,255,0.8)]" style={{ backgroundColor: tierConf.hex }}></div>}
                         <div className={`flex items-center gap-2 overflow-hidden w-full pr-2 transition-all duration-300 ${isLoser ? 'opacity-30 grayscale' : ''}`}>
-                            {isTBD ? (
-                                <>
-                                    <div className="w-4 h-4 rounded-full border border-white/10 bg-white/5 shrink-0 flex items-center justify-center"></div>
-                                    <span className="text-[9px] font-bold text-white/30 tracking-widest uppercase">TBD</span>
-                                </>
-                            ) : (
+                            {isTBD ? ( <><div className="w-4 h-4 rounded-full border border-white/10 bg-white/5 shrink-0 flex items-center justify-center"></div><span className="text-[9px] font-bold text-white/30 tracking-widest uppercase">TBD</span></> ) : (
                                 <>
                                     <img src={p.images?.[0] || p.imageUrl || "https://via.placeholder.com/40"} loading="lazy" decoding="async" className={`w-4 h-4 rounded-full object-cover shrink-0 shadow-sm border ${isWinner ? 'border-white/40' : 'border-white/10'}`} />
                                     <div className="flex flex-col min-w-0 justify-center">
                                         <span onClick={tournament.status === 'completed' ? (e) => { e.stopPropagation(); onNavigate('players', pId); } : undefined} className={`text-[11px] flex items-center truncate ${isWinner ? 'text-white font-black drop-shadow-md' : 'text-white/70 font-bold'} ${tournament.status === 'completed' ? 'hover:underline cursor-pointer hover:text-gold-400' : ''}`}>
-                                            <span className="text-xs drop-shadow-sm">{getFlag(p.nationality)}</span>
-                                            <span className="text-[8px] uppercase tracking-widest text-white/50 font-bold ml-1">{p.nationality}</span>
-                                            <span className="ml-1.5 truncate tracking-wide">{p.name}</span>
+                                            <span className="text-xs drop-shadow-sm">{getFlag(p.nationality)}</span><span className="text-[8px] uppercase tracking-widest text-white/50 font-bold ml-1">{p.nationality}</span><span className="ml-1.5 truncate tracking-wide">{p.name}</span>
                                             {getSeedText(tournament, pId) && <span className="text-[8px] text-white/40 font-mono ml-1.5 shrink-0">{getSeedText(tournament, pId)}</span>}
                                         </span>
                                     </div>
                                 </>
                             )}
                         </div>
-                        {isWinner && (
-                            <span className="text-[8px] font-black text-black ml-1 px-1.5 py-0.5 rounded-sm shrink-0 shadow-[0_0_10px_rgba(255,255,255,0.2)] flex items-center gap-1" style={{ backgroundColor: tierConf.hex }}>
-                                {match.type === 'random' ? <><Shuffle size={8} strokeWidth={3}/> LUCK</> : match.type === 'lopsided' ? <><IconDom/> DOM</> : <><IconClose/> CLS</>}
-                            </span>
-                        )}
+                        {isWinner && <span className="text-[8px] font-black text-black ml-1 px-1.5 py-0.5 rounded-sm shrink-0 shadow-[0_0_10px_rgba(255,255,255,0.2)] flex items-center gap-1" style={{ backgroundColor: tierConf.hex }}>{match.type === 'random' ? <><Shuffle size={8} strokeWidth={3}/> LUCK</> : match.type === 'lopsided' ? <><IconDom/> DOM</> : <><IconClose/> CLS</>}</span>}
                         {isBye && <span className="text-[8px] font-bold text-white/20 uppercase tracking-widest shrink-0 mr-1">BYE</span>}
                     </div>
                 );
             };
 
-            const renderStandingsTable = (groupName, standings) => (
-                <div className="bg-black/40 backdrop-blur-2xl rounded-3xl border border-white/10 overflow-hidden shadow-2xl w-full">
-                    <div className="bg-black/40 p-4 border-b border-white/10 font-black text-white flex justify-between items-center text-lg tracking-wide">
-                        <span>Group {groupName}</span>
-                        {isGroupStageComplete && <span className="text-[10px] bg-emerald-500/20 text-emerald-400 px-3 py-1 rounded-md uppercase tracking-widest border border-emerald-500/30">Final</span>}
+            const renderPodiumCard = (pId, role) => {
+                if (!pId) return null;
+                const p = getPlayer(pId);
+                const isChamp = role === 'Champion'; const isFin = role === 'Finalist';
+                const colors = isChamp ? { bg: 'bg-gold-500', border: 'border-gold-400', text: 'text-gold-400' } : isFin ? { bg: 'bg-slate-300', border: 'border-slate-300', text: 'text-slate-300' } : { bg: 'bg-[#cd7f32]', border: 'border-[#cd7f32]', text: 'text-[#cd7f32]' };
+                
+                return (
+                    <div onClick={() => onNavigate('players', pId)} className={`flex flex-col items-center gap-3 p-5 rounded-3xl bg-white/5 border border-white/10 hover:bg-white/10 cursor-pointer transition-all hover:scale-105 shadow-xl backdrop-blur-md ${isChamp ? 'md:-translate-y-8 md:scale-110 shadow-[0_20px_50px_rgba(212,175,55,0.2)]' : ''}`}>
+                        <span className={`text-[10px] font-black uppercase tracking-widest ${colors.text}`}>{role}</span>
+                        <div className={`relative rounded-full p-1 ${colors.bg} shadow-lg`}><img src={p.images?.[0] || p.imageUrl || "https://via.placeholder.com/80"} className={`w-16 h-16 ${isChamp ? 'md:w-20 md:h-20' : ''} rounded-full object-cover border-2 border-black`} /></div>
+                        <div className="text-center">
+                            <span className="text-xl drop-shadow-sm">{getFlag(p.nationality)}</span>
+                            <h3 className={`font-black text-white mt-1 ${isChamp ? 'text-lg md:text-xl' : 'text-base'}`}>{p.name}</h3>
+                            {getSeedText(tournament, pId) && <span className="text-[9px] text-white/40 font-mono tracking-widest block mt-1">{getSeedText(tournament, pId)}</span>}
+                        </div>
                     </div>
-                    <table className="w-full text-left text-sm">
-                        <thead className="bg-white/5 text-white/60 text-[10px] uppercase tracking-widest border-b border-white/10">
-                            <tr><th className="p-4 font-bold">Player</th><th className="p-4 text-center font-bold">W-L</th><th className="p-4 text-center font-bold">Tiebreaker</th></tr>
+                );
+            };
+
+            const renderStandingsTable = (groupName, standings) => (
+                <div className="bg-white/5 backdrop-blur-2xl rounded-2xl border border-white/10 overflow-hidden shadow-2xl w-full">
+                    <div className="bg-black/40 px-4 py-2.5 border-b border-white/10 font-black text-white flex justify-between items-center text-sm tracking-wide">
+                        <span>Group {groupName}</span>
+                        {isGroupStageComplete && <span className="text-[9px] bg-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded-md uppercase tracking-widest border border-emerald-500/30">Final</span>}
+                    </div>
+                    <table className="w-full text-left text-xs">
+                        <thead className="bg-black/20 text-white/50 text-[9px] uppercase tracking-widest border-b border-white/5">
+                            <tr><th className="px-3 py-2 font-bold">Player</th><th className="px-3 py-2 text-center font-bold">W-L</th><th className="px-3 py-2 text-center font-bold">TB</th></tr>
                         </thead>
                         <tbody className="divide-y divide-white/5 text-white font-medium">
                             {standings.map((s, idx) => {
-                                const p = getPlayer(s.id);
-                                const isAdvancing = isGroupStageComplete && idx < 2;
+                                const p = getPlayer(s.id); const isAdvancing = isGroupStageComplete && idx < 2;
                                 return (
                                     <tr key={s.id} className={`${isAdvancing ? 'bg-emerald-500/10' : 'hover:bg-white/5'} transition-colors`}>
-                                        <td className="p-4 flex items-center gap-3">
-                                            <span className={`w-6 h-6 flex items-center justify-center rounded-full text-[10px] font-black shadow-sm ${isAdvancing ? 'bg-emerald-500 text-black shadow-[0_0_10px_rgba(16,185,129,0.4)]' : 'bg-white/10 text-white/80 border border-white/10'}`}>{idx+1}</span>
-                                            <span onClick={tournament.status === 'completed' ? (e) => { e.stopPropagation(); onNavigate('players', s.id); } : undefined} className={`truncate flex items-center ${tournament.status === 'completed' ? 'cursor-pointer hover:text-gold-400 hover:underline' : ''}`}>
-                                                <span className="text-lg drop-shadow-sm mr-2">{getFlag(p.nationality)}</span>
-                                                <span className="font-bold text-sm">{p.name}</span>
-                                                {getSeedText(tournament, s.id) && <span className="text-[9px] text-white/40 font-mono tracking-tighter ml-2 bg-black/40 px-1.5 py-0.5 rounded">{getSeedText(tournament, s.id)}</span>}
+                                        <td className="px-3 py-2.5 flex items-center gap-2">
+                                            <span className={`w-4 h-4 flex items-center justify-center rounded-full text-[9px] font-black shadow-sm shrink-0 ${isAdvancing ? 'bg-emerald-500 text-black shadow-[0_0_10px_rgba(16,185,129,0.4)]' : 'bg-white/10 text-white/80 border border-white/10'}`}>{idx+1}</span>
+                                            <span onClick={tournament.status === 'completed' ? (e) => { e.stopPropagation(); onNavigate('players', s.id); } : undefined} className={`truncate flex items-center min-w-0 ${tournament.status === 'completed' ? 'cursor-pointer hover:text-gold-400 hover:underline' : ''}`}>
+                                                <span className="text-base drop-shadow-sm mr-1.5 shrink-0">{getFlag(p.nationality)}</span>
+                                                <span className="font-bold text-xs truncate">{p.name}</span>
                                             </span>
                                         </td>
-                                        <td className="p-4 text-center font-bold text-sm">{s.wins}-{s.losses}</td>
-                                        <td className={`p-4 text-center font-bold text-sm ${s.tiebreaker > 0 ? 'text-emerald-400' : s.tiebreaker < 0 ? 'text-rose-400' : 'text-white/40'}`}>{s.tiebreaker > 0 ? `+${s.tiebreaker}` : s.tiebreaker}</td>
-                                    </tr>
-                                );
-                            })}
-                            {standings.length === 0 && tournament.groups && tournament.groups[groupName] && tournament.groups[groupName].map((pid, idx) => {
-                                const p = getPlayer(pid);
-                                return (
-                                    <tr key={pid} className="opacity-60">
-                                        <td className="p-4 flex items-center gap-3">
-                                            <span className="w-6 h-6 flex items-center justify-center rounded-full text-xs font-bold bg-white/5 border border-white/10 text-white/50">-</span> 
-                                            <span onClick={tournament.status === 'completed' ? (e) => { e.stopPropagation(); onNavigate('players', pid); } : undefined} className={`truncate flex items-center ${tournament.status === 'completed' ? 'cursor-pointer hover:text-gold-400 hover:underline' : ''}`}>
-                                                <span className="text-lg mr-2">{getFlag(p.nationality)}</span>
-                                                <span className="font-bold text-sm">{p.name}</span>
-                                            </span>
-                                        </td>
-                                        <td className="p-4 text-center font-mono text-white/40 text-sm">0-0</td>
-                                        <td className="p-4 text-center font-mono text-white/40 text-sm">0</td>
+                                        <td className="px-3 py-2.5 text-center font-bold">{s.wins}-{s.losses}</td>
+                                        <td className={`px-3 py-2.5 text-center font-bold ${s.tiebreaker > 0 ? 'text-emerald-400' : s.tiebreaker < 0 ? 'text-rose-400' : 'text-white/40'}`}>{s.tiebreaker > 0 ? `+${s.tiebreaker}` : s.tiebreaker}</td>
                                     </tr>
                                 );
                             })}
@@ -5169,157 +5178,165 @@
                 </div>
             );
 
-            const finalMatch = knockout[1] ? knockout[1][0] : null;
-            const showHeaderTrophy = finalMatch;
             const mapQuery = tournament.location || `${tournament.name} ${getCountryName(tournament.hostCountry)}`;
+            const finalMatch = knockout[1] ? knockout[1][0] : null; const showHeaderTrophy = finalMatch;
 
             return (
-                <div className="h-full flex flex-col pb-20 max-w-[1600px] mx-auto w-full relative">
+                <div className="h-full flex flex-col pb-20 relative max-w-[1600px] mx-auto w-full">
                     
-                    {/* SECURE HTTPS MAP LAYER - Zoomed to 13, Less dark, Clearer! */}
+                    {/* HTTPS SECURE SATELLITE MAP - Centered & 110% width */}
                     <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden bg-[#020617]">
                         <iframe 
-                            src={`http://googleusercontent.com/maps.google.com/maps?q=${encodeURIComponent(mapQuery)}&t=k&z=13&ie=UTF8&iwloc=&output=embed`} 
-                            className="w-[120%] h-[120%] -translate-x-[10%] -translate-y-[10%] opacity-50 saturate-[1.2]"
+                            src={`https://maps.google.com/maps?q=${encodeURIComponent(mapQuery)}&t=k&z=13&ie=UTF8&iwloc=&output=embed`} 
+                            className="w-[110%] h-[110%] -translate-x-[2%] -translate-y-[5%] opacity-50 saturate-[1.2] absolute left-0 top-0"
                             frameBorder="0"
                             loading="lazy"
                         />
-                        <div className="absolute inset-0 bg-gradient-to-b from-[#020617]/50 via-[#020617]/30 to-[#020617]/80 z-10"></div>
+                        <div className="absolute inset-0 bg-gradient-to-b from-[#020617]/50 via-[#020617]/10 to-[#020617]/90 z-10"></div>
                     </div>
 
                     {/* Header Area */}
-                    <div className="flex justify-between items-start md:items-center mb-6 relative z-20 pt-4 px-4 xl:px-0 shrink-0">
+                    <div className="flex justify-between items-start md:items-center mb-6 shrink-0 relative z-20 pt-4 px-4 xl:px-0">
                         <div className="flex-1 min-w-0 mr-4">
-                            <button onClick={onBack} className="flex items-center gap-2 text-white/60 hover:text-white transition-colors mb-3 text-sm font-medium drop-shadow-md">
-                                <ArrowLeft className="w-4 h-4" /> Back to Tournaments
-                            </button>
-                            <h1 className="text-3xl md:text-4xl font-black text-white flex items-center gap-4 flex-wrap drop-shadow-lg">
-                                {tournament.status === 'completed' && (
-                                    <DynamicTrophy tier="finals" result="Winner" country={tournament.hostCountry} size={56} className="drop-shadow-[0_10px_20px_rgba(0,0,0,0.5)] shrink-0" />
-                                )}
-                                <span className={`text-xs font-black uppercase tracking-widest px-3 py-1.5 rounded-lg shrink-0 shadow-md backdrop-blur-md`} style={{ backgroundColor: `${tierConf.hex}20`, color: tierConf.hex, border: `1px solid ${tierConf.hex}50` }}>
-                                    {tierConf?.name || 'SNB Internationals'}
-                                </span>
-                                <span className="text-4xl shrink-0" title={getCountryName(tournament.hostCountry || 'USA')}>{getFlag(tournament.hostCountry || 'USA')}</span>
-                                <span className="truncate tracking-tight">{tournament.name}</span>
-                                {tournament.status === 'completed' && <span className="bg-[#059669]/20 text-[#059669] text-xs px-3 py-1.5 rounded-lg shrink-0 font-black tracking-widest uppercase border border-[#059669]/40 shadow-sm backdrop-blur-sm">Completed</span>}
-                            </h1>
+                            <button onClick={onBack} className="flex items-center gap-2 text-white/60 hover:text-white transition-colors mb-3 text-sm font-medium drop-shadow-md"><ArrowLeft className="w-4 h-4" /> Back to Tournaments</button>
                             
-                            {/* Expandable Description Line */}
-                            {tournament.description && (
-                                <div className="mt-4 bg-black/20 backdrop-blur-md border border-white/10 p-4 rounded-xl max-w-3xl shadow-sm">
-                                    <p className={`text-white/80 text-sm font-medium leading-relaxed drop-shadow-sm ${expandedDesc ? '' : 'line-clamp-2 break-words'}`}>
-                                        {tournament.description}
-                                    </p>
-                                    {tournament.description.length > 150 && (
-                                        <button onClick={() => setExpandedDesc(!expandedDesc)} className="text-gold-400 hover:text-gold-300 text-[10px] uppercase tracking-widest font-black mt-2 transition-colors">
-                                            {expandedDesc ? 'Show Less' : 'Read Full Info'}
-                                        </button>
-                                    )}
-                                </div>
-                            )}
-                        </div>
-                        <div className="shrink-0 mt-4 md:mt-0">
-                            {/* EDIT BUTTON REPLACES DELETE BUTTON */}
-                            <button onClick={() => onEdit ? onEdit(tournament.id) : onNavigate('create', tournament.id)} className="flex items-center gap-2 text-white hover:text-gold-400 text-sm font-bold bg-white/10 backdrop-blur-xl px-5 py-2.5 rounded-xl border border-white/20 transition-colors shadow-lg hover:bg-white/20">
-                                <Edit2 size={16}/> Edit Event
-                            </button>
-                        </div>
-                    </div>
+                            <h1 className="text-3xl md:text-4xl font-black text-white flex items-center gap-4 flex-wrap drop-shadow-lg cursor-pointer group" onClick={() => setViewMode(v => v === 'bracket' ? 'info' : 'bracket')}>
+                                {tournament.status === 'completed' && <DynamicTrophy tier="finals" result="Winner" country={tournament.hostCountry} size={56} className="drop-shadow-[0_10px_20px_rgba(0,0,0,0.5)] shrink-0 group-hover:scale-110 transition-transform" />}
+                                
+                                {tierConf && (
+                                    <span className="text-[10px] font-black uppercase tracking-widest px-3 py-1.5 rounded-lg shrink-0 shadow-lg backdrop-blur-md border" style={{ color: tierConf.hex || '#fff', borderColor: `${tierConf.hex}80` || '#fff', backgroundColor: 'rgba(0,0,0,0.5)' }}>
+                                        {tierConf.name}
+                                    </span>
+                                )}
 
-                    {/* Group Stage Overview */}
-                    <div className="grid md:grid-cols-2 gap-8 relative z-20 px-4 xl:px-0 mb-8 shrink-0">
-                        {renderStandingsTable('A', standingsA)}
-                        {renderStandingsTable('B', standingsB)}
-                    </div>
-
-                    <div className="relative z-20 px-4 xl:px-0 mb-12 shrink-0">
-                        <h2 className="text-2xl font-black text-white mb-6 tracking-tight drop-shadow-md">Round Robin Matches</h2>
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
-                            {groupMatches.map((match, mIdx) => {
-                                if (!match) return null;
-                                const isReady = !match.winner;
-                                return (
-                                    <div key={match.id} onClick={() => handleMatchClick('group', mIdx, match)} 
-                                         className={`rounded-2xl p-2 transition-all duration-300 overflow-hidden backdrop-blur-xl shadow-lg border ${isReady ? 'hover:-translate-y-1 hover:shadow-2xl cursor-pointer z-20 bg-white/[0.05] border-white/20' : 'bg-black/40 border-white/10 opacity-80'}`} 
-                                         style={{ 
-                                             borderColor: isReady ? tierConf.hex : undefined,
-                                             boxShadow: isReady ? `0 10px 30px ${tierConf.hex}20` : undefined
-                                         }}>
-                                        <div className="text-[10px] font-black text-white/50 mb-2 mt-1 mx-2 uppercase tracking-widest">Group {match.group}</div>
-                                        <div className="flex flex-col bg-black/20 rounded-xl overflow-hidden border border-white/5">
-                                            {renderMatchParticipant(match, match.p1, true)}
-                                            {renderMatchParticipant(match, match.p2, false)}
-                                        </div>
-                                    </div>
-                                );
-                            })}
-                        </div>
-                    </div>
-
-                    {/* Knockout Stage Container - Modified so it doesn't try to stretch the full page unnecesarily */}
-                    <div className="flex-1 flex flex-col relative z-20 px-4 xl:px-0">
-                        <div className="flex items-center gap-4 mb-8">
-                            <h2 className="text-2xl font-black text-white tracking-tight drop-shadow-md">Knockout Stage</h2>
-                            <div className="h-px flex-1 bg-gradient-to-r from-white/20 to-transparent"></div>
+                                <span className="text-4xl shrink-0" title={getCountryName(tournament.hostCountry || 'USA')}>{getFlag(tournament.hostCountry || 'USA')}</span>
+                                <span className="truncate tracking-tight group-hover:text-gold-400 transition-colors">{tournament.name}</span>
+                                
+                                <span className="bg-white/10 text-white/80 px-3 py-1.5 rounded-lg text-[10px] font-black flex items-center gap-2 group-hover:bg-white/20 transition-all shadow-inner border border-white/10 uppercase tracking-widest shrink-0 ml-2">
+                                    {viewMode === 'bracket' ? <><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"></path><path d="M22 12A10 10 0 0 0 12 2v10z"></path></svg> View Summary</> : <><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="3" y1="9" x2="21" y2="9"></line><line x1="9" y1="21" x2="9" y2="9"></line></svg> View Bracket</>}
+                                </span>
+                                
+                                {tournament.status === 'completed' && <span className="bg-[#059669]/20 text-[#059669] text-xs px-3 py-1.5 rounded-lg shrink-0 font-black tracking-widest uppercase border border-[#059669]/40 shadow-sm backdrop-blur-sm ml-auto">Completed</span>}
+                            </h1>
                         </div>
                         
-                        {/* Wrapper for horizontal scrolling if needed, but keeps it contained */}
-                        <div className="overflow-x-auto custom-scrollbar pb-6">
-                            <div className="flex min-w-max items-stretch justify-center bg-white/5 backdrop-blur-2xl rounded-3xl border border-white/10 p-8 shadow-[0_20px_50px_rgba(0,0,0,0.5)]">
-                                {knockout.map((round, rIdx) => {
-                                    if (!Array.isArray(round)) return null;
-                                    const isFinalRound = rIdx === 1;
-                                    
-                                    return (
-                                    <div key={rIdx} className="flex flex-col w-64 shrink-0 mr-16">
-                                        <div className="text-center text-white/60 font-black text-xs uppercase tracking-widest mb-6 flex flex-col items-center justify-end min-h-[60px] shrink-0">
-                                            {isFinalRound && showHeaderTrophy && <DynamicTrophy tier="finals" result="Winner" country={tournament.hostCountry} size={56} className="mb-4 drop-shadow-2xl opacity-90" />}
-                                            <div className="flex items-center justify-center gap-2 drop-shadow-md" style={{ color: isFinalRound ? tierConf.hex : undefined }}>
-                                                {isFinalRound && !showHeaderTrophy && <Trophy className="w-4 h-4 inline-block opacity-80" style={{ color: tierConf.hex }} />}
-                                                {isFinalRound ? 'Championship' : 'Semifinals'}
-                                            </div>
-                                        </div>
-                                        <div className="flex-1 flex flex-col justify-around gap-6">
-                                            {round.map((match, mIdx) => {
-                                                if (!match) return null;
-                                                const isReady = match.p1 && match.p2 && !match.winner && tournament.status !== 'completed';
-                                                
-                                                return (
-                                                    <div key={match.id} className="relative flex flex-col justify-center" style={{ flex: 1, minHeight: '80px' }}>
-                                                        <div onClick={() => handleMatchClick(rIdx === 0 ? 'sf' : 'f', mIdx, match)} 
-                                                             className={`relative z-20 rounded-xl transition-all duration-300 overflow-hidden flex flex-col border ${
-                                                                 isReady 
-                                                                 ? 'cursor-pointer hover:scale-105 z-30 bg-white/[0.15] shadow-[0_10px_30px_rgba(0,0,0,0.5)] border-white/40 backdrop-blur-xl' 
-                                                                 : match.winner 
-                                                                     ? 'bg-black/50 border-white/10 shadow-md backdrop-blur-md' 
-                                                                     : 'bg-black/20 border-white/[0.05] opacity-60 backdrop-blur-sm'
-                                                             }`}
-                                                             style={{ 
-                                                                 borderColor: isReady ? tierConf.hex : undefined,
-                                                                 boxShadow: isReady ? `0 0 25px ${tierConf.hex}40` : undefined
-                                                             }}>
-                                                            
-                                                            {renderMatchParticipant(match, match.p1, true)}
-                                                            <div className="h-px w-full bg-white/10"></div>
-                                                            {renderMatchParticipant(match, match.p2, false)}
-
-                                                        </div>
-                                                        
-                                                        {/* Ultra-Visible Connector Lines (Fixed Spacing to 24px) */}
-                                                        {rIdx === 0 && <div className="absolute -right-[24px] top-1/2 w-[24px] h-[2px] bg-white/30 z-10 shadow-md"></div>}
-                                                        {rIdx === 0 && mIdx % 2 === 0 && <div className="absolute -right-[24px] top-1/2 w-[2px] bg-white/30 z-10 shadow-md" style={{ height: '100%' }}></div>}
-                                                        {rIdx === 1 && <div className="absolute -left-[24px] top-1/2 w-[24px] h-[2px] bg-white/30 z-10 shadow-md"></div>}
-                                                    </div>
-                                                );
-                                            })}
-                                        </div>
-                                    </div>
-                                    )
-                                })}
-                            </div>
+                        <div className="shrink-0 mt-4 md:mt-0 flex items-center gap-3">
+                            {showDelete ? (
+                                <div className="flex items-center gap-2 bg-[#be123c]/20 border border-[#be123c]/50 p-1.5 rounded-xl backdrop-blur-xl animate-in fade-in slide-in-from-right-2">
+                                    <button onClick={handleDelete} className="bg-[#be123c] hover:bg-[#9f1239] text-white px-3 py-1.5 rounded-lg text-xs font-bold transition-colors shadow-sm">Confirm Delete</button>
+                                    <button onClick={() => setShowDelete(false)} className="text-white/70 hover:text-white text-xs px-2 font-medium">Cancel</button>
+                                </div>
+                            ) : (
+                                <button onClick={() => setShowDelete(true)} className="w-10 h-10 flex items-center justify-center text-[#fb7185] bg-white/5 hover:bg-[#be123c]/20 backdrop-blur-xl rounded-xl border border-white/10 transition-colors shadow-sm">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                                </button>
+                            )}
+                            <button onClick={() => { if(onEdit) onEdit(tournament.id); else onNavigate('create', tournament.id); }} className="flex items-center gap-2 text-white hover:text-gold-400 text-sm font-bold bg-white/10 backdrop-blur-xl px-5 py-2.5 rounded-xl border border-white/20 transition-colors shadow-lg hover:bg-white/20"><Edit2 size={16}/> Edit Event</button>
                         </div>
                     </div>
+
+                    {/* DYNAMIC CINEMATIC VIEWS */}
+                    {viewMode === 'info' ? (
+                        <div className="flex-1 flex flex-col items-center justify-center p-4 relative z-20 animate-in fade-in zoom-in-95 duration-500">
+                            <div className="w-full max-w-5xl bg-black/40 backdrop-blur-2xl border border-white/10 rounded-[2.5rem] p-8 md:p-12 shadow-[0_20px_60px_rgba(0,0,0,0.6)]">
+                                {tournament.description && <p className="text-white/90 text-lg md:text-xl font-medium leading-relaxed mb-12 text-center max-w-4xl mx-auto drop-shadow-md">{tournament.description}</p>}
+                                {champion && (
+                                    <div className="flex flex-col md:flex-row items-center justify-center gap-6 md:gap-10 mb-12">
+                                        <div className="order-2 md:order-1">{renderPodiumCard(finalist, 'Finalist')}</div>
+                                        <div className="order-1 md:order-2">{renderPodiumCard(champion, 'Champion')}</div>
+                                        <div className="order-3 flex flex-col sm:flex-row md:flex-col gap-6">
+                                            {renderPodiumCard(semi1, 'Semifinalist')}
+                                            {renderPodiumCard(semi2, 'Semifinalist')}
+                                        </div>
+                                    </div>
+                                )}
+                                <div className="flex flex-wrap justify-center gap-4 border-t border-white/10 pt-8">
+                                    <div className="bg-white/5 border border-white/10 px-5 py-3 rounded-2xl flex items-center gap-3 backdrop-blur-md shadow-inner"><span className="text-white/40 text-[10px] font-black uppercase tracking-widest">Total Matches</span><span className="text-white font-black text-xl">{tStats.total}</span></div>
+                                    <div className="bg-white/5 border border-white/10 px-5 py-3 rounded-2xl flex items-center gap-3 backdrop-blur-md shadow-inner"><span className="text-white/40 text-[10px] font-black uppercase tracking-widest">Close (CLS)</span><span className="text-white font-black text-xl">{tStats.close}</span></div>
+                                    <div className="bg-white/5 border border-white/10 px-5 py-3 rounded-2xl flex items-center gap-3 backdrop-blur-md shadow-inner"><span className="text-white/40 text-[10px] font-black uppercase tracking-widest">Dominant (DOM)</span><span className="text-white font-black text-xl">{tStats.dom}</span></div>
+                                    <div className="bg-white/5 border border-white/10 px-5 py-3 rounded-2xl flex items-center gap-3 backdrop-blur-md shadow-inner"><span className="text-white/40 text-[10px] font-black uppercase tracking-widest">Auto (Luck)</span><span className="text-white font-black text-xl">{tStats.luck}</span></div>
+                                </div>
+                            </div>
+                        </div>
+                    ) : (
+                        <div className="flex-1 flex flex-col relative z-20 animate-in fade-in zoom-in-95 duration-300">
+                            
+                            {/* ULTRA COMPACT GROUP STAGE */}
+                            <div className="grid md:grid-cols-2 gap-6 px-4 xl:px-0 mb-6 shrink-0">
+                                {renderStandingsTable('A', standingsA)}
+                                {renderStandingsTable('B', standingsB)}
+                            </div>
+
+                            <div className="px-4 xl:px-0 mb-8 shrink-0">
+                                <h2 className="text-xl font-black text-white mb-4 tracking-tight drop-shadow-md">Round Robin Matches</h2>
+                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                                    {groupMatches.map((match, mIdx) => {
+                                        if (!match) return null; const isReady = !match.winner;
+                                        return (
+                                            <div key={match.id} onClick={() => handleMatchClick('group', mIdx, match)} 
+                                                 className={`rounded-2xl p-2 transition-all duration-300 overflow-hidden backdrop-blur-2xl shadow-lg border ${isReady ? 'hover:-translate-y-1 hover:shadow-2xl cursor-pointer z-20 bg-white/5 border-white/20' : 'bg-black/40 border-white/10 opacity-80'}`} 
+                                                 style={{ borderColor: isReady ? tierConf.hex : undefined, boxShadow: isReady ? `0 10px 30px ${tierConf.hex}20` : undefined }}>
+                                                <div className="text-[9px] font-black text-white/50 mb-1.5 mt-0.5 mx-2 uppercase tracking-widest">Group {match.group}</div>
+                                                <div className="flex flex-col bg-black/40 rounded-xl overflow-hidden border border-white/5">
+                                                    {renderMatchParticipant(match, match.p1, true)}
+                                                    {renderMatchParticipant(match, match.p2, false)}
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+
+                            {/* HEAVY MATTE GLASS KNOCKOUT STAGE */}
+                            <div className="flex-1 flex flex-col px-4 xl:px-0">
+                                <div className="flex items-center gap-4 mb-4">
+                                    <h2 className="text-xl font-black text-white tracking-tight drop-shadow-md">Knockout Stage</h2>
+                                    <div className="h-px flex-1 bg-gradient-to-r from-white/20 to-transparent"></div>
+                                </div>
+                                <div className="overflow-x-auto custom-scrollbar pb-6">
+                                    <div className="flex min-w-max items-stretch justify-center bg-white/5 backdrop-blur-2xl rounded-3xl border border-white/10 py-6 px-8 shadow-[0_20px_50px_rgba(0,0,0,0.5)]">
+                                        {knockout.map((round, rIdx) => {
+                                            if (!Array.isArray(round)) return null;
+                                            const isFinalRound = rIdx === 1;
+                                            return (
+                                            <div key={rIdx} className="flex flex-col w-60 shrink-0 mr-12">
+                                                <div className="text-center text-white/60 font-black text-[10px] uppercase tracking-widest mb-4 flex flex-col items-center justify-end min-h-[40px] shrink-0">
+                                                    {isFinalRound && showHeaderTrophy && <DynamicTrophy tier="finals" result="Winner" country={tournament.hostCountry} size={40} className="mb-2 drop-shadow-2xl opacity-90" />}
+                                                    <div className="flex items-center justify-center gap-1.5 drop-shadow-md" style={{ color: isFinalRound ? tierConf.hex : undefined }}>
+                                                        {isFinalRound && !showHeaderTrophy && <Trophy className="w-3.5 h-3.5 inline-block opacity-80" style={{ color: tierConf.hex }} />}
+                                                        {isFinalRound ? 'Championship' : 'Semifinals'}
+                                                    </div>
+                                                </div>
+                                                <div className="flex-1 flex flex-col justify-around gap-6">
+                                                    {round.map((match, mIdx) => {
+                                                        if (!match) return null;
+                                                        const isReady = match.p1 && match.p2 && !match.winner && tournament.status !== 'completed';
+                                                        return (
+                                                            <div key={match.id} className="relative flex flex-col justify-center" style={{ flex: 1, minHeight: '70px' }}>
+                                                                <div onClick={() => handleMatchClick(rIdx === 0 ? 'sf' : 'f', mIdx, match)} 
+                                                                     className={`relative z-20 rounded-xl transition-all duration-300 overflow-hidden flex flex-col border ${
+                                                                         isReady ? 'cursor-pointer hover:scale-105 z-30 bg-white/[0.15] shadow-[0_10px_30px_rgba(0,0,0,0.5)] border-white/40 backdrop-blur-xl' : match.winner ? 'bg-black/50 border-white/10 shadow-md backdrop-blur-md' : 'bg-black/20 border-white/[0.05] opacity-60 backdrop-blur-sm'
+                                                                     }`} style={{ borderColor: isReady ? tierConf.hex : undefined, boxShadow: isReady ? `0 0 25px ${tierConf.hex}40` : undefined }}>
+                                                                    {renderMatchParticipant(match, match.p1, true)}
+                                                                    <div className="h-px w-full bg-white/10"></div>
+                                                                    {renderMatchParticipant(match, match.p2, false)}
+                                                                </div>
+                                                                {rIdx === 0 && <div className="absolute -right-[24px] top-1/2 w-[24px] h-[2px] bg-white/30 z-10 shadow-md"></div>}
+                                                                {rIdx === 0 && mIdx % 2 === 0 && <div className="absolute -right-[24px] top-1/2 w-[2px] bg-white/30 z-10 shadow-md" style={{ height: '100%' }}></div>}
+                                                                {rIdx === 1 && <div className="absolute -left-[24px] top-1/2 w-[24px] h-[2px] bg-white/30 z-10 shadow-md"></div>}
+                                                            </div>
+                                                        );
+                                                    })}
+                                                </div>
+                                            </div>
+                                            )
+                                        })}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                    <ResolveMatchModal resolvingMatch={resolvingMatch} setResolvingMatch={setResolvingMatch} submitResult={submitResult} handleRandomize={handleRandomize} players={players} allTournaments={allTournaments} tournament={tournament} tierConf={tierConf} onNavigate={onNavigate} />
                 </div>
             );
         }
