@@ -2012,7 +2012,7 @@
                 return () => __snbChartListeners.delete(l);
             }, []);
 
-            const { windowSize, offset } = __snbSharedChartState;
+            const { windowSize, offset, layoutMode } = __snbSharedChartState;
             const allHistory = globalHistory.filter(h => h.isMajorPlus);
             const N = allHistory.length;
 
@@ -2039,11 +2039,9 @@
             const width = 1200;
             const cConf = { gap: 24, font: 12, rectH: 28, rectW: 100, ptR: 3, debutR: 4, stroke: 2 };
             
-            const { windowSize, offset, layoutMode } = __snbSharedChartState;
-            // ... (keep the history slice logic)
-            const cConf = { gap: 24, font: 12, rectH: 28, rectW: 100, ptR: 3, debutR: 4, stroke: 2 };
             // MASSIVE Y-AXIS STRETCH FOR EXTENDED MODE
             const plotHeight = layoutMode === 'extended' ? Math.max(1200, nationCodes.size * cConf.gap * 4) : Math.max(600, nationCodes.size * cConf.gap * 1.5);
+            
             const pad = { top: 40, right: 140, left: 80, bottom: 40 }; 
             const gridBottomY = pad.top + plotHeight;
 
@@ -2105,7 +2103,7 @@
             });
             labels.sort((a, b) => b.actualVal - a.actualVal);
 
-            const physicsGap = cConf.gap * 0.8;
+            const physicsGap = layoutMode === 'extended' ? cConf.gap : cConf.gap * 0.8;
             if (labels.length > 0) {
                 labels[0].currentY = labels[0].endY;
                 for (let i = 1; i < labels.length; i++) labels[i].currentY = Math.max(labels[i].endY, labels[i-1].currentY + physicsGap);
@@ -2143,6 +2141,11 @@
                                     <button onClick={() => updateSnbChartState({ offset: Math.max(0, safeOffset - windowSize) })} disabled={safeOffset <= 0} className="p-1 hover:bg-white/10 text-white/50 hover:text-white rounded-lg disabled:opacity-30 transition-colors"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg></button>
                                 </div>
                             )}
+                            <div className="w-px h-6 bg-white/10 hidden lg:block"></div>
+                            <div className="flex items-center gap-1.5 bg-black/40 p-1.5 rounded-xl border border-white/5 shadow-inner">
+                                <button onClick={() => updateSnbChartState({ layoutMode: 'compact' })} className={`px-4 py-1.5 rounded-lg text-xs font-black uppercase tracking-widest transition-all ${layoutMode === 'compact' ? 'bg-gold-500 text-black shadow-sm' : 'bg-transparent text-white/50 hover:text-white hover:bg-white/10'}`}>Compact</button>
+                                <button onClick={() => updateSnbChartState({ layoutMode: 'extended' })} className={`px-4 py-1.5 rounded-lg text-xs font-black uppercase tracking-widest transition-all ${layoutMode === 'extended' ? 'bg-gold-500 text-black shadow-sm' : 'bg-transparent text-white/50 hover:text-white hover:bg-white/10'}`}>Extended</button>
+                            </div>
                         </div>
                         {selectedCode && <button onClick={() => setSelectedCode(null)} className="text-xs font-black uppercase tracking-widest text-rose-400 hover:text-rose-300 px-4 py-2 bg-rose-500/10 rounded-xl border border-rose-500/20 transition-colors shadow-sm">Clear Selection</button>}
                     </div>
@@ -2493,9 +2496,8 @@
             const width = 1200;
             const LABEL_GAP = 20; 
             
-            const LABEL_GAP = 20; 
             // MASSIVE Y-AXIS STRETCH FOR EXTENDED MODE
-            let plotHeight = layoutMode === 'extended' ? Math.max(1200, allNationPlayerIds.size * LABEL_GAP * 4) : 400;
+            let plotHeight = layoutMode === 'extended' ? Math.max(1200, allNationPlayerIds.size * LABEL_GAP * 3) : 400;
             const pad = { top: 40, right: 180, left: 80, bottom: 40 }; 
             const gridBottomY = pad.top + plotHeight;
 
@@ -2615,6 +2617,7 @@
                                 {showDropped ? 'Hide Dropped' : 'Show Dropped'}
                             </button>
                         </div>
+                        {selectedId && <button onClick={() => setSelectedId(null)} className="text-xs font-black uppercase tracking-widest text-rose-400 hover:text-rose-300 px-4 py-2 bg-rose-500/10 rounded-xl border border-rose-500/20 transition-colors shadow-sm">Clear Selection</button>}
                     </div>
                     
                     {/* SVG WRAPPER */}
