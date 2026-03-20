@@ -4935,23 +4935,23 @@
                             </button>
                             
                             <h1 
-                                className="text-3xl md:text-4xl font-black text-white flex items-center gap-3 flex-wrap drop-shadow-lg cursor-pointer group"
+                                className="text-3xl md:text-4xl font-black text-white flex items-center gap-4 flex-wrap drop-shadow-lg cursor-pointer group"
                                 onClick={() => setViewMode(v => v === 'bracket' ? 'info' : 'bracket')}
                             >
                                 {['grand_slam', 'finals', 'major'].includes(rawTier) && (
                                     <DynamicTrophy tier={rawTier} result="Winner" country={tournament.hostCountry} size={56} className="drop-shadow-[0_10px_20px_rgba(0,0,0,0.5)] shrink-0 group-hover:scale-110 transition-transform" />
                                 )}
                                 
-                                {/* BULLETPROOF TIER BADGE */}
+                                {/* THE FOOLPROOF TIER BADGE (No Wrappers!) */}
                                 <span 
-                                    className="text-[10px] font-black uppercase tracking-widest px-3 py-1.5 rounded-lg shrink-0 shadow-lg backdrop-blur-md border"
+                                    className="text-[10px] font-black uppercase tracking-widest px-3 py-1.5 rounded-lg shrink-0 shadow-sm backdrop-blur-md border"
                                     style={{ 
-                                        backgroundColor: (tierConf && tierConf.hex) ? `${tierConf.hex}20` : 'rgba(255,255,255,0.05)', 
-                                        color: (tierConf && tierConf.hex) ? tierConf.hex : '#cbd5e1', 
-                                        borderColor: (tierConf && tierConf.hex) ? `${tierConf.hex}50` : 'rgba(255,255,255,0.2)' 
+                                        backgroundColor: tierConf?.hex ? `${tierConf.hex}20` : 'rgba(148,163,184,0.2)', 
+                                        color: tierConf?.hex || '#cbd5e1', 
+                                        borderColor: tierConf?.hex ? `${tierConf.hex}50` : 'rgba(148,163,184,0.4)' 
                                     }}
                                 >
-                                    {(tierConf && tierConf.name) ? tierConf.name : String(rawTier || tournament.tier || 'Event').replace('_', ' ').toUpperCase()}
+                                    {tierConf?.name || (tournament?.tier ? String(tournament.tier).replace(/_/g, ' ').toUpperCase() : 'EVENT')}
                                 </span>
 
                                 <span className="text-4xl shrink-0" title={getCountryName(tournament.hostCountry || 'USA')}>{getFlag(tournament.hostCountry || 'USA')}</span>
@@ -5386,23 +5386,23 @@
                             </button>
                             
                             <h1 
-                                className="text-3xl md:text-4xl font-black text-white flex items-center gap-3 flex-wrap drop-shadow-lg cursor-pointer group"
+                                className="text-3xl md:text-4xl font-black text-white flex items-center gap-4 flex-wrap drop-shadow-lg cursor-pointer group"
                                 onClick={() => setViewMode(v => v === 'bracket' ? 'info' : 'bracket')}
                             >
                                 {['grand_slam', 'finals', 'major'].includes(rawTier) && (
                                     <DynamicTrophy tier={rawTier} result="Winner" country={tournament.hostCountry} size={56} className="drop-shadow-[0_10px_20px_rgba(0,0,0,0.5)] shrink-0 group-hover:scale-110 transition-transform" />
                                 )}
                                 
-                                {/* BULLETPROOF TIER BADGE */}
+                                {/* THE FOOLPROOF TIER BADGE (No Wrappers!) */}
                                 <span 
-                                    className="text-[10px] font-black uppercase tracking-widest px-3 py-1.5 rounded-lg shrink-0 shadow-lg backdrop-blur-md border"
+                                    className="text-[10px] font-black uppercase tracking-widest px-3 py-1.5 rounded-lg shrink-0 shadow-sm backdrop-blur-md border"
                                     style={{ 
-                                        backgroundColor: (tierConf && tierConf.hex) ? `${tierConf.hex}20` : 'rgba(255,255,255,0.05)', 
-                                        color: (tierConf && tierConf.hex) ? tierConf.hex : '#cbd5e1', 
-                                        borderColor: (tierConf && tierConf.hex) ? `${tierConf.hex}50` : 'rgba(255,255,255,0.2)' 
+                                        backgroundColor: tierConf?.hex ? `${tierConf.hex}20` : 'rgba(148,163,184,0.2)', 
+                                        color: tierConf?.hex || '#cbd5e1', 
+                                        borderColor: tierConf?.hex ? `${tierConf.hex}50` : 'rgba(148,163,184,0.4)' 
                                     }}
                                 >
-                                    {(tierConf && tierConf.name) ? tierConf.name : String(rawTier || tournament.tier || 'Event').replace('_', ' ').toUpperCase()}
+                                    {tierConf?.name || (tournament?.tier ? String(tournament.tier).replace(/_/g, ' ').toUpperCase() : 'EVENT')}
                                 </span>
 
                                 <span className="text-4xl shrink-0" title={getCountryName(tournament.hostCountry || 'USA')}>{getFlag(tournament.hostCountry || 'USA')}</span>
