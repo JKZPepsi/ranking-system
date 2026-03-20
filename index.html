@@ -4941,8 +4941,15 @@
                                     <DynamicTrophy tier={rawTier} result="Winner" country={tournament.hostCountry} size={56} className="drop-shadow-[0_10px_20px_rgba(0,0,0,0.5)] shrink-0 group-hover:scale-110 transition-transform" />
                                 )}
                                 
-                                <span className={`text-[10px] font-black uppercase tracking-widest px-3 py-1.5 rounded-lg shrink-0 shadow-lg backdrop-blur-md border ${tierConf.bg} ${tierConf.color}`} style={{ borderColor: tierConf.hex ? `${tierConf.hex}80` : 'rgba(255,255,255,0.2)' }}>
-                                    {tierConf.name}
+                                <span 
+                                    className="text-[10px] font-black uppercase tracking-widest px-3 py-1.5 rounded-lg shrink-0 shadow-lg backdrop-blur-md border"
+                                    style={{ 
+                                        backgroundColor: tierConf?.hex ? `${tierConf.hex}20` : 'rgba(255,255,255,0.05)', 
+                                        color: tierConf?.hex || '#cbd5e1', 
+                                        borderColor: tierConf?.hex ? `${tierConf.hex}50` : 'rgba(255,255,255,0.2)' 
+                                    }}
+                                >
+                                    {tierConf?.name || String(rawTier || 'Event').replace('_', ' ').toUpperCase()}
                                 </span>
 
                                 <span className="text-4xl shrink-0" title={getCountryName(tournament.hostCountry || 'USA')}>{getFlag(tournament.hostCountry || 'USA')}</span>
@@ -5381,8 +5388,15 @@
                             >
                                 {tournament.status === 'completed' && <DynamicTrophy tier="finals" result="Winner" country={tournament.hostCountry} size={56} className="drop-shadow-[0_10px_20px_rgba(0,0,0,0.5)] shrink-0 group-hover:scale-110 transition-transform" />}
                                 
-                                <span className={`text-[10px] font-black uppercase tracking-widest px-3 py-1.5 rounded-lg shrink-0 shadow-lg backdrop-blur-md border ${tierConf.bg} ${tierConf.color}`} style={{ borderColor: tierConf.hex ? `${tierConf.hex}80` : 'rgba(255,255,255,0.2)' }}>
-                                    {tierConf.name}
+                                <span 
+                                    className="text-[10px] font-black uppercase tracking-widest px-3 py-1.5 rounded-lg shrink-0 shadow-lg backdrop-blur-md border"
+                                    style={{ 
+                                        backgroundColor: tierConf?.hex ? `${tierConf.hex}20` : 'rgba(255,255,255,0.05)', 
+                                        color: tierConf?.hex || '#cbd5e1', 
+                                        borderColor: tierConf?.hex ? `${tierConf.hex}50` : 'rgba(255,255,255,0.2)' 
+                                    }}
+                                >
+                                    {tierConf?.name || String(rawTier || 'Event').replace('_', ' ').toUpperCase()}
                                 </span>
 
                                 <span className="text-4xl shrink-0" title={getCountryName(tournament.hostCountry || 'USA')}>{getFlag(tournament.hostCountry || 'USA')}</span>
