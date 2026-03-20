@@ -4935,24 +4935,26 @@
                             </button>
                             
                             <h1 
-                                className="text-3xl md:text-4xl font-black text-white flex items-center gap-4 flex-wrap drop-shadow-lg cursor-pointer group"
+                                className="text-3xl md:text-4xl font-black text-white flex items-center gap-3 flex-wrap drop-shadow-lg cursor-pointer group"
                                 onClick={() => setViewMode(v => v === 'bracket' ? 'info' : 'bracket')}
                             >
-                                {['grand_slam', 'finals', 'major'].includes(rawTier) && (
-                                    <DynamicTrophy tier={rawTier} result="Winner" country={tournament.hostCountry} size={56} className="drop-shadow-[0_10px_20px_rgba(0,0,0,0.5)] shrink-0 group-hover:scale-110 transition-transform" />
-                                )}
-                                
-                                {/* THE FOOLPROOF TIER BADGE (No Wrappers!) */}
-                                <span 
-                                    className="text-[10px] font-black uppercase tracking-widest px-3 py-1.5 rounded-lg shrink-0 shadow-sm backdrop-blur-md border"
-                                    style={{ 
-                                        backgroundColor: tierConf?.hex ? `${tierConf.hex}20` : 'rgba(148,163,184,0.2)', 
-                                        color: tierConf?.hex || '#cbd5e1', 
-                                        borderColor: tierConf?.hex ? `${tierConf.hex}50` : 'rgba(148,163,184,0.4)' 
-                                    }}
-                                >
-                                    {tierConf?.name || (tournament?.tier ? String(tournament.tier).replace(/_/g, ' ').toUpperCase() : 'EVENT')}
-                                </span>
+                                {/* DYNAMIC GLASS TIER BADGE (Built from scratch) */}
+                                {(() => {
+                                    const t = String(tournament?.tier || 'Event').toLowerCase();
+                                    let bg = 'bg-white/5', bdr = 'border-white/20', txt = 'text-white/80', shdw = 'shadow-sm';
+                                    
+                                    if (t.includes('grand') || t.includes('slam') || t === 'finals') { bg = 'bg-yellow-500/10'; bdr = 'border-yellow-400/40'; txt = 'text-yellow-400'; shdw = 'shadow-[0_0_15px_rgba(250,204,21,0.2)]'; }
+                                    else if (t.includes('major')) { bg = 'bg-emerald-500/10'; bdr = 'border-emerald-400/40'; txt = 'text-emerald-400'; shdw = 'shadow-[0_0_15px_rgba(52,211,153,0.2)]'; }
+                                    else if (t.includes('international')) { bg = 'bg-sky-500/10'; bdr = 'border-sky-400/40'; txt = 'text-sky-400'; shdw = 'shadow-[0_0_15px_rgba(56,189,248,0.2)]'; }
+                                    else if (t.includes('pro')) { bg = 'bg-orange-500/10'; bdr = 'border-orange-400/40'; txt = 'text-orange-400'; shdw = 'shadow-[0_0_15px_rgba(251,146,60,0.2)]'; }
+                                    else if (t.includes('challenger')) { bg = 'bg-slate-500/20'; bdr = 'border-slate-400/40'; txt = 'text-slate-300'; }
+                                    
+                                    return (
+                                        <span className={`text-[10px] font-black uppercase tracking-widest px-3 py-1.5 rounded-lg shrink-0 backdrop-blur-md border ${bg} ${bdr} ${txt} ${shdw}`}>
+                                            {String(tournament?.tier || 'Event').replace(/_/g, ' ').toUpperCase()}
+                                        </span>
+                                    );
+                                })()}
 
                                 <span className="text-4xl shrink-0" title={getCountryName(tournament.hostCountry || 'USA')}>{getFlag(tournament.hostCountry || 'USA')}</span>
                                 <span className="truncate tracking-tight group-hover:text-gold-400 transition-colors">{tournament.name}</span>
@@ -5386,24 +5388,26 @@
                             </button>
                             
                             <h1 
-                                className="text-3xl md:text-4xl font-black text-white flex items-center gap-4 flex-wrap drop-shadow-lg cursor-pointer group"
+                                className="text-3xl md:text-4xl font-black text-white flex items-center gap-3 flex-wrap drop-shadow-lg cursor-pointer group"
                                 onClick={() => setViewMode(v => v === 'bracket' ? 'info' : 'bracket')}
                             >
-                                {['grand_slam', 'finals', 'major'].includes(rawTier) && (
-                                    <DynamicTrophy tier={rawTier} result="Winner" country={tournament.hostCountry} size={56} className="drop-shadow-[0_10px_20px_rgba(0,0,0,0.5)] shrink-0 group-hover:scale-110 transition-transform" />
-                                )}
-                                
-                                {/* THE FOOLPROOF TIER BADGE (No Wrappers!) */}
-                                <span 
-                                    className="text-[10px] font-black uppercase tracking-widest px-3 py-1.5 rounded-lg shrink-0 shadow-sm backdrop-blur-md border"
-                                    style={{ 
-                                        backgroundColor: tierConf?.hex ? `${tierConf.hex}20` : 'rgba(148,163,184,0.2)', 
-                                        color: tierConf?.hex || '#cbd5e1', 
-                                        borderColor: tierConf?.hex ? `${tierConf.hex}50` : 'rgba(148,163,184,0.4)' 
-                                    }}
-                                >
-                                    {tierConf?.name || (tournament?.tier ? String(tournament.tier).replace(/_/g, ' ').toUpperCase() : 'EVENT')}
-                                </span>
+                                {/* DYNAMIC GLASS TIER BADGE (Built from scratch) */}
+                                {(() => {
+                                    const t = String(tournament?.tier || 'Event').toLowerCase();
+                                    let bg = 'bg-white/5', bdr = 'border-white/20', txt = 'text-white/80', shdw = 'shadow-sm';
+                                    
+                                    if (t.includes('grand') || t.includes('slam') || t === 'finals') { bg = 'bg-yellow-500/10'; bdr = 'border-yellow-400/40'; txt = 'text-yellow-400'; shdw = 'shadow-[0_0_15px_rgba(250,204,21,0.2)]'; }
+                                    else if (t.includes('major')) { bg = 'bg-emerald-500/10'; bdr = 'border-emerald-400/40'; txt = 'text-emerald-400'; shdw = 'shadow-[0_0_15px_rgba(52,211,153,0.2)]'; }
+                                    else if (t.includes('international')) { bg = 'bg-sky-500/10'; bdr = 'border-sky-400/40'; txt = 'text-sky-400'; shdw = 'shadow-[0_0_15px_rgba(56,189,248,0.2)]'; }
+                                    else if (t.includes('pro')) { bg = 'bg-orange-500/10'; bdr = 'border-orange-400/40'; txt = 'text-orange-400'; shdw = 'shadow-[0_0_15px_rgba(251,146,60,0.2)]'; }
+                                    else if (t.includes('challenger')) { bg = 'bg-slate-500/20'; bdr = 'border-slate-400/40'; txt = 'text-slate-300'; }
+                                    
+                                    return (
+                                        <span className={`text-[10px] font-black uppercase tracking-widest px-3 py-1.5 rounded-lg shrink-0 backdrop-blur-md border ${bg} ${bdr} ${txt} ${shdw}`}>
+                                            {String(tournament?.tier || 'Event').replace(/_/g, ' ').toUpperCase()}
+                                        </span>
+                                    );
+                                })()}
 
                                 <span className="text-4xl shrink-0" title={getCountryName(tournament.hostCountry || 'USA')}>{getFlag(tournament.hostCountry || 'USA')}</span>
                                 <span className="truncate tracking-tight group-hover:text-gold-400 transition-colors">{tournament.name}</span>
