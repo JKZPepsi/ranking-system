@@ -6644,9 +6644,13 @@
             return (
                 <div className="h-screen w-full bg-[#050505] text-white flex font-sans overflow-hidden">
                     <nav className="w-64 bg-[#030303] border-r border-white/10 flex flex-col hidden md:flex shrink-0">
-                        {/* THE UPGRADED PREMIUM LOGO HOVER STATE */}
-                        <div onClick={() => navigateTo('dashboard')} className="p-6 border-b border-white/10 flex items-center gap-2 text-xl font-bold text-white cursor-pointer hover:text-gold-400 transition-colors select-none">
-                            <SnbLogo size={28} className="text-gold-500"/><span>SNB Tour</span>
+                        {/*Main title hover*/}
+                        <div 
+                            onClick={() => navigateTo('dashboard')} 
+                            className="px-6 py-5 border-b border-white/10 flex items-center gap-3 text-xl font-black text-white cursor-pointer hover:bg-white/[0.05] hover:text-gold-400 transition-all select-none"
+                        >
+                            <SnbLogo size={28} className="text-gold-500 shrink-0"/>
+                            <span className="truncate tracking-tight">SNB Tour</span>
                         </div>
 
                         <div className="px-4 pb-6 pt-2 border-b border-white/10">
