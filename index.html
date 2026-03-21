@@ -4382,7 +4382,9 @@
             const [withdrawnSearch, setWithdrawnSearch] = useState('');
             const [errorMsg, setErrorMsg] = useState('');
             const [showDelete, setShowDelete] = useState(false);
-
+            
+            const getPlayer = (id) => players.find(p => p.id === id) || { name: 'TBD', rank: '-', nationality: 'UNK', imageUrl: '' };
+            
             // --- NATIONS LEAGUE STATE ---
             const [teams, setTeams] = useState(Array(16).fill(null).map((_,i) => ({ id: `team-${i}`, name: `Co-op Team ${i+1}`, flag: 'UNK', players: [null,null,null,null] })));
             const [editingTeamIdx, setEditingTeamIdx] = useState(null);
@@ -5276,6 +5278,8 @@
             };
 
             const mapQuery = tournament.location || `${tournament.name} ${getCountryName(tournament.hostCountry)}`;
+            const finalMatch = knockout[totalRounds - 1] ? knockout[totalRounds - 1][0] : null;
+            const showHeaderTrophy = !!finalMatch;
 
             return (
                 <div className="h-full flex flex-col pb-20 relative max-w-[1600px] mx-auto w-full">
