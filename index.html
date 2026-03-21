@@ -791,6 +791,89 @@
                     );
                 }
             }
+            // ---------------------------------------------------------
+                // SNB NATIONS LEAGUE: The World Globe & Medals
+                // ---------------------------------------------------------
+                if (tier === 'nations_league') {
+                    if (result === 'Winner') {
+                        return (
+                            <svg width={size} height={size} viewBox="-15 -10 130 150" className={className} style={{filter: 'drop-shadow(0 15px 25px rgba(0,0,0,0.9))'}}>
+                                <defs>
+                                    <linearGradient id="globeGold" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stopColor="#fef08a"/><stop offset="50%" stopColor="#eab308"/><stop offset="100%" stopColor="#713f12"/></linearGradient>
+                                    <linearGradient id="globeSapphire" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stopColor="#67e8f9"/><stop offset="50%" stopColor="#0284c7"/><stop offset="100%" stopColor="#082f49"/></linearGradient>
+                                    <linearGradient id="globeObsidian" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stopColor="#1e293b"/><stop offset="50%" stopColor="#020617"/><stop offset="100%" stopColor="#0f172a"/></linearGradient>
+                                    
+                                    {/* Abstract Map Pattern */}
+                                    <pattern id="worldMap" width="20" height="20" patternUnits="userSpaceOnUse" patternTransform="scale(0.8)">
+                                        <path d="M 5 5 Q 10 0 15 5 T 20 15 Q 10 20 5 15 T 0 5 Z" fill="#38bdf8" opacity="0.3"/>
+                                        <path d="M 0 10 Q 5 5 10 10 T 15 20 Q 5 25 0 20 Z" fill="#0ea5e9" opacity="0.4"/>
+                                    </pattern>
+                                </defs>
+
+                                {/* Massive Obsidian Base */}
+                                <path d="M 15 135 L 85 135 L 75 120 L 25 120 Z" fill="url(#globeObsidian)" />
+                                <path d="M 25 120 L 75 120 L 65 110 L 35 110 Z" fill="url(#globeGold)" />
+                                <rect x="35" y="105" width="30" height="5" fill="#eab308" />
+
+                                {/* The 4 Golden Pillars (Representing the 4 Roster Players) */}
+                                <path d="M 38 105 Q 20 70 38 35" fill="none" stroke="url(#globeGold)" strokeWidth="4" strokeLinecap="round" style={{filter: 'drop-shadow(-2px 0 4px rgba(0,0,0,0.6))'}}/>
+                                <path d="M 45 105 Q 35 70 45 35" fill="none" stroke="url(#globeGold)" strokeWidth="3" strokeLinecap="round"/>
+                                <path d="M 55 105 Q 65 70 55 35" fill="none" stroke="url(#globeGold)" strokeWidth="3" strokeLinecap="round"/>
+                                <path d="M 62 105 Q 80 70 62 35" fill="none" stroke="url(#globeGold)" strokeWidth="4" strokeLinecap="round" style={{filter: 'drop-shadow(2px 0 4px rgba(0,0,0,0.6))'}}/>
+
+                                {/* The Sapphire Globe */}
+                                <circle cx="50" cy="40" r="28" fill="url(#globeSapphire)" style={{filter: 'drop-shadow(0 0 15px rgba(2,132,199,0.5))'}}/>
+                                <circle cx="50" cy="40" r="28" fill="url(#worldMap)" />
+                                
+                                {/* 3D Sphere Shading & Latitude/Longitude Lines */}
+                                <circle cx="50" cy="40" r="28" fill="url(#chromeDark)" opacity="0.4" />
+                                <ellipse cx="50" cy="40" rx="28" ry="10" fill="none" stroke="url(#globeGold)" strokeWidth="1.5" opacity="0.8" />
+                                <ellipse cx="50" cy="40" rx="10" ry="28" fill="none" stroke="url(#globeGold)" strokeWidth="1.5" opacity="0.8" />
+                                
+                                {/* Orbiting Outer Rings */}
+                                <ellipse cx="50" cy="40" rx="42" ry="14" fill="none" stroke="url(#globeGold)" strokeWidth="2" strokeDasharray="15 5" transform="rotate(-15 50 40)" style={{filter: 'drop-shadow(0 0 5px #facc15)'}}/>
+                                <ellipse cx="50" cy="40" rx="38" ry="12" fill="none" stroke="#38bdf8" strokeWidth="1.5" transform="rotate(25 50 40)" opacity="0.6"/>
+
+                                {/* Flag Colors Base Trim */}
+                                <rect x="35" y="130" width="10" height="5" fill={c[0]} />
+                                <rect x="45" y="130" width="10" height="5" fill={c[1]} />
+                                <rect x="55" y="130" width="10" height="5" fill={c[2]} />
+                            </svg>
+                        );
+                    }
+                    
+                    if (result === 'Finalist' || result === 'Third Place') {
+                        const isSilver = result === 'Finalist';
+                        const mColor1 = isSilver ? '#f8fafc' : '#fcd34d';
+                        const mColor2 = isSilver ? '#94a3b8' : '#d97706';
+                        const mColor3 = isSilver ? '#334155' : '#78350f';
+                        
+                        return (
+                            <svg width={size} height={size} viewBox="-10 -10 120 140" className={className} style={{filter: 'drop-shadow(0 10px 15px rgba(0,0,0,0.6))'}}>
+                                <defs>
+                                    <linearGradient id={`medalGrad-${isSilver}`} x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stopColor={mColor1}/><stop offset="50%" stopColor={mColor2}/><stop offset="100%" stopColor={mColor3}/></linearGradient>
+                                    <linearGradient id={`medalRibbon-${isSilver}`} x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor={c[0]}/><stop offset="100%" stopColor={c[2]}/></linearGradient>
+                                </defs>
+
+                                {/* The V-Shaped Nation Ribbon */}
+                                <path d="M 20 -10 L 50 50 L 80 -10 L 65 -10 L 50 35 L 35 -10 Z" fill="url(#medalRibbon-true)" stroke={c[1]} strokeWidth="2" style={{filter: 'drop-shadow(0 4px 6px rgba(0,0,0,0.5))'}}/>
+                                
+                                {/* Ribbon Loop Connector */}
+                                <rect x="46" y="45" width="8" height="12" rx="2" fill={mColor2} stroke={mColor3} strokeWidth="1.5" />
+
+                                {/* The Heavy Medal */}
+                                <circle cx="50" cy="80" r="32" fill={`url(#medalGrad-${isSilver})`} stroke={mColor1} strokeWidth="2" style={{filter: 'drop-shadow(0 8px 12px rgba(0,0,0,0.7))'}}/>
+                                <circle cx="50" cy="80" r="26" fill="none" stroke={mColor3} strokeWidth="1.5" opacity="0.6" strokeDasharray="3 3"/>
+                                
+                                {/* Internal Medal Art (Globe Engraving) */}
+                                <circle cx="50" cy="80" r="18" fill="none" stroke={mColor1} strokeWidth="2" opacity="0.8"/>
+                                <path d="M 32 80 Q 50 60 68 80 M 32 80 Q 50 100 68 80" fill="none" stroke={mColor3} strokeWidth="1.5" opacity="0.5"/>
+                                <path d="M 50 62 Q 30 80 50 98 M 50 62 Q 70 80 50 98" fill="none" stroke={mColor3} strokeWidth="1.5" opacity="0.5"/>
+                                <circle cx="50" cy="80" r="4" fill={mColor1} />
+                            </svg>
+                        );
+                    }
+                }
             
             // Fallback for minor tiers or non-major results
             return null;
@@ -857,8 +940,9 @@
             'finals': { name: 'SNB Internationals', points: { WINNER: 1500, FINALIST: 1000, SF: 400, RR_WIN: 200 }, excludeTop: 0, wcCount: { 8: 0 }, color: 'text-cyan-400', bg: 'bg-cyan-500/20', border: 'border-cyan-500/50', hex: '#22d3ee', shadowHover: 'hover:shadow-cyan-500/20' },
             'major': { name: 'Major', points: { WINNER: 1000, FINALIST: 600, SF: 360, QF: 180, R16: 90, R32: 45, R64: 20 }, excludeTop: 0, wcCount: { 64: 16, 32: 8 }, color: 'text-yellow-400', bg: 'bg-yellow-500/20', border: 'border-yellow-500/50', hex: '#facc15', shadowHover: 'hover:shadow-yellow-500/20' },
             'pro': { name: 'Pro Series', points: { WINNER: 500, FINALIST: 300, SF: 180, QF: 90, R16: 45, R32: 20, R64: 10 }, excludeTop: 8, wcCount: { 64: 16, 32: 8, 16: 4 }, color: 'text-sky-400', bg: 'bg-sky-500/20', border: 'border-sky-500/50', hex: '#38bdf8', shadowHover: 'hover:shadow-sky-500/20' },
-            'pro_am': { name: 'Pro-Am', points: { WINNER: 350, FINALIST: 200, SF: 140, QF: 90, RR_WIN: 30 }, excludeTop: 12, wcCount: { 16: 4 }, color: 'text-indigo-400', bg: 'bg-indigo-500/20', border: 'border-indigo-500/50', hex: '#818cf8', shadowHover: 'hover:shadow-indigo-500/20' },
-            'challenger': { name: 'Challenger', points: { WINNER: 250, FINALIST: 150, SF: 90, QF: 45, R16: 20, R32: 10, R64: 5 }, excludeTop: 16, wcCount: { 64: 64, 32: 32, 16: 16, 8: 8 }, color: 'text-green-400', bg: 'bg-green-500/20', border: 'border-green-500/50', hex: '#4ade80', shadowHover: 'hover:shadow-green-500/20' }
+            'pro_am': { name: 'Pro-Am', points: { WINNER: 350, FINALIST: 200, SF: 140, QF: 90, RR_WIN: 30 }, excludeTop: 12, wcCount: { 16: 8 }, color: 'text-indigo-400', bg: 'bg-indigo-500/20', border: 'border-indigo-500/50', hex: '#818cf8', shadowHover: 'hover:shadow-indigo-500/20' },
+            'challenger': { name: 'Challenger', points: { WINNER: 250, FINALIST: 150, SF: 90, QF: 45, R16: 20, R32: 10, R64: 5 }, excludeTop: 16, wcCount: { 64: 64, 32: 32, 16: 16, 8: 8 }, color: 'text-green-400', bg: 'bg-green-500/20', border: 'border-green-500/50', hex: '#4ade80', shadowHover: 'hover:shadow-green-500/20' },
+            'nations_league': { name: 'SNB Nations League', points: { WINNER: 0, FINALIST: 0, SF: 0, QF: 0, RR_WIN: 0 }, excludeTop: 0, wcCount: {}, color: 'text-rose-400', bg: 'bg-rose-500/20', border: 'border-rose-500/50', hex: '#fb7185', shadowHover: 'hover:shadow-rose-500/20' }
         };
 
         var ROUND_NAMES = ['Round of 64', 'Round of 32', 'Round of 16', 'Quarterfinals', 'Semifinals', 'Final'];
@@ -1025,7 +1109,42 @@
         var getTournamentPointsAndResult = (playerId, t) => {
             let pts = 0, w = 0, l = 0, played = false, resultStr = '', wonFinal = false;
 
-            if (t.format === 'atp_finals' || t.format === 'pro_am') {
+            if (t.format === 'nations_league') {
+                let teams = []; try { teams = typeof t.teams === 'string' ? JSON.parse(t.teams) : (t.teams || []); } catch(e){}
+                const myTeam = teams.find(team => team.players && team.players.includes(playerId));
+                if (!myTeam) return { pts: 0, w: 0, l: 0, played: false, resultStr: '', wonFinal: false };
+                
+                played = true; resultStr = 'Group Stage';
+                let knockout = [[],[],[]]; try { knockout = typeof t.bracket === 'string' ? JSON.parse(t.bracket) : (t.bracket || [[],[],[]]); } catch(e){}
+                
+                let wonQF = knockout[0]?.some(tie => tie && tie.winner === myTeam.id);
+                if (knockout[0]?.some(tie => tie && (tie.t1?.id === myTeam.id || tie.t2?.id === myTeam.id))) resultStr = 'Quarterfinalist';
+                
+                if (wonQF) {
+                    resultStr = 'Semifinalist';
+                    let wonSF = knockout[1]?.some(tie => tie && tie.winner === myTeam.id);
+                    if (wonSF) {
+                        resultStr = 'Finalist';
+                        if (knockout[2]?.[1] && knockout[2][1].winner === myTeam.id) { resultStr = 'Winner'; wonFinal = true; }
+                    } else {
+                        if (knockout[2]?.[0] && knockout[2][0].winner === myTeam.id) resultStr = 'Third Place';
+                        else if (knockout[2]?.[0]?.winner) resultStr = 'Fourth Place';
+                    }
+                }
+                
+                let groupMatches = []; try { groupMatches = typeof t.groupMatches === 'string' ? JSON.parse(t.groupMatches) : (t.groupMatches || []); } catch(e){}
+                const allTies = [...groupMatches, ...(knockout.flat())];
+                allTies.forEach(tie => {
+                    if (tie && tie.matches) {
+                        tie.matches.forEach(m => {
+                            if (m && (m.p1 === playerId || m.p2 === playerId || m.p1b === playerId || m.p2b === playerId) && m.winner) {
+                                if (m.winner === myTeam.id) w++; else l++;
+                            }
+                        });
+                    }
+                });
+                return { pts: 0, w, l, played, resultStr, wonFinal };
+            } else if (t.format === 'atp_finals' || t.format === 'pro_am') {
                 let groupMatches = []; let knockout = [[],[]];
                 try { groupMatches = typeof t.groupMatches === 'string' ? JSON.parse(t.groupMatches) : (t.groupMatches || []); } catch(e){}
                 try { knockout = typeof t.bracket === 'string' ? JSON.parse(t.bracket) : (t.bracket || []); } catch(e){}
@@ -1043,7 +1162,6 @@
                 if (played) {
                     const totalKO = knockout.length;
                     let highestKO = -1;
-                    
                     knockout.forEach((round, rIdx) => {
                         if (!Array.isArray(round)) return;
                         round.forEach(m => {
@@ -1052,21 +1170,12 @@
                                 if (m.winner === playerId) {
                                     w++;
                                     if (rIdx === totalKO - 1) { wonFinal = true; resultStr = 'Winner'; }
-                                    
-                                    // Progressive Additive Knockout Points
-                                    if (t.format === 'atp_finals') {
-                                        if (rIdx === 0) pts += 400; // Won SF
-                                        if (rIdx === 1) pts += 500; // Won Final
-                                    } else if (t.format === 'pro_am') {
-                                        if (rIdx === 0) pts += 50; // Won QF
-                                        if (rIdx === 1) pts += 60; // Won SF
-                                        if (rIdx === 2) pts += 150; // Won Final
-                                    }
+                                    if (t.format === 'atp_finals') { if (rIdx === 0) pts += 400; if (rIdx === 1) pts += 500; } 
+                                    else if (t.format === 'pro_am') { if (rIdx === 0) pts += 50; if (rIdx === 1) pts += 60; if (rIdx === 2) pts += 150; }
                                 } else if (m.winner) { l++; }
                             }
                         });
                     });
-                    
                     if (highestKO > -1 && !wonFinal) {
                         const dist = totalKO - 1 - highestKO;
                         if (dist === 0) resultStr = 'Finalist';
@@ -1077,10 +1186,8 @@
             } else {
                 let parsedBracket = [];
                 try { parsedBracket = typeof t.bracket === 'string' ? JSON.parse(t.bracket) : (t.bracket || []); } catch(e){}
-                
                 const totalRounds = parsedBracket.length;
                 let highestRound = -1;
-
                 parsedBracket.forEach((round, rIdx) => {
                     if (!Array.isArray(round)) return;
                     round.forEach(m => {
@@ -1093,16 +1200,9 @@
                         }
                     });
                 });
-                
                 if (played && highestRound > -1) {
-                    const tierKey = getTournamentTier(t);
-                    const tierConf = TOURNAMENT_TIERS[tierKey];
-                    const drawSize = getDrawSize(t);
-                    let sizeMultiplier = 1;
-                    if (tierKey !== 'grand_slam') {
-                        if (drawSize === 16) sizeMultiplier = 0.75;
-                        if (drawSize === 8) sizeMultiplier = 0.5;
-                    }
+                    const tierKey = getTournamentTier(t); const tierConf = TOURNAMENT_TIERS[tierKey]; const drawSize = getDrawSize(t);
+                    let sizeMultiplier = 1; if (tierKey !== 'grand_slam') { if (drawSize === 16) sizeMultiplier = 0.75; if (drawSize === 8) sizeMultiplier = 0.5; }
                     if (wonFinal) pts = Math.round(tierConf.points.WINNER * sizeMultiplier);
                     else if (highestRound === totalRounds - 1) pts = Math.round(tierConf.points.FINALIST * sizeMultiplier);
                     else if (highestRound === totalRounds - 2) pts = Math.round(tierConf.points.SF * sizeMultiplier);
@@ -1110,9 +1210,7 @@
                     else if (highestRound === totalRounds - 4) pts = Math.round(tierConf.points.R16 * sizeMultiplier);
                     else if (highestRound === totalRounds - 5) pts = Math.round(tierConf.points.R32 * sizeMultiplier);
                     else if (highestRound === totalRounds - 6) pts = Math.round(tierConf.points.R64 * sizeMultiplier);
-
-                    const rOffset = 6 - totalRounds; 
-                    resultStr = wonFinal ? 'Winner' : ROUND_NAMES[highestRound + rOffset];
+                    const rOffset = 6 - totalRounds; resultStr = wonFinal ? 'Winner' : ROUND_NAMES[highestRound + rOffset];
                 }
             }
             return { pts, w, l, played, resultStr, wonFinal };
@@ -1351,6 +1449,54 @@
                     [{ id: 'sf-1', p1: null, p2: null, winner: null, type: null }, { id: 'sf-2', p1: null, p2: null, winner: null, type: null }],
                     // Championship
                     [{ id: 'f-1', p1: null, p2: null, winner: null, type: null }]
+                ])
+            };
+        };
+
+        var generateNationsDraw = (teamsList) => {
+            const t = teamsList; // Array of 16 configured team objects
+            // Serpentine draft to balance the 4 groups
+            const groupA = [t[0], t[7], t[8], t[15]];
+            const groupB = [t[1], t[6], t[9], t[14]];
+            const groupC = [t[2], t[5], t[10], t[13]];
+            const groupD = [t[3], t[4], t[11], t[12]];
+
+            const makeTie = (t1, t2, idPrefix, groupName) => ({
+                id: idPrefix, group: groupName, t1, t2, winner: null, score: null,
+                matches: [
+                    // Rubber 1: Singles 2 (Rank #2 vs Rank #2)
+                    { mId: `${idPrefix}-m1`, name: 'Singles 2', p1: t1.players[1], p2: t2.players[1], winner: null, type: null },
+                    // Rubber 2: Singles 1 (The Aces)
+                    { mId: `${idPrefix}-m2`, name: 'Singles 1', p1: t1.players[0], p2: t2.players[0], winner: null, type: null },
+                    // Rubber 3: Doubles Decider (Rank #3 & #4)
+                    { mId: `${idPrefix}-m3`, name: 'Doubles', p1: t1.players[2], p1b: t1.players[3], p2: t2.players[2], p2b: t2.players[3], winner: null, type: null }
+                ]
+            });
+
+            const makeGroupTies = (g, name) => [
+                makeTie(g[0], g[1], `${name}-1`, name), makeTie(g[2], g[3], `${name}-2`, name),
+                makeTie(g[0], g[2], `${name}-3`, name), makeTie(g[1], g[3], `${name}-4`, name),
+                makeTie(g[0], g[3], `${name}-5`, name), makeTie(g[1], g[2], `${name}-6`, name)
+            ];
+
+            const emptyTie = (idPrefix) => ({
+                id: idPrefix, group: 'knockout', t1: null, t2: null, winner: null, score: null,
+                matches: [
+                    { mId: `${idPrefix}-m1`, name: 'Singles 2', p1: null, p2: null, winner: null, type: null },
+                    { mId: `${idPrefix}-m2`, name: 'Singles 1', p1: null, p2: null, winner: null, type: null },
+                    { mId: `${idPrefix}-m3`, name: 'Doubles', p1: null, p1b: null, p2: null, p2b: null, winner: null, type: null }
+                ]
+            });
+
+            return {
+                format: 'nations_league', 
+                teams: JSON.stringify(teamsList),
+                groups: { A: groupA.map(x=>x.id), B: groupB.map(x=>x.id), C: groupC.map(x=>x.id), D: groupD.map(x=>x.id) },
+                groupMatches: JSON.stringify([ ...makeGroupTies(groupA, 'A'), ...makeGroupTies(groupB, 'B'), ...makeGroupTies(groupC, 'C'), ...makeGroupTies(groupD, 'D') ]),
+                knockout: JSON.stringify([
+                    [emptyTie('qf-1'), emptyTie('qf-2'), emptyTie('qf-3'), emptyTie('qf-4')], // Quarterfinals
+                    [emptyTie('sf-1'), emptyTie('sf-2')], // Semifinals
+                    [emptyTie('bronze'), emptyTie('final')] // 3rd Place Match & Championship!
                 ])
             };
         };
@@ -2412,14 +2558,18 @@
                         // STRICT MAJOR+ FILTER FOR TITLES
                         if (['grand_slam', 'major', 'finals'].includes(tTier)) {
                             let b = []; try { b = typeof t.bracket === 'string' ? JSON.parse(t.bracket) : t.bracket; } catch(e){}
-                            // THE FIX: Always grab the absolute LAST round for the Final Match!
                             const finalMatch = b[b.length - 1]?.[0];
                             if (finalMatch?.winner) {
                                 const winner = players.find(p => p.id === finalMatch.winner);
-                                if (winner) {
-                                    const code = winner.nationality || 'UNK';
-                                    if (stats[code]) stats[code].titles++;
-                                }
+                                if (winner && stats[winner.nationality || 'UNK']) stats[winner.nationality || 'UNK'].titles++;
+                            }
+                        } else if (tTier === 'nations_league') {
+                            let b = []; try { b = typeof t.bracket === 'string' ? JSON.parse(t.bracket) : t.bracket; } catch(e){}
+                            const finalTie = b[2]?.[1]; // Index 2 is the Medal Round, Index 1 is the Final Tie
+                            if (finalTie?.winner) {
+                                let tms = []; try { tms = typeof t.teams === 'string' ? JSON.parse(t.teams) : t.teams; } catch(e){}
+                                const winningTeam = tms.find(team => team.id === finalTie.winner);
+                                if (winningTeam && stats[winningTeam.flag]) stats[winningTeam.flag].titles++;
                             }
                         }
                     }
@@ -2485,24 +2635,24 @@
                 if (t.status !== 'completed' || !t.bracket) return;
                 const tTier = getTournamentTier(t);
                 
-                if (tTier !== 'grand_slam' && tTier !== 'major' && tTier !== 'finals') return;
-
-                let b = []; try { b = typeof t.bracket === 'string' ? JSON.parse(t.bracket) : t.bracket; } catch(e){}
-                // THE FIX: Always grab the absolute LAST round
-                const finalMatch = b[b.length - 1]?.[0];
-                
-                if (finalMatch?.winner) {
-                    const winner = players.find(p => p.id === finalMatch.winner);
-                    if (winner && (winner.nationality || 'UNK') === code) {
-                        list.push({
-                            tournamentId: t.id,
-                            tournamentName: t.name,
-                            tier: tTier,
-                            result: 'Winner',
-                            date: t.completedAt || t.createdAt,
-                            hostCountry: t.hostCountry,
-                            winner: winner
-                        });
+                if (tTier === 'nations_league') {
+                    let b = []; try { b = typeof t.bracket === 'string' ? JSON.parse(t.bracket) : t.bracket; } catch(e){}
+                    const finalTie = b[2]?.[1];
+                    if (finalTie?.winner) {
+                        let tms = []; try { tms = typeof t.teams === 'string' ? JSON.parse(t.teams) : t.teams; } catch(e){}
+                        const winningTeam = tms.find(team => team.id === finalTie.winner);
+                        if (winningTeam && winningTeam.flag === code) {
+                            list.push({ tournamentId: t.id, tournamentName: t.name, tier: tTier, result: 'Winner', date: t.completedAt || t.createdAt, hostCountry: t.hostCountry, winner: { name: winningTeam.name } });
+                        }
+                    }
+                } else if (['grand_slam', 'major', 'finals'].includes(tTier)) {
+                    let b = []; try { b = typeof t.bracket === 'string' ? JSON.parse(t.bracket) : t.bracket; } catch(e){}
+                    const finalMatch = b[b.length - 1]?.[0];
+                    if (finalMatch?.winner) {
+                        const winner = players.find(p => p.id === finalMatch.winner);
+                        if (winner && (winner.nationality || 'UNK') === code) {
+                            list.push({ tournamentId: t.id, tournamentName: t.name, tier: tTier, result: 'Winner', date: t.completedAt || t.createdAt, hostCountry: t.hostCountry, winner: winner });
+                        }
                     }
                 }
             });
@@ -3707,7 +3857,7 @@
                 tournaments.forEach(t => {
                     if (t.status !== 'completed') return;
                     const tTier = getTournamentTier(t);
-                    if (tTier !== 'grand_slam' && tTier !== 'major' && tTier !== 'finals') return;
+                    if (!['grand_slam', 'major', 'finals', 'nations_league'].includes(tTier)) return;
                     
                     const res = getTournamentPointsAndResult(player.id, t);
                     
@@ -3716,16 +3866,10 @@
                         if (tTier === 'grand_slam' && ['Winner', 'Finalist', 'Final', 'Semifinalist', 'Semifinals'].includes(res.resultStr)) meets = true;
                         if (tTier === 'major' && ['Winner', 'Finalist', 'Final'].includes(res.resultStr)) meets = true;
                         if (tTier === 'finals' && ['Winner', 'Finalist', 'Final', 'Semifinalist', 'Semifinals'].includes(res.resultStr)) meets = true;
+                        if (tTier === 'nations_league' && ['Winner', 'Finalist', 'Third Place'].includes(res.resultStr)) meets = true;
                         
                         if (meets) {
-                            list.push({
-                                tournamentId: t.id,
-                                tournamentName: t.name,
-                                tier: tTier,
-                                result: res.resultStr,
-                                date: t.completedAt || t.createdAt,
-                                hostCountry: t.hostCountry
-                            });
+                            list.push({ tournamentId: t.id, tournamentName: t.name, tier: tTier, result: res.resultStr, date: t.completedAt || t.createdAt, hostCountry: t.hostCountry });
                         }
                     }
                 });
@@ -4238,6 +4382,30 @@
             const [withdrawnSearch, setWithdrawnSearch] = useState('');
             const [errorMsg, setErrorMsg] = useState('');
             const [showDelete, setShowDelete] = useState(false);
+
+            // --- NATIONS LEAGUE STATE ---
+            const [teams, setTeams] = useState(Array(16).fill(null).map((_,i) => ({ id: `team-${i}`, name: `Co-op Team ${i+1}`, flag: 'UNK', players: [null,null,null,null] })));
+            const [editingTeamIdx, setEditingTeamIdx] = useState(null);
+            const [pickingSlot, setPickingSlot] = useState(null); // { teamIdx, slotIdx }
+            const [rosterSearch, setRosterSearch] = useState('');
+
+            const autoFillNations = () => {
+                const active = players.filter(p => !p.retired).sort((a,b) => a.rank - b.rank);
+                const byNat = {};
+                active.forEach(p => { if(!byNat[p.nationality]) byNat[p.nationality] = []; byNat[p.nationality].push(p); });
+                // Only auto-fill nations with at least 4 active players
+                const valid = Object.entries(byNat).filter(([k,v]) => v.length >= 4).sort((a,b) => a[1][0].rank - b[1][0].rank);
+                
+                const newTeams = Array(16).fill(null).map((_, i) => {
+                    if (valid[i]) return { id: `team-${i}`, name: getCountryName(valid[i][0]), flag: valid[i][0], players: valid[i][1].slice(0,4).map(p=>p.id) };
+                    return { id: `team-${i}`, name: `Co-op Team ${i+1}`, flag: 'UNK', players: [null, null, null, null] };
+                });
+                setTeams(newTeams);
+            };
+
+            const getUsedPlayerIds = () => teams.flatMap(t => t.players).filter(Boolean);
+            const activeAvailablePlayers = players.filter(p => !p.retired && (!getUsedPlayerIds().includes(p.id) || (pickingSlot && teams[pickingSlot.teamIdx].players[pickingSlot.slotIdx] === p.id))).sort((a,b) => a.rank - b.rank);
+            const searchedAvailablePlayers = activeAvailablePlayers.filter(p => p.name.toLowerCase().includes(rosterSearch.toLowerCase()) || (p.nationality||'').toLowerCase().includes(rosterSearch.toLowerCase()));
             
             useEffect(() => {
                 if (editingId && tournaments) {
@@ -4260,6 +4428,7 @@
                 if (tier === 'grand_slam') return [64];
                 if (tier === 'major') return [32, 64];
                 if (tier === 'pro') return [16, 32, 64];
+                if (tier === 'nations_league') return [16];
                 return [8, 16, 32, 64]; 
             }, [tier]);
 
@@ -4339,24 +4508,36 @@
                         await window.fb.updateDoc(tRef, { name: name.trim(), description: description.trim(), hostCountry, location: location.trim(), tier });
                         onSuccess(editingId);
                     } else {
-                        if (autoQualifiers.length + selectedWildcards.length !== size) { setErrorMsg(`You must exactly select ${size} total participants (${reqWc} wildcards required).`); setIsGenerating(false); return; }
-                        
-                        const selected = [...autoQualifiers, ...remainingPlayers.filter(p => selectedWildcards.includes(p.id))].sort((a,b) => a.rank - b.rank);
-                        let bracket; let format = 'elimination'; let groupMatches = null; let groups = null;
+                        let bracket; let format = 'elimination'; let groupMatches = null; let groups = null; let extraData = {}; let selectedPlayerIds = [];
 
-                        if (tier === 'finals') {
-                            const finalsData = generateATPFinalsDraw(selected);
-                            bracket = finalsData.knockout; format = finalsData.format; groupMatches = finalsData.groupMatches; groups = finalsData.groups;
-                        } else if (tier === 'pro_am') {
-                            const proAmData = generateProAmDraw(selected);
-                            bracket = proAmData.knockout; format = proAmData.format; groupMatches = proAmData.groupMatches; groups = proAmData.groups;
+                        if (tier === 'nations_league') {
+                            const isTeamsValid = teams.length === 16 && teams.every(t => t.name.trim() !== '' && t.players.every(p => p !== null));
+                            if (!isTeamsValid) { setErrorMsg("All 16 teams must be fully configured with exactly 4 players."); setIsGenerating(false); return; }
+                            
+                            const nationsData = generateNationsDraw(teams);
+                            bracket = nationsData.knockout; format = nationsData.format; groupMatches = nationsData.groupMatches; groups = nationsData.groups;
+                            extraData = { nationsTeams: nationsData.teams };
+                            selectedPlayerIds = teams.flatMap(t => t.players);
                         } else {
-                            bracket = JSON.stringify(generateKnockoutDraw(selected, size));
+                            if (autoQualifiers.length + selectedWildcards.length !== size) { setErrorMsg(`You must exactly select ${size} total participants (${reqWc} wildcards required).`); setIsGenerating(false); return; }
+                            const selected = [...autoQualifiers, ...remainingPlayers.filter(p => selectedWildcards.includes(p.id))].sort((a,b) => a.rank - b.rank);
+                            selectedPlayerIds = selected.map(p => p.id);
+                            
+                            if (tier === 'finals') {
+                                const finalsData = generateATPFinalsDraw(selected);
+                                bracket = finalsData.knockout; format = finalsData.format; groupMatches = finalsData.groupMatches; groups = finalsData.groups;
+                            } else if (tier === 'pro_am') {
+                                const proAmData = generateProAmDraw(selected);
+                                bracket = proAmData.knockout; format = proAmData.format; groupMatches = proAmData.groupMatches; groups = proAmData.groups;
+                            } else {
+                                bracket = JSON.stringify(generateKnockoutDraw(selected, size));
+                            }
                         }
 
                         const docRef = await window.fb.addDoc(tRef, { 
-                            name: name.trim(), description: description.trim(), hostCountry, location: location.trim(), tier, status: 'active', createdAt: Date.now(), selectedPlayers: selected.map(p => p.id), 
-                            format, bracket, ...(groupMatches ? { groupMatches, groups } : {})
+                            name: name.trim(), description: description.trim(), hostCountry, location: location.trim(), tier, status: 'active', createdAt: Date.now(), 
+                            selectedPlayers: selectedPlayerIds, 
+                            format, bracket, ...(groupMatches ? { groupMatches, groups } : {}), ...extraData
                         });
                         onSuccess(docRef.id);
                     }
@@ -4489,138 +4670,245 @@
                                 </ul>
                             </div>
 
-                            {/* Player Selection Logic (Only runs if creating new) */}
+                            {/* Player & Team Selection Logic (Only runs if creating new) */}
                             {!editingId && (
                                 <>
-                                    {!hasEnoughPlayers && (
-                                        <div className="bg-[#be123c]/20 border border-[#be123c]/40 text-[#fb7185] p-5 rounded-2xl flex items-center justify-center gap-3 mb-8 shadow-lg backdrop-blur-md">
-                                            <Shield className="w-6 h-6 shrink-0" />
-                                            <span className="font-bold text-sm">Not enough eligible players to generate this draw. Need {size + tierConf.excludeTop}, but only have {activePlayers.length}.</span>
-                                        </div>
-                                    )}
-
-                                    <div className={`grid ${reqAuto > 0 ? 'md:grid-cols-2' : 'grid-cols-1'} gap-8 border-t border-white/10 pt-10`}>
-                                        {reqAuto > 0 && (
-                                            <div className="flex flex-col h-[400px]">
-                                                <div className="flex justify-between items-center mb-4 shrink-0">
-                                                    <h3 className="font-black text-white text-lg tracking-tight drop-shadow-md">Auto Qualifiers <span className="text-white/40 text-xs ml-1.5 font-bold uppercase tracking-widest">(Top {reqAuto})</span></h3>
+                                    {tier === 'nations_league' ? (
+                                        <div className="border-t border-white/10 pt-10">
+                                            <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
+                                                <div>
+                                                    <h3 className="font-black text-white text-xl tracking-tight drop-shadow-md flex items-center gap-3"><NationsIcon size={24} className="text-rose-400"/> National Rosters</h3>
+                                                    <p className="text-white/50 text-xs font-medium mt-1">Configure 16 Teams. Each team requires exactly 4 active players.</p>
                                                 </div>
-                                                <div className="bg-black/30 backdrop-blur-xl rounded-2xl p-2 flex-1 flex flex-col border border-white/10 min-h-0 shadow-inner">
-                                                    
-                                                    {/* STICKY SEARCH BAR */}
-                                                    <div className="relative mb-2 shrink-0 z-10">
-                                                        <input type="text" placeholder="Search qualifiers to withdraw..." className="w-full bg-white/5 border border-white/10 text-white px-3 py-2 pl-9 rounded-xl text-sm focus:outline-none focus:border-gold-500/50 transition-colors shadow-inner placeholder-white/30" value={autoSearch} onChange={e => setAutoSearch(e.target.value)} />
-                                                        <Search size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-white/40" />
+                                                <button type="button" onClick={autoFillNations} className="bg-rose-500/20 hover:bg-rose-500/30 border border-rose-500/40 text-rose-300 px-5 py-2.5 rounded-xl font-bold text-sm transition-all shadow-sm flex items-center gap-2 backdrop-blur-md">
+                                                    <Shuffle size={16}/> Auto-Fill Eligible Nations
+                                                </button>
+                                            </div>
+
+                                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                                                {teams.map((t, i) => {
+                                                    const isComplete = t.name.trim() !== '' && t.players.every(p => p !== null);
+                                                    return (
+                                                        <div key={i} onClick={() => setEditingTeamIdx(i)} className={`bg-black/40 border rounded-2xl p-4 cursor-pointer hover:-translate-y-1 hover:shadow-lg transition-all duration-300 group ${isComplete ? 'border-white/10 hover:border-white/30' : 'border-rose-500/40 shadow-[0_0_15px_rgba(244,63,94,0.1)]'}`}>
+                                                            <div className="flex items-center justify-between mb-3">
+                                                                <div className="flex items-center gap-2 min-w-0 pr-2">
+                                                                    <span className="text-2xl drop-shadow-md shrink-0">{getFlag(t.flag)}</span>
+                                                                    <h4 className="font-bold text-white truncate text-sm group-hover:text-rose-400 transition-colors">{t.name || 'Unnamed Team'}</h4>
+                                                                </div>
+                                                                {!isComplete && <div className="w-2 h-2 rounded-full bg-rose-500 animate-pulse shrink-0"></div>}
+                                                            </div>
+                                                            <div className="grid grid-cols-4 gap-1.5">
+                                                                {t.players.map((pid, j) => {
+                                                                    const p = getPlayer(pid);
+                                                                    return <img key={j} src={p.imageUrl || "https://via.placeholder.com/40"} className={`w-full aspect-square rounded-full object-cover border ${pid ? 'border-white/20 shadow-sm' : 'border-dashed border-white/20 opacity-30 group-hover:opacity-60'}`} title={p.name} />
+                                                                })}
+                                                            </div>
+                                                        </div>
+                                                    )
+                                                })}
+                                            </div>
+                                        </div>
+                                    ) : (
+                                        <>
+                                            {!hasEnoughPlayers && (
+                                                <div className="bg-[#be123c]/20 border border-[#be123c]/40 text-[#fb7185] p-5 rounded-2xl flex items-center justify-center gap-3 mb-8 shadow-lg backdrop-blur-md">
+                                                    <Shield className="w-6 h-6 shrink-0" />
+                                                    <span className="font-bold text-sm">Not enough eligible players to generate this draw. Need {size + tierConf.excludeTop}, but only have {activePlayers.length}.</span>
+                                                </div>
+                                            )}
+
+                                            <div className={`grid ${reqAuto > 0 ? 'md:grid-cols-2' : 'grid-cols-1'} gap-8 border-t border-white/10 pt-10`}>
+                                                {reqAuto > 0 && (
+                                                    <div className="flex flex-col h-[400px]">
+                                                        <div className="flex justify-between items-center mb-4 shrink-0">
+                                                            <h3 className="font-black text-white text-lg tracking-tight drop-shadow-md">Auto Qualifiers <span className="text-white/40 text-xs ml-1.5 font-bold uppercase tracking-widest">(Top {reqAuto})</span></h3>
+                                                        </div>
+                                                        <div className="bg-black/30 backdrop-blur-xl rounded-2xl p-2 flex-1 flex flex-col border border-white/10 min-h-0 shadow-inner">
+                                                            <div className="relative mb-2 shrink-0 z-10">
+                                                                <input type="text" placeholder="Search qualifiers to withdraw..." className="w-full bg-white/5 border border-white/10 text-white px-3 py-2 pl-9 rounded-xl text-sm focus:outline-none focus:border-gold-500/50 transition-colors shadow-inner placeholder-white/30" value={autoSearch} onChange={e => setAutoSearch(e.target.value)} />
+                                                                <Search size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-white/40" />
+                                                            </div>
+                                                            <div className="overflow-y-auto space-y-1 pr-1 flex-1 custom-scrollbar relative z-0">
+                                                                {filteredAuto.map(p => (
+                                                                    <div key={p.id} onClick={() => toggleWithdraw(p.id)} className="p-2 opacity-90 hover:opacity-100 text-sm flex items-center justify-between text-white/70 cursor-pointer hover:bg-[#be123c]/20 rounded-xl transition-colors group border border-transparent hover:border-[#be123c]/30">
+                                                                        <span className="flex items-center">
+                                                                            <span className="font-mono text-white/30 mr-2 w-5 text-[10px] font-bold">#{p.rank}</span> 
+                                                                            <img src={p.images?.[0] || p.imageUrl || "https://via.placeholder.com/40"} className="w-6 h-6 rounded-full object-cover border border-white/20 shrink-0 mr-2" />
+                                                                            <span className="mr-2 drop-shadow-sm text-base">{getFlag(p.nationality)}</span> 
+                                                                            <span className="font-bold truncate max-w-[150px] group-hover:text-white transition-colors mr-2">{p.name}</span>
+                                                                        </span>
+                                                                        <div className="flex items-center gap-3">
+                                                                            <span className="text-[9px] font-bold text-gold-400 bg-gold-500/10 px-2 py-0.5 rounded-md border border-gold-500/20 whitespace-nowrap">{(p.points || 0).toLocaleString()} pts</span>
+                                                                            <X size={14} className="text-[#fb7185] opacity-0 group-hover:opacity-100 transition-opacity" />
+                                                                        </div>
+                                                                    </div>
+                                                                ))}
+                                                            </div>
+                                                        </div>
                                                     </div>
-                                                    
-                                                    {/* SCROLLABLE COMPACT LIST */}
-                                                    <div className="overflow-y-auto space-y-1 pr-1 flex-1 custom-scrollbar relative z-0">
-                                                        {filteredAuto.map(p => (
-                                                            <div key={p.id} onClick={() => toggleWithdraw(p.id)} className="p-2 opacity-90 hover:opacity-100 text-sm flex items-center justify-between text-white/70 cursor-pointer hover:bg-[#be123c]/20 rounded-xl transition-colors group border border-transparent hover:border-[#be123c]/30">
-                                                                <span className="flex items-center">
+                                                )}
+
+                                                <div className="flex flex-col h-[400px]">
+                                                    <div className="flex justify-between items-center mb-4 shrink-0">
+                                                        <h3 className="font-black text-white text-lg tracking-tight drop-shadow-md">{reqAuto === 0 ? 'Participants' : (reqWc === 0 ? 'Alternates' : 'Wildcards')}</h3>
+                                                        <div className="flex gap-2 items-center flex-wrap justify-end">
+                                                            {reqAuto === 0 && remainingPlayers.length > 0 && (
+                                                                <button onClick={withdrawTopFraction} className="text-[9px] uppercase tracking-wider font-bold bg-white/10 text-white/70 hover:bg-[#be123c]/30 hover:text-white px-2.5 py-1.5 rounded-lg transition-colors border border-white/10 hover:border-[#be123c]/50 backdrop-blur-md">Drop Top {dropCount} Seeds</button>
+                                                            )}
+                                                            {selectedWildcards.length < reqWc && reqWc > 0 && (
+                                                                <button onClick={selectRandomWildcards} className="text-[10px] flex items-center gap-1.5 bg-white/10 hover:bg-white/20 text-white px-3 py-1.5 rounded-lg transition-colors border border-white/20 font-bold shadow-sm backdrop-blur-md">
+                                                                    <Shuffle size={12} /> Auto-Fill
+                                                                </button>
+                                                            )}
+                                                            <span className={`text-[11px] px-3 py-1.5 rounded-lg font-black tracking-widest border shadow-sm backdrop-blur-md ${selectedWildcards.length === reqWc ? 'bg-[#059669]/20 text-[#34d399] border-[#059669]/40' : 'bg-gold-500/20 text-gold-400 border-gold-500/30'}`}>
+                                                                {selectedWildcards.length} / {reqWc}
+                                                            </span>
+                                                        </div>
+                                                    </div>
+                                                    <div className="bg-black/30 backdrop-blur-xl rounded-2xl p-2 flex-1 flex flex-col border border-white/10 min-h-0 shadow-inner">
+                                                        <div className="relative mb-2 shrink-0 z-10">
+                                                            <input type="text" placeholder="Search..." className="w-full bg-white/5 border border-white/10 text-white px-3 py-2 pl-9 rounded-xl text-sm focus:outline-none focus:border-gold-500/50 transition-colors shadow-inner placeholder-white/30" value={wcSearch} onChange={e => setWcSearch(e.target.value)} />
+                                                            <Search size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-white/40" />
+                                                        </div>
+                                                        <div className="overflow-y-auto space-y-1 pr-1 flex-1 custom-scrollbar relative z-0">
+                                                            {filteredRemaining.map(p => { 
+                                                                const isS = selectedWildcards.includes(p.id); 
+                                                                const isDisabled = reqWc === 0 || (!isS && selectedWildcards.length >= reqWc);
+                                                                return (
+                                                                    <div key={p.id} onClick={() => !isDisabled && toggleWildcard(p.id)} className={`p-2 rounded-xl ${reqWc > 0 ? 'cursor-pointer' : 'cursor-default'} flex justify-between items-center text-sm transition-all duration-300 group ${isS ? 'bg-gold-500/20 border border-gold-500/40 text-white shadow-md backdrop-blur-md' : (isDisabled && reqWc > 0) ? 'opacity-30 cursor-not-allowed border border-transparent' : 'hover:bg-white/10 text-white/70 border border-transparent hover:text-white'}`}>
+                                                                        <span className="flex items-center">
+                                                                            <span className={`font-mono text-[10px] mr-2 w-5 font-bold ${isS ? 'text-gold-400' : 'text-white/30'}`}>#{p.rank}</span> 
+                                                                            <img src={p.images?.[0] || p.imageUrl || "https://via.placeholder.com/40"} className="w-6 h-6 rounded-full object-cover border border-white/20 shrink-0 mr-2" />
+                                                                            <span className="mr-2 drop-shadow-sm text-base">{getFlag(p.nationality)}</span> 
+                                                                            <span className={`truncate max-w-[120px] mr-2 ${isS ? 'font-black' : 'font-bold'}`}>{p.name}</span>
+                                                                        </span>
+                                                                        <div className="flex items-center gap-3">
+                                                                            <span className="text-[9px] font-bold text-gold-400 bg-gold-500/10 px-2 py-0.5 rounded-md border border-gold-500/20 whitespace-nowrap">{(p.points || 0).toLocaleString()} pts</span>
+                                                                            {isS && <CheckCircle size={16} className="text-gold-400 drop-shadow-sm" />}
+                                                                            {reqWc > 0 && !isS && !isDisabled && <X size={14} className="text-[#fb7185] opacity-0 group-hover:opacity-100 transition-opacity hover:scale-110" onClick={(e) => { e.stopPropagation(); toggleWithdraw(p.id); }} />}
+                                                                        </div>
+                                                                    </div>
+                                                                ) 
+                                                            })}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            {withdrawnPlayers.length > 0 && (
+                                                <div className="mt-8 flex flex-col h-[200px]">
+                                                    <div className="flex justify-between items-end mb-4 shrink-0 border-t border-white/10 pt-6">
+                                                        <h3 className="font-black text-white/40 text-[11px] uppercase tracking-widest">Withdrawn / Skipped</h3>
+                                                        <span className="text-[10px] text-white/60 font-bold uppercase tracking-widest bg-white/5 px-2.5 py-1 rounded-lg border border-white/10">{withdrawnPlayers.length} Players</span>
+                                                    </div>
+                                                    <div className="bg-black/30 backdrop-blur-xl rounded-2xl p-2 flex-1 flex flex-col border border-white/10 min-h-0 shadow-inner">
+                                                        <div className="relative mb-2 shrink-0 z-10">
+                                                            <input type="text" placeholder="Search withdrawn players to restore..." className="w-full bg-white/5 border border-white/10 text-white px-3 py-2 pl-9 rounded-xl text-sm focus:outline-none focus:border-gold-500/50 transition-colors shadow-inner placeholder-white/30" value={withdrawnSearch} onChange={e => setWithdrawnSearch(e.target.value)} />
+                                                            <Search size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-white/40" />
+                                                        </div>
+                                                        <div className="overflow-y-auto space-y-1 pr-1 flex-1 custom-scrollbar relative z-0">
+                                                            {filteredWithdrawn.map(p => (
+                                                                <div key={p.id} onClick={() => toggleWithdraw(p.id)} className="p-2 text-sm flex items-center justify-between text-white/40 cursor-pointer hover:bg-[#059669]/20 hover:text-white rounded-xl transition-colors group border border-transparent hover:border-[#059669]/30">
+                                                                    <span className="flex items-center line-through group-hover:no-underline decoration-white/20">
+                                                                        <span className="font-mono mr-2 w-5 text-[10px] font-bold">#{p.rank}</span> 
+                                                                        <img src={p.images?.[0] || p.imageUrl || "https://via.placeholder.com/40"} className="w-6 h-6 rounded-full object-cover border border-white/20 shrink-0 mr-2 grayscale opacity-50 group-hover:grayscale-0 group-hover:opacity-100 transition-all" />
+                                                                        <span className="mr-2 drop-shadow-sm grayscale group-hover:grayscale-0 opacity-50 group-hover:opacity-100 transition-all text-base">{getFlag(p.nationality)}</span> 
+                                                                        <span className="font-bold">{p.name}</span>
+                                                                    </span>
+                                                                    <div className="flex items-center gap-3">
+                                                                        <span className="text-[9px] font-bold text-gold-400 bg-gold-500/10 px-2 py-0.5 rounded-md border border-gold-500/20 whitespace-nowrap opacity-50 group-hover:opacity-100">{(p.points || 0).toLocaleString()} pts</span>
+                                                                        <Plus size={14} className="text-[#34d399] opacity-0 group-hover:opacity-100 transition-opacity" />
+                                                                    </div>
+                                                                </div>
+                                                            ))}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </>
+                                    )}
+                                </>
+                            )}
+                            
+                            {/* --- TEAM EDIT MODAL --- */}
+                            {editingTeamIdx !== null && (
+                                <div className="fixed inset-0 z-[200] bg-black/80 backdrop-blur-md flex items-center justify-center p-4 animate-in fade-in duration-200">
+                                    <div className="bg-royal-950 border border-white/10 rounded-3xl p-6 md:p-8 w-full max-w-2xl shadow-[0_20px_60px_rgba(0,0,0,0.8)] relative flex flex-col h-[85vh] md:h-auto max-h-[800px]">
+                                        <button onClick={() => { setEditingTeamIdx(null); setPickingSlot(null); }} className="absolute top-6 right-6 text-white/40 hover:text-white bg-white/5 p-2 rounded-full transition-colors z-20"><X size={20}/></button>
+                                        
+                                        <h2 className="text-2xl font-black text-white mb-6">Edit Roster</h2>
+                                        
+                                        <div className="flex flex-col md:flex-row gap-4 mb-8 shrink-0">
+                                            <div className="flex-1">
+                                                <label className="block text-[10px] font-black text-white/40 uppercase tracking-widest mb-2">Team Name</label>
+                                                <input type="text" className="w-full bg-white/5 border border-white/10 text-white px-4 py-3 rounded-xl focus:outline-none focus:border-rose-500/50 shadow-inner" 
+                                                       value={teams[editingTeamIdx].name} 
+                                                       onChange={e => { const newT = [...teams]; newT[editingTeamIdx].name = e.target.value; setTeams(newT); }} />
+                                            </div>
+                                            <div className="w-full md:w-48">
+                                                <label className="block text-[10px] font-black text-white/40 uppercase tracking-widest mb-2">Team Flag</label>
+                                                <div className="bg-white/5 border border-white/10 rounded-xl p-1 shadow-inner relative z-50">
+                                                    <CountrySelect value={teams[editingTeamIdx].flag} onChange={val => { const newT = [...teams]; newT[editingTeamIdx].flag = val; setTeams(newT); }} />
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div className="grid grid-cols-2 gap-4 mb-6 shrink-0 relative z-10">
+                                            {[0,1,2,3].map(slotIdx => {
+                                                const pId = teams[editingTeamIdx].players[slotIdx];
+                                                const p = getPlayer(pId);
+                                                const isSelecting = pickingSlot?.slotIdx === slotIdx;
+                                                return (
+                                                    <div key={slotIdx} onClick={() => setPickingSlot({ teamIdx: editingTeamIdx, slotIdx })} 
+                                                         className={`p-3 rounded-2xl border cursor-pointer transition-all flex items-center gap-3 ${isSelecting ? 'bg-rose-500/20 border-rose-500/50 shadow-[0_0_15px_rgba(244,63,94,0.2)]' : 'bg-black/40 border-white/10 hover:bg-white/10'}`}>
+                                                        <div className={`w-10 h-10 rounded-full border shrink-0 overflow-hidden bg-black/50 flex items-center justify-center ${pId ? 'border-white/20' : 'border-dashed border-white/20'}`}>
+                                                            {pId ? <img src={p.images?.[0] || p.imageUrl || "https://via.placeholder.com/40"} className="w-full h-full object-cover" /> : <Plus size={16} className="text-white/20" />}
+                                                        </div>
+                                                        <div className="min-w-0">
+                                                            <div className="text-[9px] uppercase tracking-widest font-black text-white/40 mb-0.5">Slot {slotIdx + 1} {slotIdx < 2 ? '(Singles)' : '(Doubles)'}</div>
+                                                            <div className={`font-bold truncate text-sm ${pId ? 'text-white' : 'text-white/20'}`}>{pId ? p.name : 'Select Player'}</div>
+                                                        </div>
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+
+                                        {pickingSlot && (
+                                            <div className="flex-1 flex flex-col bg-black/30 border border-white/10 rounded-2xl p-2 min-h-0 relative z-0">
+                                                <div className="relative mb-2 shrink-0">
+                                                    <input type="text" placeholder="Search available players..." className="w-full bg-white/5 border border-white/10 text-white px-3 py-2 pl-9 rounded-xl text-sm focus:outline-none focus:border-rose-500/50 transition-colors shadow-inner" value={rosterSearch} onChange={e => setRosterSearch(e.target.value)} />
+                                                    <Search size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-white/40" />
+                                                </div>
+                                                <div className="overflow-y-auto space-y-1 pr-1 flex-1 custom-scrollbar">
+                                                    {searchedAvailablePlayers.map(p => {
+                                                        const isCurrentlyInThisSlot = teams[pickingSlot.teamIdx].players[pickingSlot.slotIdx] === p.id;
+                                                        return (
+                                                            <div key={p.id} onClick={() => {
+                                                                const newT = [...teams];
+                                                                newT[pickingSlot.teamIdx].players[pickingSlot.slotIdx] = isCurrentlyInThisSlot ? null : p.id;
+                                                                setTeams(newT);
+                                                                setPickingSlot(null);
+                                                                setRosterSearch('');
+                                                            }} className={`p-2 rounded-xl cursor-pointer flex items-center justify-between text-sm transition-colors border ${isCurrentlyInThisSlot ? 'bg-rose-500/20 border-rose-500/40 text-white' : 'hover:bg-white/10 text-white/70 border-transparent hover:text-white'}`}>
+                                                                <span className="flex items-center min-w-0 pr-2">
                                                                     <span className="font-mono text-white/30 mr-2 w-5 text-[10px] font-bold">#{p.rank}</span> 
                                                                     <img src={p.images?.[0] || p.imageUrl || "https://via.placeholder.com/40"} className="w-6 h-6 rounded-full object-cover border border-white/20 shrink-0 mr-2" />
                                                                     <span className="mr-2 drop-shadow-sm text-base">{getFlag(p.nationality)}</span> 
-                                                                    <span className="font-bold truncate max-w-[150px] group-hover:text-white transition-colors mr-2">{p.name}</span>
+                                                                    <span className="font-bold truncate">{p.name}</span>
                                                                 </span>
-                                                                <div className="flex items-center gap-3">
-                                                                    <span className="text-[9px] font-bold text-gold-400 bg-gold-500/10 px-2 py-0.5 rounded-md border border-gold-500/20 whitespace-nowrap">{(p.points || 0).toLocaleString()} pts</span>
-                                                                    <X size={14} className="text-[#fb7185] opacity-0 group-hover:opacity-100 transition-opacity" />
-                                                                </div>
+                                                                {isCurrentlyInThisSlot && <CheckCircle size={16} className="text-rose-400 shrink-0" />}
                                                             </div>
-                                                        ))}
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        )}
-
-                                        <div className="flex flex-col h-[400px]">
-                                            <div className="flex justify-between items-center mb-4 shrink-0">
-                                                <h3 className="font-black text-white text-lg tracking-tight drop-shadow-md">{reqAuto === 0 ? 'Participants' : (reqWc === 0 ? 'Alternates' : 'Wildcards')}</h3>
-                                                <div className="flex gap-2 items-center flex-wrap justify-end">
-                                                    {/* DYNAMIC DROP TOP SEEDS BUTTON */}
-                                                    {reqAuto === 0 && remainingPlayers.length > 0 && (
-                                                        <button onClick={withdrawTopFraction} className="text-[9px] uppercase tracking-wider font-bold bg-white/10 text-white/70 hover:bg-[#be123c]/30 hover:text-white px-2.5 py-1.5 rounded-lg transition-colors border border-white/10 hover:border-[#be123c]/50 backdrop-blur-md">Drop Top {dropCount} Seeds</button>
-                                                    )}
-                                                    {selectedWildcards.length < reqWc && reqWc > 0 && (
-                                                        <button onClick={selectRandomWildcards} className="text-[10px] flex items-center gap-1.5 bg-white/10 hover:bg-white/20 text-white px-3 py-1.5 rounded-lg transition-colors border border-white/20 font-bold shadow-sm backdrop-blur-md">
-                                                            <Shuffle size={12} /> Auto-Fill
-                                                        </button>
-                                                    )}
-                                                    <span className={`text-[11px] px-3 py-1.5 rounded-lg font-black tracking-widest border shadow-sm backdrop-blur-md ${selectedWildcards.length === reqWc ? 'bg-[#059669]/20 text-[#34d399] border-[#059669]/40' : 'bg-gold-500/20 text-gold-400 border-gold-500/30'}`}>
-                                                        {selectedWildcards.length} / {reqWc}
-                                                    </span>
-                                                </div>
-                                            </div>
-                                            <div className="bg-black/30 backdrop-blur-xl rounded-2xl p-2 flex-1 flex flex-col border border-white/10 min-h-0 shadow-inner">
-                                                
-                                                {/* STICKY SEARCH BAR */}
-                                                <div className="relative mb-2 shrink-0 z-10">
-                                                    <input type="text" placeholder="Search..." className="w-full bg-white/5 border border-white/10 text-white px-3 py-2 pl-9 rounded-xl text-sm focus:outline-none focus:border-gold-500/50 transition-colors shadow-inner placeholder-white/30" value={wcSearch} onChange={e => setWcSearch(e.target.value)} />
-                                                    <Search size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-white/40" />
-                                                </div>
-                                                
-                                                {/* SCROLLABLE COMPACT LIST */}
-                                                <div className="overflow-y-auto space-y-1 pr-1 flex-1 custom-scrollbar relative z-0">
-                                                    {filteredRemaining.map(p => { 
-                                                        const isS = selectedWildcards.includes(p.id); 
-                                                        const isDisabled = reqWc === 0 || (!isS && selectedWildcards.length >= reqWc);
-                                                        return (
-                                                            <div key={p.id} onClick={() => !isDisabled && toggleWildcard(p.id)} className={`p-2 rounded-xl ${reqWc > 0 ? 'cursor-pointer' : 'cursor-default'} flex justify-between items-center text-sm transition-all duration-300 group ${isS ? 'bg-gold-500/20 border border-gold-500/40 text-white shadow-md backdrop-blur-md' : (isDisabled && reqWc > 0) ? 'opacity-30 cursor-not-allowed border border-transparent' : 'hover:bg-white/10 text-white/70 border border-transparent hover:text-white'}`}>
-                                                                <span className="flex items-center">
-                                                                    <span className={`font-mono text-[10px] mr-2 w-5 font-bold ${isS ? 'text-gold-400' : 'text-white/30'}`}>#{p.rank}</span> 
-                                                                    <img src={p.images?.[0] || p.imageUrl || "https://via.placeholder.com/40"} className="w-6 h-6 rounded-full object-cover border border-white/20 shrink-0 mr-2" />
-                                                                    <span className="mr-2 drop-shadow-sm text-base">{getFlag(p.nationality)}</span> 
-                                                                    <span className={`truncate max-w-[120px] mr-2 ${isS ? 'font-black' : 'font-bold'}`}>{p.name}</span>
-                                                                </span>
-                                                                <div className="flex items-center gap-3">
-                                                                    <span className="text-[9px] font-bold text-gold-400 bg-gold-500/10 px-2 py-0.5 rounded-md border border-gold-500/20 whitespace-nowrap">{(p.points || 0).toLocaleString()} pts</span>
-                                                                    {isS && <CheckCircle size={16} className="text-gold-400 drop-shadow-sm" />}
-                                                                    {reqWc > 0 && !isS && !isDisabled && <X size={14} className="text-[#fb7185] opacity-0 group-hover:opacity-100 transition-opacity hover:scale-110" onClick={(e) => { e.stopPropagation(); toggleWithdraw(p.id); }} />}
-                                                                </div>
-                                                            </div>
-                                                        ) 
+                                                        );
                                                     })}
                                                 </div>
                                             </div>
+                                        )}
+                                        
+                                        <div className="mt-6 flex justify-end shrink-0 relative z-20">
+                                            <button type="button" onClick={() => { setEditingTeamIdx(null); setPickingSlot(null); }} className="bg-white hover:bg-gray-200 text-black px-8 py-3 rounded-xl font-black transition-colors shadow-md">Done</button>
                                         </div>
                                     </div>
-
-                                    {withdrawnPlayers.length > 0 && (
-                                        <div className="mt-8 flex flex-col h-[200px]">
-                                            <div className="flex justify-between items-end mb-4 shrink-0 border-t border-white/10 pt-6">
-                                                <h3 className="font-black text-white/40 text-[11px] uppercase tracking-widest">Withdrawn / Skipped</h3>
-                                                <span className="text-[10px] text-white/60 font-bold uppercase tracking-widest bg-white/5 px-2.5 py-1 rounded-lg border border-white/10">{withdrawnPlayers.length} Players</span>
-                                            </div>
-                                            <div className="bg-black/30 backdrop-blur-xl rounded-2xl p-2 flex-1 flex flex-col border border-white/10 min-h-0 shadow-inner">
-                                                
-                                                {/* STICKY SEARCH BAR */}
-                                                <div className="relative mb-2 shrink-0 z-10">
-                                                    <input type="text" placeholder="Search withdrawn players to restore..." className="w-full bg-white/5 border border-white/10 text-white px-3 py-2 pl-9 rounded-xl text-sm focus:outline-none focus:border-gold-500/50 transition-colors shadow-inner placeholder-white/30" value={withdrawnSearch} onChange={e => setWithdrawnSearch(e.target.value)} />
-                                                    <Search size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-white/40" />
-                                                </div>
-
-                                                {/* SCROLLABLE COMPACT LIST */}
-                                                <div className="overflow-y-auto space-y-1 pr-1 flex-1 custom-scrollbar relative z-0">
-                                                    {filteredWithdrawn.map(p => (
-                                                        <div key={p.id} onClick={() => toggleWithdraw(p.id)} className="p-2 text-sm flex items-center justify-between text-white/40 cursor-pointer hover:bg-[#059669]/20 hover:text-white rounded-xl transition-colors group border border-transparent hover:border-[#059669]/30">
-                                                            <span className="flex items-center line-through group-hover:no-underline decoration-white/20">
-                                                                <span className="font-mono mr-2 w-5 text-[10px] font-bold">#{p.rank}</span> 
-                                                                <img src={p.images?.[0] || p.imageUrl || "https://via.placeholder.com/40"} className="w-6 h-6 rounded-full object-cover border border-white/20 shrink-0 mr-2 grayscale opacity-50 group-hover:grayscale-0 group-hover:opacity-100 transition-all" />
-                                                                <span className="mr-2 drop-shadow-sm grayscale group-hover:grayscale-0 opacity-50 group-hover:opacity-100 transition-all text-base">{getFlag(p.nationality)}</span> 
-                                                                <span className="font-bold">{p.name}</span>
-                                                            </span>
-                                                            <div className="flex items-center gap-3">
-                                                                <span className="text-[9px] font-bold text-gold-400 bg-gold-500/10 px-2 py-0.5 rounded-md border border-gold-500/20 whitespace-nowrap opacity-50 group-hover:opacity-100">{(p.points || 0).toLocaleString()} pts</span>
-                                                                <Plus size={14} className="text-[#34d399] opacity-0 group-hover:opacity-100 transition-opacity" />
-                                                            </div>
-                                                        </div>
-                                                    ))}
-                                                </div>
-                                            </div>
-                                        </div>
-                                    )}
-                                </>
+                                </div>
                             )}
 
                             {errorMsg && <div className="mt-10 text-[#fb7185] text-sm font-bold text-center w-full bg-[#be123c]/20 p-5 rounded-2xl border border-[#be123c]/40 shadow-lg backdrop-blur-md">{errorMsg}</div>}
@@ -5688,7 +5976,414 @@
             );
         }
         
-        
+        function SNBNationsBracket({ tournament, allTournaments = [], players, onBack, db, appId, onNavigate }) {
+            const [viewMode, setViewMode] = useState(tournament.status === 'completed' ? 'info' : 'bracket');
+            const [resolvingTie, setResolvingTie] = useState(null); // The selected Team vs Team Tie
+            const [localMatches, setLocalMatches] = useState([]); // The 3 sub-matches being resolved
+            
+            // --- SETTINGS STATE ---
+            const [showSettings, setShowSettings] = useState(false);
+            const [editName, setEditName] = useState('');
+            const [editLocation, setEditLocation] = useState('');
+            const [editDesc, setEditDesc] = useState('');
+            const [showDelete, setShowDelete] = useState(false);
+            const [expandedDesc, setExpandedDesc] = useState(false);
+
+            useEffect(() => {
+                if (tournament && showSettings) {
+                    setEditName(tournament.name || ''); setEditLocation(tournament.location || ''); setEditDesc(tournament.description || ''); setShowDelete(false);
+                }
+            }, [tournament, showSettings]);
+
+            // Parse Data
+            let teams = []; try { teams = typeof tournament.teams === 'string' ? JSON.parse(tournament.teams) : (tournament.teams || []); } catch(e){}
+            let groupMatches = []; try { groupMatches = typeof tournament.groupMatches === 'string' ? JSON.parse(tournament.groupMatches) : (tournament.groupMatches || []); } catch(e){}
+            let knockout = [[],[],[]]; try { knockout = typeof tournament.bracket === 'string' ? JSON.parse(tournament.bracket) : (tournament.bracket || [[],[],[]]); } catch(e){}
+            
+            const getPlayer = (id) => players.find(p => p.id === id) || { name: 'TBD', rank: '-', nationality: 'UNK' };
+            const getTeam = (id) => teams.find(t => t.id === id) || { name: 'TBD', flag: 'UNK', players: [] };
+
+            // Calculate Team Standings
+            const calcNationStandings = (groupId) => {
+                const scores = {};
+                const gTeams = teams.filter(t => tournament.groups[groupId].includes(t.id));
+                gTeams.forEach(t => scores[t.id] = { id: t.id, wins: 0, losses: 0, matchWins: 0 });
+                
+                groupMatches.filter(m => m.group === groupId).forEach(tie => {
+                    if (tie.winner) {
+                        const loser = tie.winner === tie.t1.id ? tie.t2.id : tie.t1.id;
+                        if (scores[tie.winner]) scores[tie.winner].wins++;
+                        if (scores[loser]) scores[loser].losses++;
+                        
+                        // Calculate individual match wins for tiebreakers
+                        let t1w = 0, t2w = 0;
+                        tie.matches.forEach(m => { if (m.winner === tie.t1.id) t1w++; else if (m.winner === tie.t2.id) t2w++; });
+                        if (scores[tie.t1.id]) scores[tie.t1.id].matchWins += t1w;
+                        if (scores[tie.t2.id]) scores[tie.t2.id].matchWins += t2w;
+                    }
+                });
+                return Object.values(scores).sort((a,b) => b.wins - a.wins || b.matchWins - a.matchWins);
+            };
+
+            const standingsA = useMemo(() => calcNationStandings('A'), [groupMatches, teams]);
+            const standingsB = useMemo(() => calcNationStandings('B'), [groupMatches, teams]);
+            const standingsC = useMemo(() => calcNationStandings('C'), [groupMatches, teams]);
+            const standingsD = useMemo(() => calcNationStandings('D'), [groupMatches, teams]);
+
+            const isGroupStageComplete = useMemo(() => groupMatches.length === 24 && groupMatches.every(m => m && m.winner), [groupMatches]);
+
+            const openResolveModal = (type, mIdx, tie, rIdx = null) => {
+                if (tournament.status === 'completed' || !tie || !tie.t1 || !tie.t2 || tie.winner) return;
+                setResolvingTie({ matchType: type, matchIndex: mIdx, roundIndex: rIdx, ...tie });
+                setLocalMatches(JSON.parse(JSON.stringify(tie.matches))); // Clone matches for editing
+            };
+
+            const handleSubMatchWin = (mIdx, winnerTeamId, type = 'close') => {
+                const newM = [...localMatches];
+                newM[mIdx].winner = winnerTeamId;
+                newM[mIdx].type = type;
+                setLocalMatches(newM);
+            };
+
+            const submitTieResult = async () => {
+                // Calculate overall Tie winner
+                let t1Wins = 0; let t2Wins = 0;
+                localMatches.forEach(m => { if (m.winner === resolvingTie.t1.id) t1Wins++; else if (m.winner === resolvingTie.t2.id) t2Wins++; });
+                
+                if (t1Wins < 2 && t2Wins < 2) return; // Need 2 wins to secure the Tie
+                
+                const tieWinnerId = t1Wins > t2Wins ? resolvingTie.t1.id : resolvingTie.t2.id;
+                const score = `${Math.max(t1Wins, t2Wins)}-${Math.min(t1Wins, t2Wins)}`;
+
+                const newT = JSON.parse(JSON.stringify(tournament));
+                const { matchType, matchIndex, roundIndex: rIdx } = resolvingTie;
+
+                let parsedGM = []; let parsedKO = [[], [], []];
+                try { parsedGM = typeof newT.groupMatches === 'string' ? JSON.parse(newT.groupMatches) : newT.groupMatches; } catch(e){}
+                try { parsedKO = typeof newT.bracket === 'string' ? JSON.parse(newT.bracket) : newT.bracket; } catch(e){}
+
+                const winningTeamObj = teams.find(t => t.id === tieWinnerId);
+                const losingTeamObj = teams.find(t => t.id === (t1Wins > t2Wins ? resolvingTie.t2.id : resolvingTie.t1.id));
+
+                if (matchType === 'group') {
+                    parsedGM[matchIndex].winner = tieWinnerId; parsedGM[matchIndex].score = score; parsedGM[matchIndex].matches = localMatches;
+                    const allGroupsDone = parsedGM.every(m => m && m.winner);
+                    if (allGroupsDone) {
+                        // Push to Quarterfinals
+                        const sA = calcNationStandings('A'); const sB = calcNationStandings('B');
+                        const sC = calcNationStandings('C'); const sD = calcNationStandings('D');
+                        if(sA.length >= 2 && sB.length >= 2 && sC.length >= 2 && sD.length >= 2) {
+                            parsedKO[0][0].t1 = teams.find(t=>t.id===sA[0].id); parsedKO[0][0].t2 = teams.find(t=>t.id===sB[1].id);
+                            parsedKO[0][1].t1 = teams.find(t=>t.id===sC[0].id); parsedKO[0][1].t2 = teams.find(t=>t.id===sD[1].id);
+                            parsedKO[0][2].t1 = teams.find(t=>t.id===sB[0].id); parsedKO[0][2].t2 = teams.find(t=>t.id===sA[1].id);
+                            parsedKO[0][3].t1 = teams.find(t=>t.id===sD[0].id); parsedKO[0][3].t2 = teams.find(t=>t.id===sC[1].id);
+                            // Populate inner matches for QF
+                            parsedKO[0].forEach(tie => {
+                                if (tie.t1 && tie.t2) {
+                                    tie.matches[0].p1 = tie.t1.players[1]; tie.matches[0].p2 = tie.t2.players[1];
+                                    tie.matches[1].p1 = tie.t1.players[0]; tie.matches[1].p2 = tie.t2.players[0];
+                                    tie.matches[2].p1 = tie.t1.players[2]; tie.matches[2].p1b = tie.t1.players[3];
+                                    tie.matches[2].p2 = tie.t2.players[2]; tie.matches[2].p2b = tie.t2.players[3];
+                                }
+                            });
+                        }
+                    }
+                } else if (matchType === 'knockout') {
+                    parsedKO[rIdx][matchIndex].winner = tieWinnerId; parsedKO[rIdx][matchIndex].score = score; parsedKO[rIdx][matchIndex].matches = localMatches;
+                    
+                    if (rIdx === 0) { // QF to SF
+                        const nRIdx = 1; const nMIdx = Math.floor(matchIndex / 2);
+                        if (matchIndex % 2 === 0) parsedKO[nRIdx][nMIdx].t1 = winningTeamObj; else parsedKO[nRIdx][nMIdx].t2 = winningTeamObj;
+                        // Populate SF matches if both teams are there
+                        const targetTie = parsedKO[nRIdx][nMIdx];
+                        if (targetTie.t1 && targetTie.t2) {
+                            targetTie.matches[0].p1 = targetTie.t1.players[1]; targetTie.matches[0].p2 = targetTie.t2.players[1];
+                            targetTie.matches[1].p1 = targetTie.t1.players[0]; targetTie.matches[1].p2 = targetTie.t2.players[0];
+                            targetTie.matches[2].p1 = targetTie.t1.players[2]; targetTie.matches[2].p1b = targetTie.t1.players[3];
+                            targetTie.matches[2].p2 = targetTie.t2.players[2]; targetTie.matches[2].p2b = targetTie.t2.players[3];
+                        }
+                    } else if (rIdx === 1) { // SF to Bronze/Final
+                        const nRIdx = 2;
+                        // Final is index 1, Bronze is index 0
+                        if (matchIndex === 0) { parsedKO[nRIdx][1].t1 = winningTeamObj; parsedKO[nRIdx][0].t1 = losingTeamObj; }
+                        else { parsedKO[nRIdx][1].t2 = winningTeamObj; parsedKO[nRIdx][0].t2 = losingTeamObj; }
+                        
+                        // Populate Final/Bronze matches if both teams are present
+                        [0, 1].forEach(idx => {
+                            const targetTie = parsedKO[nRIdx][idx];
+                            if (targetTie.t1 && targetTie.t2) {
+                                targetTie.matches[0].p1 = targetTie.t1.players[1]; targetTie.matches[0].p2 = targetTie.t2.players[1];
+                                targetTie.matches[1].p1 = targetTie.t1.players[0]; targetTie.matches[1].p2 = targetTie.t2.players[0];
+                                targetTie.matches[2].p1 = targetTie.t1.players[2]; targetTie.matches[2].p1b = targetTie.t1.players[3];
+                                targetTie.matches[2].p2 = targetTie.t2.players[2]; targetTie.matches[2].p2b = targetTie.t2.players[3];
+                            }
+                        });
+                    } else if (rIdx === 2) {
+                        // Check if both Final and Bronze are done
+                        if (parsedKO[2][0].winner && parsedKO[2][1].winner) {
+                            newT.status = 'completed'; newT.completedAt = Date.now();
+                        }
+                    }
+                }
+                
+                newT.groupMatches = JSON.stringify(parsedGM); newT.bracket = JSON.stringify(parsedKO);
+                await window.fb.updateDoc(window.fb.doc(db, 'artifacts', appId, 'public', 'data', 'tournaments', tournament.id), newT);
+                setResolvingTie(null);
+            };
+
+            const tierConf = TOURNAMENT_TIERS['nations_league'];
+            
+            const renderTeamRow = (teamId, isWinner, isLoser, score) => {
+                if (!teamId) return <div className="h-[34px] flex items-center px-3"><span className="text-[10px] font-bold text-white/30 tracking-widest uppercase">TBD</span></div>;
+                const t = getTeam(teamId);
+                return (
+                    <div className={`relative px-3 py-2 flex items-center justify-between transition-colors h-[38px] ${isWinner ? 'bg-rose-500/10' : 'bg-transparent'}`}>
+                        {isWinner && <div className="absolute left-0 top-0 bottom-0 w-[3px] rounded-r shadow-[0_0_8px_rgba(244,63,94,0.8)] bg-rose-400"></div>}
+                        <div className={`flex items-center gap-2.5 overflow-hidden w-full pr-2 transition-all duration-300 ${isLoser ? 'opacity-40 grayscale' : ''}`}>
+                            <span className="text-lg drop-shadow-md shrink-0 leading-none">{getFlag(t.flag)}</span>
+                            <span className={`text-xs truncate ${isWinner ? 'text-white font-black drop-shadow-md' : 'text-white/80 font-bold'}`}>{t.name}</span>
+                        </div>
+                        {score !== undefined && score !== null && <span className={`text-[10px] font-black shrink-0 ${isWinner ? 'text-rose-400' : 'text-white/40'}`}>{score}</span>}
+                    </div>
+                );
+            };
+
+            const renderTieBox = (tie, type, mIdx, rIdx = null) => {
+                const isReady = tie && tie.t1 && tie.t2 && !tie.winner;
+                let t1Score = null; let t2Score = null;
+                if (tie && tie.score) {
+                    const [s1, s2] = tie.score.split('-');
+                    if (tie.winner === tie.t1.id) { t1Score = s1; t2Score = s2; } else { t1Score = s2; t2Score = s1; }
+                }
+
+                return (
+                    <div key={tie.id} onClick={() => openResolveModal(type, mIdx, tie, rIdx)} 
+                         className={`rounded-2xl transition-all duration-300 overflow-hidden flex flex-col border shadow-sm ${isReady ? 'cursor-pointer hover:-translate-y-1 hover:shadow-lg z-20 bg-white/10 border-white/30' : tie.winner ? 'bg-black/50 border-white/10 backdrop-blur-md' : 'bg-black/20 border-white/[0.05] opacity-70 backdrop-blur-sm'}`} 
+                         style={{ borderColor: isReady ? tierConf.hex : undefined, boxShadow: isReady ? `0 4px 15px ${tierConf.hex}20` : undefined }}>
+                        {renderTeamRow(tie.t1?.id, tie.winner === tie.t1?.id, tie.winner && tie.winner !== tie.t1?.id, t1Score)}
+                        <div className="h-px w-full bg-white/10"></div>
+                        {renderTeamRow(tie.t2?.id, tie.winner === tie.t2?.id, tie.winner && tie.winner !== tie.t2?.id, t2Score)}
+                    </div>
+                );
+            };
+
+            const renderStandingsTable = (groupName, standings) => (
+                <div className="bg-white/5 backdrop-blur-2xl rounded-3xl border border-white/10 overflow-hidden shadow-[0_10px_40px_rgba(0,0,0,0.4)] w-full flex flex-col">
+                    <div className="bg-black/40 px-5 py-3.5 border-b border-white/10 font-black text-white flex justify-between items-center tracking-wide">
+                        <span className="text-lg">Group {groupName}</span>
+                    </div>
+                    <div className="flex-1 p-2">
+                        <table className="w-full text-left text-xs">
+                            <thead className="text-white/50 text-[9px] uppercase tracking-widest border-b border-white/5">
+                                <tr><th className="px-3 py-2 font-bold">Team</th><th className="px-3 py-2 text-center font-bold">Ties</th><th className="px-3 py-2 text-center font-bold">Matches</th></tr>
+                            </thead>
+                            <tbody className="divide-y divide-white/5 text-white font-medium">
+                                {standings.map((s, idx) => {
+                                    const t = getTeam(s.id); const isAdvancing = isGroupStageComplete && idx < 2;
+                                    return (
+                                        <tr key={s.id} className={`transition-colors ${isAdvancing ? 'bg-rose-500/10 rounded-xl' : 'hover:bg-white/5'}`}>
+                                            <td className="px-3 py-3 flex items-center gap-2">
+                                                <span className={`w-5 h-5 flex items-center justify-center rounded-full text-[10px] font-black shadow-sm shrink-0 ${isAdvancing ? 'bg-rose-500 text-white shadow-[0_0_10px_rgba(244,63,94,0.4)]' : 'bg-white/10 text-white/80 border border-white/10'}`}>{idx+1}</span>
+                                                <span className="truncate flex items-center min-w-0">
+                                                    <span className="text-lg drop-shadow-sm mr-2 shrink-0">{getFlag(t.flag)}</span>
+                                                    <span className="font-bold text-sm truncate tracking-tight">{t.name}</span>
+                                                </span>
+                                            </td>
+                                            <td className="px-3 py-3 text-center font-bold tabular-nums text-sm">{s.wins}-{s.losses}</td>
+                                            <td className="px-3 py-3 text-center font-bold tabular-nums text-sm text-white/50">{s.matchWins}</td>
+                                        </tr>
+                                    );
+                                })}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            );
+
+            return (
+                <div className="h-full flex flex-col pb-20 relative max-w-[1600px] mx-auto w-full">
+                    
+                    {/* Header */}
+                    <div className="flex justify-between items-start md:items-center mb-6 shrink-0 relative z-20 pt-4 px-4 xl:px-0">
+                        <div className="flex-1 min-w-0 mr-4">
+                            <button onClick={onBack} className="flex items-center gap-2 text-white/60 hover:text-white transition-colors mb-3 text-sm font-medium drop-shadow-md">
+                                <ArrowLeft className="w-4 h-4" /> Back to Tournaments
+                            </button>
+                            <h1 className="text-3xl md:text-4xl font-black text-white flex items-center gap-3 flex-wrap drop-shadow-lg cursor-pointer group" onClick={() => setViewMode(v => v === 'bracket' ? 'info' : 'bracket')}>
+                                <TierBadge rawTier="nations_league" name="SNB Nations League" />
+                                <span className="truncate tracking-tight group-hover:text-rose-400 transition-colors">{tournament.name}</span>
+                                <span className="bg-white/10 text-white/80 px-3 py-1.5 rounded-lg text-[10px] font-black flex items-center gap-2 group-hover:bg-white/20 transition-all shadow-inner border border-white/10 uppercase tracking-widest shrink-0 ml-2">
+                                    {viewMode === 'bracket' ? <><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"></path><path d="M22 12A10 10 0 0 0 12 2v10z"></path></svg> Summary</> : <><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="3" y1="9" x2="21" y2="9"></line><line x1="9" y1="21" x2="9" y2="9"></line></svg> Bracket</>}
+                                </span>
+                                {tournament.status === 'completed' && <span className="bg-[#059669]/20 text-[#059669] text-xs px-3 py-1.5 rounded-lg shrink-0 font-black tracking-widest uppercase border border-[#059669]/40 shadow-sm backdrop-blur-sm ml-auto">Completed</span>}
+                            </h1>
+                        </div>
+                    </div>
+
+                    {viewMode === 'info' ? (
+                        <div className="px-4 xl:px-0 relative z-20">
+                            <div className="w-full max-w-lg bg-black/60 backdrop-blur-2xl border border-white/10 rounded-2xl p-5 shadow-2xl animate-in slide-in-from-top-4 fade-in duration-500">
+                                <p className="text-white/70 text-sm font-medium">Tournament completed. Team results have been recorded in the Nations Database.</p>
+                            </div>
+                        </div>
+                    ) : (
+                        <div className="flex-1 flex flex-col relative z-20 animate-in fade-in zoom-in-95 duration-300">
+                            
+                            {/* Group Stage Dashboard */}
+                            <div className="grid md:grid-cols-2 xl:grid-cols-4 gap-6 px-4 xl:px-0 mb-8 shrink-0">
+                                {['A', 'B', 'C', 'D'].map(g => (
+                                    <div key={g} className="flex flex-col gap-6 h-full">
+                                        {renderStandingsTable(g, g==='A'?standingsA:g==='B'?standingsB:g==='C'?standingsC:standingsD)}
+                                        <div className="bg-white/5 backdrop-blur-2xl rounded-3xl border border-white/10 overflow-hidden shadow-[0_10px_40px_rgba(0,0,0,0.4)] flex flex-col flex-1">
+                                            <div className="bg-black/40 px-5 py-3.5 border-b border-white/10 flex items-center justify-between">
+                                                <h3 className="font-black text-white/70 text-[11px] uppercase tracking-widest">Ties (Group {g})</h3>
+                                            </div>
+                                            <div className="p-3 flex flex-col gap-3 flex-1 justify-around">
+                                                {groupMatches.filter(m => m.group === g).map(tie => {
+                                                    const mIdx = groupMatches.findIndex(m => m.id === tie.id);
+                                                    return renderTieBox(tie, 'group', mIdx);
+                                                })}
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+
+                            {/* Knockout Stage */}
+                            <div className="flex-1 flex flex-col px-4 xl:px-0">
+                                <div className="flex items-center gap-4 mb-4">
+                                    <h2 className="text-xl font-black text-white tracking-tight drop-shadow-md">Knockout Stage</h2>
+                                    <div className="h-px flex-1 bg-gradient-to-r from-white/20 to-transparent"></div>
+                                </div>
+                                
+                                <div className="flex-1 bg-white/5 backdrop-blur-2xl rounded-3xl shadow-[0_0_50px_rgba(0,0,0,0.6)] relative overflow-hidden border border-white/10 flex flex-col z-20 mb-6">
+                                    <div className="flex-1 overflow-auto custom-scrollbar relative z-10 flex flex-col">
+                                        
+                                        <div className="flex min-w-max sticky top-0 z-40 bg-black/50 backdrop-blur-3xl border-b border-white/10 py-3 px-8 shadow-xl">
+                                            {knockout.map((round, rIdx) => {
+                                                const isFinalRound = rIdx === 2;
+                                                const roundName = isFinalRound ? 'Medal Matches' : (rIdx === 1 ? 'Semifinals' : 'Quarterfinals');
+                                                return (
+                                                    <div key={`header-${rIdx}`} className="w-64 shrink-0 mr-16 text-center flex flex-col items-center justify-end min-h-[40px]">
+                                                        <div className="flex items-center justify-center gap-2 text-white font-black uppercase tracking-widest text-[11px] drop-shadow-md" style={{ color: isFinalRound ? tierConf.hex : undefined }}>
+                                                            {roundName}
+                                                        </div>
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+
+                                        <div className="flex min-w-max items-stretch relative z-10 px-8 pb-10 pt-6 flex-1 h-max">
+                                            {knockout.map((round, rIdx) => {
+                                                return (
+                                                <div key={`col-${rIdx}`} className="flex flex-col w-64 shrink-0 mr-16 py-1 justify-around h-max min-h-full gap-8">
+                                                    {round.map((tie, mIdx) => {
+                                                        const isBronze = rIdx === 2 && mIdx === 0;
+                                                        const isFinal = rIdx === 2 && mIdx === 1;
+                                                        return (
+                                                            <div key={tie.id} className="relative flex flex-col justify-center py-2" style={{ flex: 1, minHeight: '80px' }}>
+                                                                {isBronze && <div className="absolute -top-6 left-0 text-[10px] font-black uppercase tracking-widest text-[#cd7f32] bg-[#cd7f32]/10 px-2 py-0.5 rounded border border-[#cd7f32]/30">Bronze Medal Match</div>}
+                                                                {isFinal && <div className="absolute -top-6 left-0 text-[10px] font-black uppercase tracking-widest text-gold-400 bg-gold-500/10 px-2 py-0.5 rounded border border-gold-500/30">World Championship</div>}
+                                                                
+                                                                {renderTieBox(tie, 'knockout', mIdx, rIdx)}
+                                                                
+                                                                {/* Connector Lines */}
+                                                                {rIdx < 2 && <div className="absolute -right-[32px] top-1/2 w-[32px] h-[2px] bg-white/30 z-10 shadow-md"></div>}
+                                                                {rIdx < 2 && mIdx % 2 === 0 && <div className="absolute -right-[32px] top-1/2 w-[2px] bg-white/30 z-10 shadow-md" style={{ height: 'calc(100% + 2rem)' }}></div>}
+                                                                {rIdx > 0 && <div className="absolute -left-[32px] top-1/2 w-[32px] h-[2px] bg-white/30 z-10 shadow-md"></div>}
+                                                            </div>
+                                                        );
+                                                    })}
+                                                </div>
+                                                )
+                                            })}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* --- RESOLVE TIE MODAL --- */}
+                    {resolvingTie && (
+                        <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-[200] flex items-center justify-center p-4 sm:p-6 animate-in fade-in duration-300">
+                            <div className="w-full max-w-4xl bg-royal-950 backdrop-blur-3xl rounded-[2.5rem] border border-white/20 shadow-[0_20px_60px_rgba(0,0,0,0.8)] flex flex-col overflow-hidden animate-in zoom-in-95 duration-300">
+                                
+                                <div className="flex items-center justify-between px-8 py-6 border-b border-white/10 bg-black/40">
+                                    <div>
+                                        <h2 className="text-3xl font-black text-white tracking-tight drop-shadow-sm">Resolve Tie</h2>
+                                        <p className="text-rose-400 text-[11px] mt-1 font-bold uppercase tracking-widest flex items-center gap-2">
+                                            {resolvingTie.t1.name} vs {resolvingTie.t2.name}
+                                        </p>
+                                    </div>
+                                    <button onClick={() => setResolvingTie(null)} className="w-10 h-10 bg-white/5 hover:bg-white/20 rounded-full flex items-center justify-center transition-colors text-white border border-white/10 backdrop-blur-md"><X size={20} /></button>
+                                </div>
+
+                                <div className="p-8 bg-gradient-to-b from-black/20 to-black/60 flex flex-col gap-6">
+                                    {localMatches.map((m, idx) => {
+                                        const isDoubles = idx === 2;
+                                        const p1a = getPlayer(m.p1); const p1b = isDoubles ? getPlayer(m.p1b) : null;
+                                        const p2a = getPlayer(m.p2); const p2b = isDoubles ? getPlayer(m.p2b) : null;
+                                        
+                                        const t1WinsThisMatch = m.winner === resolvingTie.t1.id;
+                                        const t2WinsThisMatch = m.winner === resolvingTie.t2.id;
+
+                                        return (
+                                            <div key={idx} className="bg-white/5 border border-white/10 rounded-2xl p-5 flex flex-col md:flex-row gap-6 items-center shadow-inner">
+                                                <div className="w-full md:w-32 shrink-0 text-center md:text-left border-b md:border-b-0 md:border-r border-white/10 pb-4 md:pb-0 md:pr-4">
+                                                    <div className="text-xs font-black uppercase tracking-widest text-white/50">{m.name}</div>
+                                                    <div className="text-[10px] font-bold text-rose-400 mt-1">{isDoubles ? '2v2' : '1v1'}</div>
+                                                </div>
+
+                                                <div className="flex-1 flex flex-col w-full gap-3">
+                                                    <div className={`flex justify-between items-center p-3 rounded-xl border transition-all ${t1WinsThisMatch ? 'bg-rose-500/20 border-rose-500/50 shadow-md' : 'bg-black/40 border-white/5'}`}>
+                                                        <div className="flex items-center gap-3">
+                                                            <div className="flex items-center">
+                                                                <img src={p1a.imageUrl || "https://via.placeholder.com/40"} className="w-8 h-8 rounded-full object-cover border border-white/20" />
+                                                                {isDoubles && <img src={p1b.imageUrl || "https://via.placeholder.com/40"} className="w-8 h-8 rounded-full object-cover border border-white/20 -ml-3" />}
+                                                            </div>
+                                                            <span className="font-bold text-white text-sm truncate max-w-[150px]">{p1a.name} {isDoubles && `& ${p1b.name}`}</span>
+                                                        </div>
+                                                        <button onClick={() => handleSubMatchWin(idx, resolvingTie.t1.id)} className={`px-4 py-1.5 rounded-lg text-xs font-black uppercase tracking-widest transition-colors ${t1WinsThisMatch ? 'bg-rose-500 text-white shadow-[0_0_10px_rgba(244,63,94,0.5)]' : 'bg-white/10 text-white/50 hover:bg-white/20 hover:text-white'}`}>Win</button>
+                                                    </div>
+                                                    
+                                                    <div className={`flex justify-between items-center p-3 rounded-xl border transition-all ${t2WinsThisMatch ? 'bg-rose-500/20 border-rose-500/50 shadow-md' : 'bg-black/40 border-white/5'}`}>
+                                                        <div className="flex items-center gap-3">
+                                                            <div className="flex items-center">
+                                                                <img src={p2a.imageUrl || "https://via.placeholder.com/40"} className="w-8 h-8 rounded-full object-cover border border-white/20" />
+                                                                {isDoubles && <img src={p2b.imageUrl || "https://via.placeholder.com/40"} className="w-8 h-8 rounded-full object-cover border border-white/20 -ml-3" />}
+                                                            </div>
+                                                            <span className="font-bold text-white text-sm truncate max-w-[150px]">{p2a.name} {isDoubles && `& ${p2b.name}`}</span>
+                                                        </div>
+                                                        <button onClick={() => handleSubMatchWin(idx, resolvingTie.t2.id)} className={`px-4 py-1.5 rounded-lg text-xs font-black uppercase tracking-widest transition-colors ${t2WinsThisMatch ? 'bg-rose-500 text-white shadow-[0_0_10px_rgba(244,63,94,0.5)]' : 'bg-white/10 text-white/50 hover:bg-white/20 hover:text-white'}`}>Win</button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+
+                                <div className="p-6 border-t border-white/10 bg-black/40 flex justify-between items-center">
+                                    <div className="text-white/50 text-xs font-bold uppercase tracking-widest">
+                                        Best 2 out of 3 required.
+                                    </div>
+                                    {(() => {
+                                        let t1w = 0; let t2w = 0;
+                                        localMatches.forEach(m => { if(m.winner === resolvingTie.t1.id) t1w++; else if(m.winner === resolvingTie.t2.id) t2w++; });
+                                        const canSubmit = t1w >= 2 || t2w >= 2;
+                                        return (
+                                            <button onClick={submitTieResult} disabled={!canSubmit} className="bg-rose-500 hover:bg-rose-400 text-white px-8 py-3.5 rounded-xl font-black tracking-widest uppercase transition-all shadow-[0_0_20px_rgba(244,63,94,0.4)] disabled:opacity-30 disabled:cursor-not-allowed">
+                                                Confirm Result ({Math.max(t1w, t2w)}-{Math.min(t1w, t2w)})
+                                            </button>
+                                        );
+                                    })()}
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            );
+        }
 
         function App() {
             const [user, setUser] = useState(null);
@@ -5871,7 +6566,11 @@
                             {activeTab === 'tournaments' && selectedTournamentId && (() => {
                                 const t = tournaments.find(t => t.id === selectedTournamentId);
                                 if (!t) return null;
-                                // ROUTER UPDATE: Send both Finals and Pro-Am to the Group Stage component!
+                                
+                                if (t.format === 'nations_league') {
+                                    return <SNBNationsBracket tournament={t} players={players} onBack={() => navigateTo('tournaments')} db={db} appId={appId} allTournaments={tournaments} onNavigate={navigate} />;
+                                }
+                                
                                 return (t.format === 'atp_finals' || t.format === 'pro_am') ? 
                                     <SNBInternationalsBracket tournament={t} players={players} onBack={() => navigateTo('tournaments')} db={db} appId={appId} allTournaments={tournaments} onNavigate={navigate} /> :
                                     <TournamentBracket tournament={t} allTournaments={tournaments} players={players} onBack={() => navigateTo('tournaments')} db={db} appId={appId} onNavigate={navigate} />
