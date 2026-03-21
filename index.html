@@ -4386,27 +4386,64 @@
             const getPlayer = (id) => players.find(p => p.id === id) || { name: 'TBD', rank: '-', nationality: 'UNK', imageUrl: '' };
             
             // --- NATIONS LEAGUE STATE ---
-            const [teams, setTeams] = useState(Array(16).fill(null).map((_,i) => ({ id: `team-${i}`, name: `Co-op Team ${i+1}`, flag: 'UNK', players: [null,null,null,null] })));
+            const [teams, setTeams] = useState(Array(16).fill(null).map((_,i) => ({ id: `team-${i}`, name: `Entry ${i+1}`, flags: [], players: [null,null,null,null] })));
             const [editingTeamIdx, setEditingTeamIdx] = useState(null);
-            const [pickingSlot, setPickingSlot] = useState(null); // { teamIdx, slotIdx }
+            const [pickingSlot, setPickingSlot] = useState(null);
             const [rosterSearch, setRosterSearch] = useState('');
 
-            const autoFillNations = () => {
+            const autoQualifyTop4 = () => {
                 const active = players.filter(p => !p.retired).sort((a,b) => a.rank - b.rank);
                 const byNat = {};
                 active.forEach(p => { if(!byNat[p.nationality]) byNat[p.nationality] = []; byNat[p.nationality].push(p); });
-                // Only auto-fill nations with at least 4 active players
-                const valid = Object.entries(byNat).filter(([k,v]) => v.length >= 4).sort((a,b) => a[1][0].rank - b[1][0].rank);
                 
-                const newTeams = Array(16).fill(null).map((_, i) => {
-                    if (valid[i]) return { id: `team-${i}`, name: getCountryName(valid[i][0]), flag: valid[i][0], players: valid[i][1].slice(0,4).map(p=>p.id) };
-                    return { id: `team-${i}`, name: `Co-op Team ${i+1}`, flag: 'UNK', players: [null, null, null, null] };
+                // Only take the absolute Top 4 Nations that have at least 4 players
+                const valid = Object.entries(byNat).filter(([k,v]) => v.length >= 4).sort((a,b) => a[1][0].rank - b[1][0].rank).slice(0, 4);
+                
+                const newTeams = [...teams];
+                valid.forEach((nat, i) => {
+                    newTeams[i] = { id: `team-${i}`, name: getCountryName(nat[0]), flags: [nat[0]], players: nat[1].slice(0,4).map(p=>p.id) };
                 });
                 setTeams(newTeams);
             };
 
             const getUsedPlayerIds = () => teams.flatMap(t => t.players).filter(Boolean);
-            const activeAvailablePlayers = players.filter(p => !p.retired && (!getUsedPlayerIds().includes(p.id) || (pickingSlot && teams[pickingSlot.teamIdx].players[pickingSlot.slotIdx] === p.id))).sort((a,b) => a.rank - b.rank);
+            
+            // Auto-Drafting Engine
+            const handleAddFlagToTeam = (code) => {
+                if (!code) return;
+                const newT = [...teams]; const team = newT[editingTeamIdx];
+                if (!team.flags.includes(code)) {
+                    team.flags.push(code);
+                    const natPlayers = players.filter(p => p.nationality === code && !p.retired && !getUsedPlayerIds().includes(p.id)).sort((a,b) => a.rank - b.rank);
+                    let pIdx = 0;
+                    for (let i=0; i<4; i++) {
+                        if (!team.players[i] && pIdx < natPlayers.length) { team.players[i] = natPlayers[pIdx].id; pIdx++; }
+                    }
+                    // Auto-Naming Logic
+                    if (team.flags.length === 1 && team.name.startsWith('Entry ')) team.name = getCountryName(code);
+                    else if (team.flags.length > 1 && team.name === getCountryName(team.flags[0])) team.name = `${getCountryName(team.flags[0])} Co-op`;
+                }
+                setTeams(newT);
+            };
+
+            const handleRemoveFlagFromTeam = (code) => {
+                const newT = [...teams]; const team = newT[editingTeamIdx];
+                team.flags = team.flags.filter(f => f !== code);
+                team.players = team.players.map(pid => {
+                    if (!pid) return null;
+                    return getPlayer(pid).nationality === code ? null : pid; // Evict players from the removed nation
+                });
+                setTeams(newT);
+            };
+
+            // Dynamic Player Filtering
+            const activeAvailablePlayers = players.filter(p => {
+                if (p.retired) return false;
+                if (editingTeamIdx !== null && teams[editingTeamIdx].flags.length > 0 && !teams[editingTeamIdx].flags.includes(p.nationality)) return false;
+                if (getUsedPlayerIds().includes(p.id) && (!pickingSlot || teams[pickingSlot.teamIdx].players[pickingSlot.slotIdx] !== p.id)) return false;
+                return true;
+            }).sort((a,b) => a.rank - b.rank);
+            
             const searchedAvailablePlayers = activeAvailablePlayers.filter(p => p.name.toLowerCase().includes(rosterSearch.toLowerCase()) || (p.nationality||'').toLowerCase().includes(rosterSearch.toLowerCase()));
             
             useEffect(() => {
@@ -4680,10 +4717,10 @@
                                             <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
                                                 <div>
                                                     <h3 className="font-black text-white text-xl tracking-tight drop-shadow-md flex items-center gap-3"><NationsIcon size={24} className="text-rose-400"/> National Rosters</h3>
-                                                    <p className="text-white/50 text-xs font-medium mt-1">Configure 16 Teams. Each team requires exactly 4 active players.</p>
+                                                    <p className="text-white/50 text-xs font-medium mt-1">Configure 16 Entries. The Top 4 Nations can be auto-qualified.</p>
                                                 </div>
-                                                <button type="button" onClick={autoFillNations} className="bg-rose-500/20 hover:bg-rose-500/30 border border-rose-500/40 text-rose-300 px-5 py-2.5 rounded-xl font-bold text-sm transition-all shadow-sm flex items-center gap-2 backdrop-blur-md">
-                                                    <Shuffle size={16}/> Auto-Fill Eligible Nations
+                                                <button type="button" onClick={autoQualifyTop4} className="bg-rose-500/20 hover:bg-rose-500/30 border border-rose-500/40 text-rose-300 px-5 py-2.5 rounded-xl font-bold text-sm transition-all shadow-sm flex items-center gap-2 backdrop-blur-md">
+                                                    <Shuffle size={16}/> Auto-Qualify Top 4
                                                 </button>
                                             </div>
 
@@ -4694,8 +4731,10 @@
                                                         <div key={i} onClick={() => setEditingTeamIdx(i)} className={`bg-black/40 border rounded-2xl p-4 cursor-pointer hover:-translate-y-1 hover:shadow-lg transition-all duration-300 group ${isComplete ? 'border-white/10 hover:border-white/30' : 'border-rose-500/40 shadow-[0_0_15px_rgba(244,63,94,0.1)]'}`}>
                                                             <div className="flex items-center justify-between mb-3">
                                                                 <div className="flex items-center gap-2 min-w-0 pr-2">
-                                                                    <span className="text-2xl drop-shadow-md shrink-0">{getFlag(t.flag)}</span>
-                                                                    <h4 className="font-bold text-white truncate text-sm group-hover:text-rose-400 transition-colors">{t.name || 'Unnamed Team'}</h4>
+                                                                    <span className="text-2xl drop-shadow-md shrink-0 flex gap-0.5">
+                                                                        {t.flags.length > 0 ? t.flags.map(f => getFlag(f)).join('') : '🏳️'}
+                                                                    </span>
+                                                                    <h4 className="font-bold text-white truncate text-sm group-hover:text-rose-400 transition-colors">{t.name}</h4>
                                                                 </div>
                                                                 {!isComplete && <div className="w-2 h-2 rounded-full bg-rose-500 animate-pulse shrink-0"></div>}
                                                             </div>
@@ -4847,10 +4886,19 @@
                                                        value={teams[editingTeamIdx].name} 
                                                        onChange={e => { const newT = [...teams]; newT[editingTeamIdx].name = e.target.value; setTeams(newT); }} />
                                             </div>
-                                            <div className="w-full md:w-48">
-                                                <label className="block text-[10px] font-black text-white/40 uppercase tracking-widest mb-2">Team Flag</label>
-                                                <div className="bg-white/5 border border-white/10 rounded-xl p-1 shadow-inner relative z-50">
-                                                    <CountrySelect value={teams[editingTeamIdx].flag} onChange={val => { const newT = [...teams]; newT[editingTeamIdx].flag = val; setTeams(newT); }} />
+                                            <div className="w-full md:w-auto min-w-[250px]">
+                                                <label className="block text-[10px] font-black text-white/40 uppercase tracking-widest mb-2">Team Nations (Add to unlock players)</label>
+                                                <div className="flex flex-wrap gap-2 items-center bg-black/40 border border-white/10 rounded-xl p-1.5 min-h-[48px]">
+                                                    {teams[editingTeamIdx].flags.map(f => (
+                                                        <div key={f} className="flex items-center gap-1.5 bg-white/10 px-2 py-1 rounded-lg border border-white/20 shadow-sm">
+                                                            <span className="text-base drop-shadow-md leading-none">{getFlag(f)}</span>
+                                                            <span className="text-xs font-bold text-white/90">{f}</span>
+                                                            <X size={12} className="text-rose-400 cursor-pointer hover:text-rose-300 transition-colors ml-1" onClick={() => handleRemoveFlagFromTeam(f)}/>
+                                                        </div>
+                                                    ))}
+                                                    <div className="relative z-50 flex-1 min-w-[140px]">
+                                                        <CountrySelect value="" onChange={handleAddFlagToTeam} />
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>
@@ -4878,9 +4926,12 @@
                                         {pickingSlot && (
                                             <div className="flex-1 flex flex-col bg-black/30 border border-white/10 rounded-2xl p-2 min-h-0 relative z-0">
                                                 <div className="relative mb-2 shrink-0">
-                                                    <input type="text" placeholder="Search available players..." className="w-full bg-white/5 border border-white/10 text-white px-3 py-2 pl-9 rounded-xl text-sm focus:outline-none focus:border-rose-500/50 transition-colors shadow-inner" value={rosterSearch} onChange={e => setRosterSearch(e.target.value)} />
+                                                    <input type="text" placeholder="Search filtered players..." className="w-full bg-white/5 border border-white/10 text-white px-3 py-2 pl-9 rounded-xl text-sm focus:outline-none focus:border-rose-500/50 transition-colors shadow-inner" value={rosterSearch} onChange={e => setRosterSearch(e.target.value)} />
                                                     <Search size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-white/40" />
                                                 </div>
+                                                {teams[editingTeamIdx].flags.length === 0 && (
+                                                    <div className="text-center text-rose-400/80 text-xs font-bold py-6">Add a Team Nation flag above to unlock players.</div>
+                                                )}
                                                 <div className="overflow-y-auto space-y-1 pr-1 flex-1 custom-scrollbar">
                                                     {searchedAvailablePlayers.map(p => {
                                                         const isCurrentlyInThisSlot = teams[pickingSlot.teamIdx].players[pickingSlot.slotIdx] === p.id;
@@ -5929,6 +5980,7 @@
                                                 if (!Array.isArray(round)) return null;
                                                 const isFinalRound = rIdx === totalRounds - 1;
                                                 const roundName = isFinalRound ? 'Championship' : (rIdx === totalRounds - 2 ? 'Semifinals' : 'Quarterfinals');
+                                                const showHeaderTrophy = isFinalRound && round[0];
                                                 
                                                 return (
                                                     <div key={`header-${rIdx}`} className="w-56 shrink-0 mr-12 text-center flex flex-col items-center justify-end min-h-[40px]">
