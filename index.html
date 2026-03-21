@@ -6049,7 +6049,7 @@
                                             {knockout.map((round, rIdx) => {
                                                 if (!Array.isArray(round)) return null;
                                                 return (
-                                                <div key={`col-${rIdx}`} className="flex flex-col w-56 shrink-0 mr-12 py-1 justify-around h-full gap-4">
+                                                <div key={`col-${rIdx}`} className="flex flex-col w-56 shrink-0 mr-12 py-1 justify-around h-full">
                                                     {round.map((match, mIdx) => {
                                                         if (!match) return null;
                                                         const isReady = match.p1 && match.p2 && !match.winner && tournament.status !== 'completed';
@@ -6401,7 +6401,7 @@
                                         <div className="flex min-w-max items-stretch relative z-10 px-8 pb-10 pt-6 flex-1 h-max">
                                             {knockout.map((round, rIdx) => {
                                                 return (
-                                                <div key={`col-${rIdx}`} className="flex flex-col w-64 shrink-0 mr-16 py-1 justify-around h-max min-h-full gap-8">
+                                                <div key={`col-${rIdx}`} className="flex flex-col w-64 shrink-0 mr-16 py-1 justify-around h-full">
                                                     {round.map((tie, mIdx) => {
                                                         const isBronze = rIdx === 2 && mIdx === 0;
                                                         const isFinal = rIdx === 2 && mIdx === 1;
@@ -6413,7 +6413,6 @@
                                                                 {renderTieBox(tie, 'knockout', mIdx, rIdx)}
                                                                 
                                                                 {/* Connector Lines */}
-                                                                {rIdx < 2 && <div className="absolute -right-[32px] top-1/2 w-[32px] h-[2px] bg-white/30 z-10 shadow-md"></div>}
                                                                 {rIdx < 2 && mIdx % 2 === 0 && <div className="absolute -right-[32px] top-1/2 w-[2px] bg-white/30 z-10 shadow-md" style={{ height: 'calc(100% + 2rem)' }}></div>}
                                                                 {rIdx > 0 && <div className="absolute -left-[32px] top-1/2 w-[32px] h-[2px] bg-white/30 z-10 shadow-md"></div>}
                                                             </div>
@@ -6645,16 +6644,28 @@
             return (
                 <div className="h-screen w-full bg-[#050505] text-white flex font-sans overflow-hidden">
                     <nav className="w-64 bg-[#030303] border-r border-white/10 flex flex-col hidden md:flex shrink-0">
-                        <div onClick={() => navigateTo('dashboard')} className="p-6 border-b border-white/10 flex items-center gap-2 text-xl font-bold text-white cursor-pointer hover:text-gold-400 transition-colors">
-                            <SnbLogo size={28} className="text-gold-500"/><span>SNB Tour</span>
+                        {/* THE UPGRADED PREMIUM LOGO HOVER STATE */}
+                        <div 
+                            className="m-4 p-3 rounded-2xl border border-transparent hover:border-white/10 hover:bg-white/5 flex items-center gap-3 cursor-pointer transition-all select-none group" 
+                            onClick={() => navigateTo('dashboard')}
+                        >
+                            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-gold-400 to-gold-600 flex items-center justify-center shadow-[0_0_15px_rgba(212,175,55,0.3)] shrink-0 group-hover:scale-105 transition-transform">
+                                <SnbLogo size={22} className="text-black" />
+                            </div>
+                            <div className="flex flex-col min-w-0">
+                                <h1 className="text-lg font-black text-white tracking-tight truncate leading-tight">SNB Tour</h1>
+                                <div className="text-[9px] font-bold text-gold-400 uppercase tracking-widest flex items-center gap-1">
+                                    <div className="w-1.5 h-1.5 rounded-full bg-gold-400 animate-pulse"></div> Live
+                                </div>
+                            </div>
                         </div>
-                        <div className="px-4 py-6 border-b border-white/10">
+
+                        <div className="px-4 pb-6 pt-2 border-b border-white/10">
                             <button onClick={() => navigateTo('create_tournament')} className={`w-full flex items-center justify-center gap-2 px-4 py-3 text-sm font-bold rounded-xl transition-all shadow-md ${activeTab === 'create_tournament' ? 'bg-gold-400 text-black shadow-[0_0_15px_rgba(212,175,55,0.3)]' : 'bg-white text-black hover:bg-gray-200 hover:shadow-[0_0_20px_rgba(255,255,255,0.2)]'}`}>
                                 <Plus size={18}/> Create Event
                             </button>
                         </div>
                         <div className="flex-1 py-4 space-y-1 overflow-y-auto">
-                            <button onClick={() => navigateTo('dashboard')} className={`w-full flex items-center gap-3 px-6 py-3.5 font-medium transition-colors ${activeTab === 'dashboard' ? 'bg-white/[0.05] text-gold-500 border-r-4 border-gold-500' : 'text-white/50 hover:bg-white/[0.02] hover:text-white'}`}><DashboardIcon size={20}/>SNB Rankings</button>
                             <button onClick={() => navigateTo('tournaments')} className={`w-full flex items-center gap-3 px-6 py-3.5 font-medium transition-colors ${(activeTab === 'tournaments' && !selectedTournamentId) ? 'bg-white/[0.05] text-gold-500 border-r-4 border-gold-500' : 'text-white/50 hover:bg-white/[0.02] hover:text-white'}`}><TournamentsIcon size={20}/>Tournaments</button>
                             <button onClick={() => navigateTo('players')} className={`w-full flex items-center gap-3 px-6 py-3.5 font-medium transition-colors ${activeTab === 'players' ? 'bg-white/[0.05] text-gold-500 border-r-4 border-gold-500' : 'text-white/50 hover:bg-white/[0.02] hover:text-white'}`}><PlayersIcon size={20}/>Players</button>
                             <button onClick={() => navigateTo('nations')} className={`w-full flex items-center gap-3 px-6 py-3.5 font-medium transition-colors ${activeTab === 'nations' ? 'bg-white/[0.05] text-gold-500 border-r-4 border-gold-500' : 'text-white/50 hover:bg-white/[0.02] hover:text-white'}`}><NationsIcon size={20}/>Nations</button>
@@ -6664,13 +6675,15 @@
                     <main className="flex-1 flex flex-col overflow-hidden relative">
                         {/* Mobile Nav */}
                         <div className="md:hidden bg-[#030303] p-4 flex justify-between items-center border-b border-white/10 overflow-x-auto shrink-0 z-50">
-                            <div onClick={() => navigateTo('dashboard')} className="flex items-center gap-1.5 font-bold text-gold-500 mr-4 cursor-pointer hover:text-gold-400">
-                                <SnbLogo size={24} className="text-gold-500"/><span>SNB Tour</span>
+                            <div onClick={() => navigateTo('dashboard')} className="flex items-center gap-2 font-bold text-gold-500 mr-4 cursor-pointer">
+                                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-gold-400 to-gold-600 flex items-center justify-center shadow-[0_0_10px_rgba(212,175,55,0.3)] shrink-0">
+                                    <SnbLogo size={16} className="text-black"/>
+                                </div>
+                                <span className="text-white text-lg tracking-tight">SNB Tour</span>
                             </div>
                             <div className="flex gap-3 items-center">
                                 <button onClick={() => navigateTo('create_tournament')} className={`p-2 rounded-lg transition-colors ${activeTab === 'create_tournament' ? 'bg-gold-400 text-black' : 'bg-white text-black hover:bg-gray-200'}`}><Plus size={18}/></button>
                                 <div className="w-px h-6 bg-white/10 mx-1"></div>
-                                <button onClick={() => navigateTo('dashboard')} className={activeTab === 'dashboard' ? 'text-gold-500' : 'text-white/40'}><DashboardIcon size={20}/></button>
                                 <button onClick={() => navigateTo('tournaments')} className={(activeTab === 'tournaments' && !selectedTournamentId) ? 'text-gold-500' : 'text-white/40'}><TournamentsIcon size={20}/></button>
                                 <button onClick={() => navigateTo('players')} className={activeTab === 'players' ? 'text-gold-500' : 'text-white/40'}><PlayersIcon size={20}/></button>
                                 <button onClick={() => navigateTo('nations')} className={activeTab === 'nations' ? 'text-gold-500' : 'text-white/40'}><NationsIcon size={20}/></button>
