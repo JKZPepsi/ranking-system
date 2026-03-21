@@ -3123,12 +3123,12 @@
                 }))
             ];
 
-            // Options for Date History
+            // Options for Date History (SLIMMED DOWN)
             const historyOptions = [
-                { value: '', label: '🟢 Live Rankings', searchKey: 'live current today' },
+                { value: '', label: 'Live', searchKey: 'live current today' },
                 ...tournaments.filter(t => t.status === 'completed').sort((a,b) => b.completedAt - a.completedAt).map(t => ({
                     value: t.id,
-                    label: `🕒 As of: ${t.name}`,
+                    label: `As of: ${t.name}`,
                     searchKey: t.name,
                     renderOption: (
                         <div className="flex flex-col w-full">
@@ -3147,7 +3147,7 @@
                         rightContent={
                             <>
                                 <GlassDropdown value={filterCountry} onChange={setFilterCountry} options={countryOptions} placeholder="All" hasSearch={true} />
-                                <GlassDropdown value={asOfId} onChange={setAsOfId} options={historyOptions} placeholder="Live Rankings" hasSearch={true} />
+                                <GlassDropdown value={asOfId} onChange={setAsOfId} options={historyOptions} placeholder="Live" hasSearch={true} />
                             </>
                         }
                     />
