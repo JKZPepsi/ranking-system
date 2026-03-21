@@ -937,14 +937,14 @@
 
         var TOURNAMENT_TIERS = {
             'grand_slam': { name: 'Grand Slam', points: { WINNER: 2000, FINALIST: 1200, SF: 720, QF: 360, R16: 180, R32: 90, R64: 45 }, excludeTop: 0, wcCount: { 64: 16 }, color: 'text-purple-400', bg: 'bg-purple-500/20', border: 'border-purple-500/50', hex: '#c084fc', shadowHover: 'hover:shadow-purple-500/20' },
-            'finals': { name: 'SNB Internationals', points: { WINNER: 1500, FINALIST: 1000, SF: 400, RR_WIN: 200 }, excludeTop: 0, wcCount: { 8: 0 }, color: 'text-slate-100', bg: 'bg-slate-100/10', border: 'border-slate-100/40', hex: '#f8fafc', shadowHover: 'hover:shadow-slate-100/20' },
+            'finals': { name: 'SNB Int.', points: { WINNER: 1500, FINALIST: 1000, SF: 400, RR_WIN: 200 }, excludeTop: 0, wcCount: { 8: 0 }, color: 'text-cyan-400', bg: 'bg-cyan-500/20', border: 'border-cyan-500/50', hex: '#22d3ee', shadowHover: 'hover:shadow-cyan-500/20' },
             'major': { name: 'Major', points: { WINNER: 1000, FINALIST: 600, SF: 360, QF: 180, R16: 90, R32: 45, R64: 20 }, excludeTop: 0, wcCount: { 64: 16, 32: 8 }, color: 'text-yellow-400', bg: 'bg-yellow-500/20', border: 'border-yellow-500/50', hex: '#facc15', shadowHover: 'hover:shadow-yellow-500/20' },
             'pro': { name: 'Pro Series', points: { WINNER: 500, FINALIST: 300, SF: 180, QF: 90, R16: 45, R32: 20, R64: 10 }, excludeTop: 8, wcCount: { 64: 16, 32: 8, 16: 4 }, color: 'text-sky-400', bg: 'bg-sky-500/20', border: 'border-sky-500/50', hex: '#38bdf8', shadowHover: 'hover:shadow-sky-500/20' },
             'pro_am': { name: 'Pro-Am', points: { WINNER: 350, FINALIST: 200, SF: 140, QF: 90, RR_WIN: 30 }, excludeTop: 12, wcCount: { 16: 8 }, color: 'text-indigo-400', bg: 'bg-indigo-500/20', border: 'border-indigo-500/50', hex: '#818cf8', shadowHover: 'hover:shadow-indigo-500/20' },
             'challenger': { name: 'Challenger', points: { WINNER: 250, FINALIST: 150, SF: 90, QF: 45, R16: 20, R32: 10, R64: 5 }, excludeTop: 16, wcCount: { 64: 64, 32: 32, 16: 16, 8: 8 }, color: 'text-green-400', bg: 'bg-green-500/20', border: 'border-green-500/50', hex: '#4ade80', shadowHover: 'hover:shadow-green-500/20' },
-            'nations_league': { name: 'SNB Nations League', points: { WINNER: 0, FINALIST: 0, SF: 0, QF: 0, RR_WIN: 0 }, excludeTop: 0, wcCount: {}, color: 'text-rose-400', bg: 'bg-rose-500/20', border: 'border-rose-500/50', hex: '#fb7185', shadowHover: 'hover:shadow-rose-500/20' }
+            'nations_league': { name: 'SNB Nations League', points: { WINNER: 0, FINALIST: 0, SF: 0, QF: 0, RR_WIN: 0 }, excludeTop: 0, wcCount: {}, color: 'text-slate-100', bg: 'bg-slate-100/10', border: 'border-slate-100/40', hex: '#f8fafc', shadowHover: 'hover:shadow-slate-100/20' }
         };
-
+        
         var ROUND_NAMES = ['Round of 64', 'Round of 32', 'Round of 16', 'Quarterfinals', 'Semifinals', 'Final'];
         
         // Highly compressed country dict to save tokens
@@ -4390,24 +4390,31 @@
             const getPlayer = (id) => players.find(p => p.id === id) || { name: 'TBD', rank: '-', nationality: 'UNK', imageUrl: '' };
             
             // --- NATIONS LEAGUE STATE ---
-            const [teams, setTeams] = useState(() => {
-                const initialTeams = Array(16).fill(null).map((_,i) => ({ id: `team-${i}`, name: `Entry ${i+1}`, flags: [], players: [null,null,null,null] }));
-                
-                // AUTO-QUALIFY TOP 4 NATIONS ON LOAD
-                if (!editingId && tier === 'nations_league') {
-                    const active = players.filter(p => !p.retired).sort((a,b) => a.rank - b.rank);
-                    const byNat = {};
-                    active.forEach(p => { if(!byNat[p.nationality]) byNat[p.nationality] = []; byNat[p.nationality].push(p); });
-                    const valid = Object.entries(byNat).filter(([k,v]) => v.length >= 4).sort((a,b) => a[1][0].rank - b[1][0].rank).slice(0, 4);
-                    valid.forEach((nat, i) => {
-                        initialTeams[i] = { id: `team-${i}`, name: getCountryName(nat[0]), flags: [nat[0]], players: nat[1].slice(0,4).map(p=>p.id) };
-                    });
-                }
-                return initialTeams;
-            });
+            const [teams, setTeams] = useState(Array(16).fill(null).map((_,i) => ({ id: `team-${i}`, name: `Entry ${i+1}`, flags: [], players: [null,null,null,null] })));
             const [editingTeamIdx, setEditingTeamIdx] = useState(null);
             const [pickingSlot, setPickingSlot] = useState(null);
             const [rosterSearch, setRosterSearch] = useState('');
+
+            // Watcher: Auto-qualify once players are downloaded
+            useEffect(() => {
+                if (!editingId && tier === 'nations_league' && players.length >= 4) {
+                    setTeams(prev => {
+                        const isPristine = prev.every(t => t.name.startsWith('Entry ') && t.flags.length === 0);
+                        if (!isPristine) return prev;
+                        
+                        const active = players.filter(p => !p.retired).sort((a,b) => a.rank - b.rank);
+                        const byNat = {};
+                        active.forEach(p => { if(!byNat[p.nationality]) byNat[p.nationality] = []; byNat[p.nationality].push(p); });
+                        const valid = Object.entries(byNat).filter(([k,v]) => v.length >= 4).sort((a,b) => a[1][0].rank - b[1][0].rank).slice(0, 4);
+                        
+                        const newTeams = [...prev];
+                        valid.forEach((nat, i) => {
+                            newTeams[i] = { id: `team-${i}`, name: getCountryName(nat[0]), flags: [nat[0]], players: nat[1].slice(0,4).map(p=>p.id) };
+                        });
+                        return newTeams;
+                    });
+                }
+            }, [tier, players, editingId]);
 
             const getUsedPlayerIds = () => teams.flatMap(t => t.players).filter(Boolean);
             
@@ -4681,10 +4688,10 @@
                                         <button 
                                             type="button"
                                             onClick={() => setTier('nations_league')} 
-                                            className={`px-5 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all border ${
+                                            className={`px-5 py-2.5 rounded-full text-xs font-black uppercase tracking-widest transition-all border ${
                                                 tier === 'nations_league' 
-                                                ? 'bg-rose-500 text-white shadow-[0_0_20px_rgba(244,63,94,0.4)] border-rose-400 scale-[1.02]' 
-                                                : 'bg-rose-500/10 text-rose-400 border-rose-500/30 hover:bg-rose-500/20 backdrop-blur-md'
+                                                ? 'bg-slate-100 text-black shadow-[0_0_20px_rgba(248,250,252,0.4)] border-white scale-[1.02]' 
+                                                : 'bg-slate-100/10 text-slate-100 border-slate-100/30 hover:bg-slate-100/20 backdrop-blur-md'
                                             }`}
                                         >
                                             SNB Nations League
@@ -5782,7 +5789,8 @@
                         <span className="text-base">Group {groupName}</span>
                         {isGroupStageComplete && <span className="text-[9px] bg-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded-md uppercase tracking-widest border border-emerald-500/30">Final</span>}
                     </div>
-                    <div className="flex-1 p-1.5">
+                    {/* REMOVED flex-1 here so it sizes naturally to its contents */}
+                    <div className="p-1.5">
                         <table className="w-full text-left text-[11px]">
                             <thead className="text-white/50 text-[8px] uppercase tracking-widest border-b border-white/5">
                                 <tr>
@@ -5857,10 +5865,10 @@
             const mapQuery = tournament.location || `${tournament.name} ${getCountryName(tournament.hostCountry)}`;
 
             return (
-                <div className="h-full flex flex-col pb-20 relative max-w-[1600px] mx-auto w-full">
+                <div className="min-h-full flex flex-col pb-20 relative max-w-[1600px] mx-auto w-full">
                     
                     <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden bg-[#020617]">
-                        <iframe src={`http://googleusercontent.com/maps.google.com/maps?q=${encodeURIComponent(mapQuery)}&t=k&z=13&ie=UTF8&iwloc=&output=embed`} className="w-[130%] h-[130%] -translate-x-[15%] -translate-y-[15%] opacity-50 saturate-[1.2] absolute left-0 top-0 transition-all duration-[3000ms]" frameBorder="0" loading="lazy" />
+                        <iframe src={`https://maps.google.com/maps?q=${encodeURIComponent(mapQuery)}&t=k&z=13&ie=UTF8&iwloc=&output=embed`} className="w-[130%] h-[130%] -translate-x-[15%] -translate-y-[15%] opacity-50 saturate-[1.2] absolute left-0 top-0 transition-all duration-[3000ms]" frameBorder="0" loading="lazy" />
                         <div className="absolute inset-0 bg-gradient-to-b from-[#020617]/50 via-[#020617]/10 to-[#020617]/90 z-10"></div>
                     </div>
 
@@ -5981,21 +5989,21 @@
                             
                             {/* --- THE UNIVERSAL DYNAMIC GROUP STAGE LAYOUT --- */}
                             <div className={`grid md:grid-cols-2 ${tournament.format === 'pro_am' ? 'xl:grid-cols-4' : ''} gap-6 px-4 xl:px-0 mb-6 shrink-0`}>
-                                <div className="flex flex-col gap-6 h-full">
+                                <div className="flex flex-col gap-6">
                                     {renderStandingsTable('A', standingsA)}
                                     {renderMatchGroup('A')}
                                 </div>
-                                <div className="flex flex-col gap-6 h-full">
+                                <div className="flex flex-col gap-6">
                                     {renderStandingsTable('B', standingsB)}
                                     {renderMatchGroup('B')}
                                 </div>
                                 {tournament.format === 'pro_am' && (
                                     <>
-                                        <div className="flex flex-col gap-6 h-full">
+                                        <div className="flex flex-col gap-6">
                                             {renderStandingsTable('C', standingsC)}
                                             {renderMatchGroup('C')}
                                         </div>
-                                        <div className="flex flex-col gap-6 h-full">
+                                        <div className="flex flex-col gap-6">
                                             {renderStandingsTable('D', standingsD)}
                                             {renderMatchGroup('D')}
                                         </div>
@@ -6295,7 +6303,7 @@
             );
 
             return (
-                <div className="h-full flex flex-col pb-20 relative max-w-[1600px] mx-auto w-full">
+                <div className="min-h-full flex flex-col pb-20 relative max-w-[1600px] mx-auto w-full">
                     
                     {/* Header */}
                     <div className="flex justify-between items-start md:items-center mb-6 shrink-0 relative z-20 pt-4 px-4 xl:px-0">
